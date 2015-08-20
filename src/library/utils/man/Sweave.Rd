@@ -1,9 +1,7 @@
 % File src/library/utils/man/Sweave.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{Sweave}
 \alias{Sweave}
@@ -112,6 +110,8 @@ Stangle(file, driver = Rtangle(),
 
   Further Sweave drivers are in, for example, packages \CRANpkg{R2HTML},
   \CRANpkg{ascii}, \CRANpkg{odfWeave} and \CRANpkg{pgfSweave}.
+  
+  Non-Sweave vignettes may be built with \code{tools::\link[tools]{buildVignette}}.
 }
 
 \examples{

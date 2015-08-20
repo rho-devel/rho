@@ -1,6 +1,6 @@
 % File src/library/base/man/sprintf.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{sprintf}
@@ -121,7 +121,9 @@ gettextf(fmt, \dots, domain = NULL)
     \item{\code{+}}{Always print number with sign: by default only
       negative numbers are printed with a sign.}
     \item{a space}{Prefix a space if the first character is not a sign.}
-    \item{\code{0}}{For numbers, pad to the field width with leading zeros.}
+    \item{\code{0}}{For numbers, pad to the field width with leading
+      zeros. For characters, this zero-pads on some platforms and is
+      ignored on others.}
     \item{\code{#}}{specifies \dQuote{alternate output} for numbers, its
       action depending on the type:
       For \code{x} or \code{X}, \code{0x} or \code{0X} will be prefixed
@@ -152,6 +154,9 @@ gettextf(fmt, \dots, domain = NULL)
 
   Field widths and precisions of \code{\%s} conversions are interpreted
   as bytes, not characters, as described in the C standard.
+  
+  The C doubles used for \R numerical vectors have signed zeros, which
+  \code{sprintf} may output as \code{-0}, \code{-0.000} \dots.
 }
 %% (for #) This is from Kernighan & Ritchie, p. 243:
 %% For \code{o}, the first digit will be zero.
@@ -168,9 +173,8 @@ gettextf(fmt, \dots, domain = NULL)
 \section{Warning}{
   The format string is passed down the OS's \code{sprintf} function, and
   incorrect formats can cause the latter to crash the \R process .  \R
-  does perform sanity checks on the format, and since \R 2.10.0, we have
-  not seen crashes anymore.  But not all possible user errors on all
-  platforms have been tested, and some might be terminal.
+  does perform sanity checks on the format, but not all possible user
+  errors on all platforms have been tested, and some might be terminal.
 
   The behaviour on inputs not documented here is \sQuote{undefined},
   which means it is allowed to differ by platform.
@@ -244,6 +248,10 @@ noquote(format(xx, justify = "right"))
 
 sprintf("min 10-char string '\%10s'",
         c("a", "ABC", "and an even longer one"))
+
+\donttest{## Platform-dependent bad example from qdapTools 1.0.0:
+## may pad with spaces or zeroes.
+sprintf("\%09s", month.name)}
 
 n <- 1:18
 sprintf(paste0("e with \%2d digits = \%.", n, "g"), n, exp(1))

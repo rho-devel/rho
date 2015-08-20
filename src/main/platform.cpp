@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2013 The R Core Team
+ *  Copyright (C) 1998--2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -186,8 +186,8 @@ static void Init_R_Platform(SEXP rho)
     SET_VECTOR_ELT(value, 4, mkString("little"));
 #endif
 /* pkgType should be "mac.binary" for CRAN build *only*, not for all
-   AQUA builds. Also we want to be able to use "mac.binary.leopard"
-   and similar for special builds. */
+   AQUA builds. Also we want to be able to use "mac.binary.leopard",
+   "mac.binary.mavericks" and similar. */
 #ifdef PLATFORM_PKGTYPE
     SET_VECTOR_ELT(value, 5, mkString(PLATFORM_PKGTYPE));
 #else /* unix default */
@@ -586,6 +586,8 @@ SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXX
 	    struct _stati64 sb;
 	    from[PATH_MAX] = L'\0';
 	    wcsncpy(from, filenameToWchar(STRING_ELT(f1, i%n1), TRUE), PATH_MAX);
+	    /* This Windows system call does not accept slashes */
+	    for (wchar_t *p = from; *p; p++) if (*p == L'/') *p = L'\\';
 	    to = filenameToWchar(STRING_ELT(f2, i%n2), TRUE);
 	    _wstati64(from, &sb);
 	    int isDir = (sb.st_mode & S_IFDIR) > 0;
@@ -790,13 +792,11 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP fn, ans, ansnames, fsize, mtime, ctime, atime, isdir,
 	mode, xxclass;
 #ifdef UNIX_EXTRAS
-    SEXP uid, gid, uname, grname;
-    struct passwd *stpwd;
-    struct group *stgrp;
+    SEXP uid = R_NilValue, gid = R_NilValue, 
+	uname = R_NilValue, grname = R_NilValue; // silence -Wall
 #endif
-    int i, n;
 #ifdef Win32
-    SEXP exe;
+    SEXP exe = R_NilValue;
     struct _stati64 sb;
 #else
     struct stat sb;
@@ -806,17 +806,19 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
     fn = args[0];
     if (!isString(fn))
 	error(_("invalid filename argument"));
-    n = length(fn);
+    int extras = asInteger(args[1]);
+    if(extras == NA_INTEGER)
+	error(_("invalid '%s' argument"), "extra_cols");
+    int n = length(fn), ncols = 6;
+    if(extras) {
 #ifdef UNIX_EXTRAS
-    PROTECT(ans = allocVector(VECSXP, 10));
-    PROTECT(ansnames = allocVector(STRSXP, 10));
+	ncols = 10;
 #elif defined(Win32)
-    PROTECT(ans = allocVector(VECSXP, 7));
-    PROTECT(ansnames = allocVector(STRSXP, 7));
-#else
-    PROTECT(ans = allocVector(VECSXP, 6));
-    PROTECT(ansnames = allocVector(STRSXP, 6));
+	ncols = 7;
 #endif
+    }
+    PROTECT(ans = allocVector(VECSXP, ncols));
+    PROTECT(ansnames = allocVector(STRSXP, ncols));
     fsize = SET_VECTOR_ELT(ans, 0, allocVector(REALSXP, n));
     SET_STRING_ELT(ansnames, 0, mkChar("size"));
     isdir = SET_VECTOR_ELT(ans, 1, allocVector(LGLSXP, n));
@@ -829,21 +831,23 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
     SET_STRING_ELT(ansnames, 4, mkChar("ctime"));
     atime = SET_VECTOR_ELT(ans, 5, allocVector(REALSXP, n));
     SET_STRING_ELT(ansnames, 5, mkChar("atime"));
+    if (extras) {
 #ifdef UNIX_EXTRAS
-    uid = SET_VECTOR_ELT(ans, 6, allocVector(INTSXP, n));
-    SET_STRING_ELT(ansnames, 6, mkChar("uid"));
-    gid = SET_VECTOR_ELT(ans, 7, allocVector(INTSXP, n));
-    SET_STRING_ELT(ansnames, 7, mkChar("gid"));
-    uname = SET_VECTOR_ELT(ans, 8, allocVector(STRSXP, n));
-    SET_STRING_ELT(ansnames, 8, mkChar("uname"));
-    grname = SET_VECTOR_ELT(ans, 9, allocVector(STRSXP, n));
-    SET_STRING_ELT(ansnames, 9, mkChar("grname"));
+	uid = SET_VECTOR_ELT(ans, 6, allocVector(INTSXP, n));
+	SET_STRING_ELT(ansnames, 6, mkChar("uid"));
+	gid = SET_VECTOR_ELT(ans, 7, allocVector(INTSXP, n));
+	SET_STRING_ELT(ansnames, 7, mkChar("gid"));
+	uname = SET_VECTOR_ELT(ans, 8, allocVector(STRSXP, n));
+	SET_STRING_ELT(ansnames, 8, mkChar("uname"));
+	grname = SET_VECTOR_ELT(ans, 9, allocVector(STRSXP, n));
+	SET_STRING_ELT(ansnames, 9, mkChar("grname"));
 #endif
 #ifdef Win32
-    exe = SET_VECTOR_ELT(ans, 6, allocVector(STRSXP, n));
-    SET_STRING_ELT(ansnames, 6, mkChar("exe"));
+	exe = SET_VECTOR_ELT(ans, 6, allocVector(STRSXP, n));
+	SET_STRING_ELT(ansnames, 6, mkChar("exe"));
 #endif
-    for (i = 0; i < n; i++) {
+    }
+    for (int i = 0; i < n; i++) {
 #ifdef Win32
 	wchar_t *wfn = filenameToWchar(STRING_ELT(fn, i), TRUE);
 	/* trailing \ is not valid on Windows except for the
@@ -891,41 +895,58 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
 	    REAL(atime)[i] += STAT_TIMESPEC_NS (sb, st_atim);
 # endif
 #endif
+	    if (extras) {
 #ifdef UNIX_EXTRAS
-	    INTEGER(uid)[i] = int( sb.st_uid);
-	    INTEGER(gid)[i] = int( sb.st_gid);
-	    stpwd = getpwuid(sb.st_uid);
-	    if (stpwd) SET_STRING_ELT(uname, i, mkChar(stpwd->pw_name));
-	    else SET_STRING_ELT(uname, i, NA_STRING);
-	    stgrp = getgrgid(sb.st_gid);
-	    if (stgrp) SET_STRING_ELT(grname, i, mkChar(stgrp->gr_name));
-	    else SET_STRING_ELT(grname, i, NA_STRING);
+		INTEGER(uid)[i] = (int) sb.st_uid;
+		INTEGER(gid)[i] = (int) sb.st_gid;
+
+		/* Usually all of the uid and gid values in a list of
+		 * files are the same so we can avoid most of the calls
+		 * to getpwuid() and getgrgid(), which can be quite slow
+		 * on some systems.  (PR#15804)
+		 */
+		if (i && INTEGER(uid)[i - 1] == (int) sb.st_uid)
+		    SET_STRING_ELT(uname, i, STRING_ELT(uname, i - 1));
+		else {
+		    struct passwd *stpwd = getpwuid(sb.st_uid);
+		    SET_STRING_ELT(uname, i,
+				   stpwd ? mkChar(stpwd->pw_name): NA_STRING);
+		}
+
+		if (i && INTEGER(gid)[i - 1] == (int) sb.st_gid)
+		    SET_STRING_ELT(grname, i, STRING_ELT(grname, i - 1));
+		else {
+		    struct group *stgrp = getgrgid(sb.st_gid);
+		    SET_STRING_ELT(grname, i, 
+				   stgrp ? mkChar(stgrp->gr_name): NA_STRING);
+		}
 #endif
 #ifdef Win32
-	    {
-		char *s="no";
-		DWORD type;
-		if (GetBinaryTypeW(wfn, &type))
-		    switch(type) {
-		    case SCS_64BIT_BINARY:
-			s = "win64";
-			break;
-		    case SCS_32BIT_BINARY:
-			s = "win32";
-			break;
-		    case SCS_DOS_BINARY:
-		    case SCS_PIF_BINARY:
-			s = "msdos";
-			break;
-		    case SCS_WOW_BINARY:
-			s = "win16";
-			break;
-		    default:
-			s = "unknown";
-		    }
-		SET_STRING_ELT(exe, i, mkChar(s));
-	    }
+		{
+		    char *s="no";
+		    DWORD type;
+		    if (GetBinaryTypeW(wfn, &type))
+			switch(type) {
+			case SCS_64BIT_BINARY:
+			    s = "win64";
+			    break;
+			case SCS_32BIT_BINARY:
+			    s = "win32";
+			    break;
+			case SCS_DOS_BINARY:
+			case SCS_PIF_BINARY:
+			    s = "msdos";
+			    break;
+			case SCS_WOW_BINARY:
+			    s = "win16";
+			    break;
+			default:
+			    s = "unknown";
+			}
+		    SET_STRING_ELT(exe, i, mkChar(s));
+		}
 #endif
+	    }
 	} else {
 	    REAL(fsize)[i] = NA_REAL;
 	    LOGICAL(isdir)[i] = NA_INTEGER;
@@ -933,21 +954,72 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
 	    REAL(mtime)[i] = NA_REAL;
 	    REAL(ctime)[i] = NA_REAL;
 	    REAL(atime)[i] = NA_REAL;
+	    if (extras) {
 #ifdef UNIX_EXTRAS
-	    INTEGER(uid)[i] = NA_INTEGER;
-	    INTEGER(gid)[i] = NA_INTEGER;
-	    SET_STRING_ELT(uname, i, NA_STRING);
-	    SET_STRING_ELT(grname, i, NA_STRING);
+		INTEGER(uid)[i] = NA_INTEGER;
+		INTEGER(gid)[i] = NA_INTEGER;
+		SET_STRING_ELT(uname, i, NA_STRING);
+		SET_STRING_ELT(grname, i, NA_STRING);
 #endif
 #ifdef Win32
-	    SET_STRING_ELT(exe, i, NA_STRING);
+		SET_STRING_ELT(exe, i, NA_STRING);
 #endif
+	    }
 	}
     }
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(xxclass = mkString("octmode"));
     classgets(mode, xxclass);
     UNPROTECT(3);
+    return ans;
+}
+
+SEXP attribute_hidden do_direxists(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP fn, ans;
+
+#ifdef Win32
+    struct _stati64 sb;
+#else
+    struct stat sb;
+#endif
+
+    checkArity(op, args);
+    fn = CAR(args);
+    if (!isString(fn))
+	error(_("invalid filename argument"));
+    int n = length(fn);
+    PROTECT(ans = allocVector(LGLSXP, n));
+    for (int i = 0; i < n; i++) {
+#ifdef Win32
+	wchar_t *wfn = filenameToWchar(STRING_ELT(fn, i), TRUE);
+	/* trailing \ is not valid on Windows except for the
+	   root directory on a drive, specified as "\", or "D:\",
+	   or "\\?\D:\", etc.  We remove it in other cases,
+	   to help those who think they're on Unix. */
+	size_t len = wcslen(wfn);
+	if (len) {
+	    wchar_t *p = wfn + (len - 1);
+            if (len > 1 && (*p == L'/' || *p == L'\\') &&
+            	*(p-1) != L':') *p = 0;
+        }
+#else
+	const char *efn = R_ExpandFileName(translateChar(STRING_ELT(fn, i)));
+#endif
+	if (STRING_ELT(fn, i) != NA_STRING &&
+#ifdef Win32
+	    _wstati64(wfn, &sb)
+#else
+	    /* Target not link */
+	    stat(efn, &sb)
+#endif
+	    == 0) {
+	    LOGICAL(ans)[i] = (sb.st_mode & S_IFDIR) > 0;
+
+	} else LOGICAL(ans)[i] = 0;
+    }
+    // copy names?
+    UNPROTECT(1);
     return ans;
 }
 
@@ -1493,17 +1565,6 @@ static int R_unlink(const char *name, int recursive, int force)
     return (res2 == 0 || res != 0) ? 0 : 1;
 }
 
-/* for use under valgrind on OS X */
-extern "C" {
-    void attribute_hidden R_CleanTempDir2(void);
-}
-
-void attribute_hidden R_CleanTempDir2(void)
-{
-    if (Sys_TempDir)
-	R_unlink(Sys_TempDir, 1, 1); /* recursive=TRUE, force=TRUE */
-}
-
 #endif
 
 
@@ -1693,10 +1754,6 @@ SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR:
     return mkString(p ? p : "");
 }
 
-extern void invalidate_cached_recodings(void);  /* from sysutils.c */
-
-extern void resetICUcollator(void); /* from util.c */
-
 /* Locale specs are always ASCII */
 SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
@@ -1741,12 +1798,18 @@ SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR:
 	break;
     case 5:
 	cat = LC_NUMERIC;
-	warning(_("setting 'LC_NUMERIC' may cause R to function strangely"));
-	p = setlocale(cat, CHAR(STRING_ELT(locale, 0)));
+	{
+	    const char *new_lc_num = CHAR(STRING_ELT(locale, 0));
+	    if (strcmp(new_lc_num, "C")) /* do not complain about C locale - that's the only
+					    reliable way to restore sanity */
+		warning(_("setting 'LC_NUMERIC' may cause R to function strangely"));
+	    p = setlocale(cat, new_lc_num);
+	}
 	break;
     case 6:
 	cat = LC_TIME;
 	p = setlocale(cat, CHAR(STRING_ELT(locale, 0)));
+	dt_invalidate_locale();
 	break;
 #if defined LC_MESSAGES
     case 7:
@@ -1922,8 +1985,8 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
 
     op->checkNumArgs(num_args, call);
 
-    PROTECT(ans = allocVector(LGLSXP, 15));
-    PROTECT(ansnames = allocVector(STRSXP, 15));
+    PROTECT(ans = allocVector(LGLSXP, 18));
+    PROTECT(ansnames = allocVector(STRSXP, 18));
 
     SET_STRING_ELT(ansnames, i, mkChar("jpeg"));
 #ifdef HAVE_JPEG
@@ -2005,7 +2068,7 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
 #endif
 
     SET_STRING_ELT(ansnames, i, mkChar("fifo"));
-#if defined(HAVE_MKFIFO) && defined(HAVE_FCNTL_H)
+#if (defined(HAVE_MKFIFO) && defined(HAVE_FCNTL_H)) || defined(_WIN32)
     LOGICAL(ans)[i++] = TRUE;
 #else
     LOGICAL(ans)[i++] = FALSE;
@@ -2064,6 +2127,24 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
 #else
     LOGICAL(ans)[i++] = FALSE;
 #endif
+
+    SET_STRING_ELT(ansnames, i, mkChar("ICU"));
+#ifdef USE_ICU
+    LOGICAL(ans)[i++] = TRUE;
+#else
+    LOGICAL(ans)[i++] = FALSE;
+#endif
+
+    SET_STRING_ELT(ansnames, i, mkChar("long.double"));
+    LOGICAL(ans)[i++] = sizeof(LDOUBLE) > sizeof(double);
+
+    SET_STRING_ELT(ansnames, i, mkChar("libcurl"));
+#ifdef HAVE_CURL_CURL_H
+    LOGICAL(ans)[i++] = TRUE;
+#else
+    LOGICAL(ans)[i++] = FALSE;
+#endif
+
 
     setAttrib(ans, R_NamesSymbol, ansnames);
     UNPROTECT(2);
@@ -2240,8 +2321,27 @@ end:
    'from', 'to' should have trailing path separator if needed.
 */
 #ifdef Win32
+static void copyFileTime(const wchar_t *from, const wchar_t * to)
+{
+    HANDLE hFrom, hTo;
+    FILETIME modft;
+    
+    hFrom = CreateFileW(from, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+			FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFrom == INVALID_HANDLE_VALUE) return;
+    int res  = GetFileTime(hFrom, NULL, &modft, NULL);
+    CloseHandle(hFrom);
+    if(!res) return;
+   
+    hTo = CreateFileW(to, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+		      FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hTo == INVALID_HANDLE_VALUE) return;
+    SetFileTime(hTo, NULL, NULL, &modft);
+    CloseHandle(hTo);
+}
+
 static int do_copy(const wchar_t* from, const wchar_t* name, const wchar_t* to,
-		   int over, int recursive, int perms, int depth)
+		   int over, int recursive, int perms, int dates, int depth)
 {
     R_CheckUserInterrupt(); // includes stack check
     if(depth > 100) {
@@ -2253,7 +2353,7 @@ static int do_copy(const wchar_t* from, const wchar_t* name, const wchar_t* to,
     wchar_t dest[PATH_MAX + 1], this[PATH_MAX + 1];
 
     if (wcslen(from) + wcslen(name) >= PATH_MAX) {
-	warning(_("over-long path length"));
+	warning(_("over-long path"));
 	return 1;
     }
     wsprintfW(this, L"%ls%ls", from, name);
@@ -2266,7 +2366,7 @@ static int do_copy(const wchar_t* from, const wchar_t* name, const wchar_t* to,
 	if (!recursive) return 1;
 	nc = wcslen(to);
 	if (wcslen(to) + wcslen(name) >= PATH_MAX) {
-	    warning(_("over-long path length"));
+	    warning(_("over-long path"));
 	    return 1;
 	}
 	wsprintfW(dest, L"%ls%ls", to, name);
@@ -2284,17 +2384,19 @@ static int do_copy(const wchar_t* from, const wchar_t* name, const wchar_t* to,
 		if (!wcscmp(de->d_name, L".") || !wcscmp(de->d_name, L".."))
 		    continue;
 		if (wcslen(name) + wcslen(de->d_name) + 1 >= PATH_MAX) {
-		    warning(_("over-long path length"));
+		    warning(_("over-long path"));
 		    return 1;
 		}
 		wsprintfW(p, L"%ls%\\%ls", name, de->d_name);
-		nfail += do_copy(from, p, to, over, recursive, perms, depth);
+		nfail += do_copy(from, p, to, over, recursive, 
+				 perms, dates, depth);
 	    }
 	    _wclosedir(dir);
 	} else {
 	    warning(_("problem reading dir %ls: %s"), this, strerror(errno));
 	    nfail++; /* we were unable to read a dir */
 	}
+	if(dates) copyFileTime(this, dest);
     } else { /* a file */
 	FILE *fp1 = NULL, *fp2 = NULL;
 	wchar_t buf[APPENDBUFSIZE];
@@ -2325,8 +2427,11 @@ static int do_copy(const wchar_t* from, const wchar_t* name, const wchar_t* to,
 		goto copy_error;
 	    }
 	}
+	if(fp1) fclose(fp1); fp1 = NULL;
+	if(fp2) fclose(fp2); fp2 = NULL;
 	/* FIXME: perhaps manipulate mode as we do in Sys.chmod? */
 	if(perms) _wchmod(dest, sb.st_mode & 0777);
+	if(dates) copyFileTime(this, dest);
 copy_error:
 	if(fp2) fclose(fp2);
 	if(fp1) fclose(fp1);
@@ -2339,30 +2444,35 @@ SEXP attribute_hidden do_filecopy(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP fn, to, ans;
     wchar_t *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
-    int i, nfiles, over, recursive, perms, nfail;
+    int i, nfiles, over, recursive, perms, dates, nfail;
 
     checkArity(op, args);
     fn = CAR(args);
     nfiles = length(fn);
     PROTECT(ans = allocVector(LGLSXP, nfiles));
     if (nfiles > 0) {
+	args = CDR(args);
 	if (!isString(fn))
 	    error(_("invalid '%s' argument"), "from");
-	to = CADR(args);
+	to = CAR(args); args = CDR(args);
 	if (!isString(to) || LENGTH(to) != 1)
 	    error(_("invalid '%s' argument"), "to");
-	over = asLogical(CADDR(args));
+	over = asLogical(CAR(args)); args = CDR(args);
 	if (over == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "over");
-	recursive = asLogical(CADDDR(args));
+	recursive = asLogical(CAR(args)); args = CDR(args);
 	if (recursive == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "recursive");
-	perms = asLogical(CAD4R(args));
+	perms = asLogical(CAR(args)); args = CDR(args);
 	if (perms == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "copy.mode");
+	dates = asLogical(CAR(args));
+	if (dates == NA_LOGICAL)
+	    error(_("invalid '%s' argument"), "copy.dates");
 	wcsncpy(dir,
 		filenameToWchar(STRING_ELT(to, 0), TRUE),
 		PATH_MAX);
+        dir[PATH_MAX - 1] = L'\0';		
 	if (*(dir + (wcslen(dir) - 1)) !=  L'\\')
 	    wcsncat(dir, L"\\", PATH_MAX);
 	for (i = 0; i < nfiles; i++) {
@@ -2370,6 +2480,7 @@ SEXP attribute_hidden do_filecopy(SEXP call, SEXP op, SEXP args, SEXP rho)
 		wcsncpy(from,
 			filenameToWchar(STRING_ELT(fn, i), TRUE),
 			PATH_MAX);
+		from[PATH_MAX - 1] = L'\0';
 		if(wcslen(from)) {
 		    /* If there was a trailing sep, this is a mistake */
 		    p = from + (wcslen(from) - 1);
@@ -2377,17 +2488,21 @@ SEXP attribute_hidden do_filecopy(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    p = wcsrchr(from, L'\\') ;
 		    if (p) {
 			wcsncpy(name, p+1, PATH_MAX);
+			name[PATH_MAX - 1] = L'\0';
 			*(p+1) = L'\0';
 		    } else {
 			if(wcslen(from) > 2 && from[1] == L':') {
 			    wcsncpy(name, from+2, PATH_MAX);
+			    name[PATH_MAX - 1] = L'\0';
 			    from[2] = L'\0';
 			} else {
 			    wcsncpy(name, from, PATH_MAX);
+			    name[PATH_MAX - 1] = L'\0';
 			    wcsncpy(from, L".\\", PATH_MAX);
 			}
 		    }
-		    nfail = do_copy(from, name, dir, over, recursive, perms, 1);
+		    nfail = do_copy(from, name, dir, over, recursive, 
+				    perms, dates, 1);
 		} else nfail = 1;
 	    } else nfail = 1;
 	    LOGICAL(ans)[i] = (nfail == 0);
@@ -2399,8 +2514,43 @@ SEXP attribute_hidden do_filecopy(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #else
 
+# ifdef HAVE_UTIMES
+#  include <sys/time.h>
+# elif defined(HAVE_UTIME)
+#  include <utime.h>
+# endif
+
+static void copyFileTime(const char *from, const char * to)
+{
+    struct stat sb;
+    if(stat(from, &sb)) return;
+    double ftime;
+
+#ifdef STAT_TIMESPEC
+    ftime = (double) STAT_TIMESPEC(sb, st_mtim).tv_sec
+	+ 1e-9 * (double) STAT_TIMESPEC(sb, st_mtim).tv_nsec;
+#elif defined STAT_TIMESPEC_NS
+    ftime = STAT_TIMESPEC_NS (sb, st_mtim);
+#else
+    ftime = (double) sb.st_mtime;
+#endif
+
+#if defined(HAVE_UTIMES)
+    struct timeval times[2];
+
+    times[0].tv_sec = times[1].tv_sec = (int)ftime;
+    times[0].tv_usec = times[1].tv_usec = (int)(1e6*(ftime - (int)ftime));
+    utimes(to, times);
+#elif defined(HAVE_UTIME)
+    struct utimbuf settime;
+
+    settime.actime = settime.modtime = (int)ftime;
+    utime(to, &settime);
+#endif
+}
+
 static int do_copy(const char* from, const char* name, const char* to,
-		   int over, int recursive, int perms, int depth)
+		   int over, int recursive, int perms, int dates, int depth)
 {
     R_CheckUserInterrupt(); // includes stack check
     if(depth > 100) {
@@ -2457,7 +2607,8 @@ static int do_copy(const char* from, const char* name, const char* to,
 		    return 1;
 		}
 		snprintf(p, PATH_MAX+1, "%s/%s", name, de->d_name);
-		nfail += do_copy(from, p, to, over, recursive, perms, depth);
+		nfail += do_copy(from, p, to, over, recursive, 
+				 perms, dates, depth);
 	    }
 	    closedir(dir);
 	} else {
@@ -2465,7 +2616,8 @@ static int do_copy(const char* from, const char* name, const char* to,
 		    thispath, strerror(errno));
 	    nfail++; /* we were unable to read a dir */
 	}
-	chmod(dest, mode_t( perms ? (sb.st_mode & mask): mask));
+	chmod(dest, (mode_t) (perms ? (sb.st_mode & mask): mask));
+	if(dates) copyFileTime(thispath, dest);
     } else { /* a file */
 	FILE *fp1 = nullptr, *fp2 = nullptr;
 	char buf[APPENDBUFSIZE];
@@ -2479,7 +2631,7 @@ static int do_copy(const char* from, const char* name, const char* to,
 	}
 	snprintf(dest, PATH_MAX+1, "%s%s", to, name);
 	if (over || !R_FileExists(dest)) {
-	    /* REprintf("copying %s to %s\n", this, dest); */
+	    /* REprintf("copying %s to %s\n", thispath, dest); */
 	    if ((fp1 = R_fopen(thispath, "rb")) == nullptr ||
 		(fp2 = R_fopen(dest, "wb")) == nullptr) {
 		warning(_("problem copying %s to %s: %s"),
@@ -2496,8 +2648,10 @@ static int do_copy(const char* from, const char* name, const char* to,
 		nfail++;
 		goto copy_error;
 	    }
+	    if(fp2) fclose(fp2); fp2 = NULL;
+	    if(perms) chmod(dest, sb.st_mode & mask);
+	    if(dates) copyFileTime(thispath, dest);
 	}
-	if(perms) chmod(dest, sb.st_mode & mask);
 copy_error:
 	if(fp2) fclose(fp2);
 	if(fp1) fclose(fp1);
@@ -2510,7 +2664,7 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP fn, to, ans;
     char *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
-    int i, nfiles, over, recursive, perms, nfail;
+    int i, nfiles, over, recursive, perms, dates, nfail;
 
     op->checkNumArgs(num_args, call);
     fn = args[0];
@@ -2531,9 +2685,13 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 	perms = asLogical(args[4]);
 	if (perms == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "copy.mode");
+	dates = asLogical(args[5]);
+	if (dates == NA_LOGICAL)
+	    error(_("invalid '%s' argument"), "copy.dates");
 	strncpy(dir,
 		R_ExpandFileName(translateChar(STRING_ELT(to, 0))),
 		PATH_MAX);
+        dir[PATH_MAX - 1] = '\0';
 	if (*(dir + (strlen(dir) - 1)) !=  '/')
 	    strncat(dir, "/", PATH_MAX);
 	for (i = 0; i < nfiles; i++) {
@@ -2541,6 +2699,7 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 		strncpy(from,
 			R_ExpandFileName(translateChar(STRING_ELT(fn, i))),
 			PATH_MAX);
+                from[PATH_MAX - 1] = '\0';
 		size_t ll = strlen(from);
 		if (ll) {  // people do pass ""
 		    /* If there is a trailing sep, this is a mistake */
@@ -2549,12 +2708,15 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 		    p = strrchr(from, '/') ;
 		    if (p) {
 			strncpy(name, p+1, PATH_MAX);
+                        name[PATH_MAX - 1] = '\0';
 			*(p+1) = '\0';
 		    } else {
 			strncpy(name, from, PATH_MAX);
+                        name[PATH_MAX - 1] = '\0';
 			strncpy(from, "./", PATH_MAX);
 		    }
-		    nfail = do_copy(from, name, dir, over, recursive, perms, 1);
+		    nfail = do_copy(from, name, dir, over, recursive, 
+				    perms, dates, 1);
 		} else nfail = 1;
 	    } else nfail = 1;
 	    LOGICAL(ans)[i] = (nfail == 0);
@@ -2766,12 +2928,6 @@ static int winSetFileTime(const char *fn, time_t ftime)
     CloseHandle(hFile);
     return res != 0; /* success is non-zero */
 }
-#else
-# ifdef HAVE_UTIMES
-#  include <sys/time.h>
-# elif defined(HAVE_UTIME)
-#  include <utime.h>
-# endif
 #endif
 
 SEXP attribute_hidden
@@ -2856,6 +3012,99 @@ SEXP attribute_hidden do_mkjunction(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ScalarLogical(bOK != 0);
 }
 #endif
+
+#include <zlib.h>
+#include <bzlib.h>
+#include <lzma.h>
+#ifdef HAVE_PCRE_PCRE_H
+# include <pcre/pcre.h>
+#else
+# include <pcre.h>
+#endif
+
+#ifdef USE_ICU
+# ifndef USE_ICU_APPLE
+#  include <unicode/uversion.h>
+# else
+#  define U_MAX_VERSION_LENGTH 4
+#  define U_MAX_VERSION_STRING_LENGTH 20
+typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
+void u_versionToString(const UVersionInfo versionArray, char *versionString);
+void u_getVersion(UVersionInfo versionArray);
+# endif
+#endif
+
+#include <iconv.h>
+#if defined(__GLIBC__)
+# include <gnu/libc-version.h>
+#endif
+
+SEXP attribute_hidden
+do_eSoftVersion(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP ans = PROTECT(allocVector(STRSXP, 7));
+    SEXP nms = PROTECT(allocVector(STRSXP, 7));
+    setAttrib(ans, R_NamesSymbol, nms);
+    unsigned int i = 0;
+    char p[256];
+    snprintf(p, 256, "%s", zlibVersion());
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("zlib"));
+    snprintf(p, 256, "%s", BZ2_bzlibVersion());
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("bzlib"));
+    snprintf(p, 256, "%s", lzma_version_string());
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("xz"));
+    snprintf(p, 256, "%s", pcre_version());
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("PCRE"));
+#ifdef USE_ICU
+    UVersionInfo icu;
+    char pu[U_MAX_VERSION_STRING_LENGTH];
+    u_getVersion(icu);
+    u_versionToString(icu, pu);
+    SET_STRING_ELT(ans, i, mkChar(pu));
+#else
+    SET_STRING_ELT(ans, i, mkChar(""));
+#endif
+    SET_STRING_ELT(nms, i++, mkChar("ICU"));
+    snprintf(p, 256, "%s", tre_version());
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("TRE"));
+#ifdef _LIBICONV_VERSION
+    {
+	int ver = _libiconv_version;
+	snprintf(p, 256, "GNU libiconv %d.%d", ver/0x0100, ver%0x0100);
+    }
+#elif defined(_WIN32)
+    snprintf(p, 256, "%s", "win_iconv");
+#elif defined(__GLIBC__)
+    snprintf(p, 256, "glibc %s", gnu_get_libc_version());
+#else
+    snprintf(p, 256, "%s", "unknown");
+#endif
+    SET_STRING_ELT(ans, i, mkChar(p));
+    SET_STRING_ELT(nms, i++, mkChar("iconv"));
+    UNPROTECT(2);
+    return ans;
+}
+
+/* platform-specific */
+
+extern "C" void Rsleep(double timeint);
+
+SEXP attribute_hidden do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    double time = asReal(CAR(args));
+    if (ISNAN(time) || time < 0.)
+	errorcall(call, _("invalid '%s' value"), "time");
+    Rsleep(time);
+    return R_NilValue;
+}
+
 
 /* Formerly src/appl/machar.c:
  * void machar()  -- computes ALL `machine constants' at once.

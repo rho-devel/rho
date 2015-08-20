@@ -35,6 +35,7 @@
 #include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
+#include <algorithm>
 
 using namespace std;
 using namespace CXXR;
@@ -55,13 +56,13 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
-RObject* Frame::Binding::forcedValue()
+RObject* Frame::Binding::forcedValue() const
 {
     return forcedValue2().first;
 }
 
 pair<RObject*, bool>
-Frame::Binding::forcedValue2()
+Frame::Binding::forcedValue2() const
 {
     bool promise_forced = false;
     RObject* val = m_value;
@@ -131,7 +132,8 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 	m_frame->monitorWrite(*this);
 }
 
-vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
+vector<const Symbol*> Frame::symbols(bool include_dotsymbols,
+				     bool sorted) const
 {
     vector<const Symbol*> ans;
     visitBindings([&](const Binding* binding) {
@@ -139,6 +141,12 @@ vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
 	    if (include_dotsymbols || !isDotSymbol(symbol))
 		ans.push_back(symbol);
 	});
+    if (sorted) {
+	std::sort(ans.begin(), ans.end(),
+		  [](const Symbol* x, const Symbol* y) {
+		      return String::Comparator()(x->name(), y->name()); });
+    }
+
     return ans;
 }
 

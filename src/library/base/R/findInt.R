@@ -1,7 +1,7 @@
 #  File src/library/base/R/findInt.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ findInterval <- function(x, vec, rightmost.closed = FALSE, all.inside = FALSE)
     ## ---------------------------------------------------------
     ## Author: Martin Maechler, Date:  4 Jan 2002, 10:16 (of very different .C version)
 
-    if(any(is.na(vec)))
+    if(anyNA(vec))
 	stop("'vec' contains NAs")
     if(is.unsorted(vec))
 	stop("'vec' must be sorted non-decreasingly")

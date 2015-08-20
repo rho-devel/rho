@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
- *  Copyright (C) 2002--2005  The R Foundation
+ *  Copyright (C) 1997--2015  The R Core Team
+ *  Copyright (C) 2002--2015  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -185,8 +185,8 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data, SEXP call)
 }
 
 
-/* The following functions are used to coerce arguments to */
-/* the appropriate type for inclusion in the returned value. */
+/* The following functions are used to coerce arguments to the
+ * appropriate type for inclusion in the returned value. */
 
 namespace {
     inline void LIST_ASSIGN(struct BindData* data, SEXP x)
@@ -239,7 +239,7 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else {
 	    for (i = 0; i < XLENGTH(x); i++)
-		LIST_ASSIGN(data, duplicate(VECTOR_ELT(x, i)));
+		LIST_ASSIGN(data, lazy_duplicate(VECTOR_ELT(x, i)));
 	}
 	break;
     case EXPRSXP:
@@ -261,12 +261,12 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else
 	    while (x != R_NilValue) {
-		LIST_ASSIGN(data, duplicate(CAR(x)));
+		LIST_ASSIGN(data, lazy_duplicate(CAR(x)));
 		x = CDR(x);
 	    }
 	break;
     default:
-	LIST_ASSIGN(data, duplicate(x));
+	LIST_ASSIGN(data, lazy_duplicate(x));
 	break;
     }
 }
@@ -327,12 +327,14 @@ LogicalAnswer(SEXP x, struct BindData *data, SEXP call)
 	    LOGICAL(data->ans_ptr)[data->ans_length++] = LOGICAL(x)[i];
 	break;
     case INTSXP:
-	for (i = 0; i < XLENGTH(x); i++)
-	    LOGICAL(data->ans_ptr)[data->ans_length++] = INTEGER(x)[i];
+	for (i = 0; i < XLENGTH(x); i++) {
+	    int v = INTEGER(x)[i];
+	    LOGICAL(data->ans_ptr)[data->ans_length++] = (v == NA_INTEGER) ? NA_LOGICAL : ( v != 0 );
+	}
 	break;
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LOGICAL(data->ans_ptr)[data->ans_length++] = int(RAW(x)[i]);
+	    LOGICAL(data->ans_ptr)[data->ans_length++] = (int)RAW(x)[i] != 0;
 	break;
     default:
 	errorcall(call, _("type '%s' is unimplemented in '%s'"),
@@ -845,7 +847,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we use the natural coercion for vector types. */
 
     mode = NILSXP;
-    if (data.ans_flags & 512)	   mode = EXPRSXP;
+    if      (data.ans_flags & 512) mode = EXPRSXP;
     else if (data.ans_flags & 256) mode = VECSXP;
     else if (data.ans_flags & 128) mode = STRSXP;
     else if (data.ans_flags &  64) mode = CPLXSXP;
@@ -1059,25 +1061,26 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* This is a special .Internal */
 SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP a, t, obj, classlist, classname, method, classmethod, rho;
-    const char *generic;
+    SEXP a, t, obj, method, rho, ans;
     SEXPTYPE mode;
     int deparse_level;
-    Rboolean compatible = TRUE;
+    Rboolean compatible = TRUE, anyS4 = FALSE;
     struct BindData data;
     char buf[512];
-    const char *s, *klass;
 
     /* since R 2.2.0: first argument "deparse.level" */
     deparse_level = asInteger(eval(CAR(args), env));
-    args = CDR(args);
+    Rboolean tryS4 = Rboolean(deparse_level >= 0);
+    /* NB: negative deparse_level should otherwise be equivalent to deparse_level == 0,
+     * --  as cbind(), rbind() below only check for '== 1' and '== 2'
+     * {FIXME: methods should do same} */
 
     /* Lazy evaluation and method dispatch based on argument types are
      * fundamentally incompatible notions.  The results here are
      * ghastly.
      *
      * We build promises to evaluate the arguments and then force the
-     * promises so that if we despatch to a closure below, the closure
+     * promises so that if we dispatch to a closure below, the closure
      * is still in a position to use "substitute" to get the actual
      * expressions which generated the argument (for naming purposes).
      *
@@ -1097,22 +1100,21 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PROTECT(args = promiseArgs(args, env));
 
-    generic = ((PRIMVAL(op) == 1) ? "cbind" : "rbind");
-    klass = "";
+    const char *generic = ((PRIMVAL(op) == 1) ? "cbind" : "rbind");
+    const char *klass = "";
     method = R_NilValue;
-    for (a = args; a != R_NilValue && compatible; a = CDR(a)) {
+    for (a = CDR(args); a != R_NilValue; a = CDR(a)) {
 	PROTECT(obj = eval(CAR(a), env));
-	if (isObject(obj)) {
-	    int i;
-	    classlist = getAttrib(obj, R_ClassSymbol);
-	    for (i = 0; i < length(classlist); i++) {
-		classname = STRING_ELT(classlist, i);
-		s = translateChar(classname);
+        if (tryS4 && !anyS4 && isS4(obj)) anyS4 = TRUE;
+	if (compatible && isObject(obj)) {
+	    SEXP classlist = PROTECT(R_data_class2(obj));
+	    for (int i = 0; i < length(classlist); i++) {
+		const char *s = translateChar(STRING_ELT(classlist, i));
 		if(strlen(generic) + strlen(s) + 2 > 512)
 		    error(_("class name too long in '%s'"), generic);
 		sprintf(buf, "%s.%s", generic, s);
-		classmethod = R_LookupMethod(install(buf), env, env,
-					     R_BaseNamespace);
+		SEXP classmethod = R_LookupMethod(install(buf), env, env,
+                                                  R_BaseNamespace);
 		if (classmethod != R_UnboundValue) {
 		    if (klass[0] == '\0') {
 			/* There is no previous class */
@@ -1127,31 +1129,39 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 			/* default method. */
 			if (strcmp(klass, s)) {
 			    method = R_NilValue;
-			    /* need to end both loops */
 			    compatible = FALSE;
 			}
 		    }
 		    break; /* go to next parameter */
 		}
 	    }
+            UNPROTECT(1);
 	}
 	UNPROTECT(1);
     }
-    if (method != R_NilValue) {
+
+    tryS4 = Rboolean(anyS4 && (!compatible || method == R_NilValue));
+    if (tryS4) {
+	// keep 'deparse.level' as first arg and *name* it:
+	SET_TAG(args, install("deparse.level"));
+	// and use methods:::cbind / rbind
+        method = findFun(install(generic), R_MethodsNamespace);
+    } else
+	args = CDR(args); // keeping deparse.level for S4 dispatch
+    if (method != R_NilValue) { // found an S3 or S4 method
 	PROTECT(method);
 	Closure* closure = SEXP_downcast<Closure*>(method);
 	Expression* callx = SEXP_downcast<Expression*>(call);
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
 	Environment* callenv = SEXP_downcast<Environment*>(env);
-	args = closure->invoke(callenv, &arglist, callx);
-	UNPROTECT(2);
-	return args;
+	ans = closure->invoke(callenv, &arglist, callx);
+	UNPROTECT(1);
+	return ans;
     }
 
     /* Dispatch based on class membership has failed. */
     /* The default code for rbind/cbind.default follows */
     /* First, extract the evaluated arguments. */
-
     rho = env;
     data.ans_flags = 0;
     data.ans_length = 0;
@@ -1166,7 +1176,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     mode = NILSXP;
-    if (data.ans_flags & 512)	   mode = EXPRSXP;
+    if      (data.ans_flags & 512) mode = EXPRSXP;
     else if (data.ans_flags & 256) mode = VECSXP;
     else if (data.ans_flags & 128) mode = STRSXP;
     else if (data.ans_flags &  64) mode = CPLXSXP;
@@ -1228,7 +1238,6 @@ static void SetColNames(SEXP dimnames, SEXP x)
 static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		  int deparse_level)
 {
-    int i, j, k, idx;
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mrows, lenmin = 0;
@@ -1285,7 +1294,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		    mnames = mrows;
 	    }
 	} else {
-	    k = length(u);
+	    int k = length(u);
 	    if (!warned && k > 0 && (k > rows || rows % k)) {
 		warned = TRUE;
 		warning("number of rows of result is not a multiple of vector length (arg %d)", na + 1);
@@ -1310,9 +1319,9 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, STRSXP);
-		k = LENGTH(u);
-		idx = (!isMatrix(u)) ? rows : k;
-		for (i = 0; i < idx; i++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (!isMatrix(u)) ? rows : k;
+		for (R_xlen_t i = 0; i < idx; i++)
 		    SET_STRING_ELT(result, n++, STRING_ELT(u, i % k));
 	    }
 	}
@@ -1320,7 +1329,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     else if (mode == VECSXP) {
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t));
-	    if (isMatrix(u) || length(u) >= lenmin) {
+	    int umatrix = isMatrix(u); /* might be lost in coercion to VECSXP */
+	    if (umatrix || length(u) >= lenmin) {
 		/* we cannot assume here that coercion will work */
 		switch(TYPEOF(u)) {
 		case NILSXP:
@@ -1333,19 +1343,21 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		case STRSXP:
 		case VECSXP:
 		case LISTSXP:
+		{
 		    PROTECT(u = coerceVector(u, mode));
-		    k = LENGTH(u);
+		    R_xlen_t k = XLENGTH(u);
 		    if (k > 0) {
-			idx = (!isMatrix(u)) ? rows : k;
-			for (i = 0; i < idx; i++)
+			R_xlen_t idx = (!umatrix) ? rows : k;
+			for (R_xlen_t i = 0; i < idx; i++)
 			    SET_VECTOR_ELT(result, n++,
-					   duplicate(VECTOR_ELT(u, i % k)));
+					   lazy_duplicate(VECTOR_ELT(u, i % k)));
 		    }
 		    UNPROTECT(1);
 		    break;
+		}
 		default:
-		    for (i = 0; i < rows; i++)
-			SET_VECTOR_ELT(result, n++, duplicate(u));
+		    for (int i = 0; i < rows; i++)
+			SET_VECTOR_ELT(result, n++, lazy_duplicate(u));
 		}
 	    }
 	}
@@ -1355,9 +1367,9 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, CPLXSXP);
-		k = LENGTH(u);
-		idx = (!isMatrix(u)) ? rows : k;
-		for (i = 0; i < idx; i++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (!isMatrix(u)) ? rows : k;
+		for (R_xlen_t i = 0; i < idx; i++)
 		    COMPLEX(result)[n++] = COMPLEX(u)[i % k];
 	    }
 	}
@@ -1367,9 +1379,9 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, RAWSXP);
-		k = LENGTH(u);
-		idx = (!isMatrix(u)) ? rows : k;
-		for (i = 0; i < idx; i++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (!isMatrix(u)) ? rows : k;
+		for (R_xlen_t i = 0; i < idx; i++)
 		    RAW(result)[n++] = RAW(u)[i % k];
 	    }
 	}
@@ -1378,20 +1390,20 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t)); /* type of u can be any of: RAW, LGL, INT, REAL */
 	    if (isMatrix(u) || length(u) >= lenmin) {
-		k = LENGTH(u);
-		idx = (!isMatrix(u)) ? rows : k;
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (!isMatrix(u)) ? rows : k;
 		if (TYPEOF(u) <= INTSXP) { /* INT or LGL */
 		    if (mode <= INTSXP) {
-			for (i = 0; i < idx; i++)
+			for (R_xlen_t i = 0; i < idx; i++)
 			    INTEGER(result)[n++] = INTEGER(u)[i % k];
 		    }
 		    else {
-			for (i = 0; i < idx; i++)
+			for (R_xlen_t i = 0; i < idx; i++)
 			    REAL(result)[n++] = (INTEGER(u)[i % k]) == NA_INTEGER ? NA_REAL : INTEGER(u)[i % k];
 		    }
 		}
 		else if (TYPEOF(u) == REALSXP) {
-		    for (i = 0; i < idx; i++)
+		    for (R_xlen_t i = 0; i < idx; i++)
 			REAL(result)[n++] = REAL(u)[i % k];
 		}
 		else { /* RAWSXP */
@@ -1400,10 +1412,10 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		       raw losslessly but not vice versa. So due to the way this was
 		       defined the raw -> logical conversion is bound to be lossy .. */
 		    if (mode == LGLSXP)
-			for (i = 0; i < idx; i++)
+			for (R_xlen_t i = 0; i < idx; i++)
 			    LOGICAL(result)[n++] = RAW(u)[i % k] ? TRUE : FALSE;
 		    else
-			for (i = 0; i < idx; i++)
+			for (R_xlen_t i = 0; i < idx; i++)
 			    INTEGER(result)[n++] = static_cast<unsigned char>( RAW(u)[i % k]);
 		}
 	    }
@@ -1418,7 +1430,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    nam = SET_VECTOR_ELT(dn, 1, allocVector(STRSXP, cols));
 	else
 	    nam = R_NilValue;	/* -Wall */
-	j = 0;
+	int j = 0;
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u)) {
@@ -1427,17 +1439,17 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (have_rnames &&
 		    GetRowNames(dn) == R_NilValue &&
 		    GetRowNames(v) != R_NilValue)
-		    SetRowNames(dn, duplicate(GetRowNames(v)));
+		    SetRowNames(dn, lazy_duplicate(GetRowNames(v)));
 
 		/* rbind() does this only  if(have_?names) .. : */
 		/* but if tnam is non-null, have_cnames = TRUE: see above */
 		tnam = GetColNames(v);
 		if (tnam != R_NilValue) {
-		    for (i = 0; i < length(tnam); i++)
+		    for (int i = 0; i < length(tnam); i++)
 			SET_STRING_ELT(nam, j++, STRING_ELT(tnam, i));
 		}
 		else if (have_cnames) {
-		    for (i = 0; i < ncols(u); i++)
+		    for (int i = 0; i < ncols(u); i++)
 			SET_STRING_ELT(nam, j++, R_BlankString);
 		}
 	    } else if (length(u) >= lenmin) {
@@ -1445,7 +1457,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
 		if (have_rnames && GetRowNames(dn) == R_NilValue
 		    && u != R_NilValue && length(u) == rows)
-		    SetRowNames(dn, duplicate(u));
+		    SetRowNames(dn, lazy_duplicate(u));
 
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
@@ -1472,7 +1484,6 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		  int deparse_level)
 {
-    int i, j, k, idx;
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mcols, lenmin = 0;
@@ -1531,7 +1542,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    }
 	}
 	else {
-	    k = length(u);
+	    int k = length(u);
 	    if (!warned && k>0 && (k > cols || cols % k)) {
 		warned = TRUE;
 		warning("number of columns of result is not a multiple of vector length (arg %d)", na + 1);
@@ -1557,10 +1568,10 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, STRSXP);
-		k = LENGTH(u);
-		idx = (isMatrix(u)) ? nrows(u) : (k > 0);
-		for (i = 0; i < idx; i++)
-		    for (j = 0; j < cols; j++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (isMatrix(u)) ? nrows(u) : (k > 0);
+		for (R_xlen_t i = 0; i < idx; i++)
+		    for (int j = 0; j < cols; j++)
 		      SET_STRING_ELT(result, i + n + (j * rows),
 				     STRING_ELT(u, (i + j * idx) % k));
 		n += idx;
@@ -1570,14 +1581,15 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     else if (mode == VECSXP) {
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t));
-	    if (isMatrix(u) || length(u) >= lenmin) {
+ 	    int umatrix = isMatrix(u), urows = umatrix ? nrows(u) : 1; /* coercing to VECSXP will lose these. PR#15468 */
+	    if (umatrix || length(u) >= lenmin) {
 		PROTECT(u = coerceVector(u, mode));
-		k = LENGTH(u);
-		idx = (isMatrix(u)) ? nrows(u) : (k > 0);
-		for (i = 0; i < idx; i++)
-		    for (j = 0; j < cols; j++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = umatrix ? urows : (k > 0);
+		for (R_xlen_t i = 0; i < idx; i++)
+		    for (int j = 0; j < cols; j++)
 		      SET_VECTOR_ELT(result, i + n + (j * rows),
-				     duplicate(VECTOR_ELT(u, (i + j * idx) % k)));
+				     lazy_duplicate(VECTOR_ELT(u, (i + j * idx) % k)));
 		n += idx;
 		UNPROTECT(1);
 	    }
@@ -1588,10 +1600,10 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, RAWSXP);
-		k = LENGTH(u);
-		idx = (isMatrix(u)) ? nrows(u) : (k > 0);
-		for (i = 0; i < idx; i++)
-		    for (j = 0; j < cols; j++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (isMatrix(u)) ? nrows(u) : (k > 0);
+		for (R_xlen_t i = 0; i < idx; i++)
+		    for (int j = 0; j < cols; j++)
 			RAW(result)[i + n + (j * rows)]
 			    = RAW(u)[(i + j * idx) % k];
 		n += idx;
@@ -1603,10 +1615,10 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, CPLXSXP);
-		k = LENGTH(u);
-		idx = (isMatrix(u)) ? nrows(u) : (k > 0);
-		for (i = 0; i < idx; i++)
-		    for (j = 0; j < cols; j++)
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (isMatrix(u)) ? nrows(u) : (k > 0);
+		for (R_xlen_t i = 0; i < idx; i++)
+		    for (int j = 0; j < cols; j++)
 			COMPLEX(result)[i + n + (j * rows)]
 			    = COMPLEX(u)[(i + j * idx) % k];
 		n += idx;
@@ -1617,41 +1629,41 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t)); /* type of u can be any of: RAW, LGL, INT, REAL */
 	    if (isMatrix(u) || length(u) >= lenmin) {
-		k = LENGTH(u);
-		idx = (isMatrix(u)) ? nrows(u) : (k > 0);
+		R_xlen_t k = XLENGTH(u);
+		R_xlen_t idx = (isMatrix(u)) ? nrows(u) : (k > 0);
 		if (TYPEOF(u) <= INTSXP) {
 		    if (mode <= INTSXP) {
-			for (i = 0; i < idx; i++)
-			    for (j = 0; j < cols; j++)
+			for (R_xlen_t i = 0; i < idx; i++)
+			    for (int j = 0; j < cols; j++)
 				INTEGER(result)[i + n + (j * rows)]
 				    = INTEGER(u)[(i + j * idx) % k];
 			n += idx;
 		    }
 		    else {
-			for (i = 0; i < idx; i++)
-			    for (j = 0; j < cols; j++)
+			for (R_xlen_t i = 0; i < idx; i++)
+			    for (int j = 0; j < cols; j++)
 				REAL(result)[i + n + (j * rows)]
 				    = (INTEGER(u)[(i + j * idx) % k]) == NA_INTEGER ? NA_REAL : INTEGER(u)[(i + j * idx) % k];
 			n += idx;
 		    }
 		}
 		else if (TYPEOF(u) == REALSXP) {
-		    for (i = 0; i < idx; i++)
-			for (j = 0; j < cols; j++)
+		    for (R_xlen_t i = 0; i < idx; i++)
+			for (int j = 0; j < cols; j++)
 			    REAL(result)[i + n + (j * rows)]
 				= REAL(u)[(i + j * idx) % k];
 		    n += idx;
 		}
 		else { /* RAWSXP */
 		    if (mode == LGLSXP) {
-			for (i = 0; i < idx; i++)
-			    for (j = 0; j < cols; j++)
+			for (R_xlen_t i = 0; i < idx; i++)
+			    for (int j = 0; j < cols; j++)
 				LOGICAL(result)[i + n + (j * rows)]
 				    = RAW(u)[(i + j * idx) % k] ? TRUE : FALSE;
 		    }
 		    else
-			for (i = 0; i < idx; i++)
-			    for (j = 0; j < cols; j++)
+			for (R_xlen_t i = 0; i < idx; i++)
+			    for (int j = 0; j < cols; j++)
 				INTEGER(result)[i + n + (j * rows)]
 				    = static_cast<unsigned char>( RAW(u)[(i + j * idx) % k]);
 		}
@@ -1667,7 +1679,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    nam = SET_VECTOR_ELT(dn, 0, allocVector(STRSXP, rows));
 	else
 	    nam = R_NilValue;	/* -Wall */
-	j = 0;
+	int j = 0;
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u)) {
@@ -1676,18 +1688,18 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (have_cnames &&
 		    GetColNames(dn) == R_NilValue &&
 		    GetColNames(v) != R_NilValue)
-		    SetColNames(dn, duplicate(GetColNames(v)));
+		    SetColNames(dn, lazy_duplicate(GetColNames(v)));
 
 		/* cbind() doesn't test have_?names BEFORE tnam!=Nil..:*/
 		/* but if tnam is non-null, have_rnames = TRUE: see above */
 		tnam = GetRowNames(v);
 		if (have_rnames) {
 		    if (tnam != R_NilValue) {
-			for (i = 0; i < length(tnam); i++)
+			for (int i = 0; i < length(tnam); i++)
 			    SET_STRING_ELT(nam, j++, STRING_ELT(tnam, i));
 		    }
 		    else {
-			for (i = 0; i < nrows(u); i++)
+			for (int i = 0; i < nrows(u); i++)
 				SET_STRING_ELT(nam, j++, R_BlankString);
 		    }
 		}
@@ -1697,7 +1709,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
 		if (have_cnames && GetColNames(dn) == R_NilValue
 		    && u != R_NilValue && length(u) == cols)
-		    SetColNames(dn, duplicate(u));
+		    SetColNames(dn, lazy_duplicate(u));
 
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));

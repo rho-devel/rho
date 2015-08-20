@@ -1,7 +1,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000-2012 The R Core Team
+ *  Copyright (C) 2000-2014 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,17 +74,20 @@ double beta(double a, double b)
 //	return gammafn(a) * gammafn(b) / gammafn(a+b);
 	/* All the terms are positive, and all can be large for large
 	   or small arguments.  They are never much less than one.
-	   gammafn(x) can still overflow for x ~ 1e-308, 
-	   but the result would too. 
+	   gammafn(x) can still overflow for x ~ 1e-308,
+	   but the result would too.
 	*/
 	return (1 / gammafn(a+b)) * gammafn(a) * gammafn(b);
     } else {
 	double val = lbeta(a, b);
+// underflow to 0 is not harmful per se;  exp(-999) also gives no warning
+#ifndef IEEE_754
 	if (val < lnsml) {
 	    /* a and/or b so big that beta underflows */
 	    ML_ERROR(ME_UNDERFLOW, "beta");
 	    /* return ML_UNDERFLOW; pointless giving incorrect value */
 	}
+#endif
 	return exp(val);
     }
 }

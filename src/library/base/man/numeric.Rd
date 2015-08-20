@@ -1,6 +1,6 @@
 % File src/library/base/man/numeric.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{numeric}
@@ -44,7 +44,7 @@ is.numeric(x)
   return false).  Methods for \code{is.numeric} should only return true
   if the base type of the class is \code{double} or \code{integer}
   \emph{and} values can reasonably be regarded as numeric
-  (e.g. arithmetic on them makes sense, and comparison should be done
+  (e.g., arithmetic on them makes sense, and comparison should be done
   via the base type).
 }
 \value{

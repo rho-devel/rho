@@ -1,6 +1,6 @@
 % File src/library/stats/man/box.test.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Box.test}
@@ -55,7 +55,7 @@ Box.test(x, lag = 1, type = c("Box-Pierce", "Ljung-Box"), fitdf = 0)
 
   Harvey, A. C. (1993)
   \emph{Time Series Models}.
-  2nd Edition, Harvester Wheatsheaf, NY, pp. 44, 45.
+  2nd Edition, Harvester Wheatsheaf, NY, pp.\sspace{}44, 45.
 }
 \author{A. Trapletti}
 \examples{

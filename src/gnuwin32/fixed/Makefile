@@ -2,7 +2,10 @@ include ../MkRules
 
 R_HOME = ../../..
 
-all: profiles fixhtml fixetc fixdoc svnonly
+# FIXME:  Should find a make where $(abspath ...) works and avoid this...
+LOCAL_SOFT := $(shell ../Rpwd.exe $(LOCAL_SOFT))
+
+all: profiles fixhtml fixetc fixdoc gitonly
 
 profiles: $(R_HOME)/library/base/R/Rprofile
 
@@ -36,6 +39,7 @@ ifeq "$(WIN)" "64"
 	  -e "s|(TCL_HOME)/bin|(TCL_HOME)/bin64|" \
 	  -e "s|@OPENMP@|$(OPENMP)|" \
 	  -e "s|@PTHREAD@|$(PTHREAD)|" \
+	  -e "s@NM_FILTER =@NM_FILTER = $(NM_FILTER)@" \
 	  etc/Makeconf > $(R_HOME)/etc$(R_ARCH)/Makeconf
 else
 	$(SED) -e "s|IMPDIR = bin|IMPDIR = $(IMPDIR)|" \
@@ -49,6 +53,7 @@ else
 	  -e "s|@SYMPAT@|$(SYMPAT)|" \
 	  -e "s|@OPENMP@|$(OPENMP)|" \
 	  -e "s|@PTHREAD@|$(PTHREAD)|" \
+	  -e "s@NM_FILTER =@NM_FILTER = $(NM_FILTER)@" \
 	  etc/Makeconf > $(R_HOME)/etc$(R_ARCH)/Makeconf
 endif
 	$(SED) -e "s+@BINDIR@+$(BINDIR)+" Makeconf > $(R_HOME)/Makeconf
@@ -58,8 +63,8 @@ fixdoc: $(wildcard ../CHANGES?)
 	$(CP) -p $^ $(R_HOME)/doc
 	@$(ECHO) done > fixdoc
 
-svnonly:
-	@$(MAKE) -C ../../../doc/manual -f Makefile.win svnonly
+gitonly:
+	@$(MAKE) -C ../../../doc/manual -f Makefile.win gitonly
 
 clean:
 	$(RM) *~ */*~ fixhtml fixbin fixetc fixshare fixdoc

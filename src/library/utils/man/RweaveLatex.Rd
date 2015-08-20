@@ -1,6 +1,6 @@
 % File src/library/utils/man/RweaveLatex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{RweaveLatex}
@@ -87,6 +87,10 @@ RweaveLatexSetup(file, syntax, output = NULL, quiet = FALSE,
   suppresses the use of the \samp{ae} package, the use of which may
   interfere with certain encoding and typeface selections.  If you have
   problems in the rendering of certain character sets, try this option.
+
+  As from \R 3.1.0 it also supports the \samp{[inconsolata]} option, to
+  render monospaced text in \code{inconsolata}, the font used by default
+  for \R help pages.
 
   The use of fancy quotes (see \code{\link{sQuote}}) can cause problems
   when setting \R output.  Either set
@@ -228,8 +232,7 @@ RweaveLatexSetup(file, syntax, output = NULL, quiet = FALSE,
 
   In addition, users can specify further options, either in the header
   of an individual code section or in a \samp{\\SweaveOpts\{\}} line in
-  the document. Prior to \R 2.14.0 unknown options were taken as
-  logical: now their type is set at first use.
+  the document. For unknown options, their type is set at first use.
 }
 
 \section{Custom Graphics Devices}{
@@ -252,7 +255,7 @@ my.Swd <- function(name, width, height, ...)
   different devices can be used for different chunks.
 
   A replacement for \code{\link{dev.off}} can be provided as a function
-  with suffix \code{.off}, e.g. \code{my.Swd.off()}.
+  with suffix \code{.off}, e.g.\sspace{}\code{my.Swd.off()}.
 }
 
 \section{Hook Functions}{

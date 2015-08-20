@@ -1,7 +1,7 @@
 #  File src/library/graphics/R/mosaicplot.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ function(x, main = deparse(substitute(x)), sub = NULL, xlab = NULL,
             XP <- rep.int(0, xdim)
             for (i in seq_len(xdim))
                 XP[i] <- sum(X[X[, 1L] == i,p]) / sum(X[,p])
-            if(any(is.na(XP))) stop("missing values in contingency table")
+            if(anyNA(XP)) stop("missing values in contingency table")
             white <- off[1L] * (x2 - x1) / max(1, xdim-1)
             x.l <- x1
             x.r <- x1 + (1 - off[1L]) * XP[1L] * (x2 - x1)

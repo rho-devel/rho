@@ -1,9 +1,7 @@
 % File src/library/stats/man/GammaDist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{GammaDist}
 \alias{GammaDist}
@@ -49,11 +47,11 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   
   The length of the result is determined by \code{n} for
   \code{rgamma}, and is the maximum of the lengths of the
-  numerical parameters for the other functions.  
+  numerical arguments for the other functions.  
   
-  The numerical parameters other than \code{n} are recycled to the
+  The numerical arguments other than \code{n} are recycled to the
   length of the result.  Only the first elements of the logical
-  parameters are used.
+  arguments are used.
 }
 \details{
   If \code{scale} is omitted, it assumes the default value of \code{1}.

@@ -1,7 +1,7 @@
 #  File src/library/stats/R/smooth.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ smooth <- function(x, kind = c("3RS3R", "3RSS", "3RSR", "3R", "3", "S"),
                    endrule = "Tukey", do.ends = FALSE)
 {
     if(!is.numeric(x)) stop("attempt to smooth non-numeric values")
-    if(any(is.na(x))) stop("attempt to smooth NA values")
+    if(anyNA(x)) stop("attempt to smooth NA values")
     rules <- c("copy","Tukey")#- exact order matters!
     if(is.na(iend <- pmatch(endrule, rules))) stop("invalid 'endrule' argument")
     n <- as.integer(length(x))

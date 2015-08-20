@@ -1,7 +1,7 @@
 #  File src/library/grid/R/components.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,11 +17,7 @@
 #  http://www.r-project.org/Licenses/
 
 grid.collection <- function(..., gp=gpar(), draw=TRUE, vp=NULL) {
-  .Deprecated("gTree")
-  gc <- gTree(children=gList(...), gp=gp, vp=vp, cl="collection")
-  if (draw)
-    grid.draw(gc)
-  gc
+    .Defunct("gTree")
 }
 
 ######################################

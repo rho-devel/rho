@@ -1,7 +1,7 @@
 #  File src/library/tools/R/pdftools.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ function(file, cache = TRUE)
         ## there a way to get the connection closed when the doc object
         ## gets removed?
         ##   if(cache) {
-        ##       .bytes <- readBin(file, "raw", file.info(file)$size)
+        ##       .bytes <- readBin(file, "raw", file.size(file))
         ##       con <- rawConnection(.bytes)
         ##       keep <- TRUE
         ##   }
@@ -235,7 +235,7 @@ function(file, cache = TRUE)
             ## PDF 1.5+ cross-reference stream, hopefully.
             .con_seek(con, -1L, 2L)
             pos <- .con_seek(con)
-            hdr <- pdf_read_object_header(con)
+            pdf_read_object_header(con)
             obj <- pdf_read_object(con)
             if(!("Type" %in% names(obj)) ||
                !(obj[["Type"]] == "XRef")) {
@@ -1123,7 +1123,7 @@ function(con, pos, num = NA_integer_, gen = NA_integer_, doc = NULL)
     ## Read header first.
     hdr <- pdf_read_object_header(con)
     ## Be paranoid.
-    if(any(is.na(hdr)))
+    if(anyNA(hdr))
         stop(gettextf("cannot find object header at xrefed position %d",
                       pos),
              domain = NA)
@@ -1237,7 +1237,7 @@ function(doc, ref, con = NULL)
 
     ## Figure out the position to start from.
     if(length(ref) == 1L) {
-        pos <- which(doc$xref_tabs[, "num"] == ref)[1L]
+	pos <- which.max(doc$xref_tabs[, "num"] == ref)
         gen <- doc$xref_tabs[pos, "gen"]
         pos <- doc$xref_tabs[pos, "pos"]
     }
@@ -1717,8 +1717,8 @@ function(bytes)
     ## Strip apostrophes in offset spec.
     s <- gsub("'", "", s)
     if(nchar(s) <= 14L) {
-        substring(s, nchar(s), 14L) <-
-            substring("    0101000000", nchar(s), 14L)
+        s <- sprintf("%s%s", s,
+                     substring("    0101000000", nchar(s) + 1L, 14L))
         strptime(s, "%Y%m%d%H%M%S")
     } else if(substring(s, 15L, 15L) == "Z") {
         strptime(substring(s, 1L, 14L), "%Y%m%d%H%M%S")
@@ -1825,7 +1825,7 @@ function(con)
 raw_connection_to_bytes_in_file <-
 function(file)
 {
-    bytes <- readBin(file, "raw", file.info(file)$size)
+    bytes <- readBin(file, "raw", file.size(file))
     rawConnection(bytes)
 }
 

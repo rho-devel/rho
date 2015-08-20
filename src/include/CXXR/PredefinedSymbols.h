@@ -40,20 +40,30 @@
 //   SEXP R_BracketSymbol = CXXR::BracketSymbol;
 //   ...
 
+// TODO(kmillar): distinguish between public and private symbols.
+
 // Helper macro for the common case where the C name is the same as the CXXR
 // name with a 'R_' prefix.
 #define PREDEFINED_SYMBOL2(CXXR_NAME, R_NAME) \
   PREDEFINED_SYMBOL(R_ ## CXXR_NAME, CXXR_NAME, R_NAME)
 
-PREDEFINED_SYMBOL2(Bracket2Symbol, "[[");
-PREDEFINED_SYMBOL2(BracketSymbol, "[");
+PREDEFINED_SYMBOL2(baseSymbol, "base");  // deprecated.
+PREDEFINED_SYMBOL2(BaseSymbol, "base");
 PREDEFINED_SYMBOL2(BraceSymbol, "{");
+PREDEFINED_SYMBOL2(BracketSymbol, "[");
+PREDEFINED_SYMBOL2(SubsetSym, "[");
+PREDEFINED_SYMBOL2(SubassignSym, "[<-");
+PREDEFINED_SYMBOL2(Bracket2Symbol, "[[");
+PREDEFINED_SYMBOL2(Subset2Sym, "[[");
+PREDEFINED_SYMBOL2(Subassign2Sym, "[[<-");
+PREDEFINED_SYMBOL2(ColonSymbol, ":");
 PREDEFINED_SYMBOL2(TmpvalSymbol, "*tmp*");
 PREDEFINED_SYMBOL2(ClassSymbol, "class");
 PREDEFINED_SYMBOL2(ConnIdSymbol, "conn_id");
 PREDEFINED_SYMBOL2(DimNamesSymbol, "dimnames");
 PREDEFINED_SYMBOL2(DimSymbol, "dim");
 PREDEFINED_SYMBOL2(DollarSymbol, "$");
+PREDEFINED_SYMBOL2(DollarGetsSymbol, "$<-");
 PREDEFINED_SYMBOL2(DotClassSymbol, ".Class");
 PREDEFINED_SYMBOL(R_DeviceSymbol, DotDeviceSymbol, ".Device");
 PREDEFINED_SYMBOL(R_DevicesSymbol, DotDevicesSymbol, ".Devices");
@@ -64,6 +74,7 @@ PREDEFINED_SYMBOL2(DotGroupSymbol, ".Group");
 PREDEFINED_SYMBOL(R_dot_Method, DotMethodSymbol, ".Method");
 PREDEFINED_SYMBOL2(DotMethodsSymbol, ".Methods");
 PREDEFINED_SYMBOL(R_dot_defined, DotdefinedSymbol, ".defined");
+PREDEFINED_SYMBOL(R_dot_packageName, DotPackageName, ".packageName");
 PREDEFINED_SYMBOL2(DotsSymbol, "...");
 PREDEFINED_SYMBOL(R_dot_target, DottargetSymbol, ".target");
 PREDEFINED_SYMBOL2(DoubleColonSymbol, "::");
@@ -74,6 +85,7 @@ PREDEFINED_SYMBOL2(LevelsSymbol, "levels");
 PREDEFINED_SYMBOL2(ModeSymbol, "mode");
 PREDEFINED_SYMBOL2(NameSymbol, "name");
 PREDEFINED_SYMBOL2(NamesSymbol, "names");
+PREDEFINED_SYMBOL2(NamespaceEnvSymbol, ".__NAMESPACE__.");
 PREDEFINED_SYMBOL2(NaRmSymbol, "na.rm");
 PREDEFINED_SYMBOL2(PackageSymbol, "package");
 PREDEFINED_SYMBOL2(PreviousSymbol, "previous");
@@ -82,6 +94,8 @@ PREDEFINED_SYMBOL2(RowNamesSymbol, "row.names");
 PREDEFINED_SYMBOL2(S3MethodsTableSymbol, ".__S3MethodsTable__.");
 PREDEFINED_SYMBOL2(SeedsSymbol, ".Random.seed");
 PREDEFINED_SYMBOL2(SourceSymbol, "source");
+PREDEFINED_SYMBOL2(SortListSymbol, "sort.list");
+PREDEFINED_SYMBOL2(SpecSymbol, "spec");
 PREDEFINED_SYMBOL2(TripleColonSymbol, ":::");
 PREDEFINED_SYMBOL2(TspSymbol, "tsp");
 PREDEFINED_SYMBOL2(CommentSymbol, "comment");
@@ -90,6 +104,7 @@ PREDEFINED_SYMBOL2(RecursiveSymbol, "recursive");
 PREDEFINED_SYMBOL2(UseNamesSymbol, "use.names");
 PREDEFINED_SYMBOL2(SrcfileSymbol, "srcfile");
 PREDEFINED_SYMBOL2(SrcrefSymbol, "srcref");
+PREDEFINED_SYMBOL2(valueSym, "value");
 PREDEFINED_SYMBOL2(WholeSrcrefSymbol, "wholeSrcref");
 
 #undef PREDEFINED_SYMBOL2

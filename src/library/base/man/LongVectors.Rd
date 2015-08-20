@@ -1,6 +1,6 @@
 % File src/library/base/man/Constants.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2012 R Core Team
+% Copyright 2012-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{LongVectors}
@@ -31,7 +31,7 @@
 
   \R code typically only needs minor changes to work with long vectors,
   maybe only checking that \code{as.integer} is not used unnecessarily
-  for e.g. lengths.  However, compiled code typically needs quite
+  for e.g.\sspace{}lengths.  However, compiled code typically needs quite
   extensive changes.  Note that the \code{\link{.C}} and
   \code{\link{.Fortran}} interfaces do not accept long vectors, so
   \code{\link{.Call}} (or similar) has to be used.

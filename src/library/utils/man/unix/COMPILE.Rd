@@ -1,6 +1,6 @@
 % File src/library/utils/man/unix/COMPILE.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{COMPILE}
@@ -49,7 +49,7 @@
 }
 \note{
   Some binary distributions of \R have \code{COMPILE} in a separate
-  bundle, e.g. an \code{R-devel} RPM.
+  bundle, e.g.\sspace{}an \code{R-devel} RPM.
   
   This is not available on Windows.
 }

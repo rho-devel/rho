@@ -1,6 +1,6 @@
 % File src/library/tools/man/HTMLheader.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{HTMLheader}
@@ -49,7 +49,7 @@ The declared encoding for the whole page.
 \details{
 The \code{up} and \code{top} links should be relative to the current page.
 The \code{Rhome} path default works with dynamic help; for static help, a
-relative path (e.g. \file{../..}) to it should be used.
+relative path (e.g., \file{../..}) to it should be used.
 }
 \value{
 A character vector containing the lines of an HTML header which can be used

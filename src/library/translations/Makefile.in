@@ -20,7 +20,7 @@ all: Makefile
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)
 	@$(MAKE) mkdesc
 	@cp -R `ls -d $(srcdir)/inst/*` $(top_builddir)/library/$(pkg)
-	@find "$(top_builddir)/library/$(pkg)" -name .svn -type d -prune \
+	@find "$(top_builddir)/library/$(pkg)" -name .git -type d -prune \
             -exec rm -rf \{\} \; 2>/dev/null
 	@cp DESCRIPTION $(top_builddir)/library/$(pkg)
 

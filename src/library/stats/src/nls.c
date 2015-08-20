@@ -5,14 +5,8 @@
  *  Copyright 1999-2001 Douglas M. Bates
  *                      Saikat DebRoy
  *
- *  Copyright 2005--2007  The R Core Team
+ *  Copyright 2005--2014  The R Core Team
  *  Copyright 2006	  The R Foundation
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -324,6 +318,11 @@ numeric_deriv(SEXP expr, SEXP theta, SEXP rho, SEXP dir)
 	    error(_("variable '%s' is integer, not numeric"), name);
 	if(!isReal(temp))
 	    error(_("variable '%s' is not numeric"), name);
+	if (MAYBE_SHARED(temp)) { /* We'll be modifying the variable, so need to make sure it's unique PR#15849 */
+	    SEXP s_name = install(name);
+	    defineVar(s_name, temp = duplicate(temp), rho);
+	}
+	MARK_NOT_MUTABLE(temp);
 	SET_VECTOR_ELT(pars, i, temp);
 	lengthTheta += LENGTH(VECTOR_ELT(pars, i));
     }

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2013   The R Core Team.
+ *  Copyright (C) 2000-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -39,7 +39,7 @@ extern "C" {
        A subset can be accessed using R_ext/Connections.h but read
        the warning in that file for details. */
 
-typedef enum {HTTPsh, FTPsh, HTTPSsh} UrlScheme;
+typedef enum {HTTPsh, FTPsh, HTTPSsh, FTPSsh} UrlScheme;
 
 /* used in internet module */
 typedef struct urlconn {
@@ -76,7 +76,7 @@ Rconnection getConnection_no_err(int n);
 Rboolean switch_stdout(int icon, int closeOnExit);
 void init_con(Rconnection newconn, const char *description, int enc,
 	      const char * const mode);
-Rconnection R_newurl(const char *description, const char * const mode);
+Rconnection R_newurl(const char *description, const char * const mode, int type);
 Rconnection R_newsock(const char *host, int port, int server, const char * const mode, int timeout);
 Rconnection in_R_newsock(const char *host, int port, int server, const char *const mode, int timeout);
 Rconnection R_newunz(const char *description, const char * const mode);

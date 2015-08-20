@@ -1,6 +1,6 @@
 % File src/library/stats/man/se.contrast.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{se.contrast}
@@ -107,7 +107,7 @@ cont2 <- c(-1, 1)[B] * c(-1, 1)[C]/32
 cont <- cbind(A = cont1, BC = cont2)
 colSums(cont*Yield) # values of the contrasts
 se.contrast(fit, as.matrix(cont))
-\dontrun{# comparison with lme
+\donttest{# comparison with lme
 library(nlme)
 fit2 <- lme(Yield ~ A + B*C, random = ~1 | Block, data = aovdat)
 summary(fit2)$tTable # same estimates, similar (but smaller) se's.

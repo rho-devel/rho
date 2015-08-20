@@ -1,9 +1,7 @@
 % File src/library/stats/man/cophenetic.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{cophenetic}
 \alias{cophenetic}
@@ -49,7 +47,7 @@ cophenetic(x)
 \references{
   Sneath, P.H.A. and Sokal, R.R. (1973)
   \emph{Numerical Taxonomy: The Principles and Practice of Numerical
-    Classification}, p. 278 ff;
+    Classification}, p.\sspace{}278 ff;
   Freeman, San Francisco.
 }
 \author{Robert Gentleman}

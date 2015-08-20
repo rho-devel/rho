@@ -1,7 +1,7 @@
 #  File src/library/utils/R/package.skeleton.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,13 +18,12 @@
 
 package.skeleton <-
     function(name = "anRpackage", list = character(), environment = .GlobalEnv,
-	     path = ".", force = FALSE, namespace = TRUE,
+	     path = ".", force = FALSE,
              code_files = character())
 {
     safe.dir.create <- function(path)
     {
-	dirTest <- function(x) !is.na(isdir <- file.info(x)$isdir) & isdir
-	if(!dirTest(path) && !dir.create(path))
+	if(!dir.exists(path) && !dir.create(path))
 	    stop(gettextf("cannot create directory '%s'", path), domain = NA)
     }
 
@@ -66,7 +65,7 @@ package.skeleton <-
         warning("cannot turn off locale-specific chars via LC_CTYPE",
                 domain = NA)
 
-    have <- unlist(lapply(list, exists, envir = environment))
+    have <- vapply(list, exists, NA, envir = environment)
     if(any(!have))
         warning(sprintf(ngettext(sum(!have),
                                  "object '%s' not found",
@@ -104,9 +103,6 @@ package.skeleton <-
 	file = description, sep = "")
     close(description)
 
-    if(!missing(namespace))
-	warning("From R 2.14.0 on, every package gets a NAMESPACE.",
-		" Argument 'namespace' is deprecated.", domain = NA)
     ## NAMESPACE
     ## <NOTE>
     ## For the time being, we export all non-internal objects using the pattern

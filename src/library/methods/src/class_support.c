@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002-2007   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,10 +27,9 @@ SEXP R_MakeExternalPtrFn(DL_FUNC p, SEXP tag, SEXP prot);
 
 #include "methods.h"
 
-SEXP R_dummy_extern_place()
+SEXP NORET R_dummy_extern_place()
 {
     error(_("calling the C routine used as an initializer for 'externalptr' objects"));
-    return R_NilValue; /* -Wall */
 }
 
 SEXP R_externalptr_prototype_object()

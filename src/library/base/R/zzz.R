@@ -1,7 +1,7 @@
 #  File src/library/base/R/zzz.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ assign(".External.graphics", function(.NAME, ..., PACKAGE) NULL,
        envir = .ArgsEnv)
 assign(".Internal", function(call) NULL, envir = .ArgsEnv)
 assign(".Primitive", function(name) NULL, envir = .ArgsEnv)
-assign(".isMethodsDispatchOn", function(x, onOff = NULL) NULL, envir = .ArgsEnv)
+assign(".isMethodsDispatchOn", function(onOff = NULL) NULL, envir = .ArgsEnv)
 assign(".primTrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".primUntrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".subset", function(x, ...) NULL, envir = .ArgsEnv)
@@ -141,7 +141,7 @@ assign("untracemem", function(x) NULL, envir = .ArgsEnv)
 
 
 .S3PrimitiveGenerics <-
-  c("as.character", "as.complex", "as.double", "as.environment",
+  c("anyNA", "as.character", "as.complex", "as.double", "as.environment",
     "as.integer", "as.logical", "as.numeric", "as.raw",
     "c", "dim", "dim<-", "dimnames", "dimnames<-",
     "is.array", "is.finite",
@@ -165,6 +165,7 @@ assign("untracemem", function(x) NULL, envir = .ArgsEnv)
                "exp", "expm1", "log1p", "log10", "log2",
                "cos", "sin", "tan", "acos", "asin", "atan", "cosh", "sinh",
                "tanh", "acosh", "asinh", "atanh",
+	       "cospi", "sinpi", "tanpi",
                "gamma", "lgamma", "digamma", "trigamma",
                "cumsum", "cumprod", "cummax", "cummin")) {
         body(fx) <- substitute(UseMethod(ff), list(ff=f))
@@ -194,6 +195,9 @@ assign("untracemem", function(x) NULL, envir = .ArgsEnv)
         environment(fx) <- .BaseNamespaceEnv
         assign(f, fx, envir = env)
     }
+    fx <- function(x, recursive = FALSE) UseMethod("anyNA")
+    environment(fx) <- .BaseNamespaceEnv
+    assign("anyNA", fx, envir = env)
     env
 })
 ### do these outside to get the base namespace as the environment.

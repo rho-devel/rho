@@ -851,8 +851,7 @@ namespace CXXR {
 		std::size_t dsz = dimindices.size();
 		for (std::size_t i = 0; i < dsz; ++i)
 		    if (dimindices[i] == 0)
-			Rf_error(_("NA subscripts are not allowed"
-				   " in this context"));
+			Rf_error(_("NAs are not allowed in subscripted assignments"));
 	    }
 	}
 	GCStackRoot<VL> ans(lhs);
@@ -1001,8 +1000,7 @@ namespace CXXR {
 	if (rhs_size > 1) {
 	    for (std::size_t i = 0; i < ni; ++i)
 		if (indices[i] == 0)
-		    Rf_error(_("NA subscripts are not allowed"
-			       " in this context"));
+		    Rf_error(_("NAs are not allowed in subscripted assignments"));
 	}
 	GCStackRoot<VL> ans(lhs);
 	std::size_t minsize = indices.minimumLHSSize();

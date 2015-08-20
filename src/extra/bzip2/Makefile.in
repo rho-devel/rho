@@ -14,7 +14,7 @@ include $(top_builddir)/Makeconf
 BZIP2_CPPFLAGS = -I$(srcdir)
 ALL_CPPFLAGS = $(BZIP2_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 
-SOURCES = blocksort.c bzlib.c bzcompress.c crctable.c decompress.c \
+SOURCES = blocksort.c bzlib.c compress.c crctable.c decompress.c \
   huffman.c randtable.c
 HEADERS = bzlib.h bzlib_private.h
 DEPENDS = $(SOURCES:.c=.d)
@@ -30,7 +30,7 @@ libbz2_a_SOURCES = $(SOURCES)
 libbz2_a_OBJECTS = $(OBJECTS)
 
 
-all: Makefile Makedeps R
+all: R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
@@ -41,8 +41,7 @@ Makedeps: Makefile $(DEPENDS)
 	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
-R: Makefile
-	@$(MAKE) Makedeps
+R: Makedeps
 	@$(MAKE) $(noinst_LIBRARIES)
 
 libbz2.a: $(libbz2_a_OBJECTS)

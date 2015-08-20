@@ -1,6 +1,6 @@
 % File src/library/base/man/writeLines.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{writeLines}
@@ -41,7 +41,7 @@ writeLines(text, con = stdout(), sep = "\n", useBytes = FALSE)
   re-encoding).  \code{useBytes = TRUE} suppresses the re-encoding of
   marked strings so they are passed byte-by-byte to the connection:
   this can be useful when strings have already been re-encoded by
-  e.g. \code{\link{iconv}}.  (It is invoked automatically for strings
+  e.g.\sspace{}\code{\link{iconv}}.  (It is invoked automatically for strings
   with marked encoding \code{"bytes"}.)
 }
 \seealso{

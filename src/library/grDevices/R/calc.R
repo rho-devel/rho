@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/calc.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ chull <- function(x, y = NULL)
 {
     X <- xy.coords(x, y, recycle = TRUE)
     x <- cbind(X$x, X$y)
+    if(any(!is.finite(x))) stop("finite coordinates are needed")
     if(nrow(x) == 0) return(integer())
     if(nrow(x) == 1) return(1L)
     res <- .Call(C_chull, x)

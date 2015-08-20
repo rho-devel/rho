@@ -9,11 +9,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:52\n"
-"PO-Revision-Date: 2013-03-19 19:20-0600\n"
+"POT-Creation-Date: 2014-05-26 08:40\n"
+"PO-Revision-Date: 2014-03-11 10:27-0600\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
-"Language: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=KOI8-R\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -37,10 +37,16 @@ msgid "no proper 'z' matrix specified"
 msgstr "не указана подходящая 'z'-матрица"
 
 msgid "dimensions of 'x', 'y' and 'z' do not match"
+msgstr "измерения 'x', 'y' and 'z' не соответствуют друг другу"
+
+msgid "finite coordinates are needed"
 msgstr ""
 
 msgid "'bias' must be positive"
 msgstr "'bias' должен быть положительным"
+
+msgid "'alpha' must be false if 'space' is specified"
+msgstr ""
 
 msgid "at least 3 columns needed"
 msgstr "нужны по крайней мере 3 колонки"
@@ -166,8 +172,9 @@ msgstr "неизвестное семейство '%s'"
 msgid "invalid 'family' argument"
 msgstr "неправильный аргумент 'family'"
 
-msgid "invalid 'file'"
-msgstr "неправильный 'file'"
+#, fuzzy
+msgid "invalid 'file' argument '%s'"
+msgstr "неправильный аргумент 'family'"
 
 msgid "invalid PDF version"
 msgstr "неправильная версия PDF"
@@ -214,7 +221,11 @@ msgstr "несоответствие кодировки шрифта '%s'/'%s'"
 msgid "'file' must be a non-empty character string"
 msgstr "'file' должен быть непустой символьной строкой"
 
-msgid "Invalid output format"
+msgid "GhostScript was not found"
+msgstr ""
+
+#, fuzzy
+msgid "invalid output format"
 msgstr "Неправильный формат вывода"
 
 msgid "status %d in running command '%s'"
@@ -255,10 +266,8 @@ msgstr "нет устройства, которое надо записывать"
 msgid "argument is not of class %s"
 msgstr "аргумент не принадлежит к классу %s"
 
-msgid "loading snapshot from pre-3.0.0 R version"
-msgstr "загрузка снимка из версии R до 3.0.0"
-
-msgid "loading snapshot from different R version"
+#, fuzzy
+msgid "loading snapshot from a different session"
 msgstr "загрузка снимка из другой версии R"
 
 msgid "'nbin' must be numeric of length 1 or 2"
@@ -297,16 +306,16 @@ msgstr "длины 'x', 'y' и 'z' различаются"
 msgid "'file' is missing with no default"
 msgstr "пропущен 'file', умолчания нет"
 
-msgid "sorry, 'gs' cannot be found"
-msgstr "извините, не могу найти 'gs'"
-
 msgid "unrecognized format of gs -help"
 msgstr "неподдерживаемый формат gs -help"
 
 msgid "device '%s' is not available"
 msgstr "устройство '%s' недоступно"
 
-msgid "Available devices are %s"
+#, fuzzy
+msgid ""
+"Available devices are:\n"
+"%s"
 msgstr "Доступные устройства: %s"
 
 msgid "'res' must be specified unless 'units = \"px\"'"
@@ -314,6 +323,9 @@ msgstr "'res' должен быть определен до тех пор пока 'units = \"px\"'"
 
 msgid "invalid 'title'"
 msgstr "неправильный 'title'"
+
+msgid "invalid 'file'"
+msgstr "неправильный 'file'"
 
 msgid "invalid Quartz font:  must be 4 strings"
 msgstr "неправильный шрифт Quartz:  должно быть 4 строки"
@@ -403,6 +415,12 @@ msgid_plural "%d z values <= 0 omitted from logarithmic plot"
 msgstr[0] "%d значение z <= 0 пропущено на логарифмическом графике"
 msgstr[1] "%d значения z <= 0 пропущены на логарифмическом графике"
 msgstr[2] "%d значения z <= 0 пропущены на логарифмическом графике"
+
+#~ msgid "sorry, 'gs' cannot be found"
+#~ msgstr "извините, не могу найти 'gs'"
+
+#~ msgid "loading snapshot from pre-3.0.0 R version"
+#~ msgstr "загрузка снимка из версии R до 3.0.0"
 
 #~ msgid "can only print from screen device"
 #~ msgstr "могу печатать только с экранного устройства"

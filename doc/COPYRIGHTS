@@ -265,25 +265,42 @@ src/main/xspline.c
  * notice remain intact.
 
 
+src/modules/nano{ftp,http}.c
+
+ Copyright (C) 1998-2001 Daniel Veillard.  All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is fur-
+nished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
 src/modules/lapack/dlapack.f, cmplx.f, dlamc.f
 
   Extracted from
-  *  -- LAPACK computational routine (version 3.4.0) --
+  *  -- LAPACK computational routine (version 3.5.0) --
   *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
   *  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
-  *     November 2011
+  *     September 2012
 
   where the version number, providers and date vary by subroutine.
 
-  The LAPACK README says
-
-    It is freely-available software, and is copyrighted.
-
-  but no copyright statements appear in the sources.
-
-  LAPACK 3.4.2 contains a LICENSE file (but the routines included in R
-  were originally copied from earlier versions of LAPACK).  For binary
-  distributions it is reproduced here:
+  LAPACK 3.5.0 contains a LICENSE file, copied to src/modules/lapack
+  (but many of these routines were originally copied from earlier
+  versions of LAPACK).  For binary distributions it is reproduced here:
 
   Copyright (c) 1992-2011 The University of Tennessee and The University
                           of Tennessee Research Foundation.  All rights
@@ -447,6 +464,27 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
+src/extra/tzone/strftime.c
+/*
+  Based on code from tzcode, which is turn said to be
+  'Based on the UCB version with the copyright notice appearing below.'
+
+** Copyright (c) 1989 The Regents of the University of California.
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms are permitted
+** provided that the above copyright notice and this paragraph are
+** duplicated in all such forms and that any documentation,
+** advertising materials, and other materials related to such
+** distribution and use acknowledge that the software was developed
+** by the University of California, Berkeley. The name of the
+** University may not be used to endorse or promote products derived
+** from this software without specific prior written permission.
+** THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+** IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+*/
+
 
 src/library/tools/src/md5.[ch]
 
@@ -460,12 +498,12 @@ Based on gettextize from gettext 0.17
    Distributed under the GNU Library General Public License
    version 2 or later.
 
-src/include/memcheck.h
-src/include/valgrind.h
+src/include/vg/memcheck.h
+src/include/vg/valgrind.h
 
-From valgrind,
+From valgrind 3.10.1,
 
-   Copyright (C) 2000-2005 Julian Seward.  All rights reserved.
+   Copyright (C) 2000-2013 Julian Seward.  All rights reserved.
 
 
 src/main/mkdtemp.c
@@ -513,10 +551,14 @@ tools/config.sub
    Copyright 1992-2013 Free Software Foundation.  
    The Exception to GPL-3 applies.
 
-tools/install-sh:
+tools/install-sh
 
    Copyright (C) 1994 X Consortium
 
+m4/cxx_11.m4
+#   Copyright (c) 2008 Benjamin Kosnik <bkoz@redhat.com>
+#   Copyright (c) 2012 Zack Weinberg <zackw@panix.com>
+#   Copyright (c) 2013 Roy Stogner <roystgnr@ices.utexas.edu>
 
 m4/stat-time.m4
 
@@ -535,19 +577,6 @@ Portions of these files are based on the parser package,
 
    Copyright (C) 2009--2011  Romain Francois
    
-
-Some of the files in src/appl were originally taken from the Netlib
-archive now at www.netlib.org and do not clearly state their
-copyright status.
-
-src/appl/{dchdc,dpfa,dpbsl,dpoco,dpodi,dpofa,dposl,dqrdc,
-          dqrsl,dsvdc,dtrco,dtrsl}.f 
-
-are part of LINPACK, with authors J.J. Dongarra, Cleve Moler and
-G.W. Stewart
-
-src/appl/dqrdc2.f is based on dqrdc.f by G.W. Stewart.
-
 
 src/extra/gc/
 
@@ -598,3 +627,19 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Some of the files in src/appl were originally taken from the Netlib
+archive now at www.netlib.org and do not clearly state their
+copyright status.
+
+src/appl/{dchdc,dpfa,dpbsl,dpoco,dpodi,dpofa,dposl,dqrdc,
+          dqrsl,dsvdc,dtrco,dtrsl}.f 
+
+are part of LINPACK, with authors J.J. Dongarra, Cleve Moler and
+G.W. Stewart
+
+src/appl/dqrdc2.f is based on dqrdc.f by G.W. Stewart.
+
+src/appl/lbfgsb.c is based on the work of Zhu, Byrd, Lu-Chen and
+Nocedal, which does not state any copyright.

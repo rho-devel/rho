@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -292,7 +292,8 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP ans, sep, x;
     int i, j, k, ln, maxlen, nx, nzero, pwidth, sepw;
-    const char *s, *csep, *cbuf; char *buf;
+    const char *s, *csep, *cbuf;
+    char *buf;
 
     op->checkNumArgs(num_args, call);
 
@@ -358,6 +359,16 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
 		buf += sepw;
 	    }
 	}
+#ifdef Win32
+	// Trailing seps are invalid for file paths except for / and d:/
+	if(streql(csep, "/") || streql(csep, "\\")) {
+	    if(buf > cbuf) {
+		buf--;
+		if(*buf == csep[0] && buf > cbuf &&
+		   (buf != cbuf+2 || cbuf[1] != ':')) *buf = '\0';
+	    }
+	}
+#endif
 	SET_STRING_ELT(ans, i, mkChar(cbuf));
     }
     R_FreeStringBufferL(&cbuff);
@@ -381,10 +392,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
     scikeep = R_print.scipen;
 
     if (isEnvironment(x = args[0])) {
-	PROTECT(y = allocVector(STRSXP, 1));
-	SET_STRING_ELT(y, 0, mkChar(EncodeEnvironment(x)));
-	UNPROTECT(1);
-	return y;
+	return mkString(EncodeEnvironment(x));
     }
     else if (!isVector(x))
 	error(_("first argument must be atomic"));
@@ -467,7 +475,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    w = imax2(w, wd);
 	    PROTECT(y = allocVector(STRSXP, n));
 	    for (i = 0; i < n; i++) {
-		strp = EncodeReal(REAL(x)[i], w, d, e, OutDec);
+		strp = EncodeReal0(REAL(x)[i], w, d, e, OutDec);
 		SET_STRING_ELT(y, i, mkChar(strp));
 	    }
 	    break;

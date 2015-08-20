@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2012  The R Core Team
+ *  Copyright (C) 1998--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -340,7 +340,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     DE->isEditor = CXXRCONSTRUCT(Rboolean, TRUE);
 
     /* setup work, names, lens  */
-    DE->xmaxused = length(DE->work); DE->ymaxused = 0;
+    DE->xmaxused = Rf_length(DE->work); DE->ymaxused = 0;
     PROTECT_WITH_INDEX(DE->lens = allocVector(INTSXP, DE->xmaxused), &DE->lpi);
     nprotect++;
 
@@ -377,7 +377,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* start up the window, more initializing in here */
     if (initwin(DE, title))
-	errorcall(call, "invalid device");
+	errorcall(call, "unable to start data editor");
 
     /* use try-catch to close the window if there is an error */
     try {
@@ -486,7 +486,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     DE->isEditor = CXXRCONSTRUCT(Rboolean, FALSE);
 
     /* setup work, names, lens  */
-    DE->xmaxused = length(DE->work); DE->ymaxused = 0;
+    DE->xmaxused = Rf_length(DE->work); DE->ymaxused = 0;
     PROTECT_WITH_INDEX(DE->lens = allocVector(INTSXP, DE->xmaxused), &DE->lpi);
     nprotect++;
 
@@ -502,7 +502,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* start up the window, more initializing in here */
     if (initwin(DE, CHAR(STRING_ELT(stitle, 0))))
-	errorcall(call, "invalid device");
+	errorcall(call, "unable to start data viewer");
 
     /* use try-catch to close the window if there is an error */
     try {
@@ -750,7 +750,7 @@ static void cell_cursor_init(DEstruct DE)
 		get_col_name(DE, whichcol),
 		BOOSTED_BUF_SIZE-1);
     } else {
-	if (length(DE->work) >= whichcol) {
+	if (Rf_length(DE->work) >= whichcol) {
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
@@ -1064,7 +1064,8 @@ static SEXP processEscapes(SEXP x)
 
     PROTECT( pattern = mkString("(?<!\\\\)((\\\\\\\\)*)\"") );
     PROTECT( replacement = mkString("\\1\\\\\"") );
-    PROTECT( expr = lang5(install("gsub"), ScalarLogical(1), pattern, replacement, x) );
+    SEXP s_gsub = install("gsub");
+    PROTECT( expr = lang5(s_gsub, ScalarLogical(1), pattern, replacement, x) );
     SET_TAG( CDR(expr), install("perl") );
 
     PROTECT( newval = eval(expr, R_BaseEnv) );
@@ -1077,7 +1078,7 @@ static SEXP processEscapes(SEXP x)
     /* We only handle the first entry. If this were available more generally,
        we'd probably want to loop over all of expr */
 
-    if (status == PARSE_OK && length(expr))
+    if (status == PARSE_OK && Rf_length(expr))
 	PROTECT( newval = eval(VECTOR_ELT(expr, 0), R_BaseEnv) );
     else
 	PROTECT( newval = R_NilValue );  /* protect just so the count doesn't change */
@@ -1136,7 +1137,7 @@ static void closerect(DEstruct DE)
 		    SEXP newval;
 		    PROTECT( newval = mkString(buf) );
 		    PROTECT( newval = processEscapes(newval) );
-		    if (TYPEOF(newval) == STRSXP && length(newval) == 1)
+		    if (TYPEOF(newval) == STRSXP && Rf_length(newval) == 1)
 			SET_STRING_ELT(cvec, wrow - 1, STRING_ELT(newval, 0));
 		    else
 			warning("dataentry: parse error on string");
@@ -1146,8 +1147,10 @@ static void closerect(DEstruct DE)
 		if (newcol && warn) {
 		    /* change mode to character */
 		    SEXP tmp = coerceVector(cvec, STRSXP);
+		    PROTECT(tmp);
 		    SET_STRING_ELT(tmp, wrow - 1, mkChar(buf));
 		    SET_VECTOR_ELT(DE->work, wcol - 1, tmp);
+		    UNPROTECT(1);
 		}
 	    } else {
 		if (TYPEOF(cvec) == STRSXP)
@@ -1206,7 +1209,7 @@ static void printstring(DEstruct DE, const char *ibuf, int buflen, int row,
 	    for(j=0;*(wcspc+j)!=L'\0';j++)wcs[j]=*(wcspc+j);
 	    wcs[j]=L'\0';
 	    w_p=wcs;
-	    cnt= (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
+	    cnt = (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
 	    s[cnt]='\0';
 	    if (textwidth(DE, s, (int) strlen(s)) < (bw - DE->text_offset)) break;
 	    *(++wcspc) = L'<';
@@ -1216,7 +1219,7 @@ static void printstring(DEstruct DE, const char *ibuf, int buflen, int row,
 	    for(j=0;*(wcspc+j)!=L'\0';j++)wcs[j]=*(wcspc+j);
 	    wcs[j]=L'\0';
 	    w_p=wcs;
-	    cnt= (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
+	    cnt = (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
 	    s[cnt]='\0';
 	    if (textwidth(DE, s, (int) strlen(s)) < (bw - DE->text_offset)) break;
 	    *(wcspbuf + i - 2) = L'>';
@@ -1226,7 +1229,7 @@ static void printstring(DEstruct DE, const char *ibuf, int buflen, int row,
     for(j=0;*(wcspc+j)!=L'\0';j++) wcs[j]=*(wcspc+j);
     wcs[j]=L'\0';
     w_p=wcs;
-    cnt= (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
+    cnt = (int) wcsrtombs(s,(const wchar_t **)&w_p,sizeof(s)-1,NULL);
 
     drawtext(DE, x_pos + DE->text_offset, y_pos + DE->box_h - DE->text_offset,
 	     s, cnt);
@@ -1870,10 +1873,9 @@ static int R_X11Err(Display *dsp, XErrorEvent *event)
 }
 
 
-static int R_X11IOErr(Display *dsp)
+static int NORET R_X11IOErr(Display *dsp)
 {
     error("X11 fatal IO error: please save work and shut down R");
-    return 0; /* but should never get here */
 }
 
 /* set up the window, print the grid and column/row labels */
@@ -1940,7 +1942,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     } else {
 	DE->font_info = XLoadQueryFont(iodisplay, font_name);
 	if (DE->font_info == NULL) {
-	    warning("unable to losd font %s", font_name);
+	    warning("unable to load font %s", font_name);
 	    return CXXRCONSTRUCT(Rboolean, TRUE); /* ERROR */
 	}
     }
@@ -2509,7 +2511,7 @@ static void copycell(DEstruct DE)
 	/* won't have  cell here */
     } else {
 	strcpy(copycontents, "");
-	if (length(DE->work) >= whichcol) {
+	if (Rf_length(DE->work) >= whichcol) {
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
@@ -2606,6 +2608,6 @@ static int last_wchar_bytes(char *str)
 
     memset(last_mbs, 0, sizeof(last_mbs));
     bytes = wcrtomb(last_mbs, wcs[cnt-1], &mb_st); /* -Wall */
-    return int( bytes);
+    return (int) bytes;
 }
 

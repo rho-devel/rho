@@ -4,30 +4,32 @@ export("Adobe_glyphs", "HTMLheader", "Rd2HTML", "Rd2ex", "Rd2latex",
        "Rd2txt", "Rd2txt_options", "RdTextFilter", "Rd_db", "Rdiff",
        "Rdindex", "SweaveTeXFilter", "add_datalist",
        "assertCondition", "assertError", "assertWarning", "bibstyle",
-       "buildVignettes", "charset_to_Unicode", "checkDocFiles",
-       "checkDocStyle", "checkFF", "checkMD5sums", "checkNEWS",
-       "checkRd", "checkPoFile", "checkPoFiles", "checkRdaFiles",
-       "checkReplaceFuns", "checkS3methods", "checkTnF",
-       "checkVignettes", "codoc", "codocClasses", "codocData",
-       "compactPDF", "delimMatch", "deparseLatex", "dependsOnPkgs",
-       "encoded_text_to_latex", "file_ext", "file_path_as_absolute",
-       "file_path_sans_ext", "findHTMLlinks", "getBibstyle",
-       "getDepList", "getVignetteInfo", "installFoundDepends",
-       "latexToUtf8", "list_files_with_exts", "list_files_with_type",
+       "buildVignette", "buildVignettes", "charset_to_Unicode",
+       "checkDocFiles", "checkDocStyle", "checkFF", "checkMD5sums",
+       "checkNEWS", "checkRd", "checkPoFile", "checkPoFiles",
+       "checkRdaFiles", "checkReplaceFuns", "checkS3methods",
+       "checkTnF", "checkVignettes", "codoc", "codocClasses",
+       "codocData", "compactPDF", "delimMatch", "deparseLatex",
+       "dependsOnPkgs", "encoded_text_to_latex", "file_ext",
+       "file_path_as_absolute", "file_path_sans_ext", "findHTMLlinks",
+       "find_gs_cmd", "getBibstyle", "getDepList", "getVignetteInfo",
+       "installFoundDepends", "latexToUtf8", "list_files_with_exts",
+       "list_files_with_type", "loadRdMacros", "loadPkgRdMacros",
        "make_translations_pkg", "md5sum", "package.dependencies",
        "package_dependencies", "parseLatex", "parse_Rd", "pkgDepends",
        "pkgVignettes", "pskill", "psnice", "read.00Index", "readNEWS",
        "resaveRdaFiles", "showNonASCII", "showNonASCIIfile",
        "startDynamicHelp", "testInstalledBasic",
        "testInstalledPackage", "testInstalledPackages", "texi2dvi",
-       "texi2pdf", "toHTML", "toRd", "undoc", "update_pkg_po",
-       "vignetteDepends", "vignetteEngine", "write_PACKAGES",
-       "xgettext", "xgettext2pot", "xngettext")
+       "texi2pdf", "toHTML", "toRd", "toTitleCase", "undoc",
+       "update_pkg_po", "vignetteDepends", "vignetteEngine",
+       "write_PACKAGES", "xgettext", "xgettext2pot", "xngettext")
 
 export("check_packages_in_dir",
        "summarize_check_packages_in_dir_depends",
        "summarize_check_packages_in_dir_results",
-       "summarize_check_packages_in_dir_timings")
+       "summarize_check_packages_in_dir_timings",
+       "check_packages_in_dir_changes")
 
 export(".print.via.format")
 
@@ -54,11 +56,14 @@ S3method("format", "check_package_code_attach")
 S3method("format", "check_package_code_startup_functions")
 S3method("format", "check_package_datasets")
 S3method("format", "check_package_depends")
+S3method("format", "check_package_description2")
 S3method("format", "check_package_description_encoding")
 S3method("format", "check_package_license")
+S3method("format", "check_packages_in_dir_changes")
 S3method("format", "check_packages_used")
 S3method("format", "check_so_symbols")
 S3method("format", "check_nonAPI_calls")
+S3method("format", "check_url_db")
 S3method("format", "checkDocFiles")
 S3method("format", "checkDocStyle")
 S3method("format", "checkFF")
@@ -69,6 +74,7 @@ S3method("format", "codocClasses")
 S3method("format", "codocData")
 S3method("format", "compactPDF")
 S3method("format", "subdir_tests")
+S3method("format", "summarize_CRAN_check_status")
 S3method("format", "undoc")
 
 S3method("format", "pdf_fonts")
@@ -137,14 +143,19 @@ S3method("print", "check_package_description_encoding", .print.via.format)
 S3method("print", "check_package_license", .print.via.format)
 S3method("print", "check_package_datasets", .print.via.format)
 S3method("print", "check_package_compact_datasets")
+S3method("print", "check_packages_in_dir")
+S3method("print", "check_packages_in_dir_changes")
 S3method("print", "check_packages_used", .print.via.format)
 S3method("print", "check_po_files")
 S3method("print", "check_so_symbols", .print.via.format)
 S3method("print", "check_nonAPI_calls", .print.via.format)
+S3method("print", "check_url_db")
 S3method("print", "check_vignette_index")
+S3method("print", "summarize_CRAN_check_status")
 
 S3method("summary", "PDF_Dictionary")
 S3method("summary", "PDF_Stream")
+S3method("summary", "check_packages_in_dir")
 
 S3method("toHTML", "news_db")
 S3method("toHTML", "packageIQR")

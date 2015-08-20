@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -36,7 +36,7 @@
  *  INDENTATION:
  *
  *  Indentation is carried out in the routine printtab2buff at the
- *  botton of this file.  It seems like this should be settable via
+ *  bottom of this file.  It seems like this should be settable via
  *  options.
  *
  *
@@ -100,6 +100,9 @@
 #include <float.h> /* for DBL_DIG */
 #include <Print.h>
 #include <Fileio.h>
+#ifdef Win32
+#include <trioremap.h>
+#endif
 
 #define BUFSIZE 512
 
@@ -355,6 +358,9 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	UNPROTECT(1);
     }
     PROTECT(tval); /* against Rconn_printf */
+
+    if(!inherits(args[1], "connection"))
+	error(_("'file' must be a character string or connection"));
     ifile = asInteger(args[1]);
 
     wasopen = CXXRTRUE;
@@ -403,6 +409,8 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
     names = args[0];
     file = args[1];
+    if(!inherits(file, "connection"))
+	error(_("'file' must be a character string or connection"));
     if(!isString(names))
 	error( _("character arguments expected"));
     nobjs = length(names);
@@ -413,7 +421,7 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	error(_("invalid '%s' argument"), "envir");
     opts = asInteger(args[3]);
     /* <NOTE>: change this if extra options are added */
-    if(opts == NA_INTEGER || opts < 0 || opts > 256)
+    if(opts == NA_INTEGER || opts < 0 || opts > 1024)
 	errorcall(call, _("'opts' should be small non-negative integer"));
     evaluate = CXXRCONSTRUCT(Rboolean, asLogical(args[4]));
     if (!evaluate) opts |= DELAYPROMISES;
@@ -424,7 +432,7 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	SET_TAG(o, installTrChar(STRING_ELT(names, j)));
 	SETCAR(o, findVar(TAG(o), source));
 	if (CAR(o) == R_UnboundValue)
-	    warning(_("object '%s' not found"), CHAR(PRINTNAME(TAG(o))));
+	    warning(_("object '%s' not found"), EncodeChar(PRINTNAME(TAG(o))));
 	else nout++;
     }
     o = objs;
@@ -448,7 +456,7 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    con = getConnection(INTEGER(file)[0]);
 	    wasopen = con->isopen;
 	    if(!wasopen) {
-		char mode[5];	
+		char mode[5];
 		strcpy(mode, con->mode);
 		strcpy(con->mode, "w");
 		if(!con->open(con)) error(_("cannot open the connection"));
@@ -613,8 +621,7 @@ static Rboolean hasAttributes(SEXP s)
     SEXP a = ATTRIB(s);
     if (length(a) > 2) return(TRUE);
     while(!isNull(a)) {
-	if(TAG(a) != R_SrcrefSymbol
-	   && (TYPEOF(s) != CLOSXP || TAG(a) != R_SourceSymbol))
+	if(TAG(a) != R_SrcrefSymbol)
 	    return(TRUE);
 	a = CDR(a);
     }
@@ -634,7 +641,7 @@ static void attr2(SEXP s, LocalParseData *d)
     if(hasAttributes(s)) {
 	SEXP a = ATTRIB(s);
 	while(!isNull(a)) {
-	    if(TAG(a) != R_SourceSymbol && TAG(a) != R_SrcrefSymbol) {
+	    if(TAG(a) != R_SrcrefSymbol) {
 		print2buff(", ", d);
 		if(TAG(a) == R_DimSymbol) {
 		    print2buff(".Dim", d);
@@ -858,7 +865,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	break;
     case LISTSXP:
 	if (localOpts & SHOWATTRIBUTES) attr1(s, d);
-	print2buff("list(", d);
+	print2buff("pairlist(", d);
 	d->inlist++;
 	for (t=s ; CDR(t) != R_NilValue ; t=CDR(t) ) {
 	    if( TAG(t) != R_NilValue ) {
@@ -1236,13 +1243,28 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	d->sourceable = FALSE;
 	print2buff("<weak reference>", d);
 	break;
-    case S4SXP:
-	d->sourceable = FALSE;
+    case S4SXP: {
+	SEXP klass = getAttrib(s, R_ClassSymbol);
 	d->isS4 = TRUE;
+
+#ifndef _TRY_S4_DEPARSE_
+	d->sourceable = FALSE;
 	print2buff("<S4 object of class ", d);
-	deparse2buff(getAttrib(s, R_ClassSymbol), d);
+	deparse2buff(klass, d);
 	print2buff(">", d);
+#else
+	/* somewhat like the  VECSXP [ "list()" ] case : */
+/* 	if (localOpts & SHOWATTRIBUTES) attr1(s, d); */
+	print2buff("new(\"", d);
+	print2buff(translateChar(STRING_ELT(klass, 0)), d);
+	print2buff("\",\n", d);
+//>>>> call vec2buf on the  Attributes >>>>>>>>>  vec2buff(s, d);
+	print2buff(")", d);
+/* 	if (localOpts & SHOWATTRIBUTES) attr2(s, d); */
+
+#endif
       break;
+    }
     default:
 	d->sourceable = FALSE;
 	UNIMPLEMENTED_TYPE("deparse2buff", s);
@@ -1281,10 +1303,37 @@ static void print2buff(const char *strng, LocalParseData *d)
     d->len += int( tlen);
 }
 
+/*
+ * Encodes a complex value as a syntactically correct
+ * string that can be reparsed by R. This is required
+ * because by default strings like '1+Infi' or '3+NaNi' 
+ * are produced which are not valid complex literals.
+ */
+
+#define NB 1000  /* Same as printutils.c */
+static const char *EncodeNonFiniteComplexElement(Rcomplex x, char* buff)
+{
+    int w, d, e, wi, di, ei;
+
+    // format a first time to get width/decimals
+    formatComplex(&x, 1, &w, &d, &e, &wi, &di, &ei, 0);
+	
+    char Re[NB];
+    char Im[NB];
+
+    strcpy(Re, EncodeReal0(x.r, w, d, e, "."));
+    strcpy(Im, EncodeReal0(x.i, wi, di, ei, "."));
+    
+    snprintf(buff, NB, "complex(real=%s, imaginary=%s)", Re, Im);
+    buff[NB-1] = '\0';
+    return buff;
+}
+
 static void vector2buff(SEXP vector, LocalParseData *d)
 {
     int tlen, i, quote;
     const char *strp;
+    char *buff = 0, hex[64]; // 64 is more than enough
     Rboolean surround = FALSE, allNA, addL = TRUE;
 
     tlen = length(vector);
@@ -1313,7 +1362,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	int *tmp = INTEGER(vector);
 
 	for(i = 1; i < tlen; i++) {
-	    if(tmp[i] - tmp[i-1] != 1) {
+	    if((tmp[i] == NA_INTEGER) || (tmp[i-1] == NA_INTEGER)
+	       || (tmp[i] - tmp[i-1] != 1)) {
 		intSeq = FALSE;
 		break;
 	    }
@@ -1397,10 +1447,15 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {
 		strp = "NA_real_";
-	    } else if (allNA && TYPEOF(vector) == CPLXSXP &&
+	    } else if (TYPEOF(vector) == CPLXSXP &&
 		       (ISNA(COMPLEX(vector)[i].r)
-			|| ISNA(COMPLEX(vector)[i].i)) ) {
-		strp = "NA_complex_";
+			&& ISNA(COMPLEX(vector)[i].i)) ) {
+		strp = allNA ? "NA_complex_" : EncodeElement(vector, i, quote, '.');
+	    } else if(TYPEOF(vector) == CPLXSXP && 
+	    	      (ISNAN(COMPLEX(vector)[i].r) || !R_FINITE(COMPLEX(vector)[i].i)) ) {
+	    	if (!buff)
+	    	    buff = (char*)alloca(NB);
+		strp = EncodeNonFiniteComplexElement(COMPLEX(vector)[i], buff);
 	    } else if (allNA && TYPEOF(vector) == STRSXP &&
 		       STRING_ELT(vector, i) == NA_STRING) {
 		strp = "NA_character_";
@@ -1417,6 +1472,36 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		vmaxset(vmax);
 	    } else if (TYPEOF(vector) == RAWSXP) {
 		strp = EncodeRaw(RAW(vector)[i], "0x");
+	    } else if (TYPEOF(vector) == REALSXP && (d->opts & HEXNUMERIC)) {
+		double x = REAL(vector)[i];
+		// Windows warns here, but incorrectly as this is C99
+		// and the snprintf used from trio is compliant.
+		if (R_FINITE(x)) {
+		    snprintf(hex, 32, "%a", x);
+		    strp = hex;
+		} else
+		    strp = EncodeElement(vector, i, quote, '.');
+	    } else if (TYPEOF(vector) == REALSXP && (d->opts & DIGITS16)) {
+		double x = REAL(vector)[i];
+		if (R_FINITE(x)) {
+		    snprintf(hex, 32, "%.17g", x);
+		    strp = hex;
+		} else
+		    strp = EncodeElement(vector, i, quote, '.');
+	    } else if (TYPEOF(vector) == CPLXSXP && (d->opts & HEXNUMERIC)) {
+		Rcomplex z =  COMPLEX(vector)[i];
+		if (R_FINITE(z.r) && R_FINITE(z.i)) {
+		    snprintf(hex, 64, "%a + %ai", z.r, z.i);
+		    strp = hex;
+		} else
+		    strp = EncodeElement(vector, i, quote, '.');
+	    } else if (TYPEOF(vector) == CPLXSXP && (d->opts & DIGITS16)) {
+		Rcomplex z =  COMPLEX(vector)[i];
+		if (R_FINITE(z.r) && R_FINITE(z.i)) {
+		    snprintf(hex, 64, "%.17g + %17gi", z.r, z.i);
+		    strp = hex;
+		} else
+		    strp = EncodeElement(vector, i, quote, '.');
 	    } else
 		strp = EncodeElement(vector, i, quote, '.');
 	    print2buff(strp, d);
@@ -1461,10 +1546,8 @@ static Rboolean src2buff(SEXP sv, int k, LocalParseData *d)
     else return FALSE;
 }
 
-/* vec2buff : New Code */
-/* Deparse vectors of S-expressions. */
-/* In particular, this deparses objects of mode expression. */
-
+/* Deparse vectors of S-expressions, i.e., list() and expression() objects.
+   In particular, this deparses objects of mode expression. */
 static void vec2buff(SEXP v, LocalParseData *d)
 {
     SEXP nv, sv;

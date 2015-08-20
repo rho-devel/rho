@@ -1,11 +1,13 @@
 % File src/library/base/man/RdUtils.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{RdUtils}
 \alias{Rdconv}
 \alias{Rd2pdf}
+\alias{RD2PDF_INPUTENC}
+
 \title{Utilities for Processing Rd Files}
 \description{
   Utilities for converting files in R documentation (Rd) format to other

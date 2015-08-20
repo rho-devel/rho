@@ -1,6 +1,6 @@
 /*
  *   R : A Computer Language for Statistical Data Analysis
- *   Copyright (C) 1997-2012   The R Core Team
+ *   Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -324,8 +324,8 @@ SEXP attribute_hidden do_readEnviron(/*const*/ CXXR::Expression* call, const CXX
 
     op->checkNumArgs(num_args, call);
     SEXP x = args[0];
-    if (length(x) != 1 || !isString(x))
-	errorcall(call, _("argument 'x' must be a character string"));
+    if (Rf_length(x) != 1 || !isString(x))
+	errorcall(call, _("argument '%s' must be a character string"), "x");
     const char *fn = R_ExpandFileName(translateChar(STRING_ELT(x, 0)));
     int res = process_Renviron(fn);
     if (!res)

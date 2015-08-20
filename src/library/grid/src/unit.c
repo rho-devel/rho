@@ -1,23 +1,7 @@
-/*CXXR $Id$
- *CXXR
- *CXXR This file is part of CXXR, a project to refactor the R interpreter
- *CXXR into C++.  It may consist in whole or in part of program code and
- *CXXR documentation taken from the R project itself, incorporated into
- *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
- *CXXR Licence.
- *CXXR 
- *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
- *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
- *CXXR CXXR is not part of the R project, and bugs and other issues should
- *CXXR not be reported via r-bugs or other R project channels; instead refer
- *CXXR to the CXXR website.
- *CXXR */
-
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-3 Paul Murrell
- *                2003-8 The R Core Team
+ *                2003-2013 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,23 +218,23 @@ double pureNullUnitValue(SEXP unit, int index)
     if (isUnitArithmetic(unit)) {
 	int i;
 	if (addOp(unit)) {
-	    result = unitValue(arg1(unit), index) + 
-		unitValue(arg2(unit), index);
+	    result = pureNullUnitValue(arg1(unit), index) + 
+		pureNullUnitValue(arg2(unit), index);
 	}
 	else if (minusOp(unit)) {
-	    result = unitValue(arg1(unit), index) - 
-		unitValue(arg2(unit), index);
+	    result = pureNullUnitValue(arg1(unit), index) - 
+		pureNullUnitValue(arg2(unit), index);
 	}
 	else if (timesOp(unit)) {
 	    result = REAL(arg1(unit))[index] * 
-		unitValue(arg2(unit), index);
+		pureNullUnitValue(arg2(unit), index);
 	}
 	else if (minFunc(unit)) {
 	    int n = unitLength(arg1(unit));
 	    double temp = DBL_MAX;
-	    result = unitValue(arg1(unit), 0);
+	    result = pureNullUnitValue(arg1(unit), 0);
 	    for (i=1; i<n; i++) {
-		temp = unitValue(arg1(unit), i);
+		temp = pureNullUnitValue(arg1(unit), i);
 		if (temp < result)
 		    result = temp;
 	    }
@@ -258,9 +242,9 @@ double pureNullUnitValue(SEXP unit, int index)
 	else if (maxFunc(unit)) {
 	    int n = unitLength(arg1(unit));
 	    double temp = DBL_MIN;
-	    result = unitValue(arg1(unit), 0);
+	    result = pureNullUnitValue(arg1(unit), 0);
 	    for (i=1; i<n; i++) {
-		temp = unitValue(arg1(unit), i);
+		temp = pureNullUnitValue(arg1(unit), i);
 		if (temp > result)
 		    result = temp;
 	    }
@@ -269,7 +253,7 @@ double pureNullUnitValue(SEXP unit, int index)
 	    int n = unitLength(arg1(unit));
 	    result = 0.0;
 	    for (i=0; i<n; i++) {
-		result += unitValue(arg1(unit), i);
+		result += pureNullUnitValue(arg1(unit), i);
 	    }
 	}
 	else 
@@ -280,7 +264,7 @@ double pureNullUnitValue(SEXP unit, int index)
 	 * to limit indices to unit length if desired
 	 */
 	int n = unitLength(unit);
-	result = unitValue(VECTOR_ELT(unit, index % n), 0);
+	result = pureNullUnitValue(VECTOR_ELT(unit, index % n), 0);
     } else
 	result = unitValue(unit, index);
     return result;
@@ -944,7 +928,10 @@ double transformLocation(double location, int unit, SEXP data,
 {
     double result = location;
     switch (unit) {
-    case L_NATIVE:       
+    case L_NATIVE:
+	/* It is invalid to create a viewport with identical limits on scale
+         * so we are protected from divide-by-zero
+         */
 	result = ((result - scalemin)/(scalemax - scalemin))*thisCM/2.54;
 	break;
     default:
@@ -1048,6 +1035,9 @@ double transformDimension(double dim, int unit, SEXP data,
     double result = dim;
     switch (unit) {
     case L_NATIVE:
+	/* It is invalid to create a viewport with identical limits on scale
+         * so we are protected from divide-by-zero
+         */
 	result = ((dim)/(scalemax - scalemin))*thisCM/2.54;
 	break;
     default:
@@ -1699,13 +1689,26 @@ double transformXYFromINCHES(double location, int unit,
 			     pGEDevDesc dd)
 {
     double result = location;
-    switch (unit) {
-    case L_NATIVE:       
-	result = scalemin + (result/(thisCM/2.54))*(scalemax - scalemin);
-	break;
-    default:
-	result = transformFromINCHES(location, unit, gc,
-				     thisCM, otherCM, dd);
+    /* Special case if "thisCM == 0":
+     * If converting FROM relative unit, result will already be zero 
+     * so leave it there.
+     * If converting FROM absolute unit that is zero, ditto.
+     * Otherwise (converting FROM non-zero absolute unit), 
+     * converting to relative unit is an error.
+     */
+    if ((unit == L_NATIVE || unit == L_NPC) &&
+        thisCM < 1e-6) {
+        if (result != 0)
+            error(_("Viewport has zero dimension(s)"));
+    } else {
+        switch (unit) {
+        case L_NATIVE:
+            result = scalemin + (result/(thisCM/2.54))*(scalemax - scalemin);
+            break;        
+        default:
+            result = transformFromINCHES(location, unit, gc,
+                                         thisCM, otherCM, dd);
+        }
     }
     return result;
 }
@@ -1717,15 +1720,96 @@ double transformWidthHeightFromINCHES(double dimension, int unit,
 				      pGEDevDesc dd)
 {
     double result = dimension;
-    switch (unit) {
-    case L_NATIVE:       
-	result = (result/(thisCM/2.54))*(scalemax - scalemin);
-	break;
-    default:
-	result = transformFromINCHES(dimension, unit, gc,
-				     thisCM, otherCM, dd);
+    /* Special case if "thisCM == 0":
+     * If converting FROM relative unit, result will already be zero 
+     * so leave it there.
+     * If converting FROM absolute unit that is zero, ditto.
+     * Otherwise (converting FROM non-zero absolute unit), 
+     * converting to relative unit is an error.
+     */
+    if ((unit == L_NATIVE || unit == L_NPC) &&
+        thisCM < 1e-6) {
+        if (result != 0)
+            error(_("Viewport has zero dimension(s)"));
+    } else {
+        switch (unit) {
+        case L_NATIVE:       
+            result = (result/(thisCM/2.54))*(scalemax - scalemin);
+            break;
+        default:
+            result = transformFromINCHES(dimension, unit, gc,
+                                         thisCM, otherCM, dd);
+        }
     }
     return result;
+}
+
+/*
+ * Special case conversion from relative unit to relative unit,
+ * only used when relevant widthCM or heightCM is zero, so
+ * we cannot transform thru INCHES (or we get divide-by-zero)
+ *
+ * Protected from divide-by-zero here because viewport with
+ * identical scale limits is disallowed.
+ */
+double transformXYtoNPC(double x, int from, double min, double max)
+{
+    double result = x;
+    switch (from) {
+    case L_NPC:
+        break;
+    case L_NATIVE:
+        result = (x - min)/(max - min);
+        break;
+    default:
+        error(_("Unsupported unit conversion"));
+    }
+    return(result);
+}
+
+double transformWHtoNPC(double x, int from, double min, double max)
+{
+    double result = x;
+    switch (from) {
+    case L_NPC:
+        break;
+    case L_NATIVE:
+        result = x/(max - min);
+        break;
+    default:
+        error(_("Unsupported unit conversion"));
+    }
+    return(result);
+}
+
+double transformXYfromNPC(double x, int to, double min, double max)
+{
+    double result = x;
+    switch (to) {
+    case L_NPC:
+        break;
+    case L_NATIVE:
+        result = min + x*(max - min);
+        break;
+    default:
+        error(_("Unsupported unit conversion"));
+    }
+    return(result);
+}
+
+double transformWHfromNPC(double x, int to, double min, double max)
+{
+    double result = x;
+    switch (to) {
+    case L_NPC:
+        break;
+    case L_NATIVE:
+        result = x*(max - min);
+        break;
+    default:
+        error(_("Unsupported unit conversion"));
+    }
+    return(result);
 }
 
 /* Attempt to make validating units faster

@@ -1,7 +1,7 @@
 #  File src/library/stats/R/cmdscale.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 cmdscale <- function (d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
 {
-    if (any(is.na(d)))
+    if (anyNA(d))
 	stop("NA values not allowed in 'd'")
     if (is.null(n <- attr(d, "Size"))) {
         if(add) d <- as.matrix(d)

@@ -145,15 +145,6 @@ namespace CXXR {
           return m_is_special_symbol;
         }
 
-	/** @brief Maximum length of symbol names.
-	 *
-	 * @return The maximum permitted length of symbol names.
-	 */
-	static size_t maxLength()
-	{
-	    return s_max_length;
-	}
-
 	/** @brief Missing argument.
 	 *
 	 * @return a pointer to the 'missing argument' pseudo-object.
@@ -202,6 +193,21 @@ namespace CXXR {
 	 */
 	static Symbol* obtain(const std::string& name);
 
+	/** @brief Get a pointer to a regular Symbol object.
+	 *
+	 * If no Symbol with the specified name currently exists, one
+	 * will be created, and a pointer to it returned.  Otherwise a
+	 * pointer to the existing Symbol will be returned.
+	 *
+	 * @param name The name of the required Symbol (CE_NATIVE
+	 *          encoding is assumed).  At present no check is made
+	 *          that the supplied string is a valid symbol name.
+	 *
+	 * @return Pointer to a Symbol (preexisting or newly
+	 * created) with the required name.
+	 */
+	static Symbol* obtain(const String& name);
+
 	/** @brief Create a double-dot symbol.
 	 *
 	 * @param n Index number of the required symbol; must be
@@ -211,6 +217,21 @@ namespace CXXR {
 	 * <tt>..</tt><i>n</i>.
 	 */
 	static Symbol* obtainDotDotSymbol(unsigned int n);
+
+	/** @brief Get a pointer to a Symbol for an S3 method.
+	 *
+	 * If no Symbol with the specified signature currently exists, one
+	 * will be created, and a pointer to it returned.  Otherwise a
+	 * pointer to the existing Symbol will be returned.
+	 *
+	 * @param className The name of the class that the method is for.
+         * @param methodName The name of the function that the method is for.
+	 *
+	 * @return Pointer to a Symbol (preexisting or newly
+	 * created) with the required signature.
+	 */
+        static Symbol* obtainS3Signature(const char* className,
+                                         const char* methodName);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -252,7 +273,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	static const size_t s_max_length = 256;
 	static Table* getTable();  // Vector of
 	  // pointers to all Symbol objects in existence, other than
 	  // psuedo-symbols and deserialization temporaries, used to

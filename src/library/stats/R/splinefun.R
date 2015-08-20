@@ -1,7 +1,7 @@
 #  File src/library/stats/R/splinefun.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -188,7 +188,7 @@ splinefunH <- function(x, y, m)
         m <- m[i]
     }
     dx <- x[-1L] - x[-n]
-    if(any(is.na(dx)) || any(dx == 0))
+    if(anyNA(dx) || any(dx == 0))
         stop("'x' must be *strictly* increasing (non - NA)")
     splinefunH0(x, y, m, dx=dx)
 }

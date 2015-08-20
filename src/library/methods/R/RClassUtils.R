@@ -1,7 +1,7 @@
 #  File src/library/methods/R/RClassUtils.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ makePrototypeFromClassDef <-
     snames <- names(slots)
     ## try for a single superclass that is not virtual
     supers <- names(extends)
-    virtual <- NA
+##    virtual <- NA
     dataPartClass <- elNamed(slots, ".Data")
     prototype <- ClassDef@prototype
     dataPartDone <- is.null(dataPartClass)  || is(prototype, dataPartClass)# don't look for data part in supreclasses
@@ -81,10 +81,10 @@ makePrototypeFromClassDef <-
         exti <- extends[[i]]
         if(identical(exti@simple, FALSE))
             next ## only simple contains rel'ns give slots
-        if(identical(what, "VIRTUAL"))
+        if(identical(what, "VIRTUAL")) {
             ## the class is virtual, and the prototype usually NULL
-            virtual <- TRUE
-        else if(isClass(what, where = where)) {
+##            virtual <- TRUE
+        } else if(isClass(what, where = where)) {
             cli <- getClass(what, where = where)
             slotsi <- names(cli@slots)
             pri <- cli@prototype
@@ -92,7 +92,7 @@ makePrototypeFromClassDef <-
             if(is.null(prototype)) {
                 prototype <- pri
                 pnames <- names(attributes(prototype))
-                fromClass <- what
+##                fromClass <- what
             }
             else if(length(slots)) {
                 for(slotName in slotsi) {
@@ -224,9 +224,9 @@ completeClassDefinition <-
     properties <- ClassDef@slots
     prototype <- makePrototypeFromClassDef(properties, ClassDef, immediate, where)
     virtual <- ClassDef@virtual
-    validity <- ClassDef@validity
-    access <- ClassDef@access
-    package <- ClassDef@package
+#    validity <- ClassDef@validity
+#    access <- ClassDef@access
+#    package <- ClassDef@package
     extends    <- if(doExtends) completeExtends   (ClassDef, where = where) else ClassDef@contains
     subclasses <- if(doExtends) completeSubclasses(ClassDef, where = where) else ClassDef@subclasses
     if(is.na(virtual))
@@ -255,9 +255,9 @@ completeClassDefinition <-
 
 .completeClassSlots <- function(ClassDef, where) {
         properties <- ClassDef@slots
-        simpleContains <- ClassDef@contains
-        Class <- ClassDef@className
-        package <- ClassDef@package
+##        simpleContains <- ClassDef@contains
+##        Class <- ClassDef@className
+##        package <- ClassDef@package
         ext <- getAllSuperClasses(ClassDef, TRUE)
         ## ext has the names of all the direct and indirect superClasses but NOT those that do
         ## an explicit coerce (we can't conclude anything about slots, etc. from them)
@@ -317,11 +317,9 @@ completeClassDefinition <-
             }
         }
         if(any(undefClasses))
-            warning(gettextf("undefined slot classes in definition of %s: %s",
+            warning(sprintf(gettext("undefined slot classes in definition of %s: %s", domain = "R-methods"),
                              .dQ(ClassDef@className),
-                             paste(names(properties)[undefClasses], "(class ",
-                                   .dQ(unlist(properties, recursive = FALSE)[undefClasses]),
-                                   ")", collapse = ", ", sep = "")),
+                             paste(names(properties)[undefClasses], gettextf("(class %s)", .dQ(unlist(properties, recursive = FALSE)[undefClasses])), collapse = ", ", sep = "")),
                     call. = FALSE, domain = NA)
         ClassDef@slots <- properties
         ClassDef
@@ -335,7 +333,7 @@ completeClassDefinition <-
     else {
         prev <- slot(ClassDef, slotName)
         if(length(prev)) {
-            indir <- sapply(prev, .isIndirectExtension)
+            indir <- vapply(prev, .isIndirectExtension, NA)
             slot(ClassDef, slotName) <- slot(ClassDef, slotName)[!indir]
         }
         ClassDef
@@ -346,14 +344,13 @@ completeClassDefinition <-
     is(object, "SClassExtension") && length(object@by) > 0
 }
 
-.mergeSlots <- function(classDef1, classDef2) {
-
-}
+## .mergeSlots <- function(classDef1, classDef2) {
+## }
 
 .directSubClasses <- function(ClassDef) {
     ## no checks for input here:
     if(length(sc <- ClassDef@subclasses)) {
-        names(sc)[sapply(sc, function(cc) cc@distance == 1L)]
+        names(sc)[vapply(sc, function(cc) cc@distance == 1L, NA)]
     } ## else NULL
 }
 
@@ -519,6 +516,11 @@ assignClassDef <-
       if(exists(mname, envir = where, inherits = FALSE) && bindingIsLocked(mname, where)) {
           if(force)
             .assignOverBinding(mname, def, where, FALSE)
+          ## called this way, e.g., from setIs()
+          ## This is old and bad.  Given that the cached version of the class
+          ## will have all the updated info about a class, we should leave
+          ## the locked version alone.  But probably too late to fix without
+          ## a lot of flack.  (JMC, 2013/10)
           else
             stop(gettextf("class %s has a locked definition in package %s",
                           dQuote(Class), sQuote(getPackageName(where))))
@@ -706,7 +708,7 @@ reconcilePropertiesAndPrototype <-
                                 dQuote(elNamed(properties, ".Data")),
                                 dQuote(dataPartClass)),
                        domain = NA)
-              pslots <- NULL
+##              pslots <- NULL
               if(is.null(prototype)) {
                   if(dataPartValue)
                       prototype <- newObject
@@ -1160,7 +1162,7 @@ completeSubclasses <-
         ext <- ext[ok]
     }
     ## require superclasses to be sorted by distance
-    distOrder <- sort.list(sapply(ext, function(x)x@distance))
+    distOrder <- sort.list(vapply(ext, function(x) x@distance, 1))
     ext <- ext[distOrder]
     if(superClassCase && (anyDuplicated(what) || length(conflicts) > 0))
         ext <- .resolveSuperclasses(ClassDef, ext, where, conflicts)
@@ -1199,7 +1201,7 @@ completeSubclasses <-
 .resolveSuperclasses <- function(classDef, ext, where, conflicts = attr(ext, "conflicts")) {
   ## find conditional extensions, ignored in superclass ordering
   .condExts <- function(contains)
-      sapply(contains, function(x) is(x, "conditionalExtension" ))
+      vapply(contains, function(x) is(x, "conditionalExtension" ), NA)
   .noncondExtsClass <- function(cl) {
     if(isClass(cl, where = where) ) {
       contains <- getClass(cl, where = where)@contains
@@ -1225,7 +1227,7 @@ completeSubclasses <-
       }
       ## else, go on with conditionals eliminated
     }
-    directSupers <- sapply(classDef@contains, function(x) identical(x@distance, 1))
+    directSupers <- vapply(classDef@contains, function(x) identical(x@distance, 1), NA)
     directSupers <- unique(names(classDef@contains[directSupers]))
     ## form a list of the superclass orderings of the direct superclasses
     ## to check consistency with each way to eliminate duplicates
@@ -1292,7 +1294,9 @@ requireMethods <-
         method <- getMethod(f, optional = TRUE)
         if(!is.function(method))
             method <- getGeneric(f, where = where)
-        body(method) <- substitute(stop(methods:::.missingMethod(FF, MESSAGE, if(exists(".Method")).Method else NULL), domain=NA), list(FF=f, MESSAGE=message))
+	body(method) <- substitute(stop(methods:::.missingMethod(FF, MESSAGE,
+								 if(exists(".Method")).Method),
+					domain=NA), list(FF=f, MESSAGE=message))
         environment(method) <- .GlobalEnv
         setMethod(f, signature, method, where = where)
     }
@@ -1509,7 +1513,7 @@ setDataPart <- function(object, value, check = TRUE) {
 }
 
 .transitiveSubclasses <- function(by, to, toExt, moreExts, strictBy) {
-    what <- names(moreExts)
+##    what <- names(moreExts)
 ###    if(!strictBy) message("Subclasses: ",by, ": ", paste(what, collapse = ", "))
     for(i in seq_along(moreExts)) {
         byExt <- moreExts[[i]]
@@ -1524,10 +1528,9 @@ setDataPart <- function(object, value, check = TRUE) {
         ## construct the composite coerce method, taking into account the strict=
         ## argument.
         f <- toExt@coerce
-        fR <- toExt@replace
-            toExpr <- body(f)
-            fBy <- byExt@coerce
-            byExpr <- body(fBy)
+	toExpr <- body(f)
+	fBy <- byExt@coerce
+	byExpr <- body(fBy)
         ## if both are simple extensions, so is the composition
         if(byExt@simple && toExt@simple) {
             expr <- (if(byExt@dataPart)
@@ -1594,8 +1597,11 @@ setDataPart <- function(object, value, check = TRUE) {
     toSlots <- names(toDef@slots)
     sameSlots <- (length(fromSlots) == length(toSlots) &&
 		  !any(is.na(match(fromSlots, toSlots))))
-    if(!isVirtualClass(toDef))
-        toClass <- class(new(toDef)) # get it with the package slot correct
+    if(is.null(packageSlot(toClass))) {
+        toClass <- toDef@className
+        if(is.null(packageSlot(toClass))) # is this possible?
+            packageSlot(toClass) <- toDef@package
+    }
     if(sameSlots)
 	substitute({class(from) <- CLASS; from}, list(CLASS = toClass))
     else if(length(toSlots) == 0L) {
@@ -1777,15 +1783,17 @@ substituteFunctionArgs <-
 ..requirePackage <- function(package, mustFind = TRUE) {
     value <- package
     if(nzchar(package)) {
-        if(package %in% loadedNamespaces())
+        ## lookup as lightning fast as possible:
+	if (.Internal(exists(package, .Internal(getNamespaceRegistry()),
+			     "any", FALSE)))
             value <- getNamespace(package)
         else {
             if(identical(package, ".GlobalEnv"))
                 return(.GlobalEnv)
             if(identical(package, "methods"))
                 return(topenv(parent.frame())) # booting methods
-            if(exists(package, envir = .PackageEnvironments, inherits = FALSE))
-                return(get(package, envir = .PackageEnvironments)) #cached, but only if no namespace
+            if(!is.null(pkg <- .PackageEnvironments[[package]]))
+                return(pkg) #cached, but only if no namespace
         }
     }
     if(is.environment(value))
@@ -1793,8 +1801,8 @@ substituteFunctionArgs <-
     topEnv <- options()$topLevelEnvironment
     if(is.null(topEnv))
         topEnv <- .GlobalEnv
-    if(exists(".packageName", topEnv, inherits=TRUE) &&
-       .identC(package, get(".packageName", topEnv)))
+    if(!is.null(pkgN <- get0(".packageName", topEnv, inherits=TRUE)) &&
+       .identC(package, pkgN))
         return(topEnv) # kludge for source'ing package code
     if(nzchar(package) && require(package, character.only = TRUE)) {}
     else {
@@ -2013,12 +2021,11 @@ assign("#HAS_DUPLICATE_CLASS_NAMES", FALSE, envir = .classTable)
 }
 
 .uncacheClass <- function(name, def) {
-    if(exists(name, envir = .classTable, inherits = FALSE)) {
+  if(!is.null(prev <- .classTable[[name]])) {
         if(is(def, "classRepresentation")) # paranoia: should only be called this way
             newpkg <- def@package
         else
             newpkg <- ""
-        prev <- get(name, envir = .classTable)
         if(is(prev, "classRepresentation") &&
            identical(prev@package, newpkg) )
             return(remove(list = name, envir = .classTable))
@@ -2073,7 +2080,7 @@ assign("#HAS_DUPLICATE_CLASS_NAMES", FALSE, envir = .classTable)
             ## insert the new superclass to maintain order by distance
             cntns <- subDef@contains
             cntns[[class]] <- subs[[i]]
-            cntns <- cntns[sort.list(sapply(cntns, function(x)x@distance))]
+            cntns <- cntns[sort.list(vapply(cntns, function(x) x@distance, 1))]
             subDef@contains <- cntns
             .cacheClass(what, subDef, FALSE, env)
         }
@@ -2127,49 +2134,59 @@ assign("#HAS_DUPLICATE_CLASS_NAMES", FALSE, envir = .classTable)
     if(length(classDef@contains)) {
         superclasses <- names(classDef@contains)
         for(what in superclasses) {
-            superWhere <- findClass(what, classWhere)
-            if(length(superWhere)) {
-                superWhere <- superWhere[[1L]]
-                .removeSubClass(what, Class, superWhere)
-            } else if(! what %in% c(.BasicClasses, "oldClass"))
-                warning(gettextf("could not find superclass %s to clean up when removing subclass references to class %s",
-                                 .dQ(what), .dQ(Class)))
+            cdef <- .getClassFromCache(what)
+            ## TODO:  handle the case of multiple packages with this class
+            if(is(cdef, "classRepresentation"))
+                .removeSubClass(what, Class, cdef)
         }
     }
     NULL
 }
 
 
-## remove subclass from the known subclasses of class
-## both in the package environment and in the cache
-.removeSubClass <- function(class, subclass, where) {
-    mname <- classMetaName(class)
-    where <- as.environment(where)
-    if(exists(mname, envir = where, inherits = FALSE)) {
-        cdef <- get(mname, envir = where)
+## remove subclass from the list of subclasses of class
+## in the cache and possibly in the attached package environment
+.removeSubClass <- function(class, subclass, cdef) {
+    if(is.null(cdef)) {}
+    else {
         newdef <- .deleteSubClass(cdef, subclass)
         if(!is.null(newdef))
-          assignClassDef(class, newdef,  where, TRUE)
-        else { # check the cache
-            cdef <- .getClassFromCache(cdef@className, where)
-            if(is.null(cdef)) {}
-            else {
-                newdef <- .deleteSubClass(cdef, subclass)
-                if(!is.null(newdef))
-                  .cacheClass(class, newdef, FALSE, where)
+            .cacheClass(class, newdef, FALSE, cdef@package)
+        ## the class definition in the search list may have been altered
+        ## (e.g., when classes are created in the global environment_
+        pname <- cdef@package
+        if(identical(pname, ".GlobalEnv")) {
+            pos <- 1
+        }
+        else {
+            pname <- paste0("package:", pname)
+            pos <- match(pname, search(), 0)
+        }
+        if(pos) {
+            penv <- as.environment(pname)
+            cmeta <- classMetaName(class)
+            if(exists(cmeta, envir = penv, inherits = FALSE)) {
+                cdefp <- get(cmeta, envir = penv)
+                if(subclass %in% names(cdefp@subclasses)) {
+                    newdef <- .deleteSubClass(cdefp, subclass)
+                    if(!is.null(newdef)) {
+                        ## unfortunately, assignClassDef assigns the subclass info
+                        ## even in a locked binding.  Would be nice to change that,
+                        ## but probably too much would break.
+                        if(bindingIsLocked(cmeta, penv))
+                            .assignOverBinding(cmeta, newdef, penv, FALSE)
+                        else
+                            assign(cmeta, newdef, envir = penv)
+                    }
+                }
             }
         }
-        sig <- signature(from=subclass, to=class)
-        if(existsMethod("coerce", sig))
-          .removeCachedMethod("coerce", sig)
-        if(existsMethod("coerce<-", sig))
-          .removeCachedMethod("coerce<-", sig)
-        if(is(cdef, "classRepresentation"))
-            .uncacheClass(class, cdef)
     }
-    else
-      warning(gettextf("no class %s found as expected in removing subclass %s",
-                       .dQ(class), .dQ(subclass)))
+    sig <- signature(from=subclass, to=class)
+    if(existsMethod("coerce", sig))
+        .removeCachedMethod("coerce", sig)
+    if(existsMethod("coerce<-", sig))
+        .removeCachedMethod("coerce<-", sig)
 }
 
 .deleteSubClass <- function(cdef, subclass) {
@@ -2203,8 +2220,7 @@ assign("#HAS_DUPLICATE_CLASS_NAMES", FALSE, envir = .classTable)
     evv <- findClass(class, .GlobalEnv) # what about hidden classes?  how to find them?
     mname <- classMetaName(class)
     for(where in evv) {
-        if(exists(mname, envir = where, inherits = FALSE)) {
-            cdef <- get(mname, envir = where)
+        if(!is.null(cdef <- where[[mname]])) {
             newdef <- .deleteSuperClass(cdef, superclass)
             if(!is.null(newdef)) {
               assignClassDef(class, newdef,  where, TRUE)
@@ -2337,36 +2353,31 @@ classesToAM <- function(classes, includeSubclasses = FALSE,
                               function(x,y)mapply(c,x,y, SIMPLIFY=FALSE))
     }
     ## check each way to make the list unique against each superclass extension
-    problems <- function(x,y) any(diff(match(y, x))<0)
+    problems <- function(x,y) any(diff(match(y, x)) < 0)
     possibles <- lapply(candidates, function(x, names)names[-x], names=allNames)
     ## the next could be vectorized, but here we choose instead to exit early.
     scores <- vector("list", length(possibles))
     for(i in seq_along(possibles)) {
-        score <- sapply(subNames, problems, x=possibles[[i]])
+        score <- vapply(subNames, problems, NA, x=possibles[[i]])
         scores[[i]] <- whichCase[score]
         if(!any(score))
           return(-candidates[[i]]+1)
     }
     # the first min. scoring possibility and its score
-    i <- which.min(sapply(scores, length))
+    i <- which.min(vapply(scores, length, 1))
     list(-candidates[[i]]+1, scores[[i]])
 }
 
 .checkGeneric <- function(what, where) {
   .checkFun <-  function(x) {
-      maybe <- (if(exists(x, where)) {
-        f <- get(x, where)
-        is.function(f)
-      }
-      else
-        FALSE)
+      maybe <- if(!is.null(f <- get0(x, where))) is.function(f) else FALSE
       if(maybe)
         maybe <- is(f, "genericFunction") ||
               (length(grep("UseMethod", deparse(f))) > 0) ||
               is.primitive(f)
       maybe
     }
-  sapply(what, .checkFun)
+  vapply(what, .checkFun, NA)
 }
 
 
@@ -2377,7 +2388,7 @@ S3forS4Methods <- function(where, checkClasses = character()) {
   if(length(allClasses) == 0)
     return(allClasses)
   pattern <- paste0("([.]",allClasses, "$)", collapse="|")
-  allObjects <- objects(where, all.names = TRUE)
+  allObjects <- names(where)
   allObjects <- allObjects[-grep("^[.][_][_]", allObjects)] # remove meta data
   allObjects <- grep(pattern, allObjects, value = TRUE)
   if(length(allObjects) > 0) {

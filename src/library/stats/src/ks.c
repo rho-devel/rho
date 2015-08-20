@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1999-2012   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -163,12 +157,12 @@ K(int n, double d)
 	   else
 	       H[i * m + j] = 1;
    for(i = 0; i < m; i++) {
-       H[i * m] -= pow(h, i + 1);
-       H[(m - 1) * m + i] -= pow(h, (m - i));
+       H[i * m] -= R_pow_di(h, i + 1);
+       H[(m - 1) * m + i] -= R_pow_di(h, (m - i));
    }
-   H[(m - 1) * m] += ((2 * h - 1 > 0) ? pow(2 * h - 1, m) : 0);
+   H[(m - 1) * m] += ((2 * h - 1 > 0) ? R_pow_di(2 * h - 1, m) : 0);
    for(i = 0; i < m; i++)
-       for(j=0; j < m; j++)
+       for(j = 0; j < m; j++)
 	   if(i - j + 1 > 0)
 	       for(g = 1; g <= i - j + 1; g++)
 		   H[i * m + j] /= g;
@@ -182,7 +176,7 @@ K(int n, double d)
 	   eQ -= 140;
        }
    }
-   s *= pow(10., eQ);
+   s *= R_pow_di(10.0, eQ);
    Free(H);
    Free(Q);
    return(s);

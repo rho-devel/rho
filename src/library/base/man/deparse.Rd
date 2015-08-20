@@ -1,6 +1,6 @@
 % File src/library/base/man/deparse.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{deparse}
@@ -53,7 +53,7 @@ deparse(expr, width.cutoff = 60L,
 
   \code{width.cutoff} is a lower bound for the line lengths: deparsing a
   line proceeds until at least \code{width.cutoff} \emph{bytes} have
-  been output and e.g. \code{arg = value} expressions will not be split
+  been output and e.g.\sspace{}\code{arg = value} expressions will not be split
   across lines.
 }
 \note{

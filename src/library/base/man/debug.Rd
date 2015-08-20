@@ -1,25 +1,33 @@
-
 % File src/library/base/man/debug.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{debug}
 \title{Debug a Function}
+\alias{debug}
+\alias{debugonce}
+\alias{undebug}
+\alias{isdebugged}
+\alias{debuggingState}
 \usage{
 debug(fun, text = "", condition = NULL)
 debugonce(fun, text = "", condition = NULL)
 undebug(fun)
 isdebugged(fun)
+debuggingState(on = NULL)
 }
-\alias{debug}
-\alias{debugonce}
-\alias{undebug}
-\alias{isdebugged}
 \arguments{
-\item{fun}{any interpreted \R function.}
-\item{text}{a text string that can be retrieved when the browser is entered.}
-\item{condition}{a condition that can be retrieved when the browser is entered.}
+  \item{fun}{any interpreted \R function.}
+  \item{text}{a text string that can be retrieved when the browser is entered.}
+  \item{condition}{a condition that can be retrieved when the browser is entered.}
+  \item{on}{logical; a call to the support function
+    \code{debuggingState} returns \code{TRUE} if debugging is globally
+    turned on, \code{FALSE} otherwise.  An argument of one or the other
+    of those values sets the state.  If the debugging state is
+    \code{FALSE}, none of the debugging actions will occur (but explicit
+    \code{\link{browser}} calls in functions will continue to work).}
+  %% can we describe what happens when it is turned off *inside* debugging ??
 }
 \description{
   Set, unset or query the debugging flag on a function.
@@ -35,33 +43,12 @@ isdebugged(fun)
   previous one destroyed).
 
   At the debug prompt the user can enter commands or \R expressions,
-  followed by a newline.  The commands are
+  followed by a newline.  The commands are described in the
+  \code{\link{browser}} help topic.
 
-  \describe{
-    \item{\code{n}}{(or just an empty line, by default).
-      Advance to the next step.}
-    \item{\code{c}}{continue to the end of the current context: e.g. to the
-      end of the loop if within a loop or to the end of the function.}
-    \item{\code{cont}}{synonym for \code{c}.}
-    \item{\code{where}}{print a stack trace of all active function calls.}
-    \item{\code{Q}}{exit the browser and the current evaluation and
-      return to the top-level prompt.}
-  }
-  (Leading and trailing whitespace is ignored, except for an empty line).
-
-  Anything else entered at the debug prompt is interpreted as an
-  \R expression to be evaluated in the calling environment: in
-  particular typing an object name will cause the object to be printed,
-  and \code{ls()} lists the objects in the calling frame.  (If you want
-  to look at an object with a name such as \code{n}, print it explicitly.)
-
-  Setting \link[=options]{option} \code{"browserNLdisabled"} to \code{TRUE}
-  disables the use of an empty line as a synonym for \code{n}.  If this
-  is done, the user will be re-prompted for input until a valid command
-  or an expression is entered.
-
-  To debug a function is defined inside a function, single-step though
-  to the end of its definition, and then call \code{debug} on its name.
+  To debug a function which is defined inside another function,
+  single-step though to the end of its definition, and then call
+  \code{debug} on its name.
 
   If you want to debug a function not starting at the very beginning,
   use \code{\link{trace}(..., at = *)} or \code{\link{setBreakpoint}}.

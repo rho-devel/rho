@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1997        Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2002   The R Core Team.
+ *  Copyright (C) 1999-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-	/* Double Precision Linpack */
+	/* Double Precision LINPACK */
 
 extern void F77_NAME(dpbfa)(double*, int*, int*, int*, int*);
 extern void F77_NAME(dpbsl)(double*, int*, int*, int*, double*);

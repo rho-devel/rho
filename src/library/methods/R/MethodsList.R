@@ -1,7 +1,7 @@
 #  File src/library/methods/R/MethodsList.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -382,7 +382,7 @@ finalDefaultMethod <-
         if(is.function(method) #somewhat liberal, but catches both methods and primitives
            || is.null(method))
           break
-        value <- NULL
+##        value <- NULL
         if(is(method, "MethodsList"))
             method <-  elNamed(slot(method, "methods"), "ANY")
         else
@@ -552,7 +552,7 @@ matchSignature <-
     ## Assertion:  match.call has permuted the args into the order of formal args,
     ## and carried along the values.  Get the supplied classes in that
     ## order, from the matched args in the call object.
-    if(any(is.na(which)))
+    if(anyNA(which))
         stop(sprintf(ngettext(sum(is.na(which)),
                               "in the method signature for function %s invalid argument name in the signature: %s",
                               "in the method signature for function %s invalid argument names in the signature: %s"),
@@ -604,7 +604,7 @@ function(mlist, includeDefs = TRUE, inherited = TRUE, classes = NULL, useArgName
   signatures <- object@classes
   args <- object@arguments
   if(!is.null(classes) && length(signatures)>0) {
-    keep <- !sapply(signatures, function(x, y)all(is.na(match(x, y))), classes)
+    keep <- !vapply(signatures, function(x, y) all(is.na(match(x, y))), NA, classes)
     methods <- methods[keep]
     signatures <- signatures[keep]
     args <- args[keep]
@@ -751,8 +751,8 @@ linearizeMlist <-
         methods <- mlist@methods
         allMethods <- mlist@allMethods
         if(inherited && length(allMethods) >= length(methods)) {
-            anames <- names(allMethods)
-            inh <- is.na(match(anames, names(methods)))
+##            anames <- names(allMethods)
+##            inh <- is.na(match(anames, names(methods)))
             methods <- allMethods
         }
         preC <- function(y, x)c(x,y) # used with lapply below

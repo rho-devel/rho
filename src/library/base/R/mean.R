@@ -1,7 +1,7 @@
 #  File src/library/base/R/mean.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ mean.default <- function(x, trim = 0, na.rm = FALSE, ...)
     if(trim > 0 && n) {
 	if(is.complex(x))
 	    stop("trimmed means are not defined for complex data")
-        if(any(is.na(x))) return(NA_real_)
+        if(anyNA(x)) return(NA_real_)
 	if(trim >= 0.5) return(stats::median(x, na.rm=FALSE))
 	lo <- floor(n*trim)+1
 	hi <- n+1-lo

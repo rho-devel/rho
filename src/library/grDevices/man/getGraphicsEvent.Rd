@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/getGraphicsEvent.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{getGraphicsEvent}
@@ -63,7 +63,7 @@ handler will be stored before being returned by \code{getGraphicsEvent()}.
 The mouse event handlers should be functions with header
 \code{function(buttons, x, y)}.  The coordinates \code{x}
 and \code{y} will be passed to mouse event handlers in device independent
-coordinates (i.e. the lower left corner of the window is \code{(0,0)},
+coordinates (i.e., the lower left corner of the window is \code{(0,0)},
 the upper right is \code{(1,1)}).  The \code{buttons} argument
 will be a vector listing the buttons
 that are pressed at the time of the event, with 0 for left, 1 for middle, and 2
@@ -97,7 +97,8 @@ console.
 \value{
 When run interactively,
 \code{getGraphicsEvent} returns a non-\code{NULL} value returned from one of the event handlers.
-In a non-interactive session, \code{getGraphicsEvent} will return \code{NULL} immediately.
+In a non-interactive session, \code{getGraphicsEvent} will return \code{NULL} immediately.  It
+will also return \code{NULL} if the user closes the last window that has graphics handlers.
 
 \code{getGraphicsEventEnv} returns the current event environment for the graphics device,
 or \code{NULL} if none has been set.
@@ -107,12 +108,16 @@ event environment for the graphics device.
 }
 \author{Duncan Murdoch}
 \examples{
-\donttest{
+# This currently only works on the Windows
+# and X11(type = "Xlib") screen devices...
+\dontrun{
 savepar <- par(ask = FALSE)
 dragplot <- function(..., xlim = NULL, ylim = NULL, xaxs = "r", yaxs = "r") {
     plot(..., xlim = xlim, ylim = ylim, xaxs = xaxs, yaxs = yaxs)
     startx <- NULL
     starty <- NULL
+    prevx <- NULL
+    prevy <- NULL
     usr <- NULL
 
     devset <- function()
@@ -121,6 +126,8 @@ dragplot <- function(..., xlim = NULL, ylim = NULL, xaxs = "r", yaxs = "r") {
     dragmousedown <- function(buttons, x, y) {
         startx <<- x
         starty <<- y
+        prevx <<- 0
+        prevy <<- 0
         devset()
         usr <<- par("usr")
         eventEnv$onMouseMove <- dragmousemove
@@ -131,8 +138,12 @@ dragplot <- function(..., xlim = NULL, ylim = NULL, xaxs = "r", yaxs = "r") {
         devset()
         deltax <- diff(grconvertX(c(startx, x), "ndc", "user"))
         deltay <- diff(grconvertY(c(starty, y), "ndc", "user"))
-        plot(..., xlim = usr[1:2]-deltax, xaxs = "i",
-                  ylim = usr[3:4]-deltay, yaxs = "i")
+	if (abs(deltax-prevx) + abs(deltay-prevy) > 0) {
+	    plot(..., xlim = usr[1:2]-deltax, xaxs = "i",
+		      ylim = usr[3:4]-deltay, yaxs = "i")
+	    prevx <<- deltax
+	    prevy <<- deltay
+	}
         NULL
     }
 
@@ -154,8 +165,6 @@ dragplot <- function(..., xlim = NULL, ylim = NULL, xaxs = "r", yaxs = "r") {
 }
 
 dragplot(rnorm(1000), rnorm(1000))
-# This currently only works on the Windows
-# and X11(type = "Xlib") screen devices...
 getGraphicsEvent()
 par(savepar)
 }

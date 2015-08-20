@@ -159,6 +159,8 @@ void GCNode::destruct_aux()
     s_moribund->erase(it);
 }
     
+extern RObject* R_Srcref;
+
 void GCNode::gc(bool markSweep)
 {
     if (GCManager::GCInhibitor::active())
@@ -167,17 +169,21 @@ void GCNode::gc(bool markSweep)
 
     ProtectStack::protectAll();
     ByteCode::protectAll();
+    incRefCount(R_Srcref);
+
     if (markSweep) {
 	GCStackRootBase::withAllStackNodesProtected(markSweepGC);
     } else {
 	GCStackRootBase::withAllStackNodesProtected(gclite);
     }
+
+    decRefCount(R_Srcref);
 }
 
 void GCNode::markSweepGC()
 {
     // NB: setting this flag implies that the garbage collection will ignore
-    // any new stack nodes.  To ensure correctness, this function must not call
+    // any new stack roots.  To ensure correctness, this function must not call
     // any code that depends on normal operation of the garbage collector.
     s_on_stack_bits_correct = true;
 
@@ -201,6 +207,7 @@ void GCNode::gclite()
 	if (node->maybeGarbage())
 	    delete node;
     }
+
     s_on_stack_bits_correct = false;
 }
 
@@ -248,6 +255,8 @@ void GCNode::mark()
     ProtectStack::visitRoots(&marker);
     ByteCode::visitRoots(&marker);
     WeakRef::markThru();
+    if (R_Srcref)
+	marker(R_Srcref);
 }
 
 static GCNode* getNodePointerFromAllocation(void* allocation)

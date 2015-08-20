@@ -1,15 +1,13 @@
 % File src/library/stats/man/logLik.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{logLik}
 \encoding{UTF-8}
 \alias{logLik}
-\alias{print.logLik}
-\alias{str.logLik}
+%\alias{print.logLik}
+%\alias{str.logLik}
 \alias{logLik.lm}
 \title{Extract Log-Likelihood}
 \usage{
@@ -40,9 +38,9 @@ logLik(object, \dots)
 %   \code{varFunc}.
 \details{
   \code{logLik} is most commonly used for a model fitted by maximum
-  likelihood, and some uses, e.g. by \code{\link{AIC}}, assume this.  So
-  care is needed where other fit criteria have been used, for example
-  REML (the default for \code{"lme"}).
+  likelihood, and some uses, e.g.\sspace{}by \code{\link{AIC}}, assume
+  this.  So care is needed where other fit criteria have been used, for
+  example REML (the default for \code{"lme"}).
 
   For a \code{"glm"} fit the \code{\link{family}} does not have to
   specify how to calculate the log-likelihood, so this is based on using

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.2.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:53\n"
+"POT-Creation-Date: 2015-01-31 13:18\n"
 "PO-Revision-Date: 2011-03-26 08:56-0300\n"
 "Last-Translator: Fernando Henrique <pessoal@fernandohrosa.com.br>\n"
 "Language-Team: http://www.feferraz.net/br/P/Projeto_Traducao_R_Portugues\n"
@@ -364,14 +364,8 @@ msgstr "função \"%s\" já um genérico de grupo; nenhuma mudança"
 msgid "Function %s is a group generic; do not call it directly"
 msgstr "função \"%s\" é um genérico de grupo; não chame-a diretamente"
 
-msgid ""
-"'callGeneric' with a primitive needs explicit arguments (no formal args "
-"defined)"
-msgstr ""
-"'callGeneric' com uma primitiva requer argumentos explícitos (nenhum "
-"argumento formal definido)"
-
-msgid "'callGeneric' must be called from a generic function or method"
+#, fuzzy
+msgid "callGeneric() must be called from within a method body"
 msgstr ""
 "'callGeneric' deve ser chamada a partir de uma função ou método genérico"
 
@@ -449,13 +443,11 @@ msgid "non-generic function '%s' given to findMethods()"
 msgstr "função não-genérica '%s' fornecida para findMethods()"
 
 #, fuzzy
-msgid "only FALSE is meaningful for 'inherited', when 'where' is supplied (got"
+msgid ""
+"only FALSE is meaningful for 'inherited', when 'where' is supplied (got %s)"
 msgstr ""
 "Somente 'FALSE' faz sentido para 'inherited', quando 'where' é fornecido "
 "(obtido"
-
-msgid "\""
-msgstr "\""
 
 #, fuzzy
 msgid "argument 'f' must be a generic function or %s"
@@ -628,6 +620,13 @@ msgstr ""
 
 #, fuzzy
 msgid ""
+"the names in signature for method (%s) do not match function's arguments (%s)"
+msgstr ""
+"os nomes na assinatura do método (%s) não correspondem aos argumentos da "
+"função %s (%s)"
+
+#, fuzzy
+msgid ""
 "a call to callNextMethod() appears in a call to %s, but the call does not "
 "seem to come from either a generic function or another 'callNextMethod'"
 msgstr ""
@@ -645,6 +644,9 @@ msgstr ""
 #, fuzzy
 msgid "bad object found as method (class %s)"
 msgstr "objeto inválido encontrado como método (classe \"%s\")"
+
+msgid "No next method available"
+msgstr ""
 
 #, fuzzy
 msgid ""
@@ -680,6 +682,9 @@ msgstr ""
 
 msgid "undefined slot classes in definition of %s: %s"
 msgstr "classes de slot não definidas na definição de \"%s\": %s"
+
+msgid "(class %s)"
+msgstr ""
 
 #, fuzzy
 msgid ""
@@ -839,18 +844,20 @@ msgid "unable to find an environment containing class %s"
 msgstr "não foi possível encontrar um ambiente contendo a classe \"%s\""
 
 msgid ""
-"the specification for S3 class %s in package %s seems equivalent to one from "
-"package %s and is not turning on duplicate class definitions for this class"
+"Note: the specification for S3 class %s in package %s seems equivalent to "
+"one from package %s: not turning on duplicate class definitions for this "
+"class."
 msgstr ""
 
 msgid ""
-"some superclasses of class %s in package %s have duplicate definitions.  "
-"This definition is not being treated as equivalent to that from package %s"
+"Note: some superclasses of class %s in package %s have duplicate "
+"definitions.  This definition is not being treated as equivalent to that "
+"from package %s"
 msgstr ""
 
 msgid ""
-"the specification for class %s in package %s seems equivalent to one from "
-"package %s and is not turning on duplicate class definitions for this class"
+"Note: the specification for class %s in package %s seems equivalent to one "
+"from package %s: not turning on duplicate class definitions for this class."
 msgstr ""
 
 msgid "undefined subclass %s of class %s; definition not updated"
@@ -865,15 +872,6 @@ msgid ""
 "no definition of inheritance from %s to %s, though the relation was implied "
 "by the setIs() from %s"
 msgstr ""
-
-msgid ""
-"could not find superclass %s to clean up when removing subclass references "
-"to class %s"
-msgstr ""
-
-msgid "no class %s found as expected in removing subclass %s"
-msgstr ""
-"nenhuma classe \"%s\" encontrada como esperado na remoção da subclasse %s"
 
 msgid ""
 "argument 'includeSubclasses' must be a logical, either one value or a vector "
@@ -904,12 +902,6 @@ msgstr ""
 "obtido um objeto de classe  \"%s\""
 
 msgid "no suitable arguments to dispatch methods in this function"
-msgstr ""
-
-msgid "special function %s is not permitted to have methods"
-msgstr ""
-
-msgid "special function %s has no known argument list; will assume '(x, ...)'"
 msgstr ""
 
 #, fuzzy
@@ -1363,7 +1355,7 @@ msgstr ""
 "um objeto de classe \"%s\""
 
 #, fuzzy
-msgid "invalid or unset methods table in generic function \""
+msgid "invalid or unset methods table in generic function %s"
 msgstr "Tentando encontrar uma tabela de métodos em uma função não-genérica"
 
 #, fuzzy
@@ -1992,6 +1984,20 @@ msgid_plural ""
 "no definition of class %s in the specified position, %s, definitions on : %s"
 msgstr[0] "nenhuma definição existente para função '%s'"
 msgstr[1] "nenhuma definição existente para função '%s'"
+
+#~ msgid ""
+#~ "'callGeneric' with a primitive needs explicit arguments (no formal args "
+#~ "defined)"
+#~ msgstr ""
+#~ "'callGeneric' com uma primitiva requer argumentos explícitos (nenhum "
+#~ "argumento formal definido)"
+
+#~ msgid "\""
+#~ msgstr "\""
+
+#~ msgid "no class %s found as expected in removing subclass %s"
+#~ msgstr ""
+#~ "nenhuma classe \"%s\" encontrada como esperado na remoção da subclasse %s"
 
 #~ msgid "replacement value is not a matrix"
 #~ msgstr "valor de substituição não é uma matriz"

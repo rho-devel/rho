@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * $Id$
+ * $Id: triop.h,v 1.16 2008/11/09 10:52:26 breese Exp $
  *
  * Copyright (C) 2000 Bjorn Reese and Daniel Stenberg.
  *
@@ -36,7 +36,8 @@
 #endif
 
 /* R defines */
-#define TRIO_FEATURE_SCANF 0
+#define TRIO_FEATURE_SCANF 1
+#define TRIO_FUNC_TO_FLOAT 1
 #define TRIO_FEATURE_FD 0
 #define TRIO_FEATURE_CLOSURE 0
 #define TRIO_FEATURE_STRERR 0

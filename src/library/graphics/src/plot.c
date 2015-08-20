@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2002--2009  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 #include <float.h>  /* for DBL_MAX */
 #include <Graphics.h>
 #include <Print.h>
+#include <Rmath.h>  // Rexp10, fmin2, fmax2, imax2
 
 #include "graphics.h"
 
@@ -36,22 +37,6 @@ static R_INLINE void TypeCheck(SEXP s, SEXPTYPE type)
 	error("invalid type passed to graphics function");
 }
 
-
-#define imax2(x, y) ((x < y) ? y : x)
-
-static R_INLINE double fmin2(double x, double y)
-{
-	if (ISNAN(x) || ISNAN(y))
-		return x + y;
-	return (x < y) ? x : y;
-}
-
-static R_INLINE double fmax2(double x, double y)
-{
-	if (ISNAN(x) || ISNAN(y))
-		return x + y;
-	return (x < y) ? y : x;
-}
 
 /*
  * Is element i of a colour object NA (or NULL)?
@@ -653,7 +638,7 @@ SEXP labelformat(SEXP labels)
 	formatReal(REAL(labels), n, &w, &d, &e, 0);
 	PROTECT(ans = allocVector(STRSXP, n));
 	for (i = 0; i < n; i++) {
-	    strp = EncodeReal(REAL(labels)[i], 0, d, e, OutDec);
+	    strp = EncodeReal0(REAL(labels)[i], 0, d, e, OutDec);
 	    SET_STRING_ELT(ans, i, mkChar(strp));
 	}
 	UNPROTECT(1);
@@ -1430,7 +1415,9 @@ SEXP C_plotXY(SEXP args)
 	    GConvert(&xx, &yy, USER, INCHES, dd);
 	    if (R_FINITE(xold) && R_FINITE(yold) &&
 		R_FINITE(xx) && R_FINITE(yy)) {
-		if ((f = d/hypot(xx-xold, yy-yold)) < 0.5) {
+		// might divide by zero
+		if (d < 0.5 * hypot(xx-xold, yy-yold)) {
+		    f = d/hypot(xx-xold, yy-yold);
 		    GLine(xold + f * (xx - xold),
 			  yold + f * (yy - yold),
 			  xx + f * (xold - xx),
@@ -1842,6 +1829,7 @@ SEXP C_raster(SEXP args)
 
     raster = CAR(args); args = CDR(args);
     n = LENGTH(raster);
+    if (n <= 0) error(_("Empty raster"));  
     dim = getAttrib(raster, R_DimSymbol);
 
     vmax = vmaxget();
@@ -2864,8 +2852,8 @@ SEXP C_abline(SEXP args)
 		y[0] = aa + (xlog ? log10(x[0]) : x[0]) * bb;
 		y[1] = aa + (xlog ? log10(x[1]) : x[1]) * bb;
 		if (ylog) {
-		    y[0] = pow(10., y[0]);
-		    y[1] = pow(10., y[1]);
+		    y[0] = Rexp10(y[0]);
+		    y[1] = Rexp10(y[1]);
 		}
 
 		GLine(x[0], y[0], x[1], y[1], USER, dd);

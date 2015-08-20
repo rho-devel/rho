@@ -1,7 +1,7 @@
 #  File src/library/utils/R/data.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ function(..., list = character(), package = NULL, lib.loc = NULL,
     paths <- unique(paths[file.exists(paths)])
 
     ## Find the directories with a 'data' subdirectory.
-    paths <- paths[file_test("-d", file.path(paths, "data"))]
+    paths <- paths[dir.exists(file.path(paths, "data"))]
 
     dataExts <- tools:::.make_file_exts("data")
 

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2012   The R Core Team.
+ *  Copyright (C) 1998-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -135,7 +135,7 @@ SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
 	Rf_error(_("not that many frames on the stack"));
     while (cptr) {
 	if (n == 0) {
-	    PROTECT(result = cptr->call()->clone());
+	    PROTECT(result = shallow_duplicate(const_cast<CXXR::Expression*>(cptr->call())));
 	    if (cptr->sourceLocation())
 		setAttrib(result, R_SrcrefSymbol,
 			  duplicate(cptr->sourceLocation()));
@@ -426,4 +426,16 @@ SEXP R_tryEvalSilent(SEXP e, SEXP env, int *ErrorOccurred)
     val = R_tryEval(e, env, ErrorOccurred);
     R_ShowErrorMessages = oldshow;
     return val;
+}
+
+SEXP R_ExecWithCleanup(SEXP (*fun)(void *), void *data,
+		       void (*cleanfun)(void *), void *cleandata)
+{
+    SEXP result = nullptr;
+    try {
+	result = fun(data);
+    } catch (CommandTerminated& ignored_error) { }
+
+    cleanfun(cleandata);
+    return result;
 }

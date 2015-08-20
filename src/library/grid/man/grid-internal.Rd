@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid-internal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grid-internal}
@@ -185,14 +185,12 @@
 %% Part of the sensible export list but (currently?) documented as
 %% internal (or waiting for documentation to be written):
 %% <LIST>
-\alias{grid.legend}
 \alias{grid.multipanel}
 \alias{grid.panel}
 \alias{grid.strip}
 \alias{is.unit}
 \alias{layoutRegion}
 \alias{viewport.layout}
-\alias{viewport.transform}
 \alias{layout.heights}
 \alias{layout.widths}
 %% </LIST>

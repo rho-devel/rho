@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:52\n"
-"PO-Revision-Date: 2013-03-18 21:58+0100\n"
+"POT-Creation-Date: 2014-12-30 15:52\n"
+"PO-Revision-Date: 2014-03-17 10:41+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
 "Language: fr\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 1.5.5\n"
+"X-Generator: Poedit 1.6.4\n"
 
 msgid "'%s' is defunct."
 msgstr "'%s' est obsolète et retiré de R."
@@ -48,11 +48,8 @@ msgstr "valeurs infinies ou manquantes dans 'x'"
 msgid "a dimension is zero"
 msgstr "une dimension est nulle"
 
-msgid "'nu' must be 0, nrow(x) or ncol(x)"
-msgstr "'nu' doit être 0, nrow(x) ou ncol(x)"
-
-msgid "'nv' must be 0, nrow(x) or ncol(x)"
-msgstr "'nv' doit être 0, nrow(x) ou ncol(x)"
+msgid "\"hexNumeric\"and \"digits17\" are mutually exclusive"
+msgstr ""
 
 msgid "second argument must be a list"
 msgstr "le second argument doit être une liste"
@@ -78,6 +75,15 @@ msgstr "chaîne de caractères de version incorrecte"
 
 msgid "target is %s, current is %s"
 msgstr "la cible est %s, l'actuel est %s"
+
+msgid "'tolerance' should be numeric"
+msgstr "'tolerance' doit être numérique"
+
+msgid "'scale' should be numeric or NULL"
+msgstr "'scale' doit être numérique ou NULL"
+
+msgid "'%s' must be logical"
+msgstr "'%s' doit être une valeur logique"
 
 msgid "dim(X) must have a positive length"
 msgstr "dim(X) doit avoir un longueur positive"
@@ -151,21 +157,6 @@ msgstr "le chargement automatique n'a pas trouvé '%s' dans '%s'"
 
 msgid "complex matrices not permitted at present"
 msgstr "les matrices complexes ne sont pas encore traitées"
-
-msgid "non-square matrix in 'chol'"
-msgstr "la matrice doit être carrée pour 'chol'"
-
-msgid "non-matrix argument to 'chol'"
-msgstr "l'argument doit être une matrice pour 'chol'"
-
-msgid "invalid nrow(x)"
-msgstr "nrow(x) incorrect"
-
-msgid "too large a matrix for LINPACK"
-msgstr "matrice trop large pour LINPACK"
-
-msgid "matrix not positive definite"
-msgstr "la matrice n'est pas définie positive"
 
 msgid "'x' must be an array of at least two dimensions"
 msgstr "'x' doit être un tableau ayant au moins 2 dimensions"
@@ -327,6 +318,10 @@ msgstr "remplacement d'élément dans une colonne non existante : %s"
 msgid "only a single element should be replaced"
 msgstr "seulement un élement devrait être remplacé"
 
+#, fuzzy
+msgid "Partial match of '%s' to '%s' in data frame"
+msgstr "Nom sélectionné avec correspondance partielle dans le data frame"
+
 msgid "names do not match previous names"
 msgstr "les noms ne correspondent pas aux noms précédents"
 
@@ -338,16 +333,14 @@ msgstr ""
 "liste d'arguments incorrecte : toutes les variables doivent avoir la même "
 "longueur"
 
-msgid "data frame with 0 columns and %d rows"
-msgstr "tableau de données (data frame) avec 0 colonnes et %d lignes"
-
 msgid "<0 rows> (or 0-length row.names)"
 msgstr "<0 lignes> (ou 'row.names' de longueur nulle)"
 
 msgid "non-numeric variable in data frame:"
 msgstr "variable non numérique dans le tableau de données :"
 
-msgid "only defined for equally-sized data frames"
+#, fuzzy
+msgid "%s only defined for equally-sized data frames"
 msgstr "seulement défini pour des tableaux de données de même taille"
 
 msgid "list of length %d not meaningful"
@@ -497,6 +490,9 @@ msgstr "'from' doit être un objet \"POSIXt\""
 msgid "'to' must be a \"POSIXt\" object"
 msgstr "'to' doit être un objet \"POSIXt\""
 
+msgid "no Olson database found"
+msgstr "aucune base de donnée Olson trouvée"
+
 msgid "'file' must be a character string or connection"
 msgstr "'file' doit être une chîne de caractères ou une connection"
 
@@ -574,13 +570,17 @@ msgstr "matrice 0 x 0"
 msgid "non-square matrix in 'eigen'"
 msgstr "la matrice n'est pas carrée dans 'eigen'"
 
+msgid "invalid nrow(x)"
+msgstr "nrow(x) incorrect"
+
 msgid "invalid 'labels'; length %d should be 1 or %d"
 msgstr "'labels' incorrect ; la longueur %d doit être 1 ou %d"
 
 msgid "number of levels differs"
 msgstr "le nombre de niveaux diffère"
 
-msgid "not meaningful for factors"
+#, fuzzy
+msgid "%s not meaningful for factors"
 msgstr "ceci n'est pas pertinent pour des variables facteurs"
 
 msgid "level sets of factors are different"
@@ -648,6 +648,9 @@ msgstr "'vec' doit être trié par ordre croissant"
 msgid "using the first element of 'value' of type \"expression\""
 msgstr "utilisation du premier élément de 'value' de type \"expression\""
 
+msgid "class of 'x' was discarded"
+msgstr "la classe de 'x' est éliminée"
+
 msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
 msgstr ""
 "'mode' doit être un de \"double\" (\"real\"), \"integer\" ou \"character\""
@@ -670,6 +673,9 @@ msgid "corrupt data frame: columns will be truncated or padded with NAs"
 msgstr ""
 "tableau de données corrompu : les colonnes seront tronquées ou complétées "
 "avec des NAs"
+
+msgid "'big.mark' and 'decimal.mark' are both '%s', which could be confusing"
+msgstr ""
 
 msgid "'zero.print' has length > 1"
 msgstr "'zero.print' a une longueur > 1"
@@ -720,6 +726,9 @@ msgstr "des remplacements doivent être fournis pour les non-correspondances"
 
 msgid "must have replacements for matches"
 msgstr "des remplacements doivent être fournis pour les correspondances"
+
+msgid "No factors specified"
+msgstr "Aucunes variables 'factor's spécifiées"
 
 msgid "norm '%s' currently always uses exact = FALSE"
 msgstr "norm '%s' utilise systématiquement 'exact = FALSE' pour l'instant"
@@ -792,6 +801,13 @@ msgstr "%s n'est pas un nom correct de package installé"
 msgid "%s not found on search path, using pos = 2"
 msgstr ""
 "%s n'est pas trouvé dans le chemin de recherche, utilisation de pos = 2"
+
+msgid "version"
+msgstr ""
+
+#, fuzzy
+msgid "cannot be unloaded."
+msgstr "l'espace de noms %s ne peut être déchargé :"
 
 msgid "package or namespace load failed for %s"
 msgstr "le chargement du package ou de l'espace de noms a échoué pour %s"
@@ -887,14 +903,11 @@ msgstr "Documentation pour le package %s"
 msgid "package %s required by %s could not be found"
 msgstr "le package %s nécessaire pour %s, mais est introuvable"
 
-msgid "package %s %s was found, but %s %s is required by %s"
-msgstr "le package %s %s est trouvé, mais %s %s est réquis par %s"
+msgid "version %s of %s masked by %s in %s"
+msgstr ""
 
 msgid "package %s could not be loaded"
 msgstr "le package %s ne peut être chargé"
-
-msgid "package %s %s is loaded, but %s %s is required by %s"
-msgstr "le package %s %s est chargé, mais %s %s est requis par %s"
 
 msgid "empty (zero-byte) input file"
 msgstr "fichier d'entrée vide (0 octets)"
@@ -1004,8 +1017,14 @@ msgstr ""
 "'by' doit spécifier lune ou plusieurs colonnes comme des entiers, des noms "
 "ou des valeurs logiques"
 
+msgid "long vectors are not supported"
+msgstr ""
+
 msgid "'by.x' and 'by.y' specify different numbers of columns"
 msgstr "'by.x' et 'by.y' spécifient des nombres différents de colonnes"
+
+msgid "'incomparables' is supported only for merging on a single column"
+msgstr ""
 
 msgid "additional arguments ignored in message()"
 msgstr "arguments supplémentaires ignorés dans message()"
@@ -1024,6 +1043,8 @@ msgid ""
 "namespace %s is not available and has been replaced\n"
 "by .GlobalEnv when processing object %s"
 msgstr ""
+"l'espace de nom %s n'est pas disponible et a été remplacé\n"
+"par .GlobalEnv lors du traitement de l'objet %s"
 
 msgid "'%s' is not an exported object from 'namespace:%s'"
 msgstr "'%s' n'est pas un objet exporté depuis 'namespace:%s'"
@@ -1125,8 +1146,9 @@ msgstr ""
 msgid "cannot import into a sealed namespace"
 msgstr "impossible d'importer vers un espace de noms verrouillé"
 
-msgid "replacing previous import %s when loading %s"
-msgstr "remplacement de l'importation précédente %s lors du chargement de %s"
+msgid "replacing previous import by %s when loading %s"
+msgstr ""
+"remplacement de l'importation précédente par %s lors du chargement de %s"
 
 msgid "invalid import target"
 msgstr "cible d'importation incorrecte"
@@ -1163,14 +1185,11 @@ msgstr "le package %s n'a aucun fichier 'NAMESPACE'"
 msgid "empty name in directive '%s' in 'NAMESPACE' file"
 msgstr "nom vide dans la directive '%s' dans le fichier 'NAMESPACE'"
 
-msgid "duplicated symbol names %s in useDynLib(\"%s\")"
+msgid "duplicate symbol names %s in useDynLib(\"%s\")"
 msgstr "noms de symboles dupliqués %s dans useDynlib(\"%s\")"
 
 msgid "bad 'S3method' directive: %s"
 msgstr "mauvaise directive 'S3method' : %s"
-
-msgid "too many 'S3method' directives"
-msgstr "trop de directives 'S3method'"
 
 msgid "unknown namespace directive: %s"
 msgstr "directive inconnue dans l'espace de noms : %s"
@@ -1208,6 +1227,9 @@ msgstr "un argument sera recyclé partiellement"
 
 msgid "invalid ncol(x)"
 msgstr "ncol(x) incorrect"
+
+msgid "too large a matrix for LINPACK"
+msgstr "matrice trop large pour LINPACK"
 
 msgid "first argument must be a QR decomposition"
 msgstr "le premier argument doit être une décomposition QR"
@@ -1253,7 +1275,7 @@ msgstr ""
 msgid "invalid NCOL(R)"
 msgstr "NCOL(R) incorrecte"
 
-msgid "'x' must be an atomic vector"
+msgid "'x' must be a vector of an atomic type"
 msgstr "'x' doit être un vecteur atomique"
 
 msgid "invalid 'rle' structure"
@@ -1280,11 +1302,17 @@ msgstr "la longueur de 'scale' doit être égale au nombre de colonnes de 'x'"
 msgid "either specify 'nmax' or 'n', but not both."
 msgstr "spécifiez soit 'nmax', soit 'n', mais pas les deux à la fois"
 
+msgid "'from' cannot be NA, NaN or infinite"
+msgstr "'from' ne peut être NA, NaN ou infini"
+
 msgid "argument 'length.out' must be of length 1"
 msgstr "l'argument 'length.out' doit être de longueur 1"
 
 msgid "first element used of 'length.out' argument"
 msgstr "seul le premier élément de 'length.out' est utilisé"
+
+msgid "'to' cannot be NA, NaN or infinite"
+msgstr "'to' ne peut être NA, NaN ou infini"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "(to - from) / by incorrect dans seq(.)"
@@ -1495,9 +1523,6 @@ msgstr "Pas d'historique des fonctions appelées ('traceback') disponible"
 msgid "invalid version specification %s"
 msgstr "spécification de version incorrecte %s"
 
-msgid "wrong argument"
-msgstr "mauvais argument"
-
 msgid "invalid 'value'"
 msgstr "'value' incorrecte"
 
@@ -1598,12 +1623,31 @@ msgstr[0] "l'option de reconstruction de code (deparse) %s n'est pas reconnue"
 msgstr[1] ""
 "les options de reconstruction de code (deparse) %s ne sont pas reconnues"
 
+#, fuzzy
 msgid ""
-"The following object is masked %s %s:\n"
+"The following object is masked _by_ %s:\n"
 "\n"
 "%s\n"
 msgid_plural ""
-"The following objects are masked %s %s:\n"
+"The following objects are masked _by_ %s:\n"
+"\n"
+"%s\n"
+msgstr[0] ""
+"L'objet suivant est masqué %s %s:\n"
+"\n"
+"%s\n"
+msgstr[1] ""
+"Les objets suivants sont masqués %s %s:\n"
+"\n"
+"%s\n"
+
+#, fuzzy
+msgid ""
+"The following object is masked from %s:\n"
+"\n"
+"%s\n"
+msgid_plural ""
+"The following objects are masked from %s:\n"
 "\n"
 "%s\n"
 msgstr[0] ""
@@ -1671,6 +1715,12 @@ msgid "provided %d variable to replace %d variables"
 msgid_plural "provided %d variables to replace %d variables"
 msgstr[0] "%d variables sont fournies pour remplacer %d variables"
 msgstr[1] "%d variables sont fournies pour remplacer %d variables"
+
+#, fuzzy
+msgid "data frame with 0 columns and %d row"
+msgid_plural "data frame with 0 columns and %d rows"
+msgstr[0] "tableau de données (data frame) avec 0 colonnes et %d lignes"
+msgstr[1] "tableau de données (data frame) avec 0 colonnes et %d lignes"
 
 msgid "library %s contains no packages"
 msgid_plural "libraries %s contain no packages"
@@ -1745,6 +1795,50 @@ msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] "Message d'avis :\n"
 msgstr[1] "Messages d'avis :\n"
+
+#~ msgid "package %s %s was found, but %s %s is required by %s"
+#~ msgstr "le package %s %s est trouvé, mais %s %s est réquis par %s"
+
+#~ msgid "package %s %s is loaded, but %s %s is required by %s"
+#~ msgstr "le package %s %s est chargé, mais %s %s est requis par %s"
+
+#~ msgid "wrong argument"
+#~ msgstr "mauvais argument"
+
+#~ msgid ""
+#~ "The following object is masked %s %s:\n"
+#~ "\n"
+#~ "%s\n"
+#~ msgid_plural ""
+#~ "The following objects are masked %s %s:\n"
+#~ "\n"
+#~ "%s\n"
+#~ msgstr[0] ""
+#~ "L'objet suivant est masqué %s %s:\n"
+#~ "\n"
+#~ "%s\n"
+#~ msgstr[1] ""
+#~ "Les objets suivants sont masqués %s %s:\n"
+#~ "\n"
+#~ "%s\n"
+
+#~ msgid "'nu' must be 0, nrow(x) or ncol(x)"
+#~ msgstr "'nu' doit être 0, nrow(x) ou ncol(x)"
+
+#~ msgid "'nv' must be 0, nrow(x) or ncol(x)"
+#~ msgstr "'nv' doit être 0, nrow(x) ou ncol(x)"
+
+#~ msgid "too many 'S3method' directives"
+#~ msgstr "trop de directives 'S3method'"
+
+#~ msgid "non-square matrix in 'chol'"
+#~ msgstr "la matrice doit être carrée pour 'chol'"
+
+#~ msgid "non-matrix argument to 'chol'"
+#~ msgstr "l'argument doit être une matrice pour 'chol'"
+
+#~ msgid "matrix not positive definite"
+#~ msgstr "la matrice n'est pas définie positive"
 
 #~ msgid "'keep.source' is deprecated and will be ignored"
 #~ msgstr "'keep.source' est obsolète et sera ignoré"

@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.pack.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grid.pack}
@@ -8,12 +8,12 @@
 \alias{packGrob}
 \title{ Pack an Object within a Frame }
 \description{
-  This functions, together with \code{grid.frame} and \code{frameGrob}
+  these functions, together with \code{grid.frame} and \code{frameGrob}
   are part of a
   GUI-builder-like interface to constructing graphical images.
   The idea is that you create a frame with \code{grid.frame} or
   \code{frameGrob} then
-  use this functions to pack objects into the frame.
+  use these functions to pack objects into the frame.
 }
 \usage{
 grid.pack(gPath, grob, redraw = TRUE, side = NULL,

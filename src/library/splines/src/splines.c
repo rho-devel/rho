@@ -1,19 +1,3 @@
-/*CXXR $Id$
- *CXXR
- *CXXR This file is part of CXXR, a project to refactor the R interpreter
- *CXXR into C++.  It may consist in whole or in part of program code and
- *CXXR documentation taken from the R project itself, incorporated into
- *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
- *CXXR Licence.
- *CXXR 
- *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
- *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
- *CXXR CXXR is not part of the R project, and bugs and other issues should
- *CXXR not be reported via r-bugs or other R project channels; instead refer
- *CXXR to the CXXR website.
- *CXXR */
-
 /*  Routines for manipulating B-splines.  These are intended for use with
  *  S or S-PLUS or R.
  *
@@ -105,14 +89,13 @@ static void
 basis_funcs(splPTR sp, double x, double *b)
 {
     int j, r;
-    double saved, term;
 
     diff_table(sp, x, sp->ordm1);
     b[0] = 1.;
     for (j = 1; j <= sp->ordm1; j++) {
-	saved = 0.;
-	for (r = 0; r < j; r++) {
-	    term = b[r]/(sp->rdel[r] + sp->ldel[j - 1 - r]);
+	double saved = 0.;
+	for (r = 0; r < j; r++) { // FIXME: divides by zero
+	    double term = b[r]/(sp->rdel[r] + sp->ldel[j - 1 - r]);
 	    b[r] = saved + sp->rdel[r] * term;
 	    saved = sp->ldel[j - 1 - r] * term;
 	}
@@ -130,7 +113,7 @@ evaluate(splPTR sp, double x, int nder)
     if (sp->boundary && nder == sp->ordm1) { /* value is arbitrary */
 	return 0.0;
     }
-    while(nder--) {
+    while(nder--) {  // FIXME: divides by zero
 	for(inner = outer, apt = sp->a, lpt = ti - outer; inner--; apt++, lpt++)
 	    *apt = outer * (*(apt + 1) - *apt)/(*(lpt + outer) - *lpt);
 	outer--;
@@ -139,6 +122,7 @@ evaluate(splPTR sp, double x, int nder)
     while(outer--)
 	for(apt = sp->a, lpt = sp->ldel + outer, rpt = sp->rdel, inner = outer + 1;
 	    inner--; lpt--, rpt++, apt++)
+	    // FIXME: divides by zero
 	    *apt = (*(apt + 1) * *lpt + *apt * *rpt)/(*rpt + *lpt);
     return sp->a[0];
 }
@@ -150,41 +134,41 @@ spline_value(SEXP knots, SEXP coeff, SEXP order, SEXP x, SEXP deriv)
     SEXP val;
     splPTR sp;
     double *xx, *kk;
-    int der, i, n, nk;
+    int n, nk;
 
     PROTECT(knots = coerceVector(knots, REALSXP));
     kk = REAL(knots); nk = length(knots);
     PROTECT(coeff = coerceVector(coeff, REALSXP));
     PROTECT(x = coerceVector(x, REALSXP));
-    n = length(x);
-    xx = REAL(x);
-    PROTECT(order = coerceVector(order, INTSXP));
-    PROTECT(deriv = coerceVector(deriv, INTSXP));
-    der = INTEGER(deriv)[0];
-    PROTECT(val = allocVector(REALSXP, n));
+    xx = REAL(x); n = length(x);
+    int ord = asInteger(order);
+    int der = asInteger(deriv);
+    if (ord == NA_INTEGER || ord <= 0)
+	error(_("'ord' must be a positive integer"));
 
     /* populate the spl_struct */
-
     sp = (struct spl_struct *) R_alloc(1, sizeof(struct spl_struct));
-    sp->order = INTEGER(order)[0];
-    if (sp->order <= 0) { error(_("'ord' must be a positive integer")); }
-    sp->ordm1 = sp->order - 1;
+    sp->order = ord;
+    sp->ordm1 = ord - 1;
     sp->ldel = (double *) R_alloc(sp->ordm1, sizeof(double));
     sp->rdel = (double *) R_alloc(sp->ordm1, sizeof(double));
     sp->knots = kk; sp->nknots = nk;
     sp->coeff = REAL(coeff);
     sp->a = (double *) R_alloc(sp->order, sizeof(double));
 
-    for (i = 0; i < n; i++) {
+    PROTECT(val = allocVector(REALSXP, n));
+    double *rval = REAL(val);
+
+    for (int i = 0; i < n; i++) {
 	set_cursor(sp, xx[i]);
 	if (sp->curs < sp->order || sp->curs > (nk - sp->order)) {
-	    REAL(val)[i] = R_NaN;
+	    rval[i] = R_NaN;
 	} else {
-	    Memcpy(sp->a, REAL(coeff) + sp->curs - sp->order, sp->order);
-	    REAL(val)[i] = evaluate(sp, xx[i], der);
+	    Memcpy(sp->a, sp->coeff + sp->curs - sp->order, sp->order);
+	    rval[i] = evaluate(sp, xx[i], der);
 	}
     }
-    UNPROTECT(6);
+    UNPROTECT(4);
     return val;
 }
 
@@ -201,45 +185,46 @@ spline_basis(SEXP knots, SEXP order, SEXP xvals, SEXP derivs)
 
     PROTECT(knots = coerceVector(knots, REALSXP));
     kk = REAL(knots); nk = length(knots);
-    PROTECT(order = coerceVector(order, INTSXP));
+    int ord = asInteger(order);
     PROTECT(xvals = coerceVector(xvals, REALSXP));
     xx = REAL(xvals); nx = length(xvals);
     PROTECT(derivs = coerceVector(derivs, INTSXP));
     ders = INTEGER(derivs); nd = length(derivs);
 
     /* fill sp : */
-    sp->order = INTEGER(order)[0];
-    sp->ordm1 = sp->order - 1;
+    sp->order = ord;
+    sp->ordm1 = ord - 1;
     sp->rdel = (double *) R_alloc(sp->ordm1, sizeof(double));
     sp->ldel = (double *) R_alloc(sp->ordm1, sizeof(double));
     sp->knots = kk; sp->nknots = nk;
     sp->a = (double *) R_alloc(sp->order, sizeof(double));
     PROTECT(val = allocMatrix(REALSXP, sp->order, nx));
     PROTECT(offsets = allocVector(INTSXP, nx));
+    double *valM = REAL(val);
+    int *ioff = INTEGER(offsets);
 
     for(i = 0; i < nx; i++) {
 	set_cursor(sp, xx[i]);
-	INTEGER(offsets)[i] = j = sp->curs - sp->order;
+	ioff[i] = j = sp->curs - sp->order;
 	if (j < 0 || j > nk) {
 	    for (j = 0; j < sp->order; j++) {
-		REAL(val)[i * sp->order + j] = R_NaN;
+		valM[i * sp->order + j] = R_NaN;
 	    }
 	} else {
 	    if (ders[i % nd] > 0) { /* slow method for derivatives */
-		int ii;
-		for(ii = 0; ii < sp->order; ii++) {
+		for(int ii = 0; ii < sp->order; ii++) {
 		    for(j = 0; j < sp->order; j++) sp->a[j] = 0;
 		    sp->a[ii] = 1;
-		    REAL(val)[i * sp->order + ii] =
+		    valM[i * sp->order + ii] =
 			evaluate(sp, xx[i], ders[i % nd]);
 		}
 	    } else {		/* fast method for value */
-		basis_funcs(sp, xx[i], REAL(val) + i * sp->order);
+		basis_funcs(sp, xx[i], valM + i * sp->order);
 	    }
 	}
     }
     setAttrib(val, install("Offsets"), offsets);
-    UNPROTECT(6);
+    UNPROTECT(5);
     return val;
 }
 

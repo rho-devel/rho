@@ -1,7 +1,7 @@
 #  File src/library/parallel/R/unix/mclapply.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ mclapply <- function(X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
                      mc.silent = FALSE, mc.cores = getOption("mc.cores", 2L),
                      mc.cleanup = TRUE, mc.allow.recursive = TRUE)
 {
-    env <- parent.frame()
     cores <- as.integer(mc.cores)
-    if(cores < 1L) stop("'mc.cores' must be >= 1")
+    if(is.na(cores) || cores < 1L) stop("'mc.cores' must be >= 1")
+    .check_ncores(cores)
 
     if (isChild() && !isTRUE(mc.allow.recursive))
         return(lapply(X = X, FUN = FUN, ...))

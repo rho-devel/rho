@@ -1,15 +1,13 @@
 % File src/library/stats/man/TukeyHSD.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{TukeyHSD}
 \alias{TukeyHSD}
-\alias{TukeyHSD.aov}
-\alias{print.TukeyHSD}
-\alias{plot.TukeyHSD}
+%\alias{TukeyHSD.aov}
+%\alias{print.TukeyHSD}
+%\alias{plot.TukeyHSD}
 \title{Compute Tukey Honest Significant Differences}
 \description{
   Create a set of confidence intervals on the differences between the

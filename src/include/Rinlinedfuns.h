@@ -86,6 +86,43 @@ extern "C" {
 
 /* define inline-able functions */
 
+#ifdef INLINE_PROTECT
+extern int R_PPStackSize;
+extern int R_PPStackTop;
+extern SEXP* R_PPStack;
+
+INLINE_FUN SEXP protect(SEXP s)
+{
+    if (R_PPStackTop < R_PPStackSize)
+	R_PPStack[R_PPStackTop++] = s;
+    else R_signal_protect_error();
+    return s;
+}
+
+INLINE_FUN void unprotect(int l)
+{
+#ifdef PROTECT_PARANOID
+    if (R_PPStackTop >=  l)
+	R_PPStackTop -= l;
+    else R_signal_unprotect_error();
+#else
+    R_PPStackTop -= l;
+#endif
+}
+
+INLINE_FUN void R_ProtectWithIndex(SEXP s, PROTECT_INDEX *pi)
+{
+    protect(s);
+    *pi = R_PPStackTop - 1;
+}
+
+INLINE_FUN void R_Reprotect(SEXP s, PROTECT_INDEX i)
+{
+    if (i >= R_PPStackTop || i < 0)
+	R_signal_reprotect_error(i);
+    R_PPStack[i] = s;
+}
+#endif /* INLINE_PROTECT */
 
 /* from dstruct.c */
 
@@ -101,6 +138,11 @@ R_len_t Rf_length(SEXP s);
 
 R_xlen_t Rf_xlength(SEXP s);
 
+/* regular allocVector() as a special case of allocVector3() with no custom allocator */
+INLINE_FUN SEXP Rf_allocVector(SEXPTYPE type, R_xlen_t length)
+{
+    return Rf_allocVector3(type, length, NULL);
+}
 
 /* from list.c */
 /* Return a dotted pair with the given CAR and CDR. */
@@ -331,6 +373,7 @@ INLINE_FUN Rboolean Rf_isPairList(SEXP s)
     case NILSXP:
     case LISTSXP:
     case LANGSXP:
+    case DOTSXP:
 	return TRUE;
     default:
 	return FALSE;
@@ -463,10 +506,10 @@ INLINE_FUN Rboolean Rf_isNumber(SEXP s)
 /* As from R 2.4.0 we check that the value is allowed. */
 INLINE_FUN SEXP Rf_ScalarLogical(int x)
 {
-    SEXP ans = Rf_allocVector(LGLSXP, (R_xlen_t)1);
-    if (x == NA_LOGICAL) LOGICAL(ans)[0] = NA_LOGICAL;
-    else LOGICAL(ans)[0] = (x != 0);
-    return ans;
+    extern SEXP R_LogicalNAValue, R_TrueValue, R_FalseValue;
+    if (x == NA_LOGICAL) return R_LogicalNAValue;
+    else if (x != 0) return R_TrueValue;
+    else return R_FalseValue;
 }
 
 INLINE_FUN SEXP Rf_ScalarInteger(int x)
@@ -560,7 +603,6 @@ INLINE_FUN SEXP mkNamed(SEXPTYPE TYP, const char **names)
     return ans;
 }
 
-
 /* from gram.y */
 
 /* short cut for  ScalarString(mkChar(s)) : */
@@ -572,6 +614,42 @@ INLINE_FUN SEXP Rf_mkString(const char *s)
     SET_STRING_ELT(t, (R_xlen_t)0, Rf_mkChar(s));
     UNPROTECT(1);
     return t;
+}
+
+/* index of a given C string in (translated) R string vector  */
+INLINE_FUN int
+stringPositionTr(SEXP string, const char *translatedElement) {
+
+    int slen = LENGTH(string);
+    int i;
+
+    const void *vmax = vmaxget();
+    for (i = 0 ; i < slen; i++) {
+	Rboolean found = (Rboolean)(! strcmp(Rf_translateChar(STRING_ELT(string, i)),
+					     translatedElement));
+	vmaxset(vmax);
+        if (found)
+            return i;
+    }
+    return -1; /* not found */
+}
+
+Rboolean R_cycle_detected(SEXP, SEXP); // TODO: where is this supposed to be declared?
+
+/* duplicate RHS value of complex assignment if necessary to prevent cycles */
+INLINE_FUN SEXP R_FixupRHS(SEXP x, SEXP y)
+{
+    if( y != R_NilValue && MAYBE_REFERENCED(y) ) {
+	if (R_cycle_detected(x, y)) {
+#ifdef WARNING_ON_CYCLE_DETECT
+	    warning("cycle detected");
+	    R_cycle_detected(x, y);
+#endif
+	    y = Rf_duplicate(y);
+	}
+	else if (NAMED(y) < 2) SET_NAMED(y, 2);
+    }
+    return y;
 }
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * $Id$
+ * $Id: strio.h,v 1.11 2001/12/27 17:29:20 breese Exp $
  *
  * Copyright (C) 1998 Bjorn Reese and Daniel Stenberg.
  *

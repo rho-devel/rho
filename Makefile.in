@@ -10,9 +10,8 @@ top_builddir = .
 include $(top_builddir)/Makeconf
 
 distdir = $(PACKAGE)-$(VERSION)
-INSTFILES = COPYING NEWS.2 NEWS.1 NEWS.0
-## plus NEWS and NEWS.pdf, but need to wait until they are generated
-NON_SVN_INSTFILES = SVN-REVISION
+INSTFILES = COPYING
+NON_GIT_INSTFILES = GIT-REVISION
 DISTFILES = $(INSTFILES) \
 	ChangeLog INSTALL README VERSION VERSION-NICK \
 	Makeconf.in Makefile.in Makefile.fw \
@@ -44,7 +43,7 @@ LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
 
-R: Makefile svnonly
+R: Makefile gitonly
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
 	  for f in $(INSTFILES); do \
 	    $(INSTALL_DATA) $(srcdir)/$${f} $(top_builddir); \
@@ -84,52 +83,56 @@ install install-strip:
 	@echo "consequently, installation is currently disabled."
 	@false
 
-CXXR-install CXXR-install-strip: installdirs svnonly
+CXXR-install CXXR-install-strip: installdirs gitonly
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) $@) || exit 1; \
 	done
 	@for f in $(INSTFILES); do \
 	  $(INSTALL_DATA) $(srcdir)/$${f} "$(DESTDIR)$(rhome)"; \
 	done
-	@for f in NEWS NEWS.pdf $(NON_SVN_INSTFILES); do \
+	@for f in $(NON_GIT_INSTFILES); do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rhome)"; \
 	done
 @WANT_R_FRAMEWORK_TRUE@		$(MAKE) -f $(srcdir)/Makefile.fw top_srcdir=$(top_srcdir) $@
 
-svnonly:
+gitonly:
 	@if test ! -f "$(srcdir)/doc/FAQ" || test -f non-tarball ; then \
-	  (cd doc/manual && $(MAKE) front-matter html-non-svn) ; \
+	  (cd doc/manual && $(MAKE) front-matter html-non-git) ; \
 	  touch non-tarball ; \
-	  (cd $(srcdir); LC_ALL=C TZ=GMT svn info || $(ECHO) "Revision: -99") 2> /dev/null \
-	    | sed -n -e '/^Revision/p' -e '/^Last Changed Date/'p \
-	    | cut -d' ' -f1,2,3,4 > SVN-REVISION-tmp ; \
-	  if test "`cat SVN-REVISION-tmp`" = "Revision: -99"; then \
-	    $(ECHO) "ERROR: not an svn checkout"; \
+	  (cd $(srcdir); LC_ALL=C TZ=GMT \
+	    git log -n 1 --date=short \
+	    --format="Revision: %h%nLast Changed Date: %cd") \
+	      2> /dev/null > GIT-REVISION-tmp; \
+	  if test ! -s GIT-REVISION-tmp; then \
+	    $(ECHO) "ERROR: not an git checkout"; \
 	    exit 1; \
 	  fi; \
-	  $(SHELL) $(top_srcdir)/tools/move-if-change SVN-REVISION-tmp SVN-REVISION ; \
-	  rm -f SVN-REVISION-tmp ; \
+	  $(SHELL) $(top_srcdir)/tools/move-if-change GIT-REVISION-tmp GIT-REVISION ; \
+	  rm -f GIT-REVISION-tmp ; \
 	else \
 	  if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
-	    for f in $(NON_SVN_INSTFILES); do \
+	    for f in $(NON_GIT_INSTFILES); do \
 	      $(INSTALL_DATA) $(srcdir)/$${f} $(top_builddir); \
 	    done \
 	  fi \
 	fi
 
-libR_la = lib/libR$(DYLIB_EXT)
+@WANT_R_STATIC_FALSE@libR_la = libR$(DYLIB_EXT)
+@WANT_R_STATIC_TRUE@libR_la = libR.a
 install-libR:
-	@if test -f $(libR_la); then $(MAKE) install-libR-exists; fi
+	@if test -f lib$(R_ARCH)/$(libR_la); then $(MAKE) install-libR-exists; fi
 install-libR-exists:
 	@$(MKINSTALLDIRS) "$(DESTDIR)${libdir}"
-	@$(INSTALL_DATA) -m755 $(libR_la) "$(DESTDIR)${libdir}"
+	@$(INSTALL_DATA) -m755 lib$(R_ARCH)/$(libR_la) "$(DESTDIR)${libdir}"
+uninstall-libR:
+	@rm -f "$(DESTDIR)${libdir}/$(libR_la)"
 
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rhome)"
 uninstall:
 	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
 	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
-	@for f in NEWS NEWS.pdf $(INSTFILES) $(NON_SVN_INSTFILES); do \
+	@for f in $(INSTFILES) $(NON_GIT_INSTFILES); do \
 	  rm -f "$(DESTDIR)$(rhome)/$${f}"; \
 	done
 	@rm -rf "$(DESTDIR)$(Rexecbindir)" "$(DESTDIR)$(rhome)/lib"
@@ -150,10 +153,10 @@ distclean: clean
 	@rm -f po/Makefile
 	-@rm -rf bin include lib library modules gnome
 	@if test -f non-tarball ; then \
-	  rm -f $(NON_SVN_INSTFILES) NEWS NEWS.pdf non-tarball doc/FAQ doc/RESOURCES doc/html/resources.html doc/html/NEWS.html; \
+	  rm -f $(NON_GIT_INSTFILES) non-tarball doc/FAQ doc/RESOURCES doc/html/resources.html doc/html/NEWS.html; \
 	fi
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
-	  rm -f $(NON_SVN_INSTFILES); \
+	  rm -f $(NON_GIT_INSTFILES); \
 	  rm -rf $(SUBDIRS) $(SUBDIRS_WITH_NO_BUILD); \
 	fi
 	-@rm -rf libconftest.dSYM
@@ -188,7 +191,7 @@ distdir: $(DISTFILES) vignettes
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
-	@for f in NEWS NEWS.pdf $(NON_SVN_INSTFILES) ; do \
+	@for f in $(NON_GIT_INSTFILES) ; do \
 	  cp -p $${f} $(distdir)/$${f}; \
 	done
 	@for d in $(SUBDIRS); do \

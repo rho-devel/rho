@@ -39,7 +39,7 @@ Seatbelts
 \source{
   Harvey, A.C. (1989)
   \emph{Forecasting, Structural Time Series Models and the Kalman Filter.}
-  Cambridge University Press, pp. 519--523.
+  Cambridge University Press, pp.\sspace{}519--523.
 
   Durbin, J. and Koopman, S. J. (2001) \emph{Time Series Analysis by
     State Space Methods.}  Oxford University Press.

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999--2012  The R Core Team
+ *  Copyright (C) 1999--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -85,13 +85,8 @@ using namespace CXXR;
 #endif
 
 #ifdef Win32
-int trio_vsnprintf(char *buffer, size_t bufferSize, const char *format,
-		   va_list args);
-# define vsnprintf trio_vsnprintf
+#include <trioremap.h>
 #endif
-
-extern int R_OutputCon; /* from connections.c */
-
 #ifndef min
 #define min(a, b) (((a)<(b))?(a):(b))
 #endif
@@ -136,9 +131,9 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 const char *EncodeLogical(int x, int w)
 {
     static char buff[NB];
-    if(x == NA_LOGICAL) snprintf(buff, NB, "%*s", w, CHAR(R_print.na_string));
-    else if(x) snprintf(buff, NB, "%*s", w, "TRUE");
-    else snprintf(buff, NB, "%*s", w, "FALSE");
+    if(x == NA_LOGICAL) snprintf(buff, NB, "%*s", min(w, (NB-1)), CHAR(R_print.na_string));
+    else if(x) snprintf(buff, NB, "%*s", min(w, (NB-1)), "TRUE");
+    else snprintf(buff, NB, "%*s", min(w, (NB-1)), "FALSE");
     buff[NB-1] = '\0';
     return buff;
 }
@@ -146,7 +141,7 @@ const char *EncodeLogical(int x, int w)
 const char *EncodeInteger(int x, int w)
 {
     static char buff[NB];
-    if(x == NA_INTEGER) snprintf(buff, NB, "%*s", w, CHAR(R_print.na_string));
+    if(x == NA_INTEGER) snprintf(buff, NB, "%*s", min(w, (NB-1)), CHAR(R_print.na_string));
     else snprintf(buff, NB, "%*d", min(w, (NB-1)), x);
     buff[NB-1] = '\0';
     return buff;
@@ -185,16 +180,23 @@ const char *EncodeEnvironment(SEXP x)
 
 const char *EncodeReal(double x, int w, int d, int e, char cdec)
 {
-    static char buff[NB];
-    char *p, fmt[20];
+    char dec[2];
+    dec[0] = cdec; dec[1] = '\0';
+    return EncodeReal0(x, w, d, e, dec);
+}
+
+const char *EncodeReal0(double x, int w, int d, int e, const char *dec)
+{
+    static char buff[NB], buff2[2*NB];
+    char fmt[20], *out = buff;
 
     /* IEEE allows signed zeros (yuck!) */
     if (x == 0.0) x = 0.0;
     if (!R_FINITE(x)) {
-	if(ISNA(x)) snprintf(buff, NB, "%*s", w, CHAR(R_print.na_string));
-	else if(ISNAN(x)) snprintf(buff, NB, "%*s", w, "NaN");
-	else if(x > 0) snprintf(buff, NB, "%*s", w, "Inf");
-	else snprintf(buff, NB, "%*s", w, "-Inf");
+	if(ISNA(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), CHAR(R_print.na_string));
+	else if(ISNAN(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), "NaN");
+	else if(x > 0) snprintf(buff, NB, "%*s", min(w, (NB-1)), "Inf");
+	else snprintf(buff, NB, "%*s", min(w, (NB-1)), "-Inf");
     }
     else if (e) {
 	if(d) {
@@ -212,11 +214,84 @@ const char *EncodeReal(double x, int w, int d, int e, char cdec)
     }
     buff[NB-1] = '\0';
 
-    if(cdec != '.')
-      for(p = buff; *p; p++) if(*p == '.') *p = cdec;
+    if(strcmp(dec, ".")) {
+	char *p, *q;
+	for(p = buff, q = buff2; *p; p++) {
+	    if(*p == '.') for(const char *r = dec; *r; r++) *q++ = *r;
+	    else *q++ = *p;
+	}
+	*q = '\0';
+	out = buff2;
+    }
 
-    return buff;
+    return out;
 }
+
+static const char 
+*EncodeRealDrop0(double x, int w, int d, int e, const char *dec)
+{
+    static char buff[NB], buff2[2*NB];
+    char fmt[20], *out = buff;
+
+    /* IEEE allows signed zeros (yuck!) */
+    if (x == 0.0) x = 0.0;
+    if (!R_FINITE(x)) {
+	if(ISNA(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), CHAR(R_print.na_string));
+	else if(ISNAN(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), "NaN");
+	else if(x > 0) snprintf(buff, NB, "%*s", min(w, (NB-1)), "Inf");
+	else snprintf(buff, NB, "%*s", min(w, (NB-1)), "-Inf");
+    }
+    else if (e) {
+	if(d) {
+	    sprintf(fmt,"%%#%d.%de", min(w, (NB-1)), d);
+	    snprintf(buff, NB, fmt, x);
+	}
+	else {
+	    sprintf(fmt,"%%%d.%de", min(w, (NB-1)), d);
+	    snprintf(buff, NB, fmt, x);
+	}
+    }
+    else { /* e = 0 */
+	sprintf(fmt,"%%%d.%df", min(w, (NB-1)), d);
+	snprintf(buff, NB, fmt, x);
+    }
+    buff[NB-1] = '\0';
+
+    // Drop trailing zeroes
+    for (char *p = buff; *p; p++) {
+	if(*p == '.') {
+	    char *replace = p++;
+	    while ('0' <= *p  &&  *p <= '9')
+		if(*(p++) != '0')
+		    replace = p;
+	    if(replace != p)
+		while((*(replace++) = *(p++)))
+		    ;
+	    break;
+	}
+    }
+
+    if(strcmp(dec, ".")) {
+	char *p, *q;
+	for(p = buff, q = buff2; *p; p++) {
+	    if(*p == '.') for(const char *r = dec; *r; r++) *q++ = *r;
+	    else *q++ = *p;
+	}
+	*q = '\0';
+	out = buff2;
+    }
+
+    return out;
+}
+
+SEXP attribute_hidden StringFromReal(double x, int *warn)
+{
+    int w, d, e;
+    formatReal(&x, 1, &w, &d, &e, 0);
+    if (ISNA(x)) return NA_STRING;
+    else return mkChar(EncodeRealDrop0(x, w, d, e, OutDec));
+}
+
 
 attribute_hidden
 const char *EncodeReal2(double x, int w, int d, int e)
@@ -227,10 +302,10 @@ const char *EncodeReal2(double x, int w, int d, int e)
     /* IEEE allows signed zeros (yuck!) */
     if (x == 0.0) x = 0.0;
     if (!R_FINITE(x)) {
-	if(ISNA(x)) snprintf(buff, NB, "%*s", w, CHAR(R_print.na_string));
-	else if(ISNAN(x)) snprintf(buff, NB, "%*s", w, "NaN");
-	else if(x > 0) snprintf(buff, NB, "%*s", w, "Inf");
-	else snprintf(buff, NB, "%*s", w, "-Inf");
+	if(ISNA(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), CHAR(R_print.na_string));
+	else if(ISNAN(x)) snprintf(buff, NB, "%*s", min(w, (NB-1)), "NaN");
+	else if(x > 0) snprintf(buff, NB, "%*s", min(w, (NB-1)), "Inf");
+	else snprintf(buff, NB, "%*s", min(w, (NB-1)), "-Inf");
     }
     else if (e) {
 	if(d) {
@@ -256,7 +331,7 @@ void z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
 
 const char
 *EncodeComplex(Rcomplex x, int wr, int dr, int er, int wi, int di, int ei,
-	       char cdec)
+	       const char *dec)
 {
     static char buff[NB];
     char Re[NB];
@@ -271,7 +346,7 @@ const char
     if (ISNA(x.r) || ISNA(x.i)) {
 	snprintf(buff, NB,
 		 "%*s", /* was "%*s%*s", R_print.gap, "", */
-		 wr+wi+2, CHAR(R_print.na_string));
+		 min(wr+wi+2, (NB-1)), CHAR(R_print.na_string));
     } else {
 	/* formatComplex rounded, but this does not, and we need to
 	   keep it that way so we don't get strange trailing zeros.
@@ -280,12 +355,12 @@ const char
 	 */
 	z_prec_r(&y, &x, R_print.digits);
 	/* EncodeReal has static buffer, so copy */
-	if(y.r == 0.) tmp = EncodeReal(y.r, wr, dr, er, cdec);
-	else tmp = EncodeReal(x.r, wr, dr, er, cdec);
+	if(y.r == 0.) tmp = EncodeReal0(y.r, wr, dr, er, dec);
+	else tmp = EncodeReal0(x.r, wr, dr, er, dec);
 	strcpy(Re, tmp);
 	if ( (flagNegIm = (x.i < 0)) ) x.i = -x.i;
-	if(y.i == 0.) Im = EncodeReal(y.i, wi, di, ei, cdec);
-	else Im = EncodeReal(x.i, wi, di, ei, cdec);
+	if(y.i == 0.) Im = EncodeReal0(y.i, wi, di, ei, dec);
+	else Im = EncodeReal0(x.i, wi, di, ei, dec);
 	snprintf(buff, NB, "%s%s%si", Re, flagNegIm ? "-" : "+", Im);
     }
     buff[NB-1] = '\0';
@@ -341,6 +416,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 			break;
 		    case L'\'':
 		    case L'"':
+		    case L'`':
 			len += (quote == *p) ? 2 : 1;
 			break;
 		    default:
@@ -389,6 +465,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 			len += 2; break;
 		    case '\'':
 		    case '"':
+		    case '`':
 			len += (quote == *p)? 2 : 1; break;
 		    default:
 			len++; break;
@@ -431,7 +508,7 @@ int Rstrlen(SEXP s, int quote)
    If 'quote' is non-zero the result should be quoted (and internal quotes
    escaped and NA strings handled differently).
 
-   EncodeString is called from EncodeElements, cat() (for labels when
+   EncodeString is called from EncodeElement, cat() (for labels when
    filling), to (auto)print character vectors, arrays, names and
    CHARSXPs.  It is also called by do_encodeString, but not from
    format().
@@ -563,6 +640,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 			break;
 		    case L'\'':
 		    case L'"':
+		    case L'`':
 			if(quote == *p)  *q++ = '\\'; *q++ = *p++;
 			break;
 		    default:
@@ -633,6 +711,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		    case '\\': *q++ = '\\'; *q++ = '\\'; break;
 		    case '\'':
 		    case '"':
+		    case '`':
 			if(quote == *p)  *q++ = '\\'; *q++ = *p; break;
 		    default: *q++ = *p; break;
 		    }
@@ -685,7 +764,14 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 /* NB this is called by R.app even though it is in no public header, so 
    alter there if you alter this */
-const char *EncodeElement(SEXP x, int indx, int quote, char dec)
+const char *EncodeElement(SEXP x, int indx, int quote, char cdec)
+{
+    char dec[2];
+    dec[0] = cdec; dec[1] = '\0';
+    return EncodeElement0(x, indx, quote, dec);
+}
+
+const char *EncodeElement0(SEXP x, int indx, int quote, const char *dec)
 {
     int w, d, e, wi, di, ei;
     const char *res;
@@ -701,7 +787,7 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	break;
     case REALSXP:
 	formatReal(&REAL(x)[indx], 1, &w, &d, &e, 0);
-	res = EncodeReal(REAL(x)[indx], w, d, e, dec);
+	res = EncodeReal0(REAL(x)[indx], w, d, e, dec);
 	break;
     case STRSXP:
 	{
@@ -724,6 +810,15 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
     }
     return res;
 }
+
+/* EncodeChar is a simple wrapper for EncodeString
+   called by error messages to display CHARSXP values */
+//attribute_hidden
+const char *EncodeChar(SEXP x)
+{
+    return EncodeString(x, 0, 0, Rprt_adj_left);
+}
+
 
 void Rprintf(const char *format, ...)
 {

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -33,7 +33,6 @@
 
  *  makeSubscript()   -- for "[" and "[<-" in ./subset.c and ./subassign.c,
  *			 and "[[<-" with a scalar in ./subassign.c
- *  vectorSubscript() -- for makeSubscript()   {currently unused externally}
  *  arraySubscript()  -- for "[i,j,..." and "[<-..." in ./subset.c, ./subassign.c
  */
 
@@ -81,10 +80,10 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
     R_xlen_t i, indx, nx;
     const void *vmax;
 
-    if (pos < 0 && length(s) > 1) {
+    if (pos < 0 && Rf_length(s) > 1) {
 	ECALL(call, _("attempt to select more than one element"));
     }
-    if (pos < 0 && length(s) < 1) {
+    if (pos < 0 && Rf_length(s) < 1) {
 	ECALL(call, _("attempt to select less than one element"));
     }
 
@@ -185,14 +184,14 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 	warn_pok = true;
     }
 
-    if (pos < 0 && length(s) != 1) {
-	if (length(s) > 1) {
+    if (pos < 0 && Rf_length(s) != 1) {
+	if (Rf_length(s) > 1) {
 	    ECALL(call, _("attempt to select more than one element"));
 	} else {
 	    ECALL(call, _("attempt to select less than one element"));
 	}
     } else
-	if (pos >= length(s)) {
+	if (pos >= Rf_length(s)) {
 	    ECALL(call, _("internal error in use of recursive indexing"));
 	}
     if (pos < 0) pos = 0;
@@ -233,7 +232,7 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 
 	    /* Try for exact match */
 	    vmax = vmaxget();
-	    const char* ss = translateChar(STRING_ELT(s, pos));
+	    const char *ss = translateChar(STRING_ELT(s, pos));
 	    for (R_xlen_t i = 0; i < xlength(names); i++)
 		if (STRING_ELT(names, i) != NA_STRING) {
 		    if (streql(translateChar(STRING_ELT(names, i)), ss)) {
@@ -298,7 +297,7 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 /* This is used for [[ and [[<- with a vector of indices of length > 1 .
    x is a list or pairlist, and it is indexed recusively from 
    level start to level stop-1.  ( 0...len-1 or 0..len-2 then len-1).
-   For [[<- it needs to duplicate if substructure has NAMED > 1.
+   For [[<- it needs to duplicate if substructure might be shared.
  */
 SEXP attribute_hidden
 vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
@@ -309,7 +308,7 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
     SEXP cx;
 
     /* sanity check */
-    if (dup && NAMED(x) > 1)
+    if (dup && MAYBE_SHARED(x))
 	error("should only be called in an assignment context.");
 
     for(i = start; i < stop; i++) {
@@ -328,17 +327,21 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
 	    if (offset > R_SHORT_LEN_MAX)
 		error("invalid subscript for pairlist");
 #endif
-	    cx = nthcdr(x, int( offset));
+	    cx = nthcdr(x, (int) offset);
+	    if (NAMED(x) > NAMED(CAR(cx)))
+		SET_NAMED(CAR(x), NAMED(x));
 	    x = CAR(cx);
-	    if (dup && NAMED(x) > 1) {
-		x = duplicate(x);
+	    if (dup && MAYBE_SHARED(x)) {
+		x = shallow_duplicate(x);
 		SETCAR(cx, x);
 	    }
 	} else {
 	    cx = x;
 	    x = VECTOR_ELT(x, offset);
-	    if (dup && NAMED(x) > 1) {
-		x = duplicate(x);
+	    if (NAMED(cx) > NAMED(x))
+		SET_NAMED(x, NAMED(cx));
+	    if (dup && MAYBE_SHARED(x)) {
+		x = shallow_duplicate(x);
 		SET_VECTOR_ELT(cx, offset, x);
 	    }
     	}
@@ -458,7 +461,7 @@ SEXP attribute_hidden strmat2intmat(SEXP s, SEXP dnamelist, SEXP call)
     PROTECT(snames = allocVector(STRSXP, nr));
     PROTECT(si = allocVector(INTSXP, xlength(s)));
     dimgets(si, getAttrib(s, R_DimSymbol));
-    for (i = 0; i < length(dnamelist); i++) {
+    for (i = 0; i < Rf_length(dnamelist); i++) {
         dnames = VECTOR_ELT(dnamelist, i);
         for (j = 0; j < nr; j++)
             SET_STRING_ELT(snames, j, STRING_ELT(s, j + (i * NR)));
@@ -588,9 +591,8 @@ realSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 		cnt++;
 	    } else if (R_xlen_t( ds) != 0) cnt++;
 #else
-	    if (R_FINITE(ds) && ds > INT_MAX) 
-		int_ok = FALSE;
-	    if (R_xlen_t( ds) != 0) cnt++;
+	    if (R_FINITE(ds) && ds > INT_MAX) int_ok = FALSE;
+	    if (!R_FINITE(ds) || (R_xlen_t) ds != 0) cnt++;
 #endif
 	}
 	if (int_ok) {
@@ -605,8 +607,8 @@ realSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 	} else {
 	    indx = allocVector(REALSXP, cnt);
 	    for (i = 0, cnt = 0; i < ns; i++) {
-		R_xlen_t ia = R_xlen_t( REAL(s)[i]);
-		if (ia != 0) REAL(indx)[cnt++] = REAL(s)[i];
+		double ds = REAL(s)[i];
+		if (!R_FINITE(ds) || (R_xlen_t) ds != 0) REAL(indx)[cnt++] = ds;
 	    }
 	}
 	return indx;
@@ -652,7 +654,7 @@ attribute_hidden SEXP
 int_arraySubscript(int dim, SEXP s, SEXP dims, SEXP x, SEXP call)
 {
     R_xlen_t stretch = 0;
-    int ns = length(s);
+    int ns = Rf_length(s);
     int nd = INTEGER(dims)[dim];
 
     switch (TYPEOF(s)) {
@@ -705,44 +707,43 @@ arraySubscript(int dim, SEXP s, SEXP dims, AttrGetter dng,
    otherwise, stretch returns the new required length for x
 */
 
-static SEXP 
-vectorSubscript(R_xlen_t nx, SEXP s, R_xlen_t *stretch, SEXP x, SEXP call);
-
-SEXP attribute_hidden 
+SEXP attribute_hidden
 makeSubscript(SEXP x, SEXP s, R_xlen_t *stretch, SEXP call)
 {
-    SEXP ans = R_NilValue;
-    if (isVector(x) || isList(x) || isLanguage(x)) {
-	ans = vectorSubscript(xlength(x), s, stretch, x, call);
-    } else {
+    if (! (isVector(x) || isList(x) || isLanguage(x))) {
 	ECALL(call, _("subscripting on non-vector"));
     }
-    return ans;
 
-}
+    R_xlen_t ns = xlength(s);
+    R_xlen_t nx = xlength(x);
 
-/* nx is the length of the object being subscripted,
-   s is the R subscript value.
-*/
-
-static SEXP
-vectorSubscript(R_xlen_t nx, SEXP sarg, R_xlen_t *stretch, SEXP x, SEXP call)
-{
-    SEXP ans = R_NilValue;
-
-    R_xlen_t ns = xlength(sarg);
     /* special case for simple indices -- does not duplicate */
-    if (ns == 1 && TYPEOF(sarg) == INTSXP && ATTRIB(sarg) == R_NilValue) {
-	int i = INTEGER(sarg)[0];
-	if (0 < i && i <= nx) {
-	    *stretch = 0;
-	    return sarg;
+    if (ns == 1) {
+	if (TYPEOF(s) == INTSXP) {
+	    int i = INTEGER(s)[0];
+	    if (0 < i && i <= nx) {
+		*stretch = 0;
+		return s;
+	    }
+	}
+	else if (TYPEOF(s) == REALSXP) {
+	    double di = REAL(s)[0];
+	    if (1 <= di && di <= nx) {
+		*stretch = 0;
+		/* We could only return a REALSXP if the value is too
+		   large for an INTSXP, but, as the calling code can
+		   handle REALSXP indices, returning the REALSXP
+		   avoids and allocation. */
+		return s;
+	    }
 	}
     }
-    GCStackRoot<> s(duplicate(sarg));
+    s = duplicate(s);
     if (s) {
 	s->clearAttributes();
     }
+
+    SEXP ans = R_NilValue;
     switch (TYPEOF(s)) {
     case NILSXP:
 	*stretch = 0;
@@ -764,8 +765,8 @@ vectorSubscript(R_xlen_t nx, SEXP sarg, R_xlen_t *stretch, SEXP x, SEXP call)
 	    GCStackRoot<> names(getAttrib(x, R_NamesSymbol));
 	    /* *stretch = 0; */
 	    ans = stringSubscript(s, ns, nx, names, stretch, call);
+	    break;
 	}
-	break;
     case SYMSXP:
 	*stretch = 0;
 	if (s == R_MissingArg) {

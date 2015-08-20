@@ -1,6 +1,6 @@
 % File src/library/stats/man/alias.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{alias}
@@ -43,10 +43,10 @@ alias(object, \dots)
   correlations induced by the design.
   
   Some parts of the \code{"lm"} method require recommended package
-  \pkg{MASS} to be installed. 
+  \CRANpkg{MASS} to be installed. 
 }
 \value{
-  A list (of \code{\link{class}} \code{"listof"}) containing components
+  A list (of \code{\link{class}} \code{"\link{listof}"}) containing components
   \item{Model}{Description of the model; usually the formula.}
   \item{Complete}{A matrix with columns corresponding to effects that
     are linearly dependent on the rows.}
@@ -68,7 +68,7 @@ alias(object, \dots)
 }
 \author{
   The design was inspired by the S function of the same name described
-  in Chambers \emph{et al.} (1992).
+  in Chambers \emph{et al} (1992).
 }
 \examples{\donttest{
 op <- options(contrasts = c("contr.helmert", "contr.poly"))

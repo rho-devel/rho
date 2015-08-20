@@ -1,6 +1,6 @@
 % File src/library/utils/man/example.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{example}
@@ -8,8 +8,8 @@
 \title{Run an Examples Section from the Online Help}
 \description{
   Run all the \R code from the \bold{Examples} part of \R's online help
-  topic \code{topic} with two possible exceptions, \code{dontrun} and
-  \code{dontshow}, see \sQuote{Details} below.
+  topic \code{topic} with possible exceptions \code{dontrun},
+  \code{dontshow}, and \code{donttest}, see \sQuote{Details} below.
 }
 \usage{
 example(topic, package = NULL, lib.loc = NULL,
@@ -17,7 +17,7 @@ example(topic, package = NULL, lib.loc = NULL,
         echo = TRUE, verbose = getOption("verbose"),
         setRNG = FALSE, ask = getOption("example.ask"),
         prompt.prefix = abbreviate(topic, 6),
-        run.dontrun = FALSE)
+        run.dontrun = FALSE, run.donttest = interactive())
 }
 \arguments{
   \item{topic}{name or literal character string: the online
@@ -42,7 +42,7 @@ example(topic, package = NULL, lib.loc = NULL,
     number generator state is saved, then initialized to a specified state,
     the example is run and the (saved) state is restored.
     \code{setRNG = TRUE} sets the same state as
-    \code{R CMD \link{check}} does for
+    \command{R CMD \link{check}} does for
     running a package's examples.  This is currently equivalent to
     \code{setRNG = \{RNGkind("default", "default"); set.seed(1)\}}.}
   \item{ask}{logical (or \code{"default"}) indicating if
@@ -55,6 +55,8 @@ example(topic, package = NULL, lib.loc = NULL,
   \item{prompt.prefix}{character; prefixes the prompt to be used if
     \code{echo = TRUE}.}
   \item{run.dontrun}{logical indicating that \verb{\dontrun}
+    should be ignored.}
+  \item{run.donttest}{logical indicating that \verb{\donttest}
     should be ignored.}
 }
 \value{
@@ -78,13 +80,17 @@ example(topic, package = NULL, lib.loc = NULL,
   workspace.
 
   As detailed in the manual \emph{Writing \R Extensions}, the author of
-  the help page can markup parts of the examples for two exception rules
+  the help page can markup parts of the examples for exception rules
   \describe{
     \item{\code{dontrun}}{encloses code that should not be run.}
     \item{\code{dontshow}}{encloses code that is invisible on help
       pages, but will be run both by the package checking tools,
       and the \code{example()} function.  This was previously
       \code{testonly}, and that form is still accepted.}
+    \item{\code{donttest}}{encloses code that typically should be run,
+      but not during package checking.  The default \code{run.donttest
+	= \link{interactive}()} leads \code{example()} use in other help
+      page examples to skip \verb{\donttest} sections appropriately.}
   }
 }
 \author{Martin Maechler and others}

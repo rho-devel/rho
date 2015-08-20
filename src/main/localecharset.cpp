@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2005-12   The R Core Team
+ *  Copyright (C) 2005-2014 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -71,6 +71,7 @@ typedef struct {
 } name_value;
 
 
+#ifndef __APPLE__
 /*
  * codeset name defined.
  *
@@ -486,6 +487,7 @@ static const name_value guess[] = {
     {"zu_ZA",                          ENC_ISO8859_1},
 };
 static const int guess_count = (CXXRCONSTRUCT(int, sizeof(guess)/sizeof(name_value)));
+#endif
 
 static const name_value known[] = {
     {"iso88591", "ISO8859-1"},
@@ -618,7 +620,9 @@ const char *locale2charset(const char *locale)
     p = const_cast<char*>(strrchr(locale, '.'));
     if(p) {
 	strncpy(enc, p+1, sizeof(enc)-1);
+        enc[sizeof(enc) - 1] = '\0';
 	strncpy(la_loc, locale, sizeof(la_loc)-1);
+        la_loc[sizeof(la_loc) - 1] = '\0';
 	p = strrchr(la_loc, '.');
 	if(p) *p = '\0';
     }
@@ -682,6 +686,7 @@ const char *locale2charset(const char *locale)
 	    if(cp != 0) return charset;
 	    /* IBM-eucXX case */
 	    strncpy(charset, (enc[3] == '-') ? enc+4: enc+3, sizeof(charset));
+            charset[sizeof(charset) - 1] = '\0';
 	    if(strncmp(charset, "euc", 3)) {
 		if (charset[3] != '-') {
 		    for(i = int( strlen(charset))-3; 0 < i; i--)

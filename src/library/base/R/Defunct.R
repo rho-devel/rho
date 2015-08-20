@@ -1,7 +1,7 @@
 #  File src/library/base/R/Defunct.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -198,4 +198,11 @@ mem.limits <- function(nsize=NA, vsize=NA) .Defunct("gc")
 ## Deprecated in 2.5.0
 ## Removed in 2.15.0
 # Sys.putenv <- function(...) .Defunct("Sys.setenv")
+## </entry>
+
+## <entry>
+## Deprecated in 3.0.0
+## Defunct in 3.1.0
+.find.package <- function(...).Defunct("find.package")
+.path.package <- function(...).Defunct("path.package")
 ## </entry>

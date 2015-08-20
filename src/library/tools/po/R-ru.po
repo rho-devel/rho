@@ -9,16 +9,26 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:53\n"
-"PO-Revision-Date: 2013-03-19 22:26-0600\n"
+"POT-Creation-Date: 2015-03-01 13:20\n"
+"PO-Revision-Date: 2014-03-11 10:34-0600\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
-"Language: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=KOI8-R\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#, fuzzy
+msgid "Reading %s failed with message: %s"
+msgstr ""
+"компиляция TeX файла %s не удалась с сообщением:\n"
+"%s"
+
+#, fuzzy
+msgid "Checking %s"
+msgstr "проверяю %s..."
 
 msgid "argument 'package' must be of length 1"
 msgstr "аргумент 'package' должен быть единичной длины"
@@ -187,9 +197,6 @@ msgstr "Поля с не-ASCII значениями:"
 msgid "These fields must have ASCII values."
 msgstr "Эти поля должны иметь ASCII-значения."
 
-msgid "Required fields missing:"
-msgstr "Требуются пропущенные поля::"
-
 msgid "Malformed package version."
 msgstr "Неправильно созданная версия пакета."
 
@@ -226,6 +233,14 @@ msgstr ""
 "Номера версии должны быть последовательностями по крайней мере двух "
 "неотрицательных целых, разделенных одной точкой или дефисом."
 
+#, fuzzy
+msgid "Invalid VignetteBuilder field."
+msgstr "Неправильное поле привилегий."
+
+msgid ""
+"This field must contain one or more packages (and no version requirement)."
+msgstr ""
+
 msgid "Invalid Priority field."
 msgstr "Неправильное поле привилегий."
 
@@ -236,9 +251,16 @@ msgstr ""
 "Пакеты с привилегиями 'base' или 'recommended' или 'defunct-base' должны "
 "быть уже известны R."
 
+msgid "Malformed Title field: should not end in a period."
+msgstr ""
+
 msgid ""
-"See the information on DESCRIPTION files in section 'Creating R packages' of "
-"the 'Writing R Extensions' manual."
+"Malformed Description field: should contain one or more complete sentences."
+msgstr ""
+
+#, fuzzy
+msgid ""
+"See section 'The DESCRIPTION file' in the 'Writing R Extensions' manual."
 msgstr ""
 "См. информацию о файлах DESCRIPTION в секции  'Creating R пакетs' "
 "руководства 'Writing R Extensions'."
@@ -258,7 +280,14 @@ msgstr "В поле Authors@R есть люди без правильных ролей:"
 msgid "Cannot extract Maintainer field from Authors@R field:"
 msgstr "Не могу вынуть поле Maintainer из поля Authors@R:"
 
-msgid "Authors@R field gives no person with maintainer role and email address."
+#, fuzzy
+msgid "Authors@R field gives more than one person with maintainer role:"
+msgstr "В поле Authors@R нет никого в роли автора."
+
+#, fuzzy
+msgid ""
+"Authors@R field gives no person with maintainer role, valid email address "
+"and non-empty name."
 msgstr ""
 "В поле Authors@R нет никого в роли разработчика с адресом электронной почты."
 
@@ -277,14 +306,24 @@ msgstr "Стандартизируемо:: %s"
 msgid "Standardized license specification:"
 msgstr "Стандартизованная спецификация лицензии:"
 
+msgid "Deprecated license: %s"
+msgstr ""
+
 msgid "Invalid license file pointers: %s"
 msgstr "Неправильные указатели файла лицензии: %s"
 
-msgid "Components with restrictions not permitted:"
+#, fuzzy
+msgid "License components with restrictions not permitted:"
 msgstr "Компоненты с ограничениями не разрешены:"
+
+msgid "License components which are templates and need '+ file LICENSE':"
+msgstr ""
 
 msgid "Non-portable flags in variable '%s':"
 msgstr "Непереносимые флаги в переменной '%s':"
+
+msgid "Variables overriding user/site settings:"
+msgstr ""
 
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
@@ -296,9 +335,8 @@ msgstr ""
 msgid "Missing link or links in documentation object '%s':"
 msgstr "Пропущенная связь или связи с объектом документации '%s':"
 
-msgid ""
-"See the information in section 'Cross-references' of the 'Writing R "
-"Extensions' manual."
+#, fuzzy
+msgid "See section 'Cross-references' in the 'Writing R Extensions' manual."
 msgstr ""
 "См. информацию в секции 'Cross-references' руководства 'Writing R "
 "Extensions'."
@@ -332,9 +370,9 @@ msgstr "Стартовые функции пакета не должны вызывать %s."
 msgid "See section %s in '%s'."
 msgstr "См. раздел %s в '%s'."
 
+#, fuzzy
 msgid ""
-"Package detach functions should have one arguments with names starting with "
-"%s."
+"Package detach functions should have one argument with name starting with %s."
 msgstr ""
 "Функции отсоединения пакета должны иметь один аргумент с именем, "
 "начинающимся с %s."
@@ -363,11 +401,83 @@ msgstr "не объявлены вызовы 'library' или 'require' из:"
 msgid "'library' or 'require' call not declared from: %s"
 msgstr "не объявлен вызов 'library' или 'require' из %s"
 
+#, fuzzy
+msgid "'loadNamespace' or 'requireNamespace' calls not declared from:"
+msgstr "не объявлены вызовы 'library' или 'require' из:"
+
+#, fuzzy
+msgid "'loadNamespace' or 'requireNamespace' call not declared from: %s"
+msgstr "не объявлен вызов 'library' или 'require' из %s"
+
+#, fuzzy
+msgid "'library' or 'require' calls to packages already attached by Depends:"
+msgstr "не объявлены вызовы 'library' или 'require' из:"
+
+#, fuzzy
+msgid ""
+"'library' or 'require' call to %s which was already attached by Depends."
+msgstr "не объявлен вызов 'library' или 'require' из %s"
+
+#, fuzzy
+msgid "'library' or 'require' calls in package code:"
+msgstr "не объявлены вызовы 'library' или 'require' из:"
+
+#, fuzzy
+msgid "'library' or 'require' call to %s in package code."
+msgstr "не объявлены вызовы 'library' или 'require' из:"
+
+msgid "Namespaces in Imports field not imported from:"
+msgstr ""
+
+#, fuzzy
+msgid "Namespace in Imports field not imported from: %s"
+msgstr "Определения зависимости имен не требуется: %s"
+
+msgid "Packages in Depends field not imported from:"
+msgstr ""
+
+msgid "Package in Depends field not imported from: %s"
+msgstr ""
+
+msgid "Missing or unexported objects:"
+msgstr ""
+
+msgid "Missing or unexported object: %s"
+msgstr ""
+
+msgid "':::' calls which should be '::':"
+msgstr ""
+
+msgid "':::' call which should be '::': %s"
+msgstr ""
+
+msgid "Missing objects imported by ':::' calls:"
+msgstr ""
+
+msgid "Missing object imported by a ':::' call: %s"
+msgstr ""
+
+msgid "Unexported objects imported by ':::' calls:"
+msgstr ""
+
+msgid "Unexported object imported by a ':::' call: %s"
+msgstr ""
+
+msgid "Unavailable namespaces imported from by ':::' calls:"
+msgstr ""
+
+msgid "Unavailable namespace imported from by a ':::' call: %s"
+msgstr ""
+
 msgid "'data(package=)' calls not declared from:"
 msgstr "'data(package=)' не объявлены в:"
 
 msgid "'data(package=)' call not declared from: %s"
 msgstr "вызов 'data(package=)' не объявлен: %s"
+
+#, fuzzy
+msgid "Package has no 'Version' field"
+msgstr "у пакета '%s' нет .rda-файлов"
 
 msgid "NB: need Internet access to use CRAN incoming checks"
 msgstr "NB: для проверок приходящего в CRAN нужен доступ в Интернет"
@@ -386,9 +496,8 @@ msgstr ""
 "Автоматические сгенерированное содержание требует редактирования в оббъекте "
 "Rd '%s':"
 
-#, fuzzy
 msgid "no Rd sections specified"
-msgstr "не указан 'type'"
+msgstr "не указаны разделы Rd"
 
 msgid ""
 "Generics 'g' in 'env' %s where '%s' errors: %s\n"
@@ -403,8 +512,8 @@ msgstr ""
 "%s\n"
 "в NAMESPACE."
 
-msgid "argument 'file' must be a character string or connection"
-msgstr "аргумент 'file' должен быть текстовой строкой  или соединением"
+msgid "Rd object required"
+msgstr ""
 
 msgid "missing/empty %s field in '%s'"
 msgstr "пропущенное/пустое %s поле в '%s'"
@@ -433,6 +542,16 @@ msgstr "не могу работать с Rd-объектами в пропущенными/пустыми именами"
 
 msgid "No help on %s found in RdDB %s"
 msgstr "Не найдено помощи %s в RdDB %s"
+
+msgid "'macros' must be TRUE or must specify existing macros"
+msgstr ""
+
+msgid "Macro file %s should only contain Rd macro definitions and comments"
+msgstr ""
+
+#, fuzzy
+msgid "No Rd macros in package '%s'."
+msgstr "Не могу найти документации для пакета %s"
 
 msgid "more than one \\examples section, using the first"
 msgstr "более чем одна \\секция примеров, использую первую"
@@ -473,62 +592,40 @@ msgstr "неправильное значение '%s' : %s"
 msgid "Only one Rd section per %s is supported."
 msgstr "Поддерживается только один раздел Rd на %s."
 
-msgid "Vignette product"
-msgstr "Продукт миниатюры"
+#, fuzzy
+msgid "DESCRIPTION file is for package '%s', not '%s'"
+msgstr "пропущен 'DESCRIPTION.in' у пакета '%s'"
 
-msgid "does not have a known filename extension ("
+#, fuzzy
+msgid "Vignette product %s does not have a known filename extension (%s)"
 msgstr "не имеет известного расширения имени файла ("
 
-msgid ","
-msgstr ","
+msgid ""
+"Failed to locate the %s output file (by engine %s) for vignette with name "
+"%s. The following files exist in directory %s: %s"
+msgstr ""
 
-msgid ")"
-msgstr ")"
-
-msgid "Failed to locate the"
-msgstr "Не могу найти"
-
-msgid "output file (by engine"
-msgstr "файл вывода (в соответствии с устройством"
-
-msgid "%s::%s"
-msgstr "%s::%s"
-
-msgid ") for vignette with name"
-msgstr ") для очерка с именем"
-
-msgid ". The following files exists in directory"
-msgstr ". Следующие файлы есть в папке"
-
-msgid ":"
-msgstr ":"
-
-msgid "Located more than one"
-msgstr "Нашел больше одного"
+msgid ""
+"Located more than one %s output file (by engine %s) for vignette with name "
+"%s: %s"
+msgstr ""
 
 msgid "unable to create temp directory %s"
 msgstr "не могу создать временную папку %s"
 
-#, fuzzy
+msgid "Vignette '%s' is non-ASCII but has no declared encoding"
+msgstr ""
+
 msgid "Running"
-msgstr "Запускаю %s"
+msgstr "Запускаю"
 
-msgid "Vignette"
-msgstr "Миниатюра"
+msgid "Vignette %s overwrites the following %s output by vignette %s: %s"
+msgstr ""
 
-msgid "overwrites the following"
-msgstr "переписывает следующее"
-
-msgid "output by vignette"
-msgstr "вывод очерка"
-
-msgid "Detected vignette source files ("
-msgstr "Обнаружены исходники очерка ("
-
-msgid ") with shared names ("
-msgstr ") с общими именами ("
-
-msgid ") and therefore risking overwriting each others output files"
+#, fuzzy
+msgid ""
+"Detected vignette source files (%s) with shared names (%s) and therefore "
+"risking overwriting each others output files"
 msgstr ") и поэтому есть риск перезаписи чужих файлов вывода"
 
 msgid ""
@@ -548,67 +645,51 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr "не удался запуск 'make'"
 
+msgid "file '%s' not found"
+msgstr "файл '%s' не найден"
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr "Среди миниатюр '%s' '%s' и '%s' имеют одинаковые имена"
 
 msgid "argument 'vignette' must be of length 1"
 msgstr "аргумент 'vignette' должен быть единичной длины"
 
-msgid "file '%s' not found"
-msgstr "файл '%s' не найден"
+#, fuzzy
+msgid "Vignette engine package not specified"
+msgstr "Зависимости очерка не требуются:"
 
 msgid "Unsupported engine name"
 msgstr "Неподдерживаемое имя устройства"
 
-msgid "None of packages"
-msgstr "Ни один из пакетов"
-
-msgid "have registered vignette engines"
+#, fuzzy
+msgid "None of packages %s have registered vignette engines"
 msgstr "имеет зарегистрированные устройства очерков"
 
-msgid "Vignette engine"
-msgstr "Устройство очерка"
+#, fuzzy
+msgid "Vignette engine %s is not registered"
+msgstr "Зависимости очерка не требуются:"
 
-msgid "is not registered"
-msgstr "не зарегистрировано"
-
-msgid "is not registered by any of the packages"
+#, fuzzy
+msgid "Vignette engine %s is not registered by any of the packages %s"
 msgstr "не зарегистрировано ни одним пакетом"
 
-msgid "Engine name"
-msgstr "Имя устройства"
+#, fuzzy
+msgid "Engine name %s and package %s do not match"
+msgstr "Ссылка %s в пакете %s не найдена"
 
-msgid "and package"
-msgstr "и пакет"
-
-msgid "do not match"
-msgstr "не соответствует"
-
-msgid "Argument"
-msgstr "Аргумент"
-
-msgid "weave"
-msgstr "weave"
-
-msgid "must be a function and not"
+#, fuzzy
+msgid "Argument %s must be a function and not %s"
 msgstr "должно быть функцией и не"
 
-msgid "tangle"
-msgstr "tangle"
-
-msgid "pattern"
-msgstr "паттерн"
-
-msgid "must be a character vector or NULL and not"
+#, fuzzy
+msgid "Argument %s must be a character vector or NULL and not %s"
 msgstr "должен быть текстовой строкой или NULL и не"
 
-msgid "Cannot change the"
-msgstr "Не могу изменить файл"
-
-msgid "Sweave"
-msgstr "Sweave"
-
-msgid "engine or use an engine of that name"
+#, fuzzy
+msgid "Cannot change the %s engine or use an engine of that name"
 msgstr "устройство или использование устройства с этим именем"
 
 msgid "vignette builder '%s' not found"
@@ -681,6 +762,33 @@ msgstr "ОШИБКА: это R версии %s, а требуется R %s %s"
 
 msgid "loading failed"
 msgstr "загрузка не удалась"
+
+msgid "assertConditon: Successfully caught a condition"
+msgstr ""
+
+msgid "assertCondition: caught %s"
+msgstr ""
+
+msgid ","
+msgstr ","
+
+msgid "Got %s in evaluating %s; wanted %s"
+msgstr ""
+
+msgid "Failed to get %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get error in evaluating %s"
+msgstr ""
+
+msgid "Asserted error: %s"
+msgstr ""
+
+msgid "Got warning in evaluating %s, but also an error"
+msgstr ""
+
+msgid "Asserted warning: %s"
+msgstr ""
 
 msgid "Changes require specified 'style'"
 msgstr "Изменения требуют определенного 'style'"
@@ -769,17 +877,17 @@ msgstr "Ссылка %s в пакете %s не найдена"
 msgid "No docs found for package %s"
 msgstr "Не могу найти документации для пакета %s"
 
-#, fuzzy
+msgid "URL %s was not found"
+msgstr "URL %s не найден"
+
 msgid ""
 "Only help files, %s, %s and files under %s and %s in a package can be viewed"
 msgstr ""
-"Только файлы помощи, %s, %s и файлы внутри %s в пакете могут быть просмотрены"
+"Только файлы помощи, %s, %s и файлы внутри %s и %s в пакете могут быть "
+"просмотрены"
 
 msgid "unsupported URL %s"
 msgstr "неподдерживаемые URL %s"
-
-msgid "URL %s was not found"
-msgstr "URL %s не найден"
 
 msgid "httpd server disabled by R_DISABLE_HTTPD"
 msgstr "сервер httpd отключен через R_DISABLE_HTTPD"
@@ -821,6 +929,10 @@ msgstr ""
 msgid "generating debug symbols (%s)"
 msgstr "создаю символы отладки (%s)"
 
+#, fuzzy
+msgid "no DLL was created"
+msgstr "файл '%s' не создан"
+
 msgid "package %s successfully unpacked and MD5 sums checked"
 msgstr "пакет %s удачно распакован, MD5 sums проверены"
 
@@ -829,6 +941,9 @@ msgid ""
 "similar"
 msgstr ""
 "Включаемая папка R пуста -- возможно, надо установить R-devel.rpm или похожее"
+
+msgid "package %s %s was found, but %s %s is required by %s"
+msgstr ""
 
 msgid "no source files found"
 msgstr "не найдено файлов исходников"
@@ -1038,9 +1153,6 @@ msgstr "Пакет '%s' имеет зависимости, сокращенные до минимального набора."
 msgid "argument '%s' must be a character string or connection"
 msgstr "аргумент '%s' должен быть текстовой"
 
-msgid "'file' must be a character string or connection"
-msgstr "'file' должен быть текстовой строкой или соединением"
-
 msgid "unimplemented encoding"
 msgstr "не разработанная кодировка"
 
@@ -1084,7 +1196,7 @@ msgid "FAILED"
 msgstr "НЕ УДАЛОСЬ"
 
 msgid "DIFFERED"
-msgstr ""
+msgstr "РАЗЛИЧНЫ"
 
 msgid "running tests of random deviate generation -- fails occasionally"
 msgstr "запускаю тесты на генерацию случайных отклонений -- иногда не удаются"
@@ -1097,6 +1209,18 @@ msgstr "аргумент 'x' должен быть текстовой строкой"
 
 msgid "test '%s' is not available"
 msgstr "тест '%s' недоступен"
+
+msgid ":"
+msgstr ":"
+
+msgid "latin1"
+msgstr ""
+
+msgid "ASCII"
+msgstr ""
+
+msgid "byte"
+msgstr ""
 
 msgid "argument 'x' must be a character vector"
 msgstr "аргумент 'x' должен быть текстовым вектором"
@@ -1119,11 +1243,9 @@ msgstr "не могу запустить '%s' на '%s'"
 msgid "unable to run %s on '%s'"
 msgstr "не могу запустить %s на '%s'"
 
-msgid "cannot coerce"
+#, fuzzy
+msgid "cannot coerce %s to logical"
 msgstr "нельзя соединить"
-
-msgid "to logical"
-msgstr "в логический"
 
 msgid "File 'DESCRIPTION' is missing."
 msgstr "Файл 'DESCRIPTION' пропущен."
@@ -1148,6 +1270,10 @@ msgstr "не могу выполнить код пакета"
 
 msgid "Call sequence:"
 msgstr "Последовательность вызова:"
+
+#, fuzzy
+msgid "'text' must be a character vector"
+msgstr "аргумент 'x' должен быть текстовым вектором"
 
 msgid "parsing '%s'"
 msgstr "разбор '%s'"
@@ -1230,21 +1356,32 @@ msgstr[0] "Найден вызов .Internal в методах следующего класса ссылок:"
 msgstr[1] "Найдены вызовы .Internal в методах следующих классов ссылок:"
 msgstr[2] "Найдены вызовы .Internal в методах следующих классов ссылок:"
 
-msgid "Found an obsolete call in the following function:"
-msgid_plural "Found an obsolete call in the following functions:"
+#, fuzzy
+msgid "Found an obsolete/platform-specific call in the following function:"
+msgid_plural ""
+"Found an obsolete/platform-specific call in the following functions:"
 msgstr[0] "Найден устаревший вызов в следующей функции:"
 msgstr[1] "Найдены устаревшие вызовы в следующих функциях:"
 msgstr[2] "Найдены устаревшие вызовы в следующих функциях:"
 
-msgid "Found an obsolete call in methods for the following S4 generic:"
-msgid_plural "Found an obsolete call in methods for the following S4 generics:"
+#, fuzzy
+msgid ""
+"Found an obsolete/platform-specific call in methods for the following S4 "
+"generic:"
+msgid_plural ""
+"Found an obsolete/platform-specific call in methods for the following S4 "
+"generics:"
 msgstr[0] "Найден устаревший вызов в методах следующей S4-общей функции:"
 msgstr[1] "Найдены устаревшие вызовы в методах следующих S4-общих функций:"
 msgstr[2] "Найдены устаревшие вызовы в методах следующих S4-общих функций:"
 
-msgid "Found an obsolete call in methods for the following reference class:"
+#, fuzzy
+msgid ""
+"Found an obsolete/platform-specific call in methods for the following "
+"reference class:"
 msgid_plural ""
-"Found an obsolete call in methods for the following reference classes:"
+"Found an obsolete/platform-specific call in methods for the following "
+"reference classes:"
 msgstr[0] "Найден устаревший вызов в методах следующего класса ссылок:"
 msgstr[1] "Найдены устаревшие вызовы в методах следующих классов ссылок:"
 msgstr[2] "Найдены устаревшие вызовы в методах следующих классов ссылок:"
@@ -1260,6 +1397,12 @@ msgid_plural "Found the defunct/removed functions:"
 msgstr[0] "Нашел вымершую/удаленную функцию:"
 msgstr[1] "Нашел вымершие/удаленные функции:"
 msgstr[2] "Нашел вымершие/удаленные функции:"
+
+msgid "Found the platform-specific device:"
+msgid_plural "Found the platform-specific devices:"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "Generic without any methods in %s: %s"
 msgid_plural "Generics without any methods in %s: %s"
@@ -1289,6 +1432,13 @@ msgstr[0] "не могу перекодировать %s строку %s"
 msgstr[1] "не могу перекодировать %s строки %s"
 msgstr[2] "не могу перекодировать %s строки %s"
 
+#, fuzzy
+msgid "Required field missing or empty:"
+msgid_plural "Required fields missing or empty:"
+msgstr[0] "Требуются пропущенные поля::"
+msgstr[1] "Требуются пропущенные поля::"
+msgstr[2] "Требуются пропущенные поля::"
+
 msgid "Help on topic '%s' was found in the following package:"
 msgid_plural "Help on topic '%s' was found in the following packages:"
 msgstr[0] "Помощь по теме '%s' была найдена в следующем пакете:"
@@ -1301,12 +1451,110 @@ msgstr[0] "объект %s создан больше чем за один вызов данных"
 msgstr[1] "объекты %s созданы больше чем за один вызов данных"
 msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 
+msgid "%d of the package tests failed"
+msgid_plural "%d of the package tests failed"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#, fuzzy
+#~ msgid "Undeclared package used in Rd xrefs:"
+#~ msgid_plural "Undeclared packages used in Rd xrefs:"
+#~ msgstr[0] "Неизвестный пакет %s в Rd xrefs"
+#~ msgstr[1] "Неизвестные пакеты %s в Rd xrefs"
+#~ msgstr[2] "Неизвестные пакеты %s в Rd xrefs"
+
+#, fuzzy
+#~ msgid "Inconsistent encoding specifications: %s with %%\\SweaveUTF8"
+#~ msgstr "Нестандартная лицензия:"
+
+#~ msgid "argument 'file' must be a character string or connection"
+#~ msgstr "аргумент 'file' должен быть текстовой строкой  или соединением"
+
+#~ msgid "to logical"
+#~ msgstr "в логический"
+
+#~ msgid "Vignette product"
+#~ msgstr "Продукт миниатюры"
+
+#~ msgid ")"
+#~ msgstr ")"
+
+#~ msgid "Failed to locate the"
+#~ msgstr "Не могу найти"
+
+#~ msgid "output file (by engine"
+#~ msgstr "файл вывода (в соответствии с устройством"
+
+#~ msgid "%s::%s"
+#~ msgstr "%s::%s"
+
+#~ msgid ") for vignette with name"
+#~ msgstr ") для очерка с именем"
+
+#~ msgid ". The following files exists in directory"
+#~ msgstr ". Следующие файлы есть в папке"
+
+#~ msgid "Located more than one"
+#~ msgstr "Нашел больше одного"
+
+#~ msgid "Vignette"
+#~ msgstr "Миниатюра"
+
+#~ msgid "overwrites the following"
+#~ msgstr "переписывает следующее"
+
+#~ msgid "output by vignette"
+#~ msgstr "вывод очерка"
+
+#~ msgid "Detected vignette source files ("
+#~ msgstr "Обнаружены исходники очерка ("
+
+#~ msgid ") with shared names ("
+#~ msgstr ") с общими именами ("
+
+#~ msgid "None of packages"
+#~ msgstr "Ни один из пакетов"
+
+#~ msgid "Vignette engine"
+#~ msgstr "Устройство очерка"
+
+#~ msgid "is not registered"
+#~ msgstr "не зарегистрировано"
+
+#~ msgid "Engine name"
+#~ msgstr "Имя устройства"
+
+#~ msgid "and package"
+#~ msgstr "и пакет"
+
+#~ msgid "do not match"
+#~ msgstr "не соответствует"
+
+#~ msgid "Argument"
+#~ msgstr "Аргумент"
+
+#~ msgid "weave"
+#~ msgstr "weave"
+
+#~ msgid "tangle"
+#~ msgstr "tangle"
+
+#~ msgid "pattern"
+#~ msgstr "паттерн"
+
+#~ msgid "Cannot change the"
+#~ msgstr "Не могу изменить файл"
+
+#~ msgid "Sweave"
+#~ msgstr "Sweave"
+
+#~ msgid "'file' must be a character string or connection"
+#~ msgstr "'file' должен быть текстовой строкой или соединением"
+
 #, fuzzy
 #~ msgid "not found"
 #~ msgstr "не найден"
-
-#~ msgid "file '%s' was not created"
-#~ msgstr "файл '%s' не создан"
 
 #~ msgid "found %s"
 #~ msgstr "найден %s"
@@ -1380,8 +1628,8 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 
 #~ msgid "This name was used for a base package and is remapped by library()."
 #~ msgstr ""
-#~ "Это имя использовано базовым пакетом и связано заново посредством library"
-#~ "()."
+#~ "Это имя использовано базовым пакетом и связано заново посредством "
+#~ "library()."
 
 #~ msgid "package must be loaded"
 #~ msgstr "должен быть загружен пакет"
@@ -1649,17 +1897,11 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 #~ msgid "Package which this enhances but not available for checking: %s"
 #~ msgstr "Пакет, который это усиливает, недоступен для выдачи: %s"
 
-#~ msgid "Vignette dependencies not required:"
-#~ msgstr "Зависимости очерка не требуются:"
-
 #~ msgid "Vignette dependencies not required: %s"
 #~ msgstr "Зависимости очерка не требуются: %s"
 
 #~ msgid "Namespace dependencies not required:"
 #~ msgstr "Определения пространства имен не требуются:"
-
-#~ msgid "Namespace dependency not required: %s"
-#~ msgstr "Определения зависимости имен не требуется: %s"
 
 #~ msgid "Package name and namespace differ."
 #~ msgstr "Имена пакета и пространства имен различаются."
@@ -1743,9 +1985,6 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 #~ msgid "Unable to locate help document %s in package %s"
 #~ msgstr "Не могу найти документ помощи %s в пакете %s"
 
-#~ msgid "missing 'DESCRIPTION.in' for package '%s'"
-#~ msgstr "пропущен 'DESCRIPTION.in' у пакета '%s'"
-
 #~ msgid "ERROR: this R is version %s, bundle '%s' requires R %s %s"
 #~ msgstr "ОШИБКА: это R версии %s, а набор '%s' требует R %s %s"
 
@@ -1765,9 +2004,6 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 
 #~ msgid "*** 'hhc.exe' not found: not building CHM help"
 #~ msgstr "*** 'hhc.exe' не найден: не собираю CHM помощь"
-
-#~ msgid "package '%s' has no .rda file"
-#~ msgstr "у пакета '%s' нет .rda-файлов"
 
 #~ msgid "Rd files with syntax errors:"
 #~ msgstr "Rd-файлы с синтаксическими ошибками:"

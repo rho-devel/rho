@@ -1,7 +1,7 @@
 #  File src/library/stats/R/reshape.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -153,7 +153,7 @@ reshape <-
         ## times <- sort(unique(data[,timevar]))
         ## varying and times must have the same order
         times <- unique(data[, timevar])
-        if (any(is.na(times)))
+        if (anyNA(times))
             warning("there are records with missing times, which will be dropped.")
         undoInfo$times <- times
 
@@ -240,8 +240,10 @@ reshape <-
                times <- back$times
            }
 
-           if (is.matrix(varying))
-               varying <- split(varying, row(varying))
+           if (is.matrix(varying)) {
+               ## <FIXME split.matrix>
+               varying <- split(c(varying), row(varying))
+           }
            if (is.null(varying))
                stop("'varying' must be nonempty list or vector")
            if(is.atomic(varying)) {

@@ -1,7 +1,7 @@
 #  File src/library/base/R/print.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,9 @@ noquote <- function(obj) {
 }
 
 as.matrix.noquote <- function(x, ...) noquote(NextMethod("as.matrix", x))
+
+as.data.frame.noquote <- as.data.frame.vector
+
 c.noquote <- function(..., recursive = FALSE)
     structure(NextMethod("c"), class = "noquote")
 
@@ -68,7 +71,7 @@ print.noquote <- function(x, ...) {
     print(x, quote = FALSE, ...)
 }
 
-## for alias:
+## for alias.lm, aov
 print.listof <- function(x, ...)
 {
     nn <- names(x)
@@ -82,12 +85,20 @@ print.listof <- function(x, ...)
 
 ## formerly same as [.AsIs
 `[.listof` <- function(x, i, ...) structure(NextMethod("["), class = class(x))
+`[.Dlist` <- `[.simple.list` <- `[.listof`
 
 ## used for version:
 print.simple.list <- function(x, ...)
     print(noquote(cbind("_"=unlist(x))), ...)
 
-`[.simple.list` <- `[.listof`
-
 print.function <- function(x, useSource = TRUE, ...)
     .Internal(print.function(x, useSource, ...))
+
+## used for getenv()
+print.Dlist <- function(x, ...)
+{
+    if(!is.list(x) && !is.matrix(x) && is.null(names(x))) ## messed up Dlist
+	return(NextMethod())
+    cat(formatDL(x, ...), sep="\n")
+    invisible(x)
+}

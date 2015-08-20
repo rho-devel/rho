@@ -1,6 +1,6 @@
 % File src/library/base/man/dynload.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{dyn.load}
@@ -72,7 +72,7 @@ is.loaded(symbol, PACKAGE = "", type = "")
   \sQuote{R Installation and Administration} manuals for how to create
   and install a suitable DLL.
 
-  Unfortunately a very few platforms (e.g. Compaq Tru64) do not handle
+  Unfortunately a very few platforms (e.g., Compaq Tru64) do not handle
   the \code{PACKAGE} argument correctly, and may incorrectly find
   symbols linked into \R.
 
@@ -182,7 +182,7 @@ is.loaded(symbol, PACKAGE = "", type = "")
   \itemize{
     \item The directory from which the application was launched.
     \item The various system directories,
-    e.g. \file{c:/Windows/system32}, \file{c:/Windows/system} and
+    e.g.\sspace{}\file{c:/Windows/system32}, \file{c:/Windows/system} and
     \file{c:/Windows}.
     \item The current directory.
     \item Along the search path for executables given by the environment

@@ -58,6 +58,7 @@ merge.data.frame <-
     }
 
     nx <- nrow(x <- as.data.frame(x)); ny <- nrow(y <- as.data.frame(y))
+    if (nx >= 2^31 || ny >= 2^31) stop("long vectors are not supported")
     by.x <- fix.by(by.x, x)
     by.y <- fix.by(by.y, y)
     if((l.b <- length(by.x)) != length(by.y))
@@ -95,6 +96,8 @@ merge.data.frame <-
             bx <- x[, by.x]; if(is.factor(bx)) bx <- as.character(bx)
             by <- y[, by.y]; if(is.factor(by)) by <- as.character(by)
         } else {
+            if (!is.null(incomparables))
+                stop("'incomparables' is supported only for merging on a single column")
             ## Do these together for consistency in as.character.
             ## Use same set of names.
             bx <- x[, by.x, drop=FALSE]; by <- y[, by.y, drop=FALSE]
@@ -132,8 +135,10 @@ merge.data.frame <-
             names(ya) <- nm.by
             ## this used to use a logical matrix, but that was not good
             ## enough as x could be zero-row.
-            ya <- cbind(ya, x[rep.int(NA_integer_, nyy), nm.x, drop=FALSE ])
-            x <- rbind(x, ya)
+            ## workaround possibly duplicated names: PR#15618
+            xa <- x[rep.int(NA_integer_, nyy), nm.x, drop=FALSE ]
+            names(xa) <- nm.x
+            x <- rbind(x, cbind(ya, xa))
         }
         ## y (w/o 'by'):
         if(has.common.nms && nzchar(suffixes[2L])) {

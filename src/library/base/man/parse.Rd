@@ -1,6 +1,6 @@
 % File src/library/base/man/parse.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{parse}
@@ -67,9 +67,6 @@ parse(file = "", n = NULL, text = NULL, prompt = "?",
   marked by LF (as used on Unix), CRLF (as used on DOS/Windows)
   or CR (as used on classic Mac OS).  The final line can be incomplete,
   that is missing the final EOL marker.
-
-  See \code{\link{source}} for the limits on the size of functions
-  that can be parsed (by default).
 
   When input is taken from the console, \code{n = NULL} is equivalent to
   \code{n = 1}, and \code{n < 0} will read until an EOF character is

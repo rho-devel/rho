@@ -1,6 +1,6 @@
 
-R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R Under development (unstable) (2015-03-01 r67919) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -158,7 +158,7 @@ Warning in bs(height, degree = 3L, knots = c(62.6666666666667, 67.3333333333333 
 +           identical(bs(x, df = 4), bs(x, df = 4, knots = NULL)), # not true till 2.15.2
 +           !is.null(kk <- attr(bs(x), "knots")), # not true till 1.5.1
 +           length(kk) == 0)
-> ## End Don't show
+> ## End(Don't show)
 > 
 > 
 > cleanEx()
@@ -270,7 +270,7 @@ list(weight, ns(height, knots = c(60.8, 63.6, 66.4, 69.2), Boundary.knots = c(58
 +           identical(ns(x, df = 2), ns(x, df = 2, knots = NULL)), # not true till 2.15.2
 +           !is.null(kk <- attr(ns(x), "knots")), # not true till 1.5.1
 +           length(kk) == 0)
-> ## End Don't show
+> ## End(Don't show)
 > 
 > 
 > 
@@ -576,7 +576,7 @@ attr(,"class")
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  0.247 0.002 0.25 0 0 
+Time elapsed:  0.106 0.005 0.111 0 0 
 > grDevices::dev.off()
 null device 
           1 

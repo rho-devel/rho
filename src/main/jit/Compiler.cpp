@@ -775,9 +775,11 @@ PHINode* Compiler::emitRethrowException()
 
     BasicBlock* block = createBasicBlock("rethrow_exception");
     SetInsertPoint(block);
-    
+
     PHINode* exception_info = CreatePHI(Runtime::exceptionInfoType(this), 1);
-    CreateResume(exception_info);
+    Value* exception_ref = CreateExtractValue(exception_info, 0);
+    Runtime::emitBeginCatch(exception_ref, this);
+    Runtime::emitRethrow(this);
     return exception_info;
 }
 

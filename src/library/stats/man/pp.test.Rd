@@ -1,6 +1,6 @@
 % File src/library/stats/man/pp.test.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{PP.test}
@@ -26,7 +26,7 @@ PP.test(x, lshort = TRUE)
   is \code{TRUE}, then the truncation lag parameter is set to
   \code{trunc(4*(n/100)^0.25)}, otherwise
   \code{trunc(12*(n/100)^0.25)} is used.  The p-values are
-  interpolated from Table 4.2, page 103 of Banerjee \emph{et al.}
+  interpolated from Table 4.2, page 103 of Banerjee \emph{et al}
   (1993).
 
   Missing values are not handled.

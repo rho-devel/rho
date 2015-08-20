@@ -1,6 +1,6 @@
 % File src/library/base/man/groupGeneric.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{groupGeneric}
@@ -65,6 +65,7 @@
       \item
       \code{exp}, \code{log},  \code{expm1}, \code{log1p},\cr
       \code{cos}, \code{sin}, \code{tan},\cr
+      \code{cospi}, \code{sinpi}, \code{tanpi},\cr
       \code{acos}, \code{asin}, \code{atan}
 
       \code{cosh}, \code{sinh}, \code{tanh},\cr

@@ -154,7 +154,7 @@ char *getwd ();
 #   define getcwd(buf, max) (getcwd) (buf, max, 0)
 #  else
 /* This is naughty if already declared, but harmful on Win64 */
-#   ifndef WIN64
+#   ifndef _WIN64
 char *getcwd ();
 #   endif
 #  endif
@@ -917,8 +917,8 @@ _nl_find_msg (struct loaded_l10nfile *domain_file,
   if (domain->hash_tab != NULL)
     {
       /* Use the hashing table.  */
-      nls_uint32 len = strlen (msgid);
-      nls_uint32 hash_val = __hash_string (msgid);
+      nls_uint32 len = (nls_uint32) strlen (msgid);
+      nls_uint32 hash_val = (nls_uint32) __hash_string (msgid);
       nls_uint32 idx = hash_val % domain->hash_size;
       nls_uint32 incr = 1 + (hash_val % (domain->hash_size - 2));
 
@@ -1544,7 +1544,7 @@ guess_category_value (int category, const char *categoryname)
 	  locale_defaulted = 1;
 	}
     }
-#  ifdef WIN32
+#  ifdef _WIN32
   /* Need to translate some Windows locale names */
   const static struct {
       const char * const win;

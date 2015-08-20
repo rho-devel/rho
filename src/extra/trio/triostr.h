@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * $Id$
+ * $Id: triostr.h,v 1.15 2005/05/29 11:56:01 breese Exp $
  *
  * Copyright (C) 2001 Bjorn Reese and Daniel Stenberg.
  *

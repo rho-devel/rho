@@ -3,7 +3,7 @@
  *  file extra.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004	      The R Foundation
- *  Copyright (C) 2005--2013  The R Core Team
+ *  Copyright (C) 2005--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -140,7 +140,6 @@ int check_doc_file(const char * file)
 }
 
 #include "Startup.h"
-extern UImode CharacterMode;
 
 void Rwin_fpset(void)
 {
@@ -237,7 +236,7 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     GetComputerNameW(name, &namelen);
     wcstoutf8(buf, name, 1000);
     SET_STRING_ELT(ans, 3, mkCharCE(buf, CE_UTF8));
-#ifdef WIN64
+#ifdef _WIN64
     SET_STRING_ELT(ans, 4, mkChar("x86-64"));
 #else
     SET_STRING_ELT(ans, 4, mkChar("x86"));
@@ -261,27 +260,20 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
+void Rsleep(double timeint)
 {
+    int ntime = 1000*timeint + 0.5;
     DWORD mtime;
-    int ntime;
-    double time;
-
-    checkArity(op, args);
-    time = asReal(CAR(args));
-    if (ISNAN(time) || time < 0)
-	errorcall(call, _("invalid '%s' value"), "time");
-    ntime = 1000*(time) + 0.5;
     while (ntime > 0) {
 	mtime = min(500, ntime);
 	ntime -= mtime;
 	Sleep(mtime);
 	R_ProcessEvents();
     }
-    return R_NilValue;
+
 }
 
-#ifdef LEA_MALLOC
+
 #define MALLINFO_FIELD_TYPE size_t
 struct mallinfo {
     MALLINFO_FIELD_TYPE arena;    /* non-mmapped space allocated from system */
@@ -298,7 +290,6 @@ struct mallinfo {
 extern R_size_t R_max_memory;
 
 struct mallinfo mallinfo(void);
-#endif 
 
 SEXP in_memsize(SEXP ssize)
 {
@@ -312,8 +303,7 @@ SEXP in_memsize(SEXP ssize)
 	double mem = asReal(ssize);
 	if (!R_FINITE(mem))
 	    error(_("incorrect argument"));
-#ifdef LEA_MALLOC
-#ifndef WIN64
+#ifndef _WIN64
 	if(mem >= 4096)
 	    error(_("don't be silly!: your machine has a 4Gb address limit"));
 #endif
@@ -322,12 +312,10 @@ SEXP in_memsize(SEXP ssize)
 	    warning(_("cannot decrease memory limit: ignored"));
 	else
 	    R_max_memory = newmax;
-#endif
     } else
 	error(_("incorrect argument"));
 	
     PROTECT(ans = allocVector(REALSXP, 1));
-#ifdef LEA_MALLOC
     if(maxmem == NA_LOGICAL)
 	REAL(ans)[0] = R_max_memory;
     else if(maxmem)
@@ -335,9 +323,6 @@ SEXP in_memsize(SEXP ssize)
     else
 	REAL(ans)[0] = mallinfo().uordblks;
     REAL(ans)[0] /= 1048576.0;
-#else
-    REAL(ans)[0] = NA_REAL;
-#endif
     UNPROTECT(1);
     return ans;
 }
@@ -562,9 +547,7 @@ SEXP in_shortpath(SEXP paths)
 }
     
 #include "devWindows.h"
-#include <Startup.h>
 #include <R_ext/GraphicsEngine.h> /* GEgetDevice */
-extern UImode CharacterMode;
 
 /* grDevices::bringToTop */
 SEXP bringtotop(SEXP sdev, SEXP sstay)
@@ -840,3 +823,11 @@ SEXP attribute_hidden do_filechoose(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     return ans;
 }
+
+const char *getTZinfo(void);  // src/extra/tzone/registryTZ.c
+
+SEXP attribute_hidden do_tzone_name(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    return mkString(getTZinfo());
+}
+

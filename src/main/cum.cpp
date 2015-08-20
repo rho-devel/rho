@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -184,10 +184,10 @@ SEXP attribute_hidden do_cum(/*const*/ CXXR::Expression* call, const CXXR::Built
 	    return ccumprod(t, s);
 	    break;
 	case 3: /* cummax */
-	    errorcall(call, _("'cummin' not defined for complex numbers"));
+	    errorcall(call, _("'cummax' not defined for complex numbers"));
 	    break;
 	case 4: /* cummin */
-	    errorcall(call, _("'cummax' not defined for complex numbers"));
+	    errorcall(call, _("'cummin' not defined for complex numbers"));
 	    break;
 	default:
 	    errorcall(call, "unknown cumxxx function");

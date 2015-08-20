@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -109,7 +109,6 @@ void R_setStartTime(void); // in sys-unix.c
 /*  used here and in main/sysutils.c (for system). */
 Rboolean useaqua = FALSE;
 
-// This should have been fixed a long time ago ....
 // Finally in Sep 2012 R.app sets ptr_R_FlushConsole
 #include <R_ext/Rdynload.h>
 DL_FUNC ptr_do_flushconsole;
@@ -146,8 +145,6 @@ void R_setupHistory()
 #endif
 
 int R_running_as_main_program = 0;
-
-extern void BindDomain(char *R_Home);
 
 /* In src/main/main.c, to avoid inlining */
 extern uintptr_t dummy_ii(void);

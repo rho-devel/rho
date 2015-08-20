@@ -1,7 +1,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000-2001 The R Core Team
+ *  Copyright (C) 2000-2013 The R Core Team
  *  Copyright (C) 2002-2004 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -123,7 +123,7 @@ double gammafn(double x)
 
     /* If the argument is exactly zero or a negative integer
      * then return NaN. */
-    if (x == 0 || (x < 0 && x == (long)x)) {
+    if (x == 0 || (x < 0 && x == round(x))) {
 	ML_ERROR(ME_DOMAIN, "gammafn");
 	return ML_NAN;
     }
@@ -210,7 +210,7 @@ double gammafn(double x)
 	    ML_ERROR(ME_PRECISION, "gammafn");
 	}
 
-	sinpiy = sin(M_PI * y);
+	sinpiy = sinpi(y);
 	if (sinpiy == 0) {		/* Negative integer arg - overflow */
 	    ML_ERROR(ME_RANGE, "gammafn");
 	    return ML_POSINF;

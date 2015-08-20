@@ -1,6 +1,6 @@
 % File src/library/base/man/getDLLRegisteredRoutines.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{getDLLRegisteredRoutines}
@@ -17,7 +17,7 @@
   and potentially security in the future.
   This function provides a description of each of the
   registered routines in the DLL for the different interfaces,
-  i.e. \code{\link{.C}}, \code{\link{.Call}}, \code{\link{.Fortran}}
+  i.e.\sspace{}\code{\link{.C}}, \code{\link{.Call}}, \code{\link{.Fortran}}
   and \code{\link{.External}}.
 }
 \usage{

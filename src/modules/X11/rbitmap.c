@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2010  Guido Masarotto and the R Core Team
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
+ *  Copyright (C) 1999       Guido Masarotto
+ *  Copyright (C) 1999-2014  The R Core Team
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
  *  CXXR is not part of the R project, and bugs and other issues should
@@ -75,7 +75,7 @@
    (2) we can be arrived here from a button or menuitem callback maybe
    in a different thread from the one where R runs.
 */
-static void my_png_error(png_structp png_ptr, png_const_charp msg)
+static void NORET my_png_error(png_structp png_ptr, png_const_charp msg)
 {
     R_ShowMessage((char *) msg);
 #if PNG_LIBPNG_VER < 10400
@@ -330,7 +330,7 @@ typedef struct my_error_mgr * my_error_ptr;
  * Here's the routine that will replace the standard error_exit method:
 */
 
-static void my_error_exit (j_common_ptr cinfo)
+static void NORET my_error_exit (j_common_ptr cinfo)
 {
     /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
     my_error_ptr myerr = (my_error_ptr) cinfo->err;
@@ -511,8 +511,13 @@ int R_SaveAsTIFF(void  *d, int width, int height,
     */
     TIFFSetField(out, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 #endif
-    if(compression > 1)
-	TIFFSetField(out, TIFFTAG_COMPRESSION, compression);
+    if(compression > 1) {
+	if (compression > 10) {
+	    TIFFSetField(out, TIFFTAG_COMPRESSION, compression - 10);
+	    TIFFSetField(out, TIFFTAG_PREDICTOR, 2);
+	} else 
+	    TIFFSetField(out, TIFFTAG_COMPRESSION, compression);
+    }
 
     if (res > 0) {
 	TIFFSetField(out, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
@@ -653,7 +658,9 @@ int R_SaveAsBmp(void  *d, int width, int height,
     BMPW((unsigned short) biBitCount); /* biBitCount */
     BMPDW(0); /* biCompression=BI_RGB */
     BMPDW(0); /* biSizeImage (with BI_RGB not needed)*/
-    lres = (int)(0.5 + res/0.0254);
+    if (res > 0)
+	lres = (int)(0.5 + res/0.0254);
+    else lres = 2835; // 72ppi = 2835 pixels/metre.
     BMPDW(lres); /* XPels/M */
     BMPDW(lres); /* XPels/M */
     BMPDW(biClrUsed); /* biClrUsed */
@@ -702,4 +709,36 @@ int R_SaveAsBmp(void  *d, int width, int height,
 	}
     }
     return 1;
+}
+
+const char * in_R_pngVersion(void)
+{
+#ifdef HAVE_PNG
+    return png_get_header_ver(NULL /*ignored*/);
+#else
+    return "";
+#endif
+}
+const char * in_R_jpegVersion(void)
+{
+#ifdef HAVE_JPEG
+    static char ans[10];
+#ifdef JPEG_LIB_VERSION_MAJOR
+    sprintf(ans, "%d.%d", JPEG_LIB_VERSION_MAJOR, JPEG_LIB_VERSION_MINOR);
+#else
+    sprintf(ans, "%d.%d", JPEG_LIB_VERSION/10, JPEG_LIB_VERSION%10);
+#endif
+    return ans;
+#else
+    return "";
+#endif
+}
+
+const char * in_R_tiffVersion(void)
+{
+#ifdef HAVE_TIFF
+    return TIFFGetVersion();
+#else
+    return "";
+#endif
 }

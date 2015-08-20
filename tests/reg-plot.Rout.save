@@ -1,6 +1,6 @@
 
-R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R Under development (unstable) (2015-03-01 r67919) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -173,4 +173,10 @@ Warning in x(x) : NaNs produced
 Warning in dotchart(table(infert$education)) :
   'x' is neither a vector nor a matrix: using as.numeric(x)
 > ## failed in 2.12.[12]
+> 
+> ## cex as "..."  in "high level" function
+> hc <- hclust(dst <- dist(c(1:2, 5)), method="ave")
+> plot(hc, cex = 2, axes=FALSE, ann=FALSE)
+> ## cex was not used in 3.0.[01]
+> 
 > 

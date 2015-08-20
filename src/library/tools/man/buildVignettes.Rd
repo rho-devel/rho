@@ -1,6 +1,6 @@
 % File src/library/tools/man/buildVignettes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{buildVignettes}
@@ -21,10 +21,12 @@ pkgVignettes(package, dir, subdirs = NULL, lib.loc = NULL,
 }
 \arguments{
   \item{package}{a character string naming an installed package.  If
-    given, Sweave files are searched in subdirectory \file{doc}.}
+    given, vignette source files are by default looked for in
+    subdirectory \file{doc}.}
   \item{dir}{a character string specifying the path to a package's root
     source directory.  This subdirectory \file{vignettes} (or if it
-    does not exist \file{inst/doc}) is searched for Sweave files.}
+    does not exist \file{inst/doc}) is searched for vignette source
+    files.}
   \item{lib.loc}{a character vector of directory names of \R libraries,
     or \code{NULL}.  The default value of \code{NULL} corresponds to all
     libraries currently known.  The specified library trees are used to
@@ -35,19 +37,20 @@ pkgVignettes(package, dir, subdirs = NULL, lib.loc = NULL,
     were copies there before.}
   \item{tangle}{logical.  Do tangling as well as weaving.}
   \item{subdirs}{a character vector of subdirectories of \code{dir} in which
-    to look for vignettes.  Ignored if \code{package} is used.}
-  \item{output}{logical.  If \code{TRUE}, the output filename
-    for each vignette in the result.}
-  \item{source}{logical.  If \code{TRUE}, include the tangled output filename
-    for each vignette in the result.}
+    to look for vignettes. The first which exists is used.  Defaults to
+    \code{"doc"} if \code{package} is supplied, otherwise \code{"vignettes"}.}
+  \item{output}{logical indicating if the output filenames for each
+    vignette should be returned (in component \code{outputs}).}
+  \item{source}{logical indicating if the \emph{tangled} output
+    filenames for each vignette should be returned (in component \code{sources}).}
   \item{check}{logical.  If \code{TRUE}, check whether all files that
     have vignette-like filenames have an identifiable vignette engine.
     This may be a false positive if a file is not a vignette but has a 
     filename matching a pattern defined by one of the vignette engines.} 
 }
 \details{
-  \code{buildVignettes} is used by \code{R CMD build} and \code{R CMD
-    check} to (re-)build vignette PDFs from their (typically Sweave) sources.
+  \code{buildVignettes} is used by \command{R CMD build} and \command{R CMD
+    check} to (re-)build vignette PDFs from their sources. 
 }
 \value{
   \code{buildVignettes} is called for its side effect of creating the
@@ -56,6 +59,10 @@ pkgVignettes(package, dir, subdirs = NULL, lib.loc = NULL,
 
   \code{pkgVignettes} returns an object of class \code{"pkgVignettes"}
   if a vignette directory is found, otherwise \code{NULL}.  
+}
+\examples{
+gVigns <- pkgVignettes("grid")
+\donttest{str(gVigns)}% because it contains paths
 }
 \keyword{utilities}
 \keyword{documentation}

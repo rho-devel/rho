@@ -1,6 +1,6 @@
 % File src/library/base/man/match.fun.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{match.fun}
@@ -63,9 +63,7 @@ match.fun(FUN, descend = TRUE)
 match.fun("*")
 # Overwrite outer with a vector
 outer <- 1:5
-\dontrun{
-match.fun(outer, descend = FALSE) #-> Error:  not a function
-}
+try(match.fun(outer, descend = FALSE)) #-> Error:  not a function
 match.fun(outer) # finds it anyway
 is.function(match.fun("outer")) # as well
 }

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2013   The R Core Team
+ *  Copyright (C) 1998-2014   The R Core Team
  *  Copyright (C) 2004        The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -159,36 +159,53 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
 			return TRUE;
 	    }
 	    break;
+	case RAWSXP: // being compatible with raw_relop() in ./relop.c
+	    if(strictly) {
+		for(i = 0; i+1 < n ; i++)
+		    if(RAW(x)[i] >= RAW(x)[i+1])
+			return TRUE;
+
+	    } else {
+		for(i = 0; i+1 < n ; i++)
+		    if(RAW(x)[i] > RAW(x)[i+1])
+			return TRUE;
+	    }
+	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("isUnsorted", x);
 	}
     return FALSE;/* sorted */
-}
+} // isUnsorted()
 
 SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    int strictly;
-    SEXP x, ans;
-    int res = TRUE;
-
     op->checkNumArgs(num_args, call);
-    x = args[0];
-    strictly = asLogical(args[1]);
+
+    auto dispatched = op->InternalDispatch(call, "is.unsorted",
+					   num_args, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
+
+    RObject* x = PROTECT(args[0]);
+    int strictly = asLogical(args[1]);
     if(strictly == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' argument"), "strictly");
-    R_xlen_t n = xlength(x);
-    if(n < 2) return ScalarLogical(FALSE);
-    if(isVectorAtomic(x))
-	return ScalarLogical(isUnsorted(x, CXXRCONSTRUCT(Rboolean, strictly)));
-    if(isObject(x)) {
-	/* try dispatch */
-	SEXP call;
-	PROTECT(call = lang3(install(".gtn"), x, args[1]));
-	ans = eval(call, rho);
+    if(isVectorAtomic(x)) {
 	UNPROTECT(1);
+	return (xlength(x) < 2) ? ScalarLogical(FALSE) :
+	    ScalarLogical(isUnsorted(x, Rboolean(strictly)));
+    }
+    if(isObject(x)) {
+	// try dispatch -- fails entirely for S4: need "DispatchOrEval()" ?
+	SEXP call;
+	PROTECT(call = 	// R>  .gtn(x, strictly) :
+		lang3(install(".gtn"), x, args[1]));
+	SEXP ans = eval(call, rho);
+	UNPROTECT(2);
 	return ans;
-    } else res = NA_LOGICAL;
-    return ScalarLogical(res);
+    } // else
+	UNPROTECT(1);
+    return ScalarLogical(NA_LOGICAL);
 }
 
 
@@ -366,7 +383,6 @@ static const int incs[NI + 1] = {
 	    while (j >= h && x[j - h] less v) { x[j] = x[j - h]; j -= h; } \
 	    x[j] = v; \
 	}
-
 
 /* These are only called with n >= 2 */
 static void R_isort2(int *x, R_xlen_t n, Rboolean decreasing)
@@ -865,7 +881,7 @@ orderVectorl(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 
     if (n < 2) return;
     for (t = 0; incs[t] > n; t++);
-    for (h = incs[t]; t < NI; h = sincs[++t])
+    for (h = incs[t]; t < NI; h = incs[++t])
 	R_CheckUserInterrupt();
 	for (i = h; i < n; i++) {
 	    itmp = indx[i];
@@ -1418,7 +1434,6 @@ SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR:
     for(i = 0; i < n; i++) {
 	tmp = INTEGER(x)[i];
 	if(tmp == NA_INTEGER) continue;
-	if(tmp < 0) error(_("negative value in 'x'"));
 	if(xmax == NA_INTEGER || tmp > xmax) xmax = tmp;
 	if(xmin == NA_INTEGER || tmp < xmin) xmin = tmp;
     }

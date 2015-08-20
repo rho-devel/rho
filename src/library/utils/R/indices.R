@@ -1,7 +1,7 @@
 #  File src/library/utils/R/indices.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
-			       encoding = "")
+packageDescription <-
+    function(pkg, lib.loc = NULL, fields = NULL, drop = TRUE, encoding = "")
 {
     retval <- list()
     if(!is.null(fields)){
@@ -25,20 +25,19 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         retval[fields] <- NA
     }
 
-    ## If the NULL default for lib.loc is used, the loaded packages are
-    ## searched before the libraries.
+    ## If the NULL default for lib.loc is used,
+    ## the loaded packages/namespaces are searched before the libraries.
     pkgpath <-
 	if(is.null(lib.loc)) {
 	    if(pkg == "base")
 		file.path(.Library, "base")
-	    else if((envname <- paste0("package:", pkg))
-		    %in% search()) {
-		pp <- attr(as.environment(envname), "path")
+	    else if(isNamespaceLoaded(pkg))
+		getNamespaceInfo(pkg, "path")
+	    else if((envname <- paste0("package:", pkg)) %in% search()) {
+		attr(as.environment(envname), "path")
 		## could be NULL if a perverse user has been naming
 		## environments to look like packages.
-	    } else if(pkg %in% loadedNamespaces())
-		## correct path for a loaded (not attached) namespace:
-		getNamespaceInfo(pkg, "path")
+	    }
 	}
     if(is.null(pkgpath)) pkgpath <- ""
 
@@ -74,7 +73,7 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         desc <- as.list(dcf[1,])
     } else file <- ""
 
-    if(file != "") {
+    if(nzchar(file)) {
         ## read the Encoding field if any
         enc <- desc[["Encoding"]]
         if(!is.null(enc) && !is.na(encoding)) {
@@ -171,17 +170,13 @@ index.search <- function(topic, paths, firstOnly = FALSE)
     res
 }
 
-print.packageIQR <-
-function(x, ...)
+print.packageIQR <- function(x, ...)
 {
     db <- x$results
     ## Split according to Package.
-    out <- if(nrow(db) == 0L)
-         NULL
-    else
-        lapply(split(1 : nrow(db), db[, "Package"]),
-               function(ind) db[ind, c("Item", "Title"),
-                                drop = FALSE])
+    out <- if(nrow(db) > 0L)
+	       lapply(split(seq_len(nrow(db)), db[, "Package"]),
+		      function(ind) db[ind, c("Item", "Title"), drop = FALSE])
     outFile <- tempfile("RpackageIQR")
     outConn <- file(outFile, open = "w")
     first <- TRUE

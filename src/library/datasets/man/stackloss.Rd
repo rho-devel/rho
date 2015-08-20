@@ -37,9 +37,9 @@ stack.loss
   variable, are provided as well.
 }
 \source{
-  Brownlee, K. A. (1960, 2nd ed. 1965)
+  Brownlee, K. A. (1960, 2nd ed.\sspace{}1965)
   \emph{Statistical Theory and Methodology in Science and Engineering}.
-  New York: Wiley. pp. 491--500.
+  New York: Wiley. pp.\sspace{}491--500.
 }
 \details{
   \dQuote{Obtained from 21 days of operation of a plant for the

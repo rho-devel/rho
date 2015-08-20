@@ -1,7 +1,7 @@
 #  File src/library/stats/R/stl.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ stl <- function(x, s.window,
     deg.check <- function(deg) {
 	degname <- deparse(substitute(deg))
 	deg <- as.integer(deg)
-	if(deg < 0 || deg > 1) stop(degname, " must be 0 or 1")
+	if(deg < 0 || deg > 1) stop(gettextf("%s must be 0 or 1", degname), domain = NA)
 	deg
     }
     x <- na.action(as.ts(x))

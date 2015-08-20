@@ -1,6 +1,6 @@
 % File src/library/base/man/backsolve.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{backsolve}
@@ -51,7 +51,7 @@ forwardsolve(l, x, k = ncol(l), upper.tri = FALSE,
   Wadsworth & Brooks/Cole.
 
   Dongarra, J. J., Bunch, J. R.,  Moler, C. B. and  Stewart, G. W. (1978)
-  \emph{LINPACK Users Guide.}  Philadelphia: SIAM Publications.
+  \emph{LINPACK Users Guide}.  Philadelphia: SIAM Publications.
 }
 \seealso{
   \code{\link{chol}},

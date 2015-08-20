@@ -1,7 +1,7 @@
 #  File src/library/utils/R/packages.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -275,10 +275,12 @@ function(db)
     dups <- packages[duplicated(packages)]
     drop <- integer()
     CRAN <- getOption("repos")["CRAN"]
+    ## do nothing if there is no CRAN repos on the list
+    if(is.na(CRAN)) return(db)
     for(d in dups) {
         pos <- which(packages == d)
-        drop <- c(drop, pos[substring(db[pos, "Repository"], 1,
-                                      nchar(CRAN)) != CRAN])
+        ind <- substring(db[pos, "Repository"], 1, nchar(CRAN)) != CRAN
+        if(!all(ind)) drop <- c(drop, pos[ind])
     }
     if(length(drop)) db[-drop, , drop = FALSE] else db
 }
@@ -326,6 +328,10 @@ update.packages <- function(lib.loc = NULL, repos = getOption("repos"),
     if(is.null(lib.loc))
         lib.loc <- .libPaths()
 
+
+    if(type == "both" && (!missing(contriburl) || !is.null(available))) {
+        stop("specifying 'contriburl' or 'available' requires a single type, not type = \"both\"")
+    }
     if(is.null(available))
         available <- available.packages(contriburl = contriburl,
                                         method = method)
@@ -383,9 +389,14 @@ update.packages <- function(lib.loc = NULL, repos = getOption("repos"),
         ## do this a library at a time, to handle dependencies correctly.
         libs <- unique(instlib)
         for(l in libs)
-            install.packages(update[instlib == l , "Package"], l,
-                             contriburl = contriburl, method = method,
-                             available = available, ..., type = type)
+            if (type == 'both')
+                install.packages(update[instlib == l , "Package"], l,
+                                 repos = repos, method = method,
+                                 ..., type = type)
+            else
+                install.packages(update[instlib == l , "Package"], l,
+                                 contriburl = contriburl, method = method,
+                                 available = available, ..., type = type)
     }
 }
 
@@ -450,6 +461,9 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
                          ..., type = getOption("pkgType"))
 {
     ask  # just a check that it is valid before we start work
+    if(type == "both" && (!missing(contriburl) || !is.null(available))) {
+        stop("specifying 'contriburl' or 'available' requires a single type, not type = \"both\"")
+    }
     if(is.null(lib.loc)) lib.loc <- .libPaths()
     if(!is.matrix(instPkgs))
         stop(gettextf("no installed packages for (invalid?) 'lib.loc=%s'",
@@ -480,9 +494,13 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
         else message("no new packages are available")
     }
     if(length(update)) {
-        install.packages(update, lib = lib.loc[1L], contriburl = contriburl,
-                         method = method, available = available,
-                         type = type, ...)
+        if(type == "both")
+            install.packages(update, lib = lib.loc[1L], method = method,
+                             type = type, ...)
+        else
+            install.packages(update, lib = lib.loc[1L], contriburl = contriburl,
+                             method = method, available = available,
+                             type = type, ...)
         # Now check if they were installed and update 'res'
         dirs <- list.files(lib.loc[1L])
         updated <- update[update %in% dirs]
@@ -529,7 +547,7 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
             }
             if("Built" %in% fields) {
                 ## This should not be missing.
-                if(is.null(md$Built$R)) {
+                if(is.null(md$Built$R) || !("Built" %in% names(desc))) {
                     warning(gettextf("metadata of %s is corrupt",
                                      sQuote(pkgpath)), domain = NA)
                     next
@@ -570,7 +588,7 @@ installed.packages <-
             enc <- sprintf("%d_%s", nchar(base), .Call(C_crc64, base))
             dest <- file.path(tempdir(), paste0("libloc_", enc, ".rds"))
             if(file.exists(dest) &&
-               file.info(dest)$mtime > file.info(lib)$mtime &&
+               file.mtime(dest) > file.mtime(lib) &&
                (val <- readRDS(dest))$base == base)
                 ## use the cache file
                 retval <- rbind(retval, val$value)
@@ -650,10 +668,8 @@ download.packages <- function(pkgs, destdir, available = NULL,
                               contriburl = contrib.url(repos, type),
                               method, type = getOption("pkgType"), ...)
 {
-    dirTest <- function(x) !is.na(isdir <- file.info(x)$isdir) & isdir
-
     nonlocalcran <- length(grep("^file:", contriburl)) < length(contriburl)
-    if(nonlocalcran && !dirTest(destdir))
+    if(nonlocalcran && !dir.exists(destdir))
         stop("'destdir' is not a directory")
     if(is.null(available))
         available <- available.packages(contriburl=contriburl, method=method)
@@ -725,6 +741,7 @@ contrib.url <- function(repos, type = getOption("pkgType"))
 {
     ## Not entirely clear this is optimal
     if(type == "both") type <- "source"
+    if(type == "binary") type <- .Platform$pkgType
     if(is.null(repos)) return(NULL)
     if("@CRAN@" %in% repos && interactive()) {
         cat(gettext("--- Please select a CRAN mirror for use in this session ---"),
@@ -820,7 +837,8 @@ setRepositories <-
         p <- file.path(R.home("etc"), "repositories")
     a <- tools:::.read_repositories(p)
     pkgType <- getOption("pkgType")
-    if (pkgType == "both") pkgType <- .Platform$pkgType
+    if (pkgType == "both") pkgType <- "source" #.Platform$pkgType
+    if (pkgType == "binary") pkgType <- .Platform$pkgType
     if(length(grep("^mac\\.binary", pkgType))) pkgType <- "mac.binary"
     thisType <- a[[pkgType]]
     a <- a[thisType, 1L:3L]
@@ -863,8 +881,8 @@ compareVersion <- function(a, b)
 {
     if(is.na(a)) return(-1L)
     if(is.na(b)) return(1L)
-    a <- as.integer(strsplit(a, "[\\.-]")[[1L]])
-    b <- as.integer(strsplit(b, "[\\.-]")[[1L]])
+    a <- as.integer(strsplit(a, "[.-]")[[1L]])
+    b <- as.integer(strsplit(b, "[.-]")[[1L]])
     for(k in seq_along(a))
         if(k <= length(b)) {
             if(a[k] > b[k]) return(1) else if(a[k] < b[k]) return(-1L)
@@ -963,7 +981,7 @@ compareVersion <- function(a, b)
     ## If recursive = TRUE, do this recursively.
     if(!length(pkgs)) return(NULL)
     if(is.null(available))
-        stop(gettextf("%s must be supplied", sQuote(available)), domain = NA)
+        stop(gettextf("%s must be supplied", sQuote("available")), domain = NA)
     info <- available[pkgs, dependencies, drop = FALSE]
     x <- vector("list", length(pkgs)); names(x) <- pkgs
     if(recursive) {

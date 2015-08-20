@@ -1,6 +1,6 @@
 % File src/library/stats/man/predict.arima.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{predict.Arima}
@@ -29,7 +29,7 @@
 
   The standard errors of prediction exclude the uncertainty in the
   estimation of the ARMA model and the regression coefficients.
-  According to Harvey (1993, pp. 58--9) the effect is small.
+  According to Harvey (1993, pp.\sspace{}58--9) the effect is small.
 }
 \value{
   A time series of predictions, or if \code{se.fit = TRUE}, a list

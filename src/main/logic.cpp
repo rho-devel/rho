@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999--2012  The R Core Team.
+ *  Copyright (C) 1999--2014  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -110,20 +110,28 @@ namespace {
 	if (arg && arg->sexptype() == RAWSXP) {
 	    // Bit inversion:
 	    return applyUnaryOperator([](Rbyte x) { return Rbyte(~x); },
-				      CopyLayoutAttributes(),
+				      CopyAllAttributes(),
 				      SEXP_downcast<RawVector*>(arg));
-	} else if (!isLogical(arg) && !isNumber(arg)) {
+	} else if (arg && arg->sexptype() == LGLSXP) {
+	    // Logical negation:
+	    return applyUnaryOperator(
+		[](Logical x) { return !x; },
+		CopyAllAttributes(),
+		SEXP_downcast<LogicalVector*>(arg));
+	} else if (!isNumber(arg)) {
 	    if (Rf_length(arg) == 0U)  // For back-compatibility
 		return LogicalVector::create(0);
 	    Rf_error(_("invalid argument type"));
+	} else {
+	    // Logical negation:
+	    GCStackRoot<LogicalVector>
+		lv(static_cast<LogicalVector*>(coerceVector(arg, LGLSXP)));
+	    return applyUnaryOperator(
+		[](Logical x) { return !x; },
+                // Note: in other cases all attributes are copied.
+		CopyLayoutAttributes(),
+		lv.get());
 	}
-	// Logical negation:
-	GCStackRoot<LogicalVector>
-	    lv(static_cast<LogicalVector*>(coerceVector(arg, LGLSXP)));
-	return applyUnaryOperator(
-	    [](Logical x) { return !x; },
-	    CopyLayoutAttributes(),
-	    lv.get());
     }
 }  // anonymous namespace
 
@@ -181,7 +189,7 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 /*  &&	and  ||	 */
     SEXP s1, s2;
     int x1, x2;
-    SEXP ans;
+    int ans;
 
     if (length(args) != 2)
 	error(_("'%s' operator requires 2 arguments"),
@@ -189,7 +197,6 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 
     s1 = CAR(args);
     s2 = CADR(args);
-    PROTECT(ans = allocVector(LGLSXP, 1));
     s1 = eval(s1, env);
     if (!isNumber(s1))
 	errorcall(call, _("invalid 'x' type in 'x %s y'"),
@@ -206,28 +213,27 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
     case 1: /* && */
 	if (x1 == FALSE)
-	    LOGICAL(ans)[0] = FALSE;
+	    ans = FALSE;
 	else {
 	    get_2nd;
 	    if (x1 == NA_LOGICAL)
-		LOGICAL(ans)[0] = (x2 == NA_LOGICAL || x2) ? NA_LOGICAL : x2;
+	        ans = (x2 == NA_LOGICAL || x2) ? NA_LOGICAL : x2;
 	    else /* x1 == TRUE */
-		LOGICAL(ans)[0] = x2;
+		ans = x2;
 	}
 	break;
     case 2: /* || */
 	if (x1 == TRUE)
-	    LOGICAL(ans)[0] = TRUE;
+	    ans = TRUE;
 	else {
 	    get_2nd;
 	    if (x1 == NA_LOGICAL)
-		LOGICAL(ans)[0] = (x2 == NA_LOGICAL || !x2) ? NA_LOGICAL : x2;
+		ans = (x2 == NA_LOGICAL || !x2) ? NA_LOGICAL : x2;
 	    else /* x1 == FALSE */
-		LOGICAL(ans)[0] = x2;
+		ans = x2;
 	}
     }
-    UNPROTECT(1);
-    return ans;
+    return ScalarLogical(ans);
 }
 
 
@@ -257,8 +263,6 @@ static int checkValues(int op, int na_rm, int *x, R_xlen_t n)
     return NA_LOGICAL; /* -Wall */
 }
 
-extern SEXP fixup_NaRm(SEXP args); /* summary.c */
-
 /* all, any */
 SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -271,7 +275,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean val = PRIMVAL(op) == _OP_ALL ? TRUE : FALSE;
 
     PROTECT(args = fixup_NaRm(args));
-    PROTECT(call2 = duplicate(call));
+    PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
     if (DispatchGroup("Summary", call2, op, args, env, &ans)) {

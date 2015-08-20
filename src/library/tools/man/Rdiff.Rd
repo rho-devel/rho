@@ -1,6 +1,6 @@
 % File src/library/tools/man/Rdiff.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2010-13 R Core Team
+% Copyright 2010-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Rdiff}
@@ -26,6 +26,7 @@ Rdiff(from, to, useDiff = FALSE, forEx = FALSE,
     differences found?}
 }
 \details{
+  
   The \R startup banner and any timing information from \command{R CMD
     BATCH} are removed from both files, together with lines about
   loading packages.  UTF-8 fancy quotes (see \code{\link{sQuote}}) and

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -33,6 +33,8 @@
 #ifndef R_INTERNAL_H
 #define R_INTERNAL_H
 
+#include "R_ext/Error.h"
+
 #ifdef __cplusplus
 
 namespace CXXR {
@@ -47,6 +49,15 @@ namespace CXXR {
                                   RObject* const* args,
                                   int num_args,
                                   const PairList* tags);
+#if Win32
+SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
+SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
+SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
+SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
+SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
+#else
+SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
+#endif
 
 }  // namespace CXXR
 
@@ -55,10 +66,12 @@ namespace CXXR {
 CXXR::quick_builtin do_abbrev;
 SEXP do_abs(SEXP, SEXP, SEXP, SEXP); // calls do_cmathfuns
 CXXR::quick_builtin do_addCondHands;
+SEXP do_address(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_addRestart;
 CXXR::quick_builtin do_adist;
 CXXR::quick_builtin do_agrep;
 CXXR::quick_builtin do_allnames;
+SEXP do_anyNA(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_aperm;
 CXXR::quick_builtin do_arith;
 CXXR::quick_builtin do_aregexec;
@@ -68,7 +81,7 @@ CXXR::quick_builtin do_asPOSIXct;
 CXXR::quick_builtin do_asPOSIXlt;
 CXXR::quick_builtin do_ascall;
 CXXR::quick_builtin do_as_environment;
-CXXR::quick_builtin do_ascharacter;
+CXXR::quick_builtin do_asatomic;
 CXXR::quick_builtin do_asfunction;
 CXXR::quick_builtin do_assign;
 CXXR::quick_builtin do_asvector;
@@ -81,6 +94,9 @@ CXXR::quick_builtin do_attributesgets;
 CXXR::quick_builtin do_backsolve;
 CXXR::quick_builtin do_baseenv;
 CXXR::quick_builtin do_basename;
+SEXP do_bcprofcounts(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bcprofstart(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bcprofstop(SEXP, SEXP, SEXP, SEXP);
 SEXP do_begin(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_bincode;
 SEXP do_bind(SEXP, SEXP, SEXP, SEXP);  // Special
@@ -111,6 +127,9 @@ CXXR::quick_builtin do_copyDFattr;
 CXXR::quick_builtin do_crc64;
 CXXR::quick_builtin do_Cstack_info;
 CXXR::quick_builtin do_cum;
+SEXP do_curlDownload(SEXP, SEXP, SEXP, SEXP);
+SEXP do_curlGetHeaders(SEXP, SEXP, SEXP, SEXP);
+SEXP do_curlVersion(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_D2POSIXlt;
 CXXR::quick_builtin do_date;
 SEXP do_debug(SEXP, SEXP, SEXP, SEXP);  // Tricky.
@@ -125,6 +144,7 @@ CXXR::quick_builtin do_dimgets;
 CXXR::quick_builtin do_dimnames;
 CXXR::quick_builtin do_dimnamesgets;
 CXXR::quick_builtin do_dircreate;
+SEXP do_direxists(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_dirname;
 CXXR::quick_builtin do_docall;
 SEXP do_dotcall(SEXP, SEXP, SEXP, SEXP);
@@ -145,6 +165,7 @@ CXXR::quick_builtin do_envir;
 CXXR::quick_builtin do_envirgets;
 CXXR::quick_builtin do_envirName;
 CXXR::quick_builtin do_env2list;
+SEXP do_eSoftVersion(SEXP, SEXP, SEXP, SEXP);
 SEXP do_External(SEXP, SEXP, SEXP, SEXP);
 SEXP do_Externalgr(SEXP, SEXP, SEXP, SEXP);
 SEXP do_eval(SEXP, SEXP, SEXP, SEXP);
@@ -182,6 +203,7 @@ CXXR::quick_builtin do_getVarsFromFrame;
 CXXR::quick_builtin do_getenv;
 CXXR::quick_builtin do_geterrmessage;
 CXXR::quick_builtin do_getlocale;
+SEXP do_getOption(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_getRegisteredRoutines;
 CXXR::quick_builtin do_getSymbolInfo;
 CXXR::quick_builtin do_getRestart;
@@ -193,6 +215,7 @@ CXXR::quick_builtin do_grep;
 CXXR::quick_builtin do_grepraw;
 CXXR::quick_builtin do_gsub;
 CXXR::quick_builtin do_iconv;
+SEXP do_ICUget(SEXP, SEXP, SEXP, SEXP);
 SEXP do_ICUset(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_identical;
 SEXP do_if(SEXP, SEXP, SEXP, SEXP);  // Special
@@ -204,7 +227,7 @@ SEXP do_internal(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_interruptsSuspended;
 CXXR::quick_builtin do_intToBits;
 CXXR::quick_builtin do_invisible;
-CXXR::quick_builtin do_invokeRestart;
+CXXR::quick_builtin do_invokeRestart NORET;
 CXXR::quick_builtin do_is;
 CXXR::quick_builtin do_isatty;
 CXXR::quick_builtin do_isfinite;
@@ -222,6 +245,7 @@ CXXR::quick_builtin do_lazyLoadDBflush;
 CXXR::quick_builtin do_lazyLoadDBinsertValue;
 CXXR::quick_builtin do_length;
 CXXR::quick_builtin do_lengthgets;
+SEXP do_lengths(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_levelsgets;
 CXXR::quick_builtin do_listdirs;
 CXXR::quick_builtin do_listfiles;
@@ -273,6 +297,7 @@ CXXR::quick_builtin do_parentframe;
 CXXR::quick_builtin do_parse;
 CXXR::quick_builtin do_paste;
 CXXR::quick_builtin do_pathexpand;
+SEXP do_pcre_config(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_pmatch;
 CXXR::quick_builtin do_pmin;
 CXXR::quick_builtin do_pos2env;
@@ -305,6 +330,7 @@ CXXR::quick_builtin do_readLines;
 CXXR::quick_builtin do_readln;
 SEXP do_recall(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_recordGraphics(SEXP, SEXP, SEXP, SEXP);
+SEXP do_refcnt(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_regexec;
 CXXR::quick_builtin do_regexpr;
 CXXR::quick_builtin do_regFinaliz;
@@ -316,6 +342,7 @@ CXXR::quick_builtin do_rep_len;
 SEXP do_repeat(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_resetCondHands;
 SEXP do_return(SEXP, SEXP, SEXP, SEXP);  // Special
+SEXP do_returnValue(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_Rhome;
 CXXR::quick_builtin do_RNGkind;
 CXXR::quick_builtin do_rowsum;
@@ -353,7 +380,7 @@ CXXR::quick_builtin do_sort;
 CXXR::quick_builtin do_split;
 CXXR::quick_builtin do_sprintf;
 CXXR::quick_builtin do_standardGeneric;
-SEXP do_stop(SEXP, SEXP, SEXP, SEXP);
+SEXP do_stop(SEXP, SEXP, SEXP, SEXP) NORET;
 CXXR::quick_builtin do_storage_mode;
 CXXR::quick_builtin do_strsplit;
 CXXR::quick_builtin do_strptime;
@@ -385,6 +412,7 @@ CXXR::quick_builtin do_tempdir;
 CXXR::quick_builtin do_tempfile;
 SEXP do_tilde(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_tolower;
+SEXP do_topenv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_trace(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_traceOnOff;
 CXXR::quick_builtin do_traceback;

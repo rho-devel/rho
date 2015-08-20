@@ -1,6 +1,6 @@
 % File src/library/base/man/hexmode.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{hexmode}
@@ -59,6 +59,14 @@ as.hexmode(x)
   \code{\link{octmode}}, \code{\link{sprintf}} for other options in
   converting integers to hex, \code{\link{strtoi}} to convert hex
   strings to integers.
+}
+\examples{
+i <- as.hexmode("7fffffff")
+i; class(i)
+identical(as.integer(i), .Machine$integer.max)
+
+hm <- as.hexmode(c(NA, 1)); hm
+as.integer(hm)
 }
 \keyword{utilities}
 \keyword{print}

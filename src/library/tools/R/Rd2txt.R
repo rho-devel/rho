@@ -1,7 +1,7 @@
 #  File src/library/tools/R/Rd2txt.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -144,7 +144,7 @@ transformMethod <- function(i, blocks, Rdfile) {
     }
 
     rewriteBlocks <- function()
-    	c(blocks[seq_len(j-1)],
+    	c(blocks[seq_len(j-1L)],
     	            editblock(blocks[[j]],
     	                      paste(chars[seq_len(char)], collapse="")),
     	            if (char < length(chars))
@@ -175,7 +175,7 @@ transformMethod <- function(i, blocks, Rdfile) {
 	## need to assemble the call by matching parens in RCODE
 	findOpen(i) # Sets chars, char and j
 	chars[char] <- ""
-	blocks <- c(blocks[seq_len(j-1)],
+	blocks <- c(blocks[seq_len(j-1L)],
 	            editblock(blocks[[j]],
 	                      paste(chars[seq_len(char)], collapse="")),
 	            if (char < length(chars))
@@ -209,16 +209,20 @@ transformMethod <- function(i, blocks, Rdfile) {
 		   generic)) {
         ## Binary operators and unary '!'.
 	findOpen(i)
-	chars[char] <- ""
-	blocks <- rewriteBlocks()
 
 	if (generic != "!") {
+            chars[char] <- ""
+            blocks <- rewriteBlocks()
 	    findComma(j)
 	    chars[char] <- paste0(" ", generic, " ")
 	    # Delete blanks after the comma
 	    deleteBlanks()
 	    blocks <- rewriteBlocks()
-	}
+	} else {
+            chars[char] <- "!"
+	    blocks <- rewriteBlocks()
+        }
+
 	findClose(j)
 	chars[char] <- ""
 	blocks[j] <- editblock(blocks[[j]],
@@ -233,14 +237,31 @@ transformMethod <- function(i, blocks, Rdfile) {
 	methodtype <- if (grepl("<-", blocks[[j]])) "replacement " else ""
     }
 
-    if (blocktag == "\\S4method")
-    	blocks <- c( blocks[seq_len(i-1)],
-		     list(structure(paste0("## S4 ", methodtype, "method for signature '"),
-			   Rd_tag="RCODE", srcref=srcref)),
-		     class,
-		     list(structure("'\n", Rd_tag="RCODE", srcref=srcref)),
-		     blocks[-seq_len(i)] )
-    else if (default)
+    if (blocktag == "\\S4method") {
+        ## some signatures are very long.
+        blocks <- if(nchar(class) > 50L) {
+            cl <- paste0("'", as.character(class), "'")
+            if(nchar(cl) > 70L) {
+                cl <- strsplit(cl, ",")[[1L]]
+                ncl <- length(cl)
+                cl[-ncl] <- paste0(cl[-ncl], ",")
+                cl[-1L] <- paste0("  ", cl[-1L])
+            }
+            cl <- paste("##", cl, collapse="\n")
+            c( blocks[seq_len(i-1L)],
+              list(structure(paste0("## S4 ", methodtype, "method for signature \n"),
+                             Rd_tag="RCODE", srcref=srcref)),
+              list(structure(cl, Rd_tag="TEXT", srcref=srcref)),
+              list(structure("\n", Rd_tag="RCODE", srcref=srcref)),
+              blocks[-seq_len(i)] )
+        } else
+            c( blocks[seq_len(i-1L)],
+              list(structure(paste0("## S4 ", methodtype, "method for signature '"),
+                             Rd_tag="RCODE", srcref=srcref)),
+              class,
+              list(structure("'\n", Rd_tag="RCODE", srcref=srcref)),
+              blocks[-seq_len(i)] )
+    } else if (default)
     	blocks <- c( blocks[seq_len(i-1)],
     		     list(structure(paste0("## Default S3 ", methodtype, "method:\n"),
     		     	       Rd_tag="RCODE", srcref=srcref)),
@@ -341,7 +362,7 @@ Rd2txt <-
                 left <- excess %/% 2
                 right <- excess-left
             }
-            paste(c(rep(" ", left), x, rep(" ", right)), collapse = "")
+            paste(c(rep_len(" ", left), x, rep_len(" ", right)), collapse = "")
         } else x
     }
 
@@ -376,7 +397,7 @@ Rd2txt <-
     }
 
     blanks <- function(n)
-	if (n) paste(rep(" ", n), collapse="") else ""
+	if (n) paste(rep_len(" ", n), collapse="") else ""
 
     flushBuffer <- function() {
     	if (!length(buffer)) return()
@@ -452,13 +473,6 @@ Rd2txt <-
         psub1("\\s*$", "", x)
     }
 
-    striptitle <- function(text) {
-        text <- fsub("\\", "", text)
-        text <- fsub("---", "_", text)
-        text <- fsub("--", "-", text)
-        text
-    }
-
     ## underline via backspacing
     txt_header <- function(header) {
         opts <- Rd2txt_options()
@@ -492,7 +506,7 @@ Rd2txt <-
     	    buffer <<- buffer[-length(buffer)]
 	flushBuffer()
 	if (n > haveBlanks) {
-	    buffer <<- rep("", n - haveBlanks)
+	    buffer <<- rep_len("", n - haveBlanks)
 	    flushBuffer()
 	    haveBlanks <<- n
 	}
@@ -585,18 +599,28 @@ Rd2txt <-
                        writeQ(block, tag, quote="\\sQuote")
                    else writeContent(block,tag)
                },
-               "\\email"=  put("<email: ",
-                               gsub("\n", "", paste(as.character(block), collapse="")),
-                               ">"),
-               "\\url"= put("<URL: ",
-                              gsub("\n", "", paste(as.character(block), collapse="")),
-                              ">") ,
-               "\\href"= {
+               "\\email" = {
+                   put("<email: ",
+                       trimws(gsub("\n", "",
+                                   paste(as.character(block),
+                                         collapse=""))),
+                       ">")
+               },
+               "\\url" = {
+                   put("<URL: ",
+                       trimws(gsub("\n", "",
+                                   paste(as.character(block),
+                                         collapse=""))),
+                       ">")
+               },
+               "\\href" = {
                    opts <- Rd2txt_options()
                    writeContent(block[[2L]], tag)
                    if (opts$showURLs)
   			put(" (URL: ",
-  			    gsub("\n", "", paste(as.character(block[[1L]]), collapse="")),
+  			    trimws(gsub("\n", "",
+                                        paste(as.character(block[[1L]]),
+                                              collapse=""))),
   			    ")")
                },
                "\\Sexpr"= put(as.character.Rd(block, deparse=TRUE)),
@@ -736,8 +760,8 @@ Rd2txt <-
                     })
         rows <- entries[[length(entries)]]$row
         cols <- max(sapply(entries, function(e) e$col))
-        widths <- rep(0L, cols)
-        lines <- rep(1L, rows)
+        widths <- rep_len(0L, cols)
+        lines <- rep_len(1L, rows)
         for (i in seq_along(entries)) {
             e <- entries[[i]]
             while(length(e$text) && !nzchar(e$text[length(e$text)])) {
@@ -835,7 +859,7 @@ Rd2txt <-
                                   indent <<- max(opts$minIndent,
                                                  indent + opts$extraIndent)
                                   keepFirstIndent <<- TRUE
-                                  putw(paste(rep(" ", indent0), collapse=""),
+                                  putw(paste(rep_len(" ", indent0), collapse=""),
                                        frmt(paste0(DLlab),
                                             justify="left", width=indent),
                                        " ")
@@ -908,7 +932,7 @@ Rd2txt <-
             wrapping <<- TRUE
             keepFirstIndent <<- FALSE
     	    writeContent(section[[2L]], tag)
-    	} else if (tag %in% c("\\usage", "\\synopsis", "\\examples")) {
+    	} else if (tag %in% c("\\usage", "\\examples")) {
             putf(txt_header(sectionTitles[tag]), ":")
             blankLine()
             dropBlank <<- TRUE

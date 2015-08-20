@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file dounzip.c
- *  first part Copyright (C) 2002-12  The R Core Team
+ *  first part Copyright (C) 2002-2014  The R Core Team
  *  second part Copyright (C) 1998-2010 Gilles Vollant
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -132,6 +132,7 @@ extract_one(unzFile uf, const char *const dest, const char * const filename,
     if (filename) {
 	if (strlen(dest) + strlen(filename) > PATH_MAX - 2) return 1;
 	strncpy(fn0, filename, PATH_MAX); 
+        fn0[PATH_MAX - 1] = '\0';
 	fn = fn0;
     }
 #ifdef Win32
@@ -471,23 +472,20 @@ static size_t unz_read(void *ptr, size_t size, size_t nitems,
     return unzReadCurrentFile(uf, ptr, static_cast<unsigned int>(size*nitems))/size;
 }
 
-static int null_vfprintf(Rconnection con, const char *format, va_list ap)
+static int NORET null_vfprintf(Rconnection con, const char *format, va_list ap)
 {
     error(_("printing not enabled for this connection"));
-    return 0; /* -Wall */
 }
 
-static size_t null_write(const void *ptr, size_t size, size_t nitems,
+static size_t NORET null_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
     error(_("write not enabled for this connection"));
-    return 0; /* -Wall */
 }
 
-static double null_seek(Rconnection con, double where, int origin, int rw)
+static double NORET null_seek(Rconnection con, double where, int origin, int rw)
 {
     error(_("seek not enabled for this connection"));
-    return 0; /* -Wall */
 }
 
 static int null_fflush(Rconnection con)

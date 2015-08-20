@@ -1,7 +1,7 @@
 #  File src/library/base/R/methodsSupport.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -89,3 +89,5 @@ asS3 <- function(object, flag = TRUE, complete = TRUE)
     }
     NULL
 }
+
+returnValue <- function(default = NULL) .Internal(returnValue(default))

@@ -1,16 +1,14 @@
 % File src/library/base/man/norm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2010--2012 R Core Team
+% Copyright 2010--2015 R Core Team
 % Copyright 2010--2012 The R Foundation
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{norm}
 \alias{norm}
 \title{Compute the Norm of a Matrix}
 \description{
-  Computes a matrix norm of \code{x} using Lapack.  The norm can be
+  Computes a matrix norm of \code{x} using LAPACK.  The norm can be
   the one (\code{"O"}) norm, the infinity (\code{"I"}) norm, the
   Frobenius (\code{"F"}) norm, the maximum modulus (\code{"M"}) among
   elements of a matrix, or the \dQuote{spectral} or \code{"2"}-norm, as
@@ -46,6 +44,10 @@ norm(x, type = c("O", "I", "F", "M", "2"))
 
   Note that the 1-, Inf- and \code{"M"} norm is faster to calculate than
   the Frobenius one.
+
+  Unsuccessful results from the underlying LAPACK code will result in an
+  error giving a positive error code: these can only be interpreted by
+  detailed study of the FORTRAN code.
 }
 \value{
   The matrix norm, a non-negative number.
@@ -56,7 +58,7 @@ norm(x, type = c("O", "I", "F", "M", "2"))
   LAPACK is from \url{http://www.netlib.org/lapack}.
 }
 \references{
-  Anderson, E., et al. (1994).
+  Anderson, E., \emph{et al} (1994).
   \emph{LAPACK User's Guide},
   2nd edition, SIAM, Philadelphia.
 }

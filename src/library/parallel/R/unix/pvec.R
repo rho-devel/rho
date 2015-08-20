@@ -1,7 +1,7 @@
 #  File src/library/parallel/R/unix/pvec.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@ pvec <- function(v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
 {
     if (!is.vector(v)) stop("'v' must be a vector")
 
-    env <- parent.frame()
     cores <- as.integer(mc.cores)
     if(cores < 1L) stop("'mc.cores' must be >= 1")
     if(cores == 1L) return(FUN(v, ...))
+    .check_ncores(cores)
 
     if(mc.set.seed) mc.reset.stream()
 

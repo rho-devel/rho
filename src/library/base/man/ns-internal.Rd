@@ -1,6 +1,6 @@
 % File src/library/base/man/ns-internal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{ns-internals}
@@ -27,16 +27,19 @@
 \alias{.knownS3Generics}
 \alias{loadingNamespaceInfo}
 \alias{.getNamespace}
+\alias{.getNamespaceInfo}
 \alias{..getNamespace}
 \usage{
 asNamespace(ns, base.OK = TRUE)
-getNamespaceInfo(ns, which)
+getNamespaceInfo (ns, which)
+.getNamespaceInfo(ns, which)
 importIntoEnv(impenv, impnames, expenv, expnames)
 isBaseNamespace(ns)
 isNamespace(ns)
 namespaceExport(ns, vars)
 namespaceImport(self, \dots, from = NULL)
-namespaceImportFrom(self, ns, vars, generics, packages, from = NULL)
+namespaceImportFrom(self, ns, vars, generics, packages,
+                    from = "non-package environment")
 namespaceImportClasses(self, ns, vars, from = NULL)
 namespaceImportMethods(self, ns, vars, from = NULL)
 packageHasNamespace(package, package.lib)
@@ -75,14 +78,30 @@ loadingNamespaceInfo()
   \item{name}{symbol: name of namespace}
 }
 \description{
-  Internal namespace support functions.  Not intended to be called directly.
+  Internal namespace support functions.  Not intended to be called
+  directly, and only visible because of the special nature of the
+  \pkg{base} namespace.
 }
 \details{
   \code{packageHasNamespace} does not indicate if the package has a
-  namespace, rather if it has a \file{NAMESPACE} file, which \code{base}
-  and many older packages do not.  But then you are not intended to be
-  using it \dots.
+  namespace (all now do), rather if it has a \file{NAMESPACE} file,
+  which \pkg{base} and some legacy packages do not.  But then you are
+  not intended to be using it \dots.
 }
 
 \keyword{internal}
-\author{Luke Tierney}
+\author{
+  Luke Tierney and other members of the R Core Team.
+}
+\examples{
+## Only for for the daring ones, trying to get into the bowels :
+
+lsNamespaceInfo <- function(ns, ...) {
+    ns <- asNamespace(ns, base.OK = FALSE)
+    ls(..., envir = get(".__NAMESPACE__.", envir = ns, inherits = FALSE))
+}
+allinfoNS <- function(ns) sapply(lsNamespaceInfo(ns), getNamespaceInfo, ns=ns)
+
+utils::str(allinfoNS("stats"))
+utils::str(allinfoNS("stats4"))
+}

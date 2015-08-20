@@ -82,18 +82,25 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
       m_offset(offset), m_function(s_function_table[offset].cfun),
       m_quick_function(s_function_table[offset].quick_function)
 {
+    const std::string& name = s_function_table[offset].name;
     unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
     m_transparent = (viaDotInternal()
+		     || m_function == do_External
+		     || m_function == do_Externalgr
 		     || m_function == do_begin
 		     || m_function == do_break
+		     || m_function == do_dotcall
 		     || m_function == do_for
 		     || m_function == do_if
 		     || m_function == do_internal
-		     || m_quick_function == do_paren
 		     || m_function == do_repeat
 		     || m_function == do_return
-		     || m_function == do_while);
+		     || m_function == do_while
+		     || m_quick_function == do_paren
+		     || (m_function != do_set
+		     	 && name.length() > 2
+		     	 && name.substr(name.length() - 2) == "<-"));
 }
 
 BuiltInFunction::~BuiltInFunction()
@@ -228,11 +235,16 @@ void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
     const
 {
     if (viaDotInternal())
-	Rf_error(_("%d arguments passed to .Internal(%s)"
-		   " which requires %d"), nargs, name(), arity());
+	Rf_error(
+	    ngettext("%d argument passed to .Internal(%s) which requires %d",
+		     "%d arguments passed to .Internal(%s) which requires %d",
+		     nargs),
+	    nargs, name(), arity());
     else
 	Rf_errorcall(const_cast<Expression*>(call),
-		     _("%d arguments passed to '%s' which requires %d"),
+		      ngettext("%d argument passed to '%s' which requires %d",
+			       "%d arguments passed to '%s' which requires %d",
+			       nargs),
 		     nargs, name(), arity());
 }
 

@@ -1,7 +1,7 @@
 #  File src/library/base/R/factor.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,18 @@ factor <- function(x = character(), levels, labels = levels,
 }
 
 is.factor <- function(x) inherits(x, "factor")
-as.factor <- function(x) if (is.factor(x)) x else factor(x)
+
+as.factor <- function(x) {
+    if (is.factor(x)) x
+    else if (!is.object(x) && is.integer(x)) {
+        ## optimization for calls from tapply via split.default
+        levels <- sort(unique.default(x)) # avoid array methods
+        f <- match(x, levels)
+        levels(f) <- as.character(levels)
+        class(f) <- "factor"
+        f
+    } else factor(x)
+}
 
 levels <- function(x) UseMethod("levels")
 levels.default <- function(x) attr(x, "levels")
@@ -147,17 +158,18 @@ print.factor <- function (x, quote = FALSE, max.levels = NULL,
 }
 
 
-Math.factor <- function(x, ...) {
-    stop(.Generic, " not meaningful for factors")
-}
+Math.factor <- function(x, ...)
+    stop(gettextf("%s not meaningful for factors", sQuote(.Generic)))
+
 ## The next two have an .ordered method:
 Summary.factor <- function(..., na.rm)
-    stop(.Generic, " not meaningful for factors")
+    stop(gettextf("%s not meaningful for factors", sQuote(.Generic)))
+
 Ops.factor <- function(e1, e2)
 {
     ok <- switch(.Generic, "=="=, "!="=TRUE, FALSE)
     if(!ok) {
-	warning(.Generic, " not meaningful for factors")
+	warning(gettextf("%s not meaningful for factors", sQuote(.Generic)))
 	return(rep.int(NA, max(length(e1), if(!missing(e2)) length(e2))))
     }
     nas <- is.na(e1) | is.na(e2)
@@ -195,9 +207,8 @@ Ops.factor <- function(e1, e2)
     attr(y,"contrasts") <- attr(x,"contrasts")
     attr(y,"levels") <- attr(x,"levels")
     class(y) <- oldClass(x)
-    lev <- levels(x)
     if (drop)
-        factor(y, exclude = if(any(is.na(levels(x)))) NULL else NA ) else y
+        factor(y, exclude = if(anyNA(levels(x))) NULL else NA ) else y
 }
 
 `[<-.factor` <- function(x, ..., value)
@@ -302,7 +313,7 @@ Summary.ordered <- function(..., na.rm)
     levl <- lapply(args, levels)
     levset <- levl[[1]]
     if (!all(vapply(args, is.ordered, NA)) ||
-	!all(sapply(levl, identical, levset)))
+	!all(vapply(levl, identical, NA, levset)))
 	stop(gettextf("'%s' is only meaningful for ordered factors if all arguments have the same level sets",
 		      .Generic))
     codes <- lapply(args, as.integer)
@@ -330,8 +341,8 @@ Summary.ordered <- function(..., na.rm)
 addNA <- function(x, ifany=FALSE)
 {
     if (!is.factor(x)) x <- factor(x)
-    if (ifany & !any(is.na(x))) return(x)
+    if (ifany & !anyNA(x)) return(x)
     ll <- levels(x)
-    if (!any(is.na(ll))) ll <- c(ll, NA)
+    if (!anyNA(ll)) ll <- c(ll, NA)
     factor(x, levels=ll, exclude=NULL)
 }

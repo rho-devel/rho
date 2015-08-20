@@ -18,7 +18,8 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  file pager.c
  *  Copyright (C) 1998--2002  Guido Masarotto and Brian Ripley
- *  Copyright (C) 2004-8      The R Foundation
+ *  Copyright (C) 2004--8     The R Foundation
+ *  Copyright (C) 2004--2014  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,12 +55,10 @@
 #include "console.h"
 #include "consolestructs.h"
 #include "rui.h"
-#include <Startup.h> /* for UImode */
+#include <Startup.h> /* for CharacterMode */
 
 #define CE_UTF8 1
 extern size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
-
-extern UImode  CharacterMode;
 
 #define PAGERMAXKEPT 12
 #define PAGERMAXTITLE 128

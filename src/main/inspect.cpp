@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009-2012 The R Core Team.
+ *  Copyright (C) 2009-2014 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -59,6 +59,19 @@ SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::B
     }
     inspect_tree(0, args[0], deep, pvec);
     return obj;
+}
+
+SEXP attribute_hidden do_address(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    return R_MakeExternalPtr((void *) CAR(args), R_NilValue, R_NilValue);
+}
+
+SEXP attribute_hidden do_refcnt(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    // return ScalarInteger(REFCNT(CAR(args)));
+    return ScalarInteger(NA_INTEGER); // Not currently implemented in CXXR
 }
 
 /* the following functions can be use internally and for debugging purposes -

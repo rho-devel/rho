@@ -1,6 +1,6 @@
 % File src/library/utils/man/bug.report.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{bug.report}
@@ -131,7 +131,7 @@ bug.report(subject = "",  address,
 
   A bug report can be generated using the function \code{bug.report()}.
   For reports on \R this will open the Web page at
-  \url{http://bugs.R-project.org/}: for a contributed package it will
+  \url{http://bugs.r-project.org/}: for a contributed package it will
   open the package's bug tracker Web page or help you compose an email
   to the maintainer.
 

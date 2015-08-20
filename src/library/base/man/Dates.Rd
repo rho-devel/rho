@@ -1,6 +1,6 @@
 % File src/library/base/man/Dates.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Dates}
@@ -63,7 +63,7 @@
 
   \code{\link{DateTimeClasses}} for date-time classes.
 }
-\examples{\dontrun{
+\examples{\donttest{
 (today <- Sys.Date())
 format(today, "\%d \%b \%Y")  # with month as a word
 (tenweeks <- seq(today, length.out=10, by="1 week")) # next ten weeks

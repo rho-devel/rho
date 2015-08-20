@@ -30,7 +30,7 @@
 
 #define PRODUCER "R-core"
 
-#ifdef WIN64
+#ifdef _WIN64
 # define RK "R64"
 #else
 # define RK "R32"

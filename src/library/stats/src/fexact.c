@@ -3,12 +3,6 @@
  *  Copyright (C) 1999-2010   The R Core Team.
  *
  *  Based on ACM TOMS643 (1993)
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,7 +63,7 @@ static double f9xact(int n, int ntot, int *ir, double *fact);
 static Rboolean f10act(int nrow, int *irow, int ncol, int *icol, double *val,
 		       double *fact, int *nd, int *ne, int *m);
 static void f11act(int *irow, int i1, int i2, int *new);
-static void prterr(int icode, const char *mes);
+static void NORET prterr(int icode, const char *mes);
 static int iwork(int iwkmax, int *iwkpt, int number, int itype);
 
 #ifdef USING_R
@@ -1805,7 +1799,7 @@ void f11act(int *irow, int i1, int i2, int *new)
 }
 
 
-void prterr(int icode, const char *mes)
+void NORET prterr(int icode, const char *mes)
 {
 /*
   -----------------------------------------------------------------------
@@ -1818,7 +1812,6 @@ void prterr(int icode, const char *mes)
   -----------------------------------------------------------------------
   */
     PROBLEM "FEXACT error %d.\n%s", icode, mes RECOVER(NULL_ENTRY);
-    return;
 }
 
 int iwork(int iwkmax, int *iwkpt, int number, int itype)

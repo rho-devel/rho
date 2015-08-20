@@ -165,6 +165,9 @@ SEXP STRING_ELT(SEXP x, R_xlen_t i);
 inline SEXP STRING_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
+    if(TYPEOF(x) != STRSXP)
+      Rf_error("%s() can only be applied to a '%s', not a '%s'",
+               "STRING_ELT", "character vector", Rf_type2char(TYPEOF(x)));
     return (*SEXP_downcast<StringVector*>(x, false))[VectorBase::size_type(i)];
 }
 #endif

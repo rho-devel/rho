@@ -143,7 +143,7 @@ RObject* ArgList::evaluateSingleArgument(const RObject* arg,
 	} else if (isMissingArgument(sym, env->frame())) {
 	    if (allow_missing)
 		return Symbol::missingArgument();
-	    else Rf_error(_("'%s' is missing"),
+	    else Rf_error(_("argument \"%s\" is missing, with no default"),
 			  sym->name()->c_str());
 	}
     }

@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.time.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Sys.time}
@@ -20,7 +20,7 @@ Sys.Date()
   \code{Sys.time} returns an absolute date-time value which can be
   converted to various time zones and may return different days.
 
-  \code{Sys.Date} returns the current day in the current \link{timezone}.
+  \code{Sys.Date} returns the current day in the current \link{time zone}.
 }
 \value{
   \code{Sys.time} returns an object of class \code{"POSIXct"} (see
@@ -33,7 +33,7 @@ Sys.Date()
 }
 \note{
   \code{Sys.time} may return fractional seconds, but they are ignored by
-  the default conversions (e.g. printing) for class \code{"POSIXct"}.
+  the default conversions (e.g., printing) for class \code{"POSIXct"}.
   See the examples and \code{\link{format.POSIXct}} for ways to reveal them.
 }
 \seealso{

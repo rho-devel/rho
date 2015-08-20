@@ -1,7 +1,7 @@
 #  File src/library/methods/R/show.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ showDefault <- function(object, oldMethods = TRUE)
         for(what in slots) {
             if(identical(what, ".Data"))
                 next ## should have been done above
-            cat("Slot \"",what, "\":\n", sep="")
+	    cat("Slot ", deparse(what), ":\n", sep="")
             print(slot(object, what))
             cat("\n")
         }
@@ -68,7 +68,7 @@ showDefault <- function(object, oldMethods = TRUE)
 ##         }
 ##     }
     else
-        ## NBB:  This relies on the delicate fact (as of version 1.7 at least)
+        ## NBB:  This relies on the delicate fact
         ## that print will NOT recursively call show if it gets more than one argument!
         print(object, useS4 = FALSE)
     invisible() # documented return for show().

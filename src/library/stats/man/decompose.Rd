@@ -1,6 +1,6 @@
 % File src/library/stats/man/decompose.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{decompose}
@@ -58,7 +58,7 @@ decompose(x, type = c("additive", "multiplicative"), filter = NULL)
 \references{
   M. Kendall and A. Stuart (1983)
   \emph{The Advanced Theory of Statistics}, Vol.3,
-  Griffin. pp. 410--414.
+  Griffin. pp.\sspace{}410--414.
 }
 \author{
   David Meyer \email{David.Meyer@wu.ac.at}

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2012   The R Core Team
+ *  Copyright (C) 1998-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -126,7 +126,6 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if((fp=R_fopen(R_ExpandFileName(filename), "w")) == nullptr)
 	    errorcall(call, _("unable to open file"));
 	if (LENGTH(STRING_ELT(fn, 0)) == 0) EdFileUsed++;
-	if (TYPEOF(x) != CLOSXP || isNull(src = getAttrib(x, R_SourceSymbol)))
 	    src = deparse1(x, CXXRFALSE, FORSOURCING); /* deparse for sourcing, not for display */
 	for (i = 0; i < LENGTH(src); i++)
 	    fprintf(fp, "%s\n", translateChar(STRING_ELT(src, i)));

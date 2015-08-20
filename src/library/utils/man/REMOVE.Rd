@@ -1,6 +1,6 @@
 % File src/library/utils/man/REMOVE.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{REMOVE}
@@ -31,7 +31,7 @@
 #ifdef unix
 \note{
   Some binary distributions of \R have \code{REMOVE} in a separate
-  bundle, e.g. an \code{R-devel} RPM.
+  bundle, e.g.\sspace{}an \code{R-devel} RPM.
 }
 #endif
 \seealso{

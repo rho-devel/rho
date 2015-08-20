@@ -1,7 +1,7 @@
 #  File src/library/utils/R/demo.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ function(topic, package = NULL, lib.loc = NULL,
     paths <- find.package(package, lib.loc, verbose = verbose)
 
     ## Find the directories with a 'demo' subdirectory.
-    paths <- paths[file_test("-d", file.path(paths, "demo"))]
+    paths <- paths[dir.exists(file.path(paths, "demo"))]
     ## Earlier versions remembered given packages with no 'demo'
     ## subdirectory, and warned about them.
 

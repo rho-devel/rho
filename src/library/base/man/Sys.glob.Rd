@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.glob.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Sys.glob}
@@ -47,8 +47,8 @@ Sys.glob(paths, dirmark = FALSE)
   If a filename starts with \code{.} this may need to be matched
   explicitly: for example \code{Sys.glob("*.RData")} may or may not
   match \file{.RData} but will not usually match \file{.aa.RData}.  Note
-  that this is platform-dependent: e.g. on Solaris \code{Sys.glob("*.*")}
-  matches \file{.} and \file{..}.
+  that this is platform-dependent: e.g.\sspace{}on Solaris
+  \code{Sys.glob("*.*")} matches \file{.} and \file{..}.
 
   \code{[} begins a character class.  If the first character in
   \code{[...]} is not \code{!}, this is a character class which matches
@@ -86,8 +86,9 @@ Sys.glob(paths, dirmark = FALSE)
   filename is OS-dependent.
 
   Character classes can include ranges such as \code{[A-Z]}: include
-  \code{-} as a character by having it first or last in a class.  (In the
-  current implementation ranges are in numeric order of Unicode points.)
+  \code{-} as a character by having it first or last in a class.  (In
+  the current implementation ranges are in the numeric order of Unicode
+  code points.)
 
   One can remove the special meaning of \code{?}, \code{*}  and
   \code{[} by preceding them by a backslash (except within a
@@ -119,7 +120,7 @@ Sys.glob(paths, dirmark = FALSE)
   \link{Quotes} for handling backslashes in character strings.
 }
 \examples{
-\dontrun{
+\donttest{
 Sys.glob(file.path(R.home(), "library", "*", "R", "*.rdx"))
 }}
 \keyword{utilities}

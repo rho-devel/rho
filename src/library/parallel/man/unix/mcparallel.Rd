@@ -1,9 +1,7 @@
 % File src/library/parallel/man/unix/mcparallel.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{mcparallel}
 \alias{mccollect}
@@ -20,7 +18,8 @@
 }
 \usage{
 mcparallel(expr, name, mc.set.seed = TRUE, silent = FALSE,
-           mc.affinity = NULL, mc.interactive = FALSE)
+           mc.affinity = NULL, mc.interactive = FALSE,
+	   detached = FALSE)
 
 mccollect(jobs, wait = TRUE, timeout = 0, intermediate = FALSE)
 }
@@ -39,6 +38,9 @@ mccollect(jobs, wait = TRUE, timeout = 0, intermediate = FALSE)
     child process will be set as interactive or non-interactive
     respectively. If \code{NA} then the child process will inherit the
     interactive flag from the parent.}
+  \item{detached}{logical, if \code{TRUE} then the job is detached from
+    the current session and cannot deliver any results back - it is used
+    for the code side-effect only.}
   \item{jobs}{list of jobs (or a single job) to collect results
     for.  Alternatively \code{jobs} can also be an integer vector of
     process IDs.  If omitted \code{collect} will wait for all currently
@@ -56,7 +58,7 @@ mccollect(jobs, wait = TRUE, timeout = 0, intermediate = FALSE)
   \code{mcparallel} evaluates the \code{expr} expression in parallel to
   the current \R process.  Everything is shared read-only (or in fact
   copy-on-write) between the parallel process and the current process,
-  i.e. no side-effects of the expression affect the main process.  The
+  i.e.\sspace{}no side-effects of the expression affect the main process.  The
   result of the parallel execution can be collected using
   \code{mccollect} function.
 

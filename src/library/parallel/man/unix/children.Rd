@@ -1,9 +1,7 @@
 % File src/library/parallel/man/unix/children.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{mcchildren}
 \alias{children}
@@ -87,7 +85,7 @@ mckill(process, signal = 2L)
   \code{readChildren}).
 
   \code{selectChildren} returns \code{TRUE} is the timeout was reached,
-  \code{FALSE} if an error occurred (e.g. if the master process was
+  \code{FALSE} if an error occurred (e.g., if the master process was
   interrupted) or an integer vector of process IDs with children that
   have data available, or \code{NULL} if there are no children.
 

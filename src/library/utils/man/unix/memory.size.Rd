@@ -1,6 +1,6 @@
 % File src/library/utils/man/unix/memory.size.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{memory.size}
@@ -25,7 +25,7 @@ memory.limit(size = NA)
 }
 \details{
   To restrict memory usage on a Unix-alike use the facilities of the
-  shell used to launch \R, e.g. \code{limit} or \code{ulimit}.
+  shell used to launch \R, e.g.\sspace{}\code{limit} or \code{ulimit}.
 }
 \value{
   Size in bytes: always \code{Inf}.

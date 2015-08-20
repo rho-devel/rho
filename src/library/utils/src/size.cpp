@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-12  The R Core Team
+ *  Copyright (C) 2000-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -46,7 +46,7 @@ using namespace CXXR;
       and all the nodes specifically due to it, but not for the
       space for its name nor for .Internals it references.
 */
-SEXP csduplicated(SEXP x);  /* from unique.c */
+SEXP Rf_csduplicated(SEXP x);  /* from unique.c */
 
 static R_size_t objectsize(SEXP s)
 {
@@ -62,6 +62,7 @@ static R_size_t objectsize(SEXP s)
 	break;
     case LISTSXP:
     case LANGSXP:
+    case DOTSXP:
 	cnt += objectsize(TAG(s));
 	cnt += objectsize(CAR(s));
 	cnt += objectsize(CDR(s));
@@ -103,7 +104,7 @@ static R_size_t objectsize(SEXP s)
     case STRSXP:
 	{
 	    vcnt = PTR2VEC(xlength(s));
-	    GCStackRoot<> dup(csduplicated(s));
+	    GCStackRoot<> dup(Rf_csduplicated(s));
 	    for (R_xlen_t i = 0; i < xlength(s); i++) {
 		tmp = STRING_ELT(s, i);
 		if(tmp != NA_STRING && !LOGICAL(dup)[i])
@@ -112,7 +113,6 @@ static R_size_t objectsize(SEXP s)
 	    isVec = TRUE;
 	    break;
 	}
-    case DOTSXP:
     case ANYSXP:
 	/* we don't know about these */
 	break;

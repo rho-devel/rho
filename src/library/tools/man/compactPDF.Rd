@@ -1,6 +1,6 @@
 % File src/library/tools/man/compactPDF.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2011-3 R Core Team
+% Copyright 2011-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{compactPDF}
@@ -48,7 +48,7 @@ compactPDF(paths,
 \details{
   This by default makes use of \command{qpdf}, available from
   \url{http://qpdf.sourceforge.net/} (including as a Windows binary) and
-  included with the CRAN Mac OS X distribution of \R.  If \code{gs_cmd}
+  included with the CRAN OS X distribution of \R.  If \code{gs_cmd}
   is non-empty and \code{gs_quality != "none"}, GhostScript will used
   first, then \command{qpdf} if it is available.  If \code{gs_quality !=
   "none"} and \code{gs_cmd} is \code{""}, an attempt will be made to find a
@@ -69,13 +69,12 @@ compactPDF(paths,
   these have been supported by Acrobat Reader since version 6 in 2003,
   so this is very unlikely to cause difficulties.
 
-  Stream compression is what most often has large gains: \R's
-  \code{\link{pdf}} device prior to \R 2.14.0 did not use it, and
-  older vignette PDFs often benefit from being re-generated.  Most PDF
+  Stream compression is what most often has large gains.  Most PDF
   documents are generated with object compression, but this does not
   seem to be the default for MiKTeX's \command{pdflatex}.  For some PDF
   files (and especially package vignettes), using GhostScript can
-  dramatically reduce the space taken by embedded images (often screenshots).
+  dramatically reduce the space taken by embedded images (often
+  screenshots).
 
   Where both GhostScript and \command{qpdf} are selected (when
   \code{gs_quality != "none"} and both executables are found), they are

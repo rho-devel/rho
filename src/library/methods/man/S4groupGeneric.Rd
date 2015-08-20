@@ -1,6 +1,6 @@
 % File src/library/methods/man/S4groupGeneric.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{S4groupGeneric}
@@ -85,8 +85,10 @@ There are also
       \code{"log"}, \code{"log10"}, \code{"log2"}, \code{"log1p"},
       \code{"acos"}, \code{"acosh"},
       \code{"asin"}, \code{"asinh"}, \code{"atan"}, \code{"atanh"},
-      \code{"exp"}, \code{"expm1"}, \code{"cos"}, \code{"cosh"},
-      \code{"sin"}, \code{"sinh"}, \code{"tan"}, \code{"tanh"},
+      \code{"exp"}, \code{"expm1"},
+      \code{"cos"}, \code{"cosh"}, \code{"cospi"},
+      \code{"sin"}, \code{"sinh"}, \code{"sinpi"},
+      \code{"tan"}, \code{"tanh"}, \code{"tanpi"},
       \code{"gamma"}, \code{"lgamma"}, \code{"digamma"},
       \code{"trigamma"}
     }

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2012  The R Core Team
+ *  Copyright (C) 1998--2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -279,7 +279,7 @@ SEXP Win_dataentry(SEXP args)
 
     /* start up the window, more initializing in here */
     if (initwin(DE, G_("Data Editor")))
-	error(G_("invalid device"));
+	error("unable to start data editor");
     R_de_up = TRUE;
 
     /* set up a context which will close the window if there is an error */
@@ -292,7 +292,7 @@ SEXP Win_dataentry(SEXP args)
 
     while (R_de_up) {
 	/* avoid consuming 100% CPU time here */
-	Sleep(10);
+	R_WaitEvent();
 	R_ProcessEvents();
     }
 
@@ -792,7 +792,8 @@ static SEXP processEscapes(SEXP x)
     	
     PROTECT( pattern = mkString("(?<!\\\\)((\\\\\\\\)*)\"") );
     PROTECT( replacement = mkString("\\1\\\\\"") );
-    PROTECT( expr = lang5(install("gsub"), ScalarLogical(1), pattern, replacement, x) );
+    SEXP s_gsub = install("gsub");
+    PROTECT( expr = lang5(s_gsub, ScalarLogical(1), pattern, replacement, x) );
     SET_TAG( CDR(expr), install("perl") );
 
     PROTECT( newval = eval(expr, R_BaseEnv) );
@@ -1888,7 +1889,7 @@ SEXP Win_dataviewer(SEXP args)
 
     /* start up the window, more initializing in here */
     if (initwin(DE, CHAR(STRING_ELT(stitle, 0))))
-	error(G_("invalid device"));
+	error("unable to start data viewer");
 
     /* set up a context which will close the window if there is an error */
     begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,

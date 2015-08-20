@@ -1,9 +1,7 @@
 % File src/library/stats/man/factanal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{factanal}
 \alias{factanal}
@@ -63,9 +61,9 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
 \details{
   The factor analysis model is
   \deqn{x = \Lambda f + e}
-  for a \eqn{p}--element row-vector \eqn{x}, a \eqn{p \times k}{p x k}
+  for a \eqn{p}--element vector \eqn{x}, a \eqn{p \times k}{p x k}
   matrix \eqn{\Lambda} of \emph{loadings}, a \eqn{k}--element vector
-  \eqn{f} of \emph{scores} and a \eqn{p}--element vector \eqn{e}of
+  \eqn{f} of \emph{scores} and a \eqn{p}--element vector \eqn{e} of
   errors.  None of the components other than \eqn{x} is observed, but
   the major restriction is that the scores be uncorrelated and of unit
   variance, and that the errors be independent with variances
@@ -74,7 +72,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
 
   Thus factor analysis is in essence a model for the correlation matrix
   of \eqn{x},
-  \deqn{\Sigma = \Lambda^\prime\Lambda + \Psi}{\Sigma = \Lambda'\Lambda + \Psi}
+  \deqn{\Sigma = \Lambda\Lambda^\prime + \Psi}{\Sigma = \Lambda \Lambda' + \Psi}
   There is still some indeterminacy in the model for it is unchanged
   if \eqn{\Lambda} is replaced by \eqn{G \Lambda} for
   any orthogonal matrix \eqn{G}.  Such matrices \eqn{G} are known as
@@ -93,17 +91,17 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   The fit is done by optimizing the log likelihood assuming multivariate
   normality over the uniquenesses.  (The maximizing loadings for given
   uniquenesses can be found analytically: Lawley & Maxwell (1971,
-  p. 27).)  All the starting values supplied in \code{start} are tried
+  p.\sspace{}27).)  All the starting values supplied in \code{start} are tried
   in turn and the best fit obtained is used.  If \code{start = NULL}
   then the first fit is started at the value suggested by
   \enc{Jöreskog}{Joreskog} (1963) and given by Lawley & Maxwell
-  (1971, p. 31), and then \code{control$nstart - 1} other values are
+  (1971, p.\sspace{}31), and then \code{control$nstart - 1} other values are
   tried, randomly selected as equal values of the uniquenesses.
 
   The uniquenesses are technically constrained to lie in \eqn{[0, 1]},
   but near-zero values are problematical, and the optimization is
   done with a lower bound of \code{control$lower}, default 0.005
-  (Lawley & Maxwell, 1971, p. 32).
+  (Lawley & Maxwell, 1971, p.\sspace{}32).
 
   Scores can only be produced if a data matrix is supplied and used.
   The first method is the regression method of Thomson (1951), the

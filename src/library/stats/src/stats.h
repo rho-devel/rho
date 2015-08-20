@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-12   The R Core Team
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,5 +47,10 @@ F77_SUB(kmns)(double *a, int *m, int *n, double *c, int *k,
 
 void rcont2(int *nrow, int *ncol, int *nrowt, int *ncolt, int *ntotal,
 	    double *fact, int *jwork, int *matrix);
+
+double R_zeroin2(double ax, double bx, double fa, double fb, 
+		 double (*f)(double x, void *info), void *info, 
+		 double *Tol, int *Maxit);
+
 
 #endif

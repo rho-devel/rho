@@ -1,6 +1,6 @@
 % File src/library/base/man/Round.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Round}
@@ -56,7 +56,7 @@ signif(x, digits = 6)
   be used, \sQuote{\emph{go to the even digit}}.
   Therefore \code{round(0.5)} is \code{0} and \code{round(-1.5)} is
   \code{-2}.  However, this is dependent on OS services and on
-  representation error (since e.g. \code{0.15} is not represented
+  representation error (since e.g.\sspace{}\code{0.15} is not represented
   exactly, the rounding rule applies to the represented number and not
   to the printed number, and so \code{round(0.15, 1)} could be either
   \code{0.1} or \code{0.2}).
@@ -82,6 +82,13 @@ signif(x, digits = 6)
 
   \code{round} and \code{signif} are members of the
   \code{\link[=S4groupGeneric]{Math2}} group generic.
+}
+\section{Warning}{
+  The realities of computer arithmetic can cause unexpected results,
+  especially with \code{floor} and \code{ceiling}.  For example, we
+  \sQuote{know} that \code{floor(log(x, base = 8))} for \code{x = 8} is
+  \code{1}, but \code{0} has been seen on an \R platform.  It is
+  normally necessary to use a tolerance.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

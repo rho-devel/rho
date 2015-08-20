@@ -1,6 +1,6 @@
 % File src/library/base/man/do.call.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{do.call}
@@ -55,7 +55,7 @@ do.call(what, args, quote = FALSE, envir = parent.frame())
 \examples{
 do.call("complex", list(imag = 1:3))
 
-## if we already have a list (e.g. a data frame)
+## if we already have a list (e.g., a data frame)
 ## we need c() to add further arguments
 tmp <- expand.grid(letters[1:2], 1:3, c("+", "-"))
 do.call("paste", c(tmp, sep = ""))

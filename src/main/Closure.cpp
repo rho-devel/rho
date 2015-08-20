@@ -63,6 +63,8 @@ namespace CXXR {
     }
 }
 
+bool Closure::s_debugging_enabled = true;
+
 Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
       m_num_invokes(0)

@@ -1,9 +1,7 @@
 % File src/library/stats/man/kruskal.test.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{kruskal.test}
 \alias{kruskal.test}
@@ -22,12 +20,14 @@ kruskal.test(x, \dots)
 }
 \arguments{
   \item{x}{a numeric vector of data values, or a list of numeric data
-    vectors.}
+    vectors.  Non-numeric elements of a list will be coerced, with a
+    warning.}
   \item{g}{a vector or factor object giving the group for the
-    corresponding elements of \code{x}.  Ignored if \code{x} is a
-    list.}
-  \item{formula}{a formula of the form \code{lhs ~ rhs} where \code{lhs}
-    gives the data values and \code{rhs} the corresponding groups.}
+    corresponding elements of \code{x}.  Ignored with a warning if
+    \code{x} is a list.}
+  \item{formula}{a formula of the form \code{response ~ group} where
+    \code{response} gives the data values and \code{group} a vector or
+    factor of the corresponding groups.} 
   \item{data}{an optional matrix or data frame (or similar: see
     \code{\link{model.frame}}) containing the variables in the
     formula \code{formula}.  By default the variables are taken from

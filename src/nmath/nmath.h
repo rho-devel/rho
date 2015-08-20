@@ -1,6 +1,6 @@
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2011  The R Core Team
+ *  Copyright (C) 1998-2015  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,15 +38,23 @@
 #include <Rconfig.h>
 #include <Rmath.h>
 
+/* Used internally only */
 double  Rf_d1mach(int);
-#define gamma_cody	Rf_gamma_cody
-double	gamma_cody(double);
+double	Rf_gamma_cody(double);
 
 #include <R_ext/RS.h>
 
 /* possibly needed for debugging */
 #include <R_ext/Print.h>
 
+/* moved from dpq.h */
+#ifdef HAVE_NEARYINT
+# define R_forceint(x)   nearbyint()
+#else
+# define R_forceint(x)   round(x)
+#endif
+//R >= 3.1.0: # define R_nonint(x) 	  (fabs((x) - R_forceint(x)) > 1e-7)
+# define R_nonint(x) 	  (fabs((x) - R_forceint(x)) > 1e-7*fmax2(1., fabs(x)))
 
 #ifndef MATHLIB_STANDALONE
 
@@ -56,6 +64,7 @@ double	gamma_cody(double);
 # define MATHLIB_WARNING2(fmt,x,x2)	warning(fmt,x,x2)
 # define MATHLIB_WARNING3(fmt,x,x2,x3)	warning(fmt,x,x2,x3)
 # define MATHLIB_WARNING4(fmt,x,x2,x3,x4) warning(fmt,x,x2,x3,x4)
+# define MATHLIB_WARNING5(fmt,x,x2,x3,x4,x5) warning(fmt,x,x2,x3,x4,x5)
 
 #include <R_ext/Arith.h>
 #define ML_POSINF	R_PosInf
@@ -92,6 +101,7 @@ void R_CheckUserInterrupt(void);
 #define MATHLIB_WARNING2(fmt,x,x2)	printf(fmt,x,x2)
 #define MATHLIB_WARNING3(fmt,x,x2,x3)	printf(fmt,x,x2,x3)
 #define MATHLIB_WARNING4(fmt,x,x2,x3,x4) printf(fmt,x,x2,x3,x4)
+#define MATHLIB_WARNING5(fmt,x,x2,x3,x4,x5) printf(fmt,x,x2,x3,x4,x5)
 
 #define ISNAN(x) (isnan(x)!=0)
 #define R_FINITE(x)    R_finite(x)
@@ -169,9 +179,6 @@ int R_finite(double);
 #define lfastchoose	Rf_lfastchoose
 #define lgammacor	Rf_lgammacor
 #define stirlerr       	Rf_stirlerr
-/* in Rmath.h
-#define gamma_cody      Rf_gamma_cody
-*/
 
 	/* Chebyshev Series */
 
@@ -188,9 +195,8 @@ double	attribute_hidden lfastchoose(double, double);
 
 double  attribute_hidden bd0(double, double);
 
-double	attribute_hidden dbinom_raw(double, double, double, double, int);
-double	attribute_hidden dpois_raw (double, double, int);
-double  attribute_hidden pnchisq_raw(double, double, double, double, double, int, Rboolean);
+double  attribute_hidden pnchisq_raw(double, double, double, double, double,
+				     int, Rboolean, Rboolean);
 double  attribute_hidden pgamma_raw(double, double, int, int);
 double	attribute_hidden pbeta_raw(double, double, double, int, int);
 double  attribute_hidden qchisq_appr(double, double, double, int, int, double tol);

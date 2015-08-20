@@ -1,7 +1,7 @@
 #  File src/library/base/R/New-Internal.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -104,15 +104,17 @@ rbind <- function(..., deparse.level = 1)
                    c("all",
                      "keepInteger", "quoteExpressions", "showAttributes",
                      "useSource", "warnIncomplete", "delayPromises",
-                     "keepNA", "S_compatible"))
-    if (any(is.na(opts)))
+                     "keepNA", "S_compatible", "hexNumeric", "digits17"))
+    if (anyNA(opts))
         stop(sprintf(ngettext(as.integer(sum(is.na(opts))),
                               "deparse option %s is not recognized",
                               "deparse options %s are not recognized"),
                      paste(sQuote(control[is.na(opts)]), collapse=", ")),
              call. = FALSE, domain = NA)
     if (any(opts == 1L))
-        opts <- unique(c(opts[opts != 1L], 2L,3L,4L,5L,6L,8L)) # not (7,9)
+        opts <- unique(c(opts[opts != 1L], 2L,3L,4L,5L,6L,8L)) # not (7,9:11)
+    if(10L %in% opts && 11L %in% opts)
+        stop('"hexNumeric"and "digits17" are mutually exclusive')
     return(sum(2^(opts-2)))
 }
 
@@ -154,7 +156,7 @@ gctorture2 <- function(step, wait = step, inhibit_release = FALSE)
 is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 {
     if(length(x) <= 1L) return(FALSE)
-    if(!na.rm && any(is.na(x)))## "FIXME" is.na(<large>) is "too slow"
+    if(!na.rm && anyNA(x))
 	return(NA)
     ## else
     if(na.rm && any(ii <- is.na(x)))
@@ -276,6 +278,18 @@ setSessionTimeLimit <- function(cpu = Inf, elapsed = Inf)
     .Internal(setSessionTimeLimit(cpu, elapsed))
 
 icuSetCollate <- function(...) .Internal(icuSetCollate(...))
+icuGetCollate <- function(type = c("actual", "valid")) {
+    type <- match.arg(type)
+    .Internal(icuGetCollate(match(type, c("actual", "valid"))))
+}
+
+extSoftVersion <- function() .Internal(eSoftVersion())
+
+libcurlVersion <- function() .Internal(curlVersion())
+
+curlGetHeaders <- function(url, redirect = TRUE, verify = TRUE)
+    .Internal(curlGetHeaders(url, redirect, verify))
+
 
 ## base has no S4 generics
 .noGenerics <- TRUE

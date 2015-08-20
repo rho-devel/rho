@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/zzz.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,9 +18,11 @@
 
 .noGenerics <- TRUE
 
-if (.Platform$OS.type == "windows")
-    utils::globalVariables(c("C_cairoProps", "C_makeQuartzDefault"), add = TRUE)
-    
+if (.Platform$OS.type == "windows") {
+    utils::globalVariables(c("C_cairoProps", "C_makeQuartzDefault"))
+    utils::suppressForeignCheck(c("C_cairoProps", "C_makeQuartzDefault"))
+}
+
 .onLoad <- function(libname, pkgname)
 {
     op <- options()
@@ -38,7 +40,7 @@ if (.Platform$OS.type == "windows")
             dsp <- Sys.getenv("DISPLAY")
             if(.Platform$OS.type == "windows") windows
             else if (.Platform$GUI == "AQUA" ||
-                     ((!nzchar(dsp) || grepl("^/tmp/launch-", dsp))
+                     ((!nzchar(dsp) || grepl("^/tmp/launch-|^/private/tmp/com.apple.launchd", dsp))
                       && .Call(C_makeQuartzDefault))) quartz
             else if (nzchar(dsp) && .Platform$GUI %in% c("X11", "Tk")) X11
 	    else defdev

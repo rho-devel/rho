@@ -2,7 +2,7 @@
  *  A PicTeX device, (C) 1996 Valerio Aimale, for
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-11  The R Core Team
+ *  Copyright (C) 2001-2013  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -666,6 +666,8 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
     dd->right = in2dots(width);/* right */
     dd->bottom = 0;		/* bottom */
     dd->top = in2dots(height);/* top */
+    dd->clipLeft = dd->left; dd->clipRight = dd->right;
+    dd->clipBottom = dd->bottom; dd->clipTop = dd->top;
     ptd->width = width;
     ptd->height = height;
 
@@ -744,7 +746,7 @@ SEXP PicTeX(SEXP args)
 	    error(_("unable to start %s() device"), "pictex");
 	}
 	dd = GEcreateDevDesc(dev);
-	GEaddDevice2(dd, "pictex");
+	GEaddDevice2f(dd, "pictex", file);
     } END_SUSPEND_INTERRUPTS;
     vmaxset(vmax);
     return R_NilValue;

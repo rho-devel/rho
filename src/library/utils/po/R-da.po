@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-21 09:14\n"
+"POT-Creation-Date: 2015-02-09 08:50\n"
 "PO-Revision-Date: 2012-01-09 20:51+0200\n"
 "Last-Translator: Joe <joedalton2@yahoo.dk>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,10 +40,6 @@ msgstr "reference til ukendt klump %s"
 msgid "no Sweave file with name %s found"
 msgstr "ingen Sweavefil med navnet %s blev fundet"
 
-#, fuzzy
-msgid "%d Sweave files for basename %s found"
-msgstr "%d Sweavefiler for basisnavn %s blev fundet:"
-
 msgid "more than one syntax specification found, using the first one"
 msgstr "mere end en syntaksspecifikation fundet, bruger den første"
 
@@ -68,12 +64,15 @@ msgstr ""
 "%s"
 
 #, fuzzy
-msgid "Warning: unknown option %s"
+msgid "Warning: unknown option '--clean='%s"
 msgstr "Advarsel: Ukendt indstilling"
 
 #, fuzzy
-msgid "Created PDF document %s"
-msgstr "Oprettet PDF-dokument"
+msgid "Warning: unknown option %s"
+msgstr "Advarsel: Ukendt indstilling"
+
+msgid "Output file:"
+msgstr ""
 
 #, fuzzy
 msgid "Compacting PDF document"
@@ -84,6 +83,13 @@ msgstr "sti til %s indeholder mellemrum."
 
 msgid "this may cause problems when running LaTeX"
 msgstr "dette kan medføre problemer, når der køres LaTeX"
+
+msgid "at"
+msgstr ""
+
+#, fuzzy
+msgid ","
+msgstr ","
 
 msgid "the output file '%s' has disappeared"
 msgstr ""
@@ -150,6 +156,12 @@ msgstr "»file« skal være NULL, en tegnstreng eller en forbindelse"
 msgid "bad argument"
 msgstr "ugyldigt argument"
 
+msgid "'full.names' must be TRUE for multiple paths."
+msgstr ""
+
+msgid "Timestamp file no longer exists."
+msgstr ""
+
 msgid ""
 "Not all arguments are of the same length, the following need to be recycled: "
 "%s"
@@ -198,9 +210,6 @@ msgstr ""
 
 msgid "package %s not found"
 msgstr "pakke %s blev ikke fundet"
-
-msgid "broken installation, no CITATION file in the base package."
-msgstr "ødelagt installation, ingen CITATION-fil i basispakken."
 
 msgid "no date field in DESCRIPTION file of package %s"
 msgstr "intet datofelt i DESCRIPTION-fil for pakke %s"
@@ -277,6 +286,9 @@ msgstr ""
 msgid "Message:"
 msgstr ""
 
+msgid "'dump' is empty"
+msgstr ""
+
 msgid "Available environments had calls:"
 msgstr ""
 
@@ -331,9 +343,6 @@ msgid "no help found for %s"
 msgstr ""
 
 msgid "%s has a help file but no examples"
-msgstr ""
-
-msgid "test '%s' is not available"
 msgstr ""
 
 msgid "Line number missing"
@@ -422,10 +431,16 @@ msgstr ""
 msgid "do not know what to search"
 msgstr ""
 
-msgid "incorrect type specification"
+msgid "argument 'help.db' is deprecated"
 msgstr ""
 
-msgid "argument 'help.db' is deprecated"
+msgid "no information in the database for package %s: need 'rebuild = TRUE'?"
+msgstr ""
+
+msgid "incorrect 'agrep' specification"
+msgstr ""
+
+msgid "incorrect type specification"
 msgstr ""
 
 msgid "could not find package %s"
@@ -437,12 +452,6 @@ msgstr ""
 msgid "removing all entries with invalid multi-byte character data"
 msgstr ""
 
-msgid "no information in the database for package %s: need 'rebuild = TRUE'?"
-msgstr ""
-
-msgid "incorrect 'agrep' specification"
-msgstr ""
-
 msgid "invalid browser name, check options(\"browser\")."
 msgstr ""
 
@@ -451,7 +460,7 @@ msgstr ""
 
 msgid ""
 "If nothing happens, you should open\n"
-"'%s' yourself"
+"%s yourself"
 msgstr ""
 
 msgid ""
@@ -562,6 +571,11 @@ msgstr ""
 msgid "invalid 'filters' argument."
 msgstr "Ugyldigt argument for »filter«."
 
+msgid ""
+"specifying 'contriburl' or 'available' requires a single type, not type = "
+"\"both\""
+msgstr ""
+
 msgid "package '%s' in library '%s' will not be updated"
 msgstr ""
 
@@ -631,6 +645,9 @@ msgid ""
 "skipping dependencies"
 msgstr ""
 
+msgid "type 'binary' is not supported on this platform"
+msgstr ""
+
 msgid "no packages were specified"
 msgstr ""
 
@@ -643,15 +660,14 @@ msgstr ""
 msgid "unable to create %s"
 msgstr ""
 
-msgid "inferring 'repos = NULL' from the file name"
+msgid "inferring 'repos = NULL' from 'pkgs'"
+msgstr ""
+
+msgid "unable to create temporary directory %s"
 msgstr ""
 
 msgid ""
 "type == \"both\" can only be used on Windows or a CRAN build for Mac OS X"
-msgstr ""
-
-msgid ""
-"type == \"both\" cannot be used if 'available' or 'contriburl' is specified"
 msgstr ""
 
 msgid "type == \"both\" cannot be used with 'repos = NULL'"
@@ -683,9 +699,6 @@ msgstr ""
 msgid "installation of package %s had non-zero exit status"
 msgstr ""
 
-msgid "unable to create temporary directory %s"
-msgstr ""
-
 msgid "foundpkgs: %s"
 msgstr ""
 
@@ -693,7 +706,7 @@ msgid "files: %s"
 msgstr ""
 
 msgid ""
-"installation of one of more packages failed,\n"
+"installation of one or more packages failed,\n"
 "  probably %s"
 msgstr ""
 
@@ -729,6 +742,9 @@ msgid "Created file named %s."
 msgstr ""
 
 msgid "Edit the file and move it to the appropriate directory."
+msgstr ""
+
+msgid "cannot determine import name"
 msgstr ""
 
 msgid "no documentation of type %s and topic %s (or error in processing help)"
@@ -847,6 +863,9 @@ msgstr ""
 msgid "cannot coerce 'x' to roman"
 msgstr ""
 
+msgid "Could not create file %s, aborting"
+msgstr ""
+
 msgid "no valid packages were specified"
 msgstr ""
 
@@ -935,6 +954,12 @@ msgstr ""
 msgid "file size is limited to 8GB"
 msgstr ""
 
+msgid "invalid uid value replaced by that for user 'nobody'"
+msgstr ""
+
+msgid "invalid gid value replaced by that for user 'nobody'"
+msgstr ""
+
 msgid ""
 "vignette %s found more than once,\n"
 "using the one found in %s"
@@ -944,6 +969,9 @@ msgid "vignette %s not found"
 msgstr ""
 
 msgid "vignette %s has no PDF/HTML"
+msgstr ""
+
+msgid "vignette %s has no R code"
 msgstr ""
 
 msgid "select.list() cannot be used non-interactively"
@@ -1005,6 +1033,14 @@ msgstr ""
 msgid "no download method found"
 msgstr ""
 
+#, fuzzy
+msgid "'url' must be a length-one character vector"
+msgstr "»package« skal være en tegnstreng eller NULL"
+
+#, fuzzy
+msgid "'destfile' must be a length-one character vector"
+msgstr "»package« skal være en tegnstreng eller NULL"
+
 msgid "download had nonzero exit status"
 msgstr ""
 
@@ -1048,11 +1084,6 @@ msgstr ""
 msgid "method 'mailx' is Unix-only"
 msgstr ""
 
-msgid ""
-"If nothing happens, you should open\n"
-"%s yourself"
-msgstr ""
-
 #, fuzzy
 msgid "zip file %s not found"
 msgstr "pakke %s blev ikke fundet"
@@ -1068,6 +1099,12 @@ msgstr ""
 
 msgid "winDialogString() cannot be used non-interactively"
 msgstr ""
+
+#, fuzzy
+msgid "%d Sweave file for basename %s found"
+msgid_plural "%d Sweave files for basename %s found"
+msgstr[0] "%d Sweavefiler for basisnavn %s blev fundet:"
+msgstr[1] "%d Sweavefiler for basisnavn %s blev fundet:"
 
 #, fuzzy
 msgid "%d occurrence in %s"
@@ -1110,10 +1147,11 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "package %s is not available (for %s)"
-msgid_plural "packages %s are not available (for %s)"
-msgstr[0] ""
-msgstr[1] ""
+#, fuzzy
+msgid "package %s is not available (%s)"
+msgid_plural "packages %s are not available (%s)"
+msgstr[0] "Filter »%s« er ikke tilgængelig."
+msgstr[1] "Filter »%s« er ikke tilgængelig."
 
 msgid "dependency %s is not available"
 msgid_plural "dependencies %s are not available"
@@ -1145,14 +1183,15 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "Do you want to install from sources the package which need compilation?"
+msgid ""
+"Do you want to install from sources the package which needs compilation?"
 msgid_plural ""
 "Do you want to install from sources the packages which need compilation?"
 msgstr[0] ""
 msgstr[1] ""
 
 msgid ""
-"Package which are only available in source form, and may need compilation of "
+"Package which is only available in source form, and may need compilation of "
 "C/C++/Fortran"
 msgid_plural ""
 "Packages which are only available in source form, and may need compilation "
@@ -1190,10 +1229,22 @@ msgid_plural "invalid roman numerals: %s"
 msgstr[0] "ugyldig værdi for %s: %s"
 msgstr[1] "ugyldig værdi for %s: %s"
 
+msgid "is"
+msgid_plural "are"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "package %s is in use and will not be installed"
 msgid_plural "packages %s are in use and will not be installed"
 msgstr[0] ""
 msgstr[1] ""
+
+#~ msgid "broken installation, no CITATION file in the base package."
+#~ msgstr "ødelagt installation, ingen CITATION-fil i basispakken."
+
+#, fuzzy
+#~ msgid "Created PDF document %s"
+#~ msgstr "Oprettet PDF-dokument"
 
 #~ msgid "at least one field has to be specified"
 #~ msgstr "mindst et felt skal angives"
@@ -1208,7 +1259,3 @@ msgstr[1] ""
 
 #~ msgid "call"
 #~ msgstr "kald"
-
-#, fuzzy
-#~ msgid ","
-#~ msgstr ","

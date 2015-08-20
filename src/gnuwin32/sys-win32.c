@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -38,9 +38,6 @@
 #include <Startup.h>
 
 #include <ctype.h> /* for isalpha */
-
-extern Rboolean LoadInitFile;
-extern UImode  CharacterMode;
 
 /*
  *  4) INITIALIZATION AND TERMINATION ACTIONS
@@ -179,7 +176,7 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     rpipe *fp;
     char  buf[INTERN_BUFSIZE];
     const char *fout = "", *ferr = "";
-    int   vis = 0, flag = 2, i = 0, j, ll;
+    int   vis = 0, flag = 2, i = 0, j, ll = 0;
     SEXP  cmd, fin, Stdout, Stderr, tlist = R_NilValue, tchar, rval;
 
     checkArity(op, args);
@@ -257,12 +254,12 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    R_WriteConsole(buf, strlen(buf));
 	    }
 	    ll = rpipeClose(fp);
-	    if(ll) {
-		warningcall(R_NilValue, 
-			    _("running command '%s' had status %d"), 
-			    CHAR(STRING_ELT(cmd, 0)), ll);
-	    }
 	}
+    }
+    if(ll) {
+	warningcall(R_NilValue, 
+		    _("running command '%s' had status %d"), 
+		    CHAR(STRING_ELT(cmd, 0)), ll);
     }
     if (flag == 3) { /* intern = TRUE: convert pairlist to list */
 	PROTECT(rval = allocVector(STRSXP, i));

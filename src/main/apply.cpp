@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-12  The R Core Team
+ *  Copyright (C) 2000-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -33,60 +33,57 @@
 /* .Internal(lapply(X, FUN)) */
 
 /* This is a special .Internal, so has unevaluated arguments.  It is
-   called from a closure wrapper, so X and FUN are promises. */
+   called from a closure wrapper, so X and FUN are promises.
+
+   FUN must be unevaluated for use in e.g. bquote .
+*/
 SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP R_fcall, ans, names, X, XX, FUN;
-    R_xlen_t i, n;
     PROTECT_INDEX px;
 
     checkArity(op, args);
-    PROTECT_WITH_INDEX(X = CAR(args), &px);
-    PROTECT(XX = eval(CAR(args), rho));
-    FUN = CADR(args);  /* must be unevaluated for use in e.g. bquote */
-    n = xlength(XX);
-    if (n == NA_INTEGER) error(_("invalid length"));
-    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
+    SEXP X, XX, FUN;
+    PROTECT_WITH_INDEX(X =CAR(args), &px);
+    XX = PROTECT(eval(CAR(args), rho));
+    R_xlen_t n = xlength(XX);  // a vector, so will be valid.
+    FUN = CADR(args);
+    Rboolean realIndx = Rboolean(n > INT_MAX);
 
-    PROTECT(ans = allocVector(VECSXP, n));
-    names = getAttrib(XX, R_NamesSymbol);
+    SEXP ans = PROTECT(allocVector(VECSXP, n));
+    SEXP names = getAttrib(XX, R_NamesSymbol);
     if(!isNull(names)) setAttrib(ans, R_NamesSymbol, names);
 
+    /* Build call: FUN(XX[[<ind>]], ...) */
+
+    /* Notice that it is OK to have one arg to LCONS do memory
+       allocation and not PROTECT the result (LCONS does memory
+       protection of its args internally), but not both of them,
+       since the computation of one may destroy the other */
+
+    SEXP ind = PROTECT(allocVector(realIndx ? REALSXP : INTSXP, 1));
+    SEXP tmp;
     /* The R level code has ensured that XX is a vector.
        If it is atomic we can speed things up slightly by
        using the evaluated version.
     */
-    {
-	SEXP ind, tmp;
-	/* Build call: FUN(XX[[<ind>]], ...) */
+    if(isVectorAtomic(XX))
+	tmp = PROTECT(tmp = LCONS(R_Bracket2Symbol,
+				  CONS(XX, CONS(ind, R_NilValue))));
+    else
+	tmp = PROTECT(LCONS(R_Bracket2Symbol,
+			    CONS(X, CONS(ind, R_NilValue))));
+    SEXP R_fcall = PROTECT(LCONS(FUN,
+				 CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
-	/* Notice that it is OK to have one arg to LCONS do memory
-	   allocation and not PROTECT the result (LCONS does memory
-	   protection of its args internally), but not both of them,
-	   since the computation of one may destroy the other */
-
-	PROTECT(ind = allocVector(realIndx ? REALSXP : INTSXP, 1));
-	if(isVectorAtomic(XX))
-	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				CONS(XX, CONS(ind, R_NilValue))));
-	else
-	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				CONS(X, CONS(ind, R_NilValue))));
-	PROTECT(R_fcall = LCONS(FUN,
-				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
-
-	for(i = 0; i < n; i++) {
-	    if (realIndx) REAL(ind)[0] = double(i + 1);
-	    else INTEGER(ind)[0] = int(i + 1);
-	    tmp = eval(R_fcall, rho);
-	    if (NAMED(tmp))
-		tmp = duplicate(tmp);
-	    SET_VECTOR_ELT(ans, i, tmp);
-	}
-	UNPROTECT(3);
+    for(R_xlen_t i = 0; i < n; i++) {
+	if (realIndx) REAL(ind)[0] = (double)(i + 1);
+	else INTEGER(ind)[0] = (int)(i + 1);
+	tmp = eval(R_fcall, rho);
+	if (MAYBE_REFERENCED(tmp)) tmp = lazy_duplicate(tmp);
+	SET_VECTOR_ELT(ans, i, tmp);
     }
 
-    UNPROTECT(3); /* X, XX, ans */
+    UNPROTECT(6);
     return ans;
 }
 
@@ -102,7 +99,7 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     int useNames, rnk_v = -1; // = array_rank(value) := length(dim(value))
     Rboolean array_value;
     SEXPTYPE commonType;
-    PROTECT_INDEX index = 0;  // -Wall
+    PROTECT_INDEX index = 0; /* initialize to avoid a warning */
 
     checkArity(op, args);
     PROTECT(X = CAR(args));
@@ -117,10 +114,16 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n == NA_INTEGER) error(_("invalid length"));
     Rboolean realIndx = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 
-    commonLen = length(value);
+    commonLen = Rf_length(value);
     if (commonLen > 1 && n > INT_MAX)
 	error(_("long vectors are not supported for matrix/array results"));
     commonType = TYPEOF(value);
+    // check once here
+    if (commonType != CPLXSXP && commonType != REALSXP &&
+	commonType != INTSXP  && commonType != LGLSXP &&
+	commonType != RAWSXP  && commonType != STRSXP &&
+	commonType != VECSXP)
+	error(_("type '%s' is not supported"), type2char(commonType));
     dim_v = getAttrib(value, R_DimSymbol);
     array_value = CXXRCONSTRUCT(Rboolean, (TYPEOF(dim_v) == INTSXP && LENGTH(dim_v) >= 1));
     PROTECT(ans = allocVector(commonType, n*commonLen));
@@ -158,18 +161,19 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(R_fcall = LCONS(FUN,
 				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
+	int common_len_offset = 0;
 	for(i = 0; i < n; i++) {
 	    SEXP val; SEXPTYPE valType;
 	    PROTECT_INDEX indx;
-	    if (realIndx) REAL(ind)[0] = double(i + 1);
-	    else INTEGER(ind)[0] = int(i + 1);
+	    if (realIndx) REAL(ind)[0] = (double)(i + 1);
+	    else INTEGER(ind)[0] = (int)(i + 1);
 	    val = eval(R_fcall, rho);
-	    if (NAMED(val))
-		val = duplicate(val);
+	    if (MAYBE_REFERENCED(val))
+		val = lazy_duplicate(val); // Need to duplicate? Copying again anyway
 	    PROTECT_WITH_INDEX(val, &indx);
-	    if (length(val) != commonLen)
+	    if (Rf_length(val) != commonLen)
 	    	error(_("values must be length %d,\n but FUN(X[[%d]]) result is length %d"),
-	               commonLen, i+1, length(val));
+	               commonLen, i+1, Rf_length(val));
 	    valType = TYPEOF(val);
 	    if (valType != commonType) {
 	    	bool okay = FALSE;
@@ -188,21 +192,47 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    /* Take row names from the first result only */
 	    if (i == 0 && useNames && isNull(rowNames))
-	    	REPROTECT(rowNames = getAttrib(val,
+		REPROTECT(rowNames = getAttrib(val,
 					       array_value ? R_DimNamesSymbol : R_NamesSymbol),
 			  index);
-	    for (int j = 0; j < commonLen; j++) {
-	    	switch (commonType) {
-	    	case CPLXSXP: COMPLEX(ans)[i*commonLen + j] = COMPLEX(val)[j]; break;
-	    	case REALSXP: REAL(ans)[i*commonLen + j] = REAL(val)[j]; break;
-	    	case INTSXP:  INTEGER(ans)[i*commonLen + j] = INTEGER(val)[j]; break;
-	    	case LGLSXP:  LOGICAL(ans)[i*commonLen + j] = LOGICAL(val)[j]; break;
-	    	case RAWSXP:  RAW(ans)[i*commonLen + j] = RAW(val)[j]; break;
-	    	case STRSXP:  SET_STRING_ELT(ans, i*commonLen + j, STRING_ELT(val, j)); break;
-	    	case VECSXP:  SET_VECTOR_ELT(ans, i*commonLen + j, VECTOR_ELT(val, j)); break;
-	    	default:
-	    	    error(_("type '%s' is not supported"), type2char(commonType));
-	    	}
+	    // two cases - only for efficiency
+	    if(commonLen == 1) { // common case
+		switch (commonType) {
+		case CPLXSXP: COMPLEX(ans)[i] = COMPLEX(val)[0]; break;
+		case REALSXP: REAL(ans)   [i] = REAL   (val)[0]; break;
+		case INTSXP:  INTEGER(ans)[i] = INTEGER(val)[0]; break;
+		case LGLSXP:  LOGICAL(ans)[i] = LOGICAL(val)[0]; break;
+		case RAWSXP:  RAW(ans)    [i] = RAW    (val)[0]; break;
+		case STRSXP:  SET_STRING_ELT(ans, i, STRING_ELT(val, 0)); break;
+		case VECSXP:  SET_VECTOR_ELT(ans, i, VECTOR_ELT(val, 0)); break;
+		}
+	    } else { // commonLen > 1 (typically, or == 0) :
+		switch (commonType) {
+		case REALSXP:
+		    memcpy(REAL(ans) + common_len_offset,
+			   REAL(val), commonLen * sizeof(double)); break;
+		case INTSXP:
+		    memcpy(INTEGER(ans) + common_len_offset,
+			   INTEGER(val), commonLen * sizeof(int)); break;
+		case LGLSXP:
+		    memcpy(LOGICAL(ans) + common_len_offset,
+			   LOGICAL(val), commonLen * sizeof(int)); break;
+		case RAWSXP:
+		    memcpy(RAW(ans) + common_len_offset,
+			   RAW(val), commonLen * sizeof(Rbyte)); break;
+		case CPLXSXP:
+		    memcpy(COMPLEX(ans) + common_len_offset,
+			   COMPLEX(val), commonLen * sizeof(Rcomplex)); break;
+		case STRSXP:
+		    for (int j = 0; j < commonLen; j++)
+			SET_STRING_ELT(ans, common_len_offset + j, STRING_ELT(val, j));
+		    break;
+		case VECSXP:
+		    for (int j = 0; j < commonLen; j++)
+			SET_VECTOR_ELT(ans, common_len_offset + j, VECTOR_ELT(val, j));
+		    break;
+		}
+		common_len_offset += commonLen;
 	    }
 	    UNPROTECT(1);
 	}
@@ -259,7 +289,7 @@ static SEXP do_one(SEXP X, SEXP FUN, SEXP classes, SEXP deflt,
 
     /* if X is a list, recurse.  Otherwise if it matches classes call f */
     if(isNewList(X)) {
-	n = length(X);
+	n = Rf_length(X);
 	PROTECT(ans = allocVector(VECSXP, n));
 	names = getAttrib(X, R_NamesSymbol);
 	/* or copy attributes if replace = TRUE? */
@@ -275,7 +305,7 @@ static SEXP do_one(SEXP X, SEXP FUN, SEXP classes, SEXP deflt,
     else {
 	PROTECT(klass = R_data_class(X, FALSE));
 	for(i = 0; i < LENGTH(klass); i++)
-	    for(j = 0; j < length(classes); j++)
+	    for(j = 0; j < Rf_length(classes); j++)
 		if(Seql(STRING_ELT(klass, i), STRING_ELT(classes, j)))
 		    matched = TRUE;
 	UNPROTECT(1);
@@ -284,12 +314,12 @@ static SEXP do_one(SEXP X, SEXP FUN, SEXP classes, SEXP deflt,
 	/* PROTECT(R_fcall = lang2(FUN, X)); */
 	PROTECT(R_fcall = lang3(FUN, X, R_DotsSymbol));
 	ans = eval(R_fcall, rho);
-	if (NAMED(ans))
-	    ans = duplicate(ans);
+	if (MAYBE_REFERENCED(ans))
+	    ans = lazy_duplicate(ans);
 	UNPROTECT(1);
 	return(ans);
-    } else if(replace) return duplicate(X);
-    else return duplicate(deflt);
+    } else if(replace) return lazy_duplicate(X);
+    else return lazy_duplicate(deflt);
 }
 
 SEXP attribute_hidden do_rapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
@@ -308,7 +338,7 @@ SEXP attribute_hidden do_rapply(/*const*/ CXXR::Expression* call, const CXXR::Bu
     how = args[0];
     if(!isString(how)) error(_("invalid '%s' argument"), "how");
     replace = CXXRCONSTRUCT(Rboolean, strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0); /* ASCII */
-    n = length(X);
+    n = Rf_length(X);
     PROTECT(ans = allocVector(VECSXP, n));
     names = getAttrib(X, R_NamesSymbol);
     /* or copy attributes if replace = TRUE? */
@@ -322,7 +352,7 @@ SEXP attribute_hidden do_rapply(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 static Rboolean islistfactor(SEXP X)
 {
-    int i, n = length(X);
+    int i, n = Rf_length(X);
 
     if(n == 0) return FALSE;
     switch(TYPEOF(X)) {
@@ -354,7 +384,7 @@ SEXP attribute_hidden do_islistfactor(/*const*/ CXXR::Expression* call, const CX
     op->checkNumArgs(num_args, call);
     X = args[0];
     recursive = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
-    n = length(X);
+    n = Rf_length(X);
     if(n == 0 || !isVectorList(X)) {
 	lans = FALSE;
 	goto do_ans;

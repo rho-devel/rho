@@ -38,6 +38,7 @@
 #ifdef __cplusplus
 
 #include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
@@ -83,6 +84,13 @@ namespace CXXR {
 	    m_value = env ? Symbol::unboundValue() : valgen;
 	    m_valgen = valgen;
 	    m_environment = env;
+	}
+      
+	static Promise* createEvaluatedPromise(Expression* expression,
+                                               RObject* evaluated_value) {
+	    Promise* result = new Promise(expression, nullptr);
+	    result->m_value = evaluated_value;
+	    return result;
 	}
 
 	/** @brief Access the environment of the Promise.
@@ -218,6 +226,15 @@ extern "C" {
      * @param env CXXR::Environment in which \a expr is to be evaluated.
      */
     SEXP Rf_mkPROMISE(SEXP expr, SEXP env);
+
+    /** @brief Create a CXXR::Promise object which has already been evaluated.
+     *
+     * @param expr Expression to be evaluated to provide the value
+     *          of the CXXR::Promise.
+     *
+     * @param value CXXR::RObject which is the value of the promise.
+     */
+    SEXP R_mkEVPROMISE(SEXP expr, SEXP value);
 
     /** @brief Access the expression of a CXXR::Promise.
      *

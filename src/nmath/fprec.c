@@ -1,7 +1,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000-12 The R Core Team
+ *  Copyright (C) 2000-2014 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
 # define R_rint rint
 #else
 # define R_rint private_rint
-extern double private_rint(double x);
+# include "nmath2.h" // for private_rint
 #endif
 
 /* Improvements by Martin Maechler, May 1997;
@@ -81,7 +81,7 @@ double fprec(double x, double digits)
 	else digits = 1.0;
     }
     if(x == 0) return x;
-    dig = (int)floor(digits+0.5);
+    dig = (int)round(digits);
     if (dig > MAX_DIGITS) {
 	return x;
     } else if (dig < 1)

@@ -1,6 +1,6 @@
 % File src/library/base/man/grep.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grep}
@@ -13,10 +13,10 @@
 \alias{gregexpr}
 \alias{regexec}
 \description{
-  \code{grep}, \code{grepl}, \code{regexpr} and \code{gregexpr} search
-  for matches to argument \code{pattern} within each element of a
-  character vector: they differ in the format of and amount of detail in
-  the results.
+  \code{grep}, \code{grepl}, \code{regexpr}, \code{gregexpr} and
+  \code{regexec} search for matches to argument \code{pattern} within
+  each element of a character vector: they differ in the format of and
+  amount of detail in the results.
 
   \code{sub} and \code{gsub} perform replacement of the first and all
   matches respectively.
@@ -56,7 +56,7 @@ regexec(pattern, text, ignore.case = FALSE,
     vector.  \link{Long vectors} are supported.}
   \item{ignore.case}{if \code{FALSE}, the pattern matching is \emph{case
       sensitive} and if \code{TRUE}, case is ignored during matching.}
-  \item{perl}{logical.  Should perl-compatible regexps be used?}
+  \item{perl}{logical.  Should Perl-compatible regexps be used?}
   \item{value}{if \code{FALSE}, a vector containing the (\code{integer})
     indices of the matches determined by \code{grep} is returned, and if
     \code{TRUE}, a vector containing the matching elements themselves is
@@ -110,14 +110,21 @@ regexec(pattern, text, ignore.case = FALSE,
   invalid inputs and spurious matches in multibyte locales, but for
   \code{regexpr} it changes the interpretation of the output.
   It inhibits the conversion of inputs with marked encodings, and is
-  forced if any input is found which is marked as \code{"bytes"}.
+  forced if any input is found which is marked as \code{"bytes"}
+  see \code{\link{Encoding}}).
 
   Caseless matching does not make much sense for bytes in a multibyte
   locale, and you should expect it only to work for ASCII characters if
   \code{useBytes = TRUE}.
 
   \code{regexpr} and \code{gregexpr} with \code{perl = TRUE} allow
-    Python-style named captures, but not for \emph{long vector} inputs.  
+  Python-style named captures, but not for \emph{long vector} inputs.  
+    
+  Invalid inputs in the current locale are warned about up to 5 times.
+  
+  Caseless matching with \code{PERL = TRUE} for non-ASCII characters
+  depends on the PCRE library being compiled with \sQuote{Unicode
+  property support}: an external library might not be.
 }
 
 \value{
@@ -138,7 +145,7 @@ regexec(pattern, text, ignore.case = FALSE,
   coercion to character).  Elements of character vectors \code{x} which
   are not substituted will be returned unchanged (including any declared
   encoding).  If \code{useBytes = FALSE} a non-ASCII substituted result
-  will often be in UTF-8 with a marked encoding (e.g. if there is a
+  will often be in UTF-8 with a marked encoding (e.g., if there is a
   UTF-8 input, and in a multibyte locale unless \code{fixed = TRUE}).
   Such strings can be re-encoded by \code{\link{enc2native}}.
 
@@ -166,7 +173,7 @@ regexec(pattern, text, ignore.case = FALSE,
 
 \section{Warning}{
   POSIX 1003.2 mode of \code{gsub} and \code{gregexpr} does not
-  work correctly with repeated word-boundaries (e.g. \code{pattern =
+  work correctly with repeated word-boundaries (e.g., \code{pattern =
   "\\b"}).  Use \code{perl = TRUE} for such matches (but that may not
   work as expected with non-ASCII inputs, as the meaning of
   \sQuote{word} is system-dependent).
@@ -280,8 +287,10 @@ findArgs("package:base", "warn")
 ## trim trailing white space
 str <- "Now is the time      "
 sub(" +$", "", str)  ## spaces only
+## what is considered 'white space' depends on the locale.
 sub("[[:space:]]+$", "", str) ## white space, POSIX-style
-sub("\\\\s+$", "", str, perl = TRUE) ## Perl-style white space
+## what PCRE considered white space changed in version 8.34: see ?regex
+sub("\\\\s+$", "", str, perl = TRUE) ## PCRE-style white space
 
 ## capitalizing
 txt <- "a test of capitalizing"
@@ -327,6 +336,13 @@ URL_parts <- function(x) {
     parts
 }
 URL_parts(x)
+
+## There is no gregexec() yet, but one can emulate it by running
+## regexec() on the regmatches obtained via gregexpr().  E.g.:
+pattern <- "([[:alpha:]]+)([[:digit:]]+)"
+s <- "Test: A1 BC23 DEF456"
+lapply(regmatches(s, gregexpr(pattern, s)), 
+       function(e) regmatches(e, regexec(pattern, e)))
 }
 \keyword{character}
 \keyword{utilities}

@@ -1,6 +1,6 @@
 % File src/library/base/man/sink.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{sink}
@@ -63,7 +63,7 @@ sink.number(type = c("output", "message"))
   there is no stack of connections.
 
   If \code{file} is a character string, the file will be opened using
-  the current encoding.  If you want a different encoding (e.g. to
+  the current encoding.  If you want a different encoding (e.g., to
   represent strings which have been stored in UTF-8), use a
   \code{\link{file}} connection --- but some ways to produce \R output
   will already have converted such strings to the current encoding.
@@ -100,7 +100,7 @@ i <- 1:10
 outer(i, i, "*")
 sink()
 unlink("sink-examp.txt")
-\dontrun{
+\donttest{
 ## capture all the output to a file.
 zz <- file("all.Rout", open = "wt")
 sink(zz)
@@ -109,7 +109,7 @@ try(log("a"))
 ## back to the console
 sink(type = "message")
 sink()
-try(log("a"))
+file.show("all.Rout")
 }}
 \keyword{file}
 \keyword{connection}

@@ -3,12 +3,6 @@
  *  Copyright (C) 2000		R Core Team
  *  Copyright (C) 2003		The R Foundation
  *  based on AS 89 (C) 1975 Royal Statistical Society
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2004  The R Core Team
+ *  Copyright (C) 1999-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -27,6 +27,10 @@
 #define STARTUP_H_
 
 #include <R_ext/RStartup.h>	/* The meat here */
+#ifdef _WIN32
+extern UImode  CharacterMode;
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {

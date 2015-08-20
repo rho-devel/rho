@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2013   The R Core Team.
+ *  Copyright (C) 1998-2014  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -105,20 +105,14 @@ static SEXP cross_colon(SEXP call, SEXP s, SEXP t)
 
 static SEXP seq_colon(double n1, double n2, SEXP call)
 {
-    int in1;
-    R_xlen_t n;
-    double r;
-    SEXP ans;
-    Rboolean useInt;
-
-    r = fabs(n2 - n1);
+    double r = fabs(n2 - n1);
     if(r >= R_XLEN_T_MAX) 
 	errorcall(call, _("result would be too long a vector"));
 
-    n = R_xlen_t(r + 1 + FLT_EPSILON);
+    SEXP ans;
+    R_xlen_t n = (R_xlen_t)(r + 1 + FLT_EPSILON);
 
-    in1 = int(n1);
-    useInt = CXXRCONSTRUCT(Rboolean, (n1 == in1));
+    Rboolean useInt = Rboolean((n1 <= INT_MAX) &&  (n1 == (int) n1));
     if(useInt) {
 	if(n1 <= INT_MIN || n1 > INT_MAX)
 	    useInt = FALSE;
@@ -130,6 +124,7 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
 	}
     }
     if (useInt) {
+	int in1 = (int)(n1);
 	ans = allocVector(INTSXP, n);
 	if (n1 <= n2)
 	    for (int i = 0; i < n; i++) {
@@ -173,9 +168,15 @@ SEXP attribute_hidden do_colon(/*const*/ CXXR::Expression* call, const CXXR::Bui
     if (n1 == 0 || n2 == 0)
 	errorcall(call, _("argument of length 0"));
     if (n1 > 1)
-	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n1));
+	warningcall(call, 
+		    ngettext("numerical expression has %d element: only the first used",
+			     "numerical expression has %d elements: only the first used",
+			     (int) n1), (int) n1);
     if (n2 > 1)
-	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n2));
+	warningcall(call, 
+		    ngettext("numerical expression has %d element: only the first used", 
+			     "numerical expression has %d elements: only the first used", 
+			     (int) n2), (int) n2);
     n1 = asReal(s1);
     n2 = asReal(s2);
     if (ISNAN(n1) || ISNAN(n2))
@@ -255,9 +256,10 @@ static SEXP rep2(SEXP s, SEXP ncopy)
     case EXPRSXP:
 	for (i = 0; i < nc; i++) {
 //	    if ((i+1) % ni == 0) R_CheckUserInterrupt();
-	    SEXP elt = duplicate(XVECTOR_ELT(s, i));
+	    SEXP elt = lazy_duplicate(VECTOR_ELT(s, i));
 	    for (j = 0; j < INTEGER(t)[i]; j++)
 		SET_XVECTOR_ELT(a, n++, elt);
+	    if (j > 1) SET_NAMED(elt, 2);
 	}
 	break;
     case RAWSXP:
@@ -331,7 +333,7 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
 	for (i = 0, j = 0; i < na;) {
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    if (j >= ns) j = 0;
-	    SET_VECTOR_ELT(a, i++, duplicate(VECTOR_ELT(s, j++)));
+	    SET_VECTOR_ELT(a, i++, lazy_duplicate(VECTOR_ELT(s, j++)));
 	}
 	break;
     default:
@@ -618,9 +620,10 @@ done:
 /* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans, x, ap, times = R_NilValue /* -Wall */;
-    int each = 1, nprotect = 4;
+    SEXP ans, x, times = R_NilValue /* -Wall */;
+    int each = 1, nprotect = 3;
     R_xlen_t i, lx, len = NA_INTEGER, nt;
+    static SEXP do_rep_formals = NULL;
 
     /* includes factors, POSIX[cl]t, Date */
     if (DispatchOrEval(call, op, "rep", args, rho, &ans, 0, 0))
@@ -633,14 +636,11 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
        so we manage the argument matching ourselves.  We pretend this is
        rep(x, times, length.out, each, ...)
     */
-    PROTECT(ap = CONS(R_NilValue,
-		      list4(nullptr, nullptr, nullptr, nullptr)));
-    SET_TAG(ap, install("x"));
-    SET_TAG(CDR(ap), install("times"));
-    SET_TAG(CDDR(ap), install("length.out"));
-    SET_TAG(CDR(CDDR(ap)), install("each"));
-    SET_TAG(CDDR(CDDR(ap)), R_DotsSymbol);
-    PROTECT(args = matchArgs(ap, args, call));
+    if (do_rep_formals == NULL)
+        do_rep_formals = allocFormalsList5(install("x"), install("times"),
+					   install("length.out"),
+					   install("each"), R_DotsSymbol);
+    PROTECT(args = matchArgs(do_rep_formals, args, call));
 
     x = CAR(args);
     /* supported in R 2.15.x */
@@ -676,7 +676,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP a;
 	PROTECT(a = duplicate(x));
 	if(len != NA_INTEGER && len > 0) a = xlengthgets(a, len);
-	UNPROTECT(4);
+	UNPROTECT(3);
 	return a;
     }
     if (!isVector(x))
@@ -744,10 +744,11 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* to match seq.default */
 SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
+    SEXP ans = R_NilValue /* -Wall */, from, to, by, len, along;
     int nargs = length(args), lf;
     Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
     R_xlen_t i, lout = NA_INTEGER;
+    static SEXP do_seq_formals = NULL;
 
     if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 1))
 	return(ans);
@@ -756,18 +757,11 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
        We pretend this is
        seq(from, to, by, length.out, along.with, ...)
     */
-    PROTECT(ap = CONS(R_NilValue,
-		      CONS(R_NilValue,
-			   list4(nullptr, nullptr, nullptr,
-				 nullptr))));
-    tmp = ap;
-    SET_TAG(tmp, install("from")); tmp = CDR(tmp);
-    SET_TAG(tmp, install("to")); tmp = CDR(tmp);
-    SET_TAG(tmp, install("by")); tmp = CDR(tmp);
-    SET_TAG(tmp, install("length.out")); tmp = CDR(tmp);
-    SET_TAG(tmp, install("along.with")); tmp = CDR(tmp);
-    SET_TAG(tmp, R_DotsSymbol);
-    PROTECT(args = matchArgs(ap, args, call));
+    if (do_seq_formals == NULL)
+        do_seq_formals = allocFormalsList6(install("from"), install("to"),
+					   install("by"), install("length.out"),
+					   install("along.with"), R_DotsSymbol);
+    PROTECT(args = matchArgs(do_seq_formals, args, call));
 
     from = CAR(args); args = CDR(args);
     to = CAR(args); args = CDR(args);
@@ -948,7 +942,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("too many arguments"));
 
 done:
-    UNPROTECT(2);
+    UNPROTECT(1);
     return ans;
 }
 

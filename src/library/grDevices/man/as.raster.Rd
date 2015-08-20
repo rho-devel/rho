@@ -1,6 +1,6 @@
 % File src/library/grid/man/as.raster.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{as.raster}
@@ -63,6 +63,12 @@ as.raster(x, \dots)
   of the same dimensions as the raster object.  Note that \code{NA}
   values are interpreted as the fully transparent colour by some (but
   not all) graphics devices.
+}
+\note{
+  Raster images are internally represented row-first, which can cause
+  confusion when trying to manipulate a raster object.  The recommended
+  approach is to coerce a raster to a matrix, perform the manipulation,
+  then convert back to a raster.
 }
 \value{
   For \code{as.raster()}, a raster object.

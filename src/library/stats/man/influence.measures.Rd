@@ -1,6 +1,6 @@
 % File src/library/stats/man/influence.measures.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{influence.measures}
@@ -14,8 +14,8 @@
 \concept{DFFITs}
 
 \alias{influence.measures}
-\alias{print.infl}
-\alias{summary.infl}
+%\alias{print.infl}
+%\alias{summary.infl}
 \alias{hat}
 \alias{hatvalues}
 \alias{hatvalues.lm}
@@ -158,7 +158,12 @@ hat(x, intercept = TRUE)
 
   Fox, J. (2002)
   \emph{An R and S-Plus Companion to Applied Regression}.
-  Sage Publ.; \url{http://www.socsci.mcmaster.ca/jfox/Books/Companion/}.
+  Sage Publ.
+
+  Fox, J. and Weisberg, S. (2011)
+  \emph{An R Companion to Applied Regression}, second edition.
+  Sage Publ;
+  \url{http://socserv.mcmaster.ca/jfox/Books/Companion/index.html}.
 }
 \seealso{
   \code{\link{influence}} (containing \code{\link{lm.influence}}).

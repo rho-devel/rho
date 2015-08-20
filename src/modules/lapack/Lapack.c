@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001--2012  The R Core Team.
+ *  Copyright (C) 2001--2013  The R Core Team.
  *  Copyright (C) 2003--2010  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -109,24 +109,21 @@ static SEXP La_svd(SEXP jobu, SEXP x, SEXP s, SEXP u, SEXP vt)
     if (TYPEOF(dims) != INTSXP) error("non-integer dims");
     int ldvt = INTEGER(dims)[0];
     double tmp;
-    /* min(n,p) large is implausible, but ... */
+    /* min(n,p) large is implausible, but cast to be sure */
     int *iwork= (int *) R_alloc(8*(size_t)(n < p ? n : p), sizeof(int));
 
     /* ask for optimal size of work array */
+    const char *ju = CHAR(STRING_ELT(jobu, 0));
     int lwork = -1;
-    F77_CALL(dgesdd)(CHAR(STRING_ELT(jobu, 0)),
-		     &n, &p, xvals, &n, REAL(s),
-		     REAL(u), &ldu,
-		     REAL(vt), &ldvt,
+    F77_CALL(dgesdd)(ju, &n, &p, xvals, &n, REAL(s),
+		     REAL(u), &ldu, REAL(vt), &ldvt,
 		     &tmp, &lwork, iwork, &info);
     if (info != 0)
 	error(_("error code %d from Lapack routine '%s'"), info, "dgesdd");
     lwork = (int) tmp;
     double *work = (double *) R_alloc(lwork, sizeof(double));
-    F77_CALL(dgesdd)(CHAR(STRING_ELT(jobu, 0)),
-		     &n, &p, xvals, &n, REAL(s),
-		     REAL(u), &ldu,
-		     REAL(vt), &ldvt,
+    F77_CALL(dgesdd)(ju, &n, &p, xvals, &n, REAL(s),
+		     REAL(u), &ldu, REAL(vt), &ldvt,
 		     work, &lwork, iwork, &info);
     if (info != 0)
 	error(_("error code %d from Lapack routine '%s'"), info, "dgesdd");
@@ -148,7 +145,7 @@ static SEXP La_svd(SEXP jobu, SEXP x, SEXP s, SEXP u, SEXP vt)
 static SEXP La_rs(SEXP x, SEXP only_values)
 {
     int *xdims, n, lwork, info = 0, ov;
-    char jobv[1], uplo[1], range[1];
+    char jobv[2] = "U", uplo[2] = "L", range[2] = "A";
     SEXP z = R_NilValue;
     double *work, *rx, *rvalues, tmp, *rz = NULL;
     int liwork, *iwork, itmp, m;
@@ -157,7 +154,6 @@ static SEXP La_rs(SEXP x, SEXP only_values)
        not to be used if range='a' */
     int il, iu, *isuppz;
 
-    uplo[0] = 'L';
     xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
     n = xdims[0];
     if (n != xdims[1]) error(_("'x' must be a square numeric matrix"));
@@ -177,7 +173,6 @@ static SEXP La_rs(SEXP x, SEXP only_values)
     SEXP values = PROTECT(allocVector(REALSXP, n));
     rvalues = REAL(values);
 
-    range[0] = 'A';
     if (!ov) {
 	z = PROTECT(allocMatrix(REALSXP, n, n));
 	rz = REAL(z);
@@ -251,7 +246,7 @@ static SEXP La_rg(SEXP x, SEXP only_values)
     Rboolean vectors, complexValues;
     int i, n, lwork, info, *xdims, ov;
     double *work, *wR, *wI, *left, *right, *xvals, tmp;
-    char jobVL[1], jobVR[1];
+    char jobVL[2] = "N", jobVR[2] = "N";
 
     xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
     n = xdims[0];
@@ -271,7 +266,6 @@ static SEXP La_rg(SEXP x, SEXP only_values)
     ov = asLogical(only_values);
     if (ov == NA_LOGICAL) error(_("invalid '%s' argument"), "only.values");
     vectors = !ov;
-    jobVL[0] = jobVR[0] = 'N';
     left = right = (double *) 0;
     if (vectors) {
 	jobVR[0] = 'V';
@@ -748,25 +742,33 @@ static SEXP qr_qy_cmplx(SEXP Q, SEXP Bin, SEXP trans)
 #endif
 }
 
-static SEXP La_svd_cmplx(SEXP jobu, SEXP jobv, SEXP x, SEXP s, SEXP u, SEXP v)
+static SEXP La_svd_cmplx(SEXP jobu, SEXP x, SEXP s, SEXP u, SEXP v)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    if (!(isString(jobu) && isString(jobv)))
-	error(_("'jobu' and 'jobv' must be character strings"));
+    if (!(isString(jobu)))
+	error(_("'jobu' must be a character string"));
     int *xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
     int n = xdims[0], p = xdims[1];
+    const char *jz = CHAR(STRING_ELT(jobu, 0));
 
     /* The underlying LAPACK, specifically ZLARF, does not work with
      * long arrays */
     if ((double)n * (double)p > INT_MAX)
 	error(_("matrices of 2^31 or more elements are not supported"));
-    double *rwork = (double *) R_alloc(5*(size_t)(n < p ? n:p), sizeof(double));
 
-    /* work on a copy of x: duplicate would copy too much, like dimnames */
+    /* work on a copy of x */
     Rcomplex *xvals = (Rcomplex *) R_alloc(n * (size_t) p, sizeof(Rcomplex));
     Memcpy(xvals, COMPLEX(x), n * (size_t) p);
 
-    /* ask for optimal size of work array */
+    int *iwork= (int *) R_alloc(8*(size_t)(n < p ? n : p), sizeof(int));
+    size_t mn0 = (n < p ? n : p), mn1 = (n > p ? n : p), lrwork;
+    if (strcmp(jz, "N")) {
+	size_t f1 = 5 * mn1 + 7, f2 = 2 * mn1 + 2 * mn0 + 1;
+	lrwork = (f1 > f2 ? f1 : f2) * mn0;
+	// 7 replaces 5: bug 111 in http://www.netlib.org/lapack/Errata/index2.html
+    } else lrwork = 7 * mn0;
+    double *rwork  = (double *) R_alloc(lrwork, sizeof(double));
+    /* ask for optimal size of lwork array */
     int lwork = -1, info;
     Rcomplex tmp;
     int ldu, ldv;
@@ -776,20 +778,19 @@ static SEXP La_svd_cmplx(SEXP jobu, SEXP jobv, SEXP x, SEXP s, SEXP u, SEXP v)
     dims = getAttrib(v, R_DimSymbol);
     if (TYPEOF(dims) != INTSXP) error("non-integer dims");
     ldv = INTEGER(dims)[0];
-    F77_CALL(zgesvd)(CHAR(STRING_ELT(jobu, 0)), CHAR(STRING_ELT(jobv, 0)),
-		     &n, &p, xvals, &n, REAL(s),
+    F77_CALL(zgesdd)(jz, &n, &p, xvals, &n, REAL(s),
 		     COMPLEX(u), &ldu, COMPLEX(v), &ldv,
-		     &tmp, &lwork, rwork, &info);
+		     &tmp, &lwork, rwork, iwork, &info);
     if (info != 0)
-	error(_("error code %d from Lapack routine '%s'"), info, "zgesvd");
+	error(_("error code %d from Lapack routine '%s'"), info, "zgesdd");
     lwork = (int) tmp.r;
     Rcomplex *work = (Rcomplex *) R_alloc(lwork, sizeof(Rcomplex));
-    F77_CALL(zgesvd)(CHAR(STRING_ELT(jobu, 0)), CHAR(STRING_ELT(jobv, 0)),
-		     &n, &p, xvals, &n, REAL(s),
+    F77_CALL(zgesdd)(jz, &n, &p, xvals, &n, REAL(s),
 		     COMPLEX(u), &ldu, COMPLEX(v), &ldv,
-		     work, &lwork, rwork, &info);
+		     work, &lwork, rwork, iwork, &info);
     if (info != 0)
-	error(_("error code %d from Lapack routine '%s'"), info, "zgesvd");
+	error(_("error code %d from Lapack routine '%s'"), info, "zgesdd");
+
     SEXP val = PROTECT(allocVector(VECSXP, 3));
     SEXP nm = PROTECT(allocVector(STRSXP, 3));
     SET_STRING_ELT(nm, 0, mkChar("d"));
@@ -812,11 +813,10 @@ static SEXP La_rs_cmplx(SEXP xin, SEXP only_values)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
     int *xdims, n, lwork, info, ov;
-    char jobv[1], uplo[1];
+    char jobv[2] = "N", uplo[2] = "L";
     Rcomplex *work, *rx, tmp;
     double *rwork, *rvalues;
 
-    uplo[0] = 'L';
     xdims = INTEGER(coerceVector(getAttrib(xin, R_DimSymbol), INTSXP));
     n = xdims[0];
     if (n != xdims[1]) error(_("'x' must be a square complex matrix"));
@@ -872,7 +872,7 @@ static SEXP La_rg_cmplx(SEXP x, SEXP only_values)
     int  n, lwork, info, *xdims, ov;
     Rcomplex *work, *left, *right, *xvals, tmp;
     double *rwork;
-    char jobVL[1], jobVR[1];
+    char jobVL[2] = "N", jobVR[2] = "N";
     SEXP ret, nm, values, val = R_NilValue;
 
     xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
@@ -884,7 +884,6 @@ static SEXP La_rg_cmplx(SEXP x, SEXP only_values)
     Memcpy(xvals, COMPLEX(x), (size_t) n * n);
     ov = asLogical(only_values);
     if (ov == NA_LOGICAL) error(_("invalid '%s' argument"), "only.values");
-    jobVL[0] = jobVR[0] = 'N';
     left = right = (Rcomplex *) 0;
     if (!ov) {
 	jobVR[0] = 'V';
@@ -970,7 +969,8 @@ static SEXP La_chol(SEXP A, SEXP pivot, SEXP stol)
 		      -info, "dpstrf");
 	}
 	setAttrib(ans, install("pivot"), piv);
-	setAttrib(ans, install("rank"), ScalarInteger(rank));
+	SEXP s_rank = install("rank");
+	setAttrib(ans, s_rank, ScalarInteger(rank));
 	SEXP cn, dn = getAttrib(ans, R_DimNamesSymbol);
 	if (!isNull(dn) && !isNull(cn = VECTOR_ELT(dn, 1))) {
 	    // need to pivot the colnames
@@ -1101,9 +1101,10 @@ static SEXP La_solve(SEXP A, SEXP Bin, SEXP tolin)
 	error(_("Lapack routine %s: system is exactly singular: U[%d,%d] = 0"),
 	      "dgesv", info, info);
     if(tol > 0) {
-	anorm = F77_CALL(dlange)("1", &n, &n, REAL(A), &n, (double*) NULL);
+	char one[2] = "1";
+	anorm = F77_CALL(dlange)(one, &n, &n, REAL(A), &n, (double*) NULL);
 	work = (double *) R_alloc(4*(size_t)n, sizeof(double));
-	F77_CALL(dgecon)("1", &n, avals, &n, &anorm, &rcond, work, ipiv, &info);
+	F77_CALL(dgecon)(one, &n, avals, &n, &anorm, &rcond, work, ipiv, &info);
 	if (rcond < tol)
 	    error(_("system is computationally singular: reciprocal condition number = %g"),
 		  rcond);
@@ -1293,7 +1294,8 @@ static SEXP det_ge_real(SEXP Ain, SEXP logarithm)
     SET_STRING_ELT(nm, 1, mkChar("sign"));
     setAttrib(val, R_NamesSymbol, nm);
     SET_VECTOR_ELT(val, 0, ScalarReal(modulus));
-    setAttrib(VECTOR_ELT(val, 0), install("logarithm"), ScalarLogical(useLog));
+    SEXP s_logarithm = install("logarithm");
+    setAttrib(VECTOR_ELT(val, 0), s_logarithm, ScalarLogical(useLog));
     SET_VECTOR_ELT(val, 1, ScalarInteger(sign));
     setAttrib(val, R_ClassSymbol, ScalarString(mkChar("det")));
     UNPROTECT(3);
@@ -1343,13 +1345,21 @@ static SEXP mod_do_lapack(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     case 401:
     {
-	SEXP a1, a2, a3, a4, a5;
+	SEXP a1, a2, a3, a4;
 	a1 = CAR(args); args = CDR(args);
 	a2 = CAR(args); args = CDR(args);
 	a3 = CAR(args); args = CDR(args);
 	a4 = CAR(args); args = CDR(args);
-	a5 = CAR(args); args = CDR(args);
-	ans = La_svd_cmplx(a1, a2, a3, a4, a5, CAR(args));
+	ans = La_svd_cmplx(a1, a2, a3, a4, CAR(args));
+	break;
+    }
+    case 1000:
+    {
+	int major, minor, patch;
+	char str[20];
+	F77_CALL(ilaver)(&major, &minor, &patch);
+	snprintf(str, 20, "%d.%d.%d", major, minor, patch);
+	ans = mkString(str);
 	break;
     }
     }

@@ -2,7 +2,7 @@
 #  Part of the R package, http://www.R-project.org
 #
 #  Copyright (C) 1998 B. D. Ripley
-#  Copyright (C) 2000-12 The R Core Team
+#  Copyright (C) 2000-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ function(formula, data, weights, subset,
     X <- model.matrix(Terms, m, contrasts)
     Y <- model.response(m)
     w <- model.weights(m)
-    if(length(w) == 0L) w <- rep(1, nrow(X))
+    if(length(w) == 0L) w <- rep_len(1, nrow(X))
     fit <- ppr.default(X, Y, w, ...)
     fit$na.action <- attr(m, "na.action")
     fit$terms <- Terms

@@ -10,11 +10,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:53\n"
-"PO-Revision-Date: 2013-03-19 21:46-0600\n"
+"POT-Creation-Date: 2014-11-20 11:48\n"
+"PO-Revision-Date: 2014-03-11 10:32-0600\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
-"Language: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=KOI8-R\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -109,6 +109,9 @@ msgstr "x$lag должен иметь как минимум 1 колонку"
 
 msgid "can use ci.type=\"ma\" only if first lag is 0"
 msgstr "могу использовать ci.type=\"ma\" только если первый лаг -- ноль"
+
+msgid "Page [%d,%d]: i =%s; j =%s"
+msgstr ""
 
 msgid "univariate time series only"
 msgstr "только одномерные временные ряды"
@@ -285,6 +288,9 @@ msgstr "'order.max' должен быть >= 1"
 msgid "'order.max' must be < 'n.used'"
 msgstr "'order.max' должен быть < 'n.used'"
 
+msgid "zero-variance series"
+msgstr ""
+
 msgid "'n.ahead' must be at least 1"
 msgstr "'n.ahead' должен быть по меньшей мере 1"
 
@@ -349,6 +355,14 @@ msgstr "часть скользящего среднего из модели не обратима"
 msgid "seasonal MA part of model is not invertible"
 msgstr "сезонная часть скользящего среднего из модели необратима"
 
+#, fuzzy
+msgid "NAs in '%s'"
+msgstr "NAs в 'x'"
+
+#, fuzzy
+msgid "invalid 'SSinit'"
+msgstr "неправильный 'nb'"
+
 msgid "converting non-invertible initial MA values"
 msgstr "конвертирую не-необратимые начальные значения скользящего среднего"
 
@@ -397,6 +411,10 @@ msgstr "все наблюдения находятся в одной группе"
 
 msgid "there must be at least 2 observations in each group"
 msgstr "тут должно быть как минимум 2 наблюдения в каждой группе"
+
+#, fuzzy
+msgid "'formula' should be of the form response ~ group"
+msgstr "формула '%s' должна быть в виде '~expr'"
 
 msgid "'x' must be nonnegative and integer"
 msgstr "'x' должен быть неотрицательным и целым"
@@ -615,8 +633,10 @@ msgstr "у 'tree' компонент 'height' не сортирован (по возрастанию)"
 msgid "elements of 'k' must be between 1 and %d"
 msgstr "элементы 'k' должны быть между 1 и %d"
 
-msgid "'merge' and 'height' do not fit!"
-msgstr "'merge' и 'height' не соответствуют!"
+msgid ""
+"dendrogram entries must be 1,2,..,%d (in any order), to be coercible to "
+"\"hclust\""
+msgstr ""
 
 msgid "dendrogram node with non-positive #{branches}"
 msgstr "узел дендрограммы с неположительными #{branches}"
@@ -746,8 +766,9 @@ msgstr "определите 'rate' или 'scale', но не оба"
 msgid "x[] and prob[] must be equal length vectors."
 msgstr "x[] и prob[] должны векторами одинаковой длины."
 
-msgid "probabilities cannot be negative nor all 0"
-msgstr "вероятности не могут быть ни отрицательными, ни все равными нулю"
+#, fuzzy
+msgid "probabilities must be finite, non-negative and not all 0"
+msgstr "вероятности должны быть неотрицательными."
 
 msgid "'x' must be non-negative"
 msgstr "'x' должен быть неотрицательным"
@@ -915,19 +936,14 @@ msgstr "'circular' должен быть логическим и не NA"
 msgid "length of 'init' must equal length of 'filter'"
 msgstr "длина 'init' должна равняться длине 'filter'"
 
-msgid "'init' must have 1 column"
-msgstr "'init' должен иметь одну колонку"
-
-msgid "'init' must have 1 or %d columns"
-msgstr "'init' должен иметь 1 или %d колонок"
-
 msgid "'x' must have at least 2 rows and columns"
 msgstr "'x' должен иметь по крайней мере 2 строки и колонки"
 
 msgid "'x' has entries too large to be integer"
 msgstr "у 'x' есть элементы, слишком большие чтобы быть целыми"
 
-msgid "'x' has been rounded to integer: %d"
+#, fuzzy
+msgid "'x' has been rounded to integer: %s"
 msgstr "'x' был округлен до целого: %d"
 
 msgid "if 'x' is not a matrix, 'y' must be given"
@@ -1119,6 +1135,10 @@ msgstr "не все модели были подогнаны под размер данных"
 msgid "observations with zero weight not used for calculating dispersion"
 msgstr "наблюдения с нулевым весом не использовались при вычислении дисперсии"
 
+msgid ""
+"The \"ward\" method has been renamed to \"ward.D\"; note new \"ward.D2\""
+msgstr ""
+
 msgid "invalid clustering method"
 msgstr "неправильный метод кластеризации"
 
@@ -1136,12 +1156,6 @@ msgstr "для кластеризации нужно иметь n >= 2 объектов"
 
 msgid "invalid length of members"
 msgstr "неправильная длина членов"
-
-msgid "invalid dendrogram"
-msgstr "неправильная дендрограмма"
-
-msgid "'merge' component in dendrogram must be integer"
-msgstr "компонент дендрограммы 'merge' должен быть целым"
 
 msgid "argument 'x' cannot be coerced to class %s"
 msgstr "аргумент 'x' не может быть конвертирован в класс %s"
@@ -1218,6 +1232,9 @@ msgstr "пустой кластер: попробуйте другой набор исходных центров"
 msgid "number of cluster centres must lie between 1 and nrow(x)"
 msgstr "количество центров кластеров должно быть в пределах между 1 и nrow(x)"
 
+msgid "Quick-TRANSfer stage steps exceeded maximum (= %d)"
+msgstr ""
+
 msgid "invalid nrow(x)"
 msgstr "неправильный nrow(x)"
 
@@ -1244,6 +1261,12 @@ msgstr "'iter.max' должен быть положительным"
 
 msgid "must have same number of columns in 'x' and 'centers'"
 msgstr "в 'x' и 'centers' нужно одно количество колонок"
+
+msgid "'x' is a list, so ignoring argument 'g'"
+msgstr ""
+
+msgid "some elements of 'x' are not numeric and will be coerced to numeric"
+msgstr ""
 
 msgid "not enough 'x' data"
 msgstr "недостаточно данных 'x'"
@@ -1302,6 +1325,10 @@ msgstr "вызываю summary.lm(<fake-lm-object>) ..."
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr ""
 "остаточные степени свободы в объекте указывают, что это не подгонка \"lm\""
+
+#, fuzzy
+msgid "essentially perfect fit: summary may be unreliable"
+msgstr "применение F-критерия для в целом хорошей подгонки бессмысленно"
 
 msgid ""
 "lm object does not have a proper 'qr' component.\n"
@@ -1421,6 +1448,9 @@ msgstr "недоступен атрибут \"nobs\""
 
 msgid "no 'nobs' method is available"
 msgstr "нет доступного метода 'nobs'"
+
+msgid "'margin' must contain names or numbers corresponding to 'table'"
+msgstr ""
 
 msgid "'start' and 'table' must be same length"
 msgstr "'start' и 'table' должны быть одной длины"
@@ -1602,8 +1632,24 @@ msgstr "f.lower = f(lower) -- это NA"
 msgid "f.upper = f(upper) is NA"
 msgstr "f.upper = f(upper) -- это NA"
 
+#, fuzzy
+msgid "invalid 'extendInt'; please report"
+msgstr "недопустимый аргумент 'method'"
+
+#, fuzzy
+msgid "no sign change found in %d iterations"
+msgstr "не сошлось за %d итерацию"
+
+msgid ""
+"did not succeed extending the interval endpoints for f(lower) * f(upper) <= 0"
+msgstr ""
+
 msgid "f() values at end points not of opposite sign"
 msgstr "f() значений на концевых точках не противоположного знака"
+
+#, fuzzy
+msgid "convergence problem in zero finding:"
+msgstr "возможно, проблема сходимости: 'optim' выдал код= %d"
 
 msgid "'control' argument must be a named list"
 msgstr "аргумент 'control' должен быть именованным списком"
@@ -1973,6 +2019,9 @@ msgstr "попытка сгладить пропущенные значения"
 msgid "invalid 'endrule' argument"
 msgstr "недопустимый аргумент 'endrule'"
 
+msgid ".nknots.smspl() is now exported; use it instead of n.knots()"
+msgstr ""
+
 msgid "invalid 'control.spar'"
 msgstr "неправильный 'control.spar'"
 
@@ -2111,7 +2160,8 @@ msgstr "неправильная шаговая функция"
 msgid "'plot.stepfun' called with wrong type of argument 'x'"
 msgstr "'plot.stepfun' вызван с неправильным типом аргумента 'x'"
 
-msgid "must be 0 or 1"
+#, fuzzy
+msgid "%s must be 0 or 1"
 msgstr "должен быть 0 или 1"
 
 msgid "only univariate series are allowed"
@@ -2424,6 +2474,13 @@ msgstr[0] "не могу оптимизировать, начиная с этого стартового значения"
 msgstr[1] "не могу оптимизировать, начиная с этих стартовых значений"
 msgstr[2] "не могу оптимизировать, начиная с этих стартовых значений"
 
+#, fuzzy
+msgid "'init' must have %d column"
+msgid_plural "'init' must have 1 or %d columns"
+msgstr[0] "'init' должен иметь одну колонку"
+msgstr[1] "'init' должен иметь одну колонку"
+msgstr[2] "'init' должен иметь одну колонку"
+
 msgid "X matrix has rank %d, but only %d observation"
 msgid_plural "X matrix has rank %d, but only %d observations"
 msgstr[0] "матрица X имеет ранг %d, но только %d наблюдение"
@@ -2442,28 +2499,24 @@ msgstr[0] "%d пропущенное значение удалено"
 msgstr[1] "%d пропущенных значения удалено"
 msgstr[2] "%d пропущенных значений удалено"
 
-#, fuzzy
 msgid "'X' matrix has %d case (row)"
 msgid_plural "'X' matrix has %d cases (rows)"
-msgstr[0] "'X'-матрица имеет %d отклик"
-msgstr[1] "'X'-матрица имеет %d отклика"
-msgstr[2] "'X'-матрица имеет %d откликов"
+msgstr[0] "'X'-матрица имеет %d отклик (строку)"
+msgstr[1] "'X'-матрица имеет %d отклика (строки)"
+msgstr[2] "'X'-матрица имеет %d откликов (строк)"
 
-#, fuzzy
 msgid "'Y' has %d case (row)"
 msgid_plural "'Y' has %d cases (rows)"
-msgstr[0] "'Y' вызвал %d отклик"
-msgstr[1] "'Y' вызвал %d отклика"
-msgstr[2] "'Y' вызвал %d откликов"
+msgstr[0] "'Y' вызвал %d отклик (строку)"
+msgstr[1] "'Y' вызвал %d отклика (строки)"
+msgstr[2] "'Y' вызвал %d откликов (строк)"
 
-#, fuzzy
 msgid "only %d case"
 msgid_plural "only %d cases"
-msgstr[0] "но только %d переменную"
-msgstr[1] "но только %d переменных"
-msgstr[2] "но только %d переменных"
+msgstr[0] "но только %d случай"
+msgstr[1] "но только %d случая"
+msgstr[2] "но только %d случаев"
 
-#, fuzzy
 msgid "but %d variable"
 msgid_plural "but %d variables"
 msgstr[0] "но только %d переменную"
@@ -2535,6 +2588,21 @@ msgid_plural "'start.innov' is too short: need %d points"
 msgstr[0] "'start.innov' слишком короткий: нужно %d точку"
 msgstr[1] "'start.innov' слишком короткий: нужно %d точки"
 msgstr[2] "'start.innov' слишком короткий: нужно %d точек"
+
+#~ msgid "'merge' and 'height' do not fit!"
+#~ msgstr "'merge' и 'height' не соответствуют!"
+
+#~ msgid "invalid dendrogram"
+#~ msgstr "неправильная дендрограмма"
+
+#~ msgid "'merge' component in dendrogram must be integer"
+#~ msgstr "компонент дендрограммы 'merge' должен быть целым"
+
+#~ msgid "probabilities cannot be negative nor all 0"
+#~ msgstr "вероятности не могут быть ни отрицательными, ни все равными нулю"
+
+#~ msgid "'init' must have 1 or %d columns"
+#~ msgstr "'init' должен иметь 1 или %d колонок"
 
 #~ msgid "'deriv' must be between 0 and 2"
 #~ msgstr "'deriv' должно быть между 0 и 2"

@@ -1,6 +1,6 @@
 % File src/library/stats/man/birthday.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{birthday}
@@ -42,10 +42,6 @@ pbirthday(n, classes = 365, coincident = 2)
  The formula used is approximate for \code{coincident > 2}.  The
  approximation is very good for moderate values of \code{prob} but less
  good for very small probabilities.
-}
-\note{
-  Prior to \R 2.14.0 the approximate formula was used even for
-  \code{coincident = 2}.
 }
 \references{
   Diaconis, P. and Mosteller F. (1989)

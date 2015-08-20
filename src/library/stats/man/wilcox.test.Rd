@@ -1,9 +1,7 @@
 % File src/library/stats/man/wilcox.test.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{wilcox.test}
 \alias{wilcox.test}
@@ -26,7 +24,7 @@ wilcox.test(x, \dots)
 \method{wilcox.test}{formula}(formula, data, subset, na.action, \dots)
 }
 \arguments{
-  \item{x}{numeric vector of data values.  Non-finite (e.g. infinite or
+  \item{x}{numeric vector of data values.  Non-finite (e.g., infinite or
     missing) values will be omitted.}
   \item{y}{an optional numeric vector of data values: as with \code{x}
     non-finite values will be omitted.}

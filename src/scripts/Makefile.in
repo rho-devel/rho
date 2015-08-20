@@ -86,10 +86,10 @@ Makerules:
 ## installed as 'R'.
 R.sh: $(srcdir)/R.sh.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-R.fe: R.sh $(top_srcdir)/VERSION $(top_builddir)/SVN-REVISION
+R.fe: R.sh $(top_srcdir)/VERSION $(top_builddir)/GIT-REVISION
 	@$(ECHO) "creating $(subdir)/$@"
 	@(v=`cat $(top_srcdir)/VERSION`; \
-	  dat=`sed -e 1d -e 's/^Last Changed Date: //' $(top_builddir)/SVN-REVISION`; \
+	  dat=`sed -e 1d -e 's/^Last Changed Date: //' $(top_builddir)/GIT-REVISION`; \
 	  v="$${v} ($${dat})"; \
 	  y=`$(ECHO) $${dat} | cut -d- -f1`; \
 	  d=`$(ECHO) "$(abs_top_builddir)" | sed 's,/,\\\/,g'`; \

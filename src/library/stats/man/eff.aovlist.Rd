@@ -1,6 +1,6 @@
 % File src/library/stats/man/eff.aovlist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{eff.aovlist}
@@ -35,7 +35,7 @@ eff.aovlist(aovlist)
   are done.
 
   The calculation used requires orthogonal contrasts for each term, and
-  will throw an error if non-orthogonal contrasts (e.g. treatment
+  will throw an error if non-orthogonal contrasts (e.g., treatment
   contrasts or an unbalanced design) are detected.
 }
 \value{

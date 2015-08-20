@@ -292,32 +292,45 @@ void WeakRef::runExitFinalizers()
 
 bool WeakRef::runFinalizers()
 {
-    WeakRef::check();
     WRList* finalization_pending = getFinalizationPending();
+    if (finalization_pending->empty())
+	return false;
 
-    bool finalizer_run = !finalization_pending->empty();
-    WRList::iterator lit = finalization_pending->begin();
-    while (lit != finalization_pending->end()) {
-	WeakRef* wr = *lit++;
-	GCStackRoot<> topExp(R_CurrentExpr);
-	size_t savestack = ProtectStack::size();
-	{
-	    // An Evaluator is declared for the finalizer to
-	    // insure that any errors that might occur do not spill into
-	    // the call that triggered the collection:
-	    Evaluator evalr;
-	    try {
-		wr->finalize();
+    // Prevent this function from running again when already in progress.
+    static Rboolean running = FALSE;
+    if (running) return FALSE;
+    running = TRUE;
+    
+    try {
+	WeakRef::check();
+
+	WRList::iterator lit = finalization_pending->begin();
+	while (lit != finalization_pending->end()) {
+	    WeakRef* wr = *lit++;
+	    GCStackRoot<> topExp(R_CurrentExpr);
+	    size_t savestack = ProtectStack::size();
+	    {
+		// An Evaluator is declared for the finalizer to
+		// insure that any errors that might occur do not spill into
+		// the call that triggered the collection:
+		Evaluator evalr;
+		try {
+		    wr->finalize();
+		}
+		catch (CommandTerminated) {
+		}
+		// Expose WeakRef to reference-counting collection:
+		wr->m_self = nullptr;
 	    }
-	    catch (CommandTerminated) {
-	    }
-	    // Expose WeakRef to reference-counting collection:
-	    wr->m_self = nullptr;
+	    ProtectStack::restoreSize(savestack);
+	    R_CurrentExpr = topExp;
 	}
-	ProtectStack::restoreSize(savestack);
-	R_CurrentExpr = topExp;
+	running = FALSE;
+    } catch (...) {
+	running = FALSE;
+	throw;
     }
-    return finalizer_run;
+    return true;
 }
 
 void WeakRef::tombstone()
@@ -379,6 +392,10 @@ void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit)
 void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun)
 {
     R_RegisterCFinalizerEx(s, fun, FALSE);
+}
+
+void R_RunPendingFinalizers() {
+    WeakRef::runFinalizers();
 }
 
 void R_RunExitFinalizers()

@@ -1,12 +1,12 @@
 % File src/library/stats/man/predict.lm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{predict.lm}
 \title{Predict method for Linear Model Fits}
 \alias{predict.lm}
-\alias{predict.mlm}
+%\alias{predict.mlm}
 \concept{regression}
 \description{
   Predicted values based on linear model object.
@@ -34,8 +34,8 @@
     values in \code{newdata}.  The default is to predict \code{NA}.}
   \item{pred.var}{the variance(s) for future observations to be assumed
     for prediction intervals.  See \sQuote{Details}.}
-  \item{weights}{variance weights for prediction. This can be a numeric
-    vector or a one-sided model formula. In the latter case, it is
+  \item{weights}{variance weights for prediction.  This can be a numeric
+    vector or a one-sided model formula.  In the latter case, it is
     interpreted as an expression evaluated in \code{newdata}.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
@@ -66,15 +66,14 @@
 
   The prediction intervals are for a single observation at each case in
   \code{newdata} (or by default, the data used for the fit) with error
-  variance(s) \code{pred.var}. This can be a multiple of \code{res.var},
-  the estimated
-  value of \eqn{\sigma^2}: the default is to assume that future
-  observations have the same error variance as those
-  used for fitting. If \code{weights} is supplied, the inverse of this
-  is used as a scale factor. For a weighted fit, if the prediction
+  variance(s) \code{pred.var}.  This can be a multiple of \code{res.var},
+  the estimated value of \eqn{\sigma^2}: the default is to assume that
+  future observations have the same error variance as those
+  used for fitting.  If \code{weights} is supplied, the inverse of this
+  is used as a scale factor.  For a weighted fit, if the prediction
   is for the original data frame, \code{weights} defaults to the weights
   used for the  model fit, with a warning since it might not be the
-  intended result. If the fit was weighted and \code{newdata} is given, the
+  intended result.  If the fit was weighted and \code{newdata} is given, the
   default is to assume constant prediction variance, with a warning.
 }
 \value{
@@ -100,7 +99,7 @@
 
   Notice that prediction variances and prediction intervals always refer
   to \emph{future} observations, possibly corresponding to the same
-  predictors as used for the fit. The variance of the \emph{residuals}
+  predictors as used for the fit.  The variance of the \emph{residuals}
   will be smaller.
 
   Strictly speaking, the formula used for prediction limits assumes that
@@ -111,7 +110,8 @@
 \seealso{
   The model fitting function \code{\link{lm}}, \code{\link{predict}}.
 
-  \link{SafePrediction} for prediction from polynomial and spline fits.
+  \link{SafePrediction} for prediction from (univariable) polynomial and
+  spline fits.
 }
 \examples{
 require(graphics)
@@ -144,6 +144,6 @@ npk.aov <- aov(yield ~ block + N*P*K, npk)
 (pt <- predict(npk.aov, type = "terms"))
 pt. <- predict(npk.aov, type = "terms", terms = termL[1:4])
 stopifnot(all.equal(pt[,1:4], pt.,
-                    check.attr = FALSE, tol = 1e-12))
+                    tolerance = 1e-12, check.attributes = FALSE))
 }
 \keyword{regression}

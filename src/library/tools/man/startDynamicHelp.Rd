@@ -1,11 +1,13 @@
 % File src/library/tools/man/startDynamicHelp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009 R Core Team
+% Copyright 2009-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{startDynamicHelp}
 \alias{startDynamicHelp}
 \alias{help.ports}
+\alias{R_DISABLE_HTTPD}
+
 \title{Start the Dynamic HTML Help System}
 \description{
   This function starts the internal help server, so that HTML help pages
@@ -16,7 +18,7 @@ startDynamicHelp(start = TRUE)
 }
 \arguments{
   \item{start}{logical: whether to start or shut down the dynamic help
-    system.}
+    system.  If \code{NA}, the server is started if not already running.}
 }
 \details{
   This function starts the internal HTTP server, which runs on the

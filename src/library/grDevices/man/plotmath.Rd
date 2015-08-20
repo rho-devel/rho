@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/plotmath.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{plotmath}
@@ -158,8 +158,15 @@
     \code{group("(",list(a, b),"]")} \tab specify left and right delimiters \cr
     \code{bgroup("(",atop(x,y),")")} \tab use scalable delimiters \cr
     \code{group(lceil, x, rceil)} \tab special delimiters \cr
+    \code{group(lfloor, x, rfloor)} \tab special delimiters \cr
   }
-
+  
+  The supported \sQuote{scalable delimiters} are \code{| ( [ \{},
+  \code{lceil}, \code{lfloor} and their right-hand versions.
+  \code{"."} is equivalent to \code{""}: the corresponding delimiter
+  will be omitted. Delimiter \code{||} is supported but has the same
+  effect as \code{|}.
+  
   The symbol font uses Adobe Symbol encoding so, for example, a lower
   case mu can be obtained either by the special symbol \code{mu} or by
   \code{symbol("m")}.  This provides access to symbols that have no
@@ -176,7 +183,7 @@
 
   \code{sigma1} is also known as \code{stigma}, its Unicode name.
 
-  Control characters (e.g. \samp{\\n}) are not interpreted in character
+  Control characters (e.g., \samp{\\n}) are not interpreted in character
   strings in plotmath, unlike normal plotting.
 
   The fonts used are taken from the current font family, and so can be
@@ -234,7 +241,7 @@
   \bold{9}, 582--599.
 
   The symbol codes can be found in octal in the Adobe reference manuals,
-  e.g. for Postscript
+  e.g.\sspace{}for Postscript
   \url{http://www.adobe.com/products/postscript/pdfs/PLRM.pdf}
   or PDF
   \url{http://www.adobe.com/devnet/acrobat/pdfs/pdf_reference_1-7.pdf}

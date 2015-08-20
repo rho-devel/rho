@@ -1,7 +1,7 @@
 #  File src/library/tcltk/R/Tk.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@
     val2string <- function(x) {
         if (is.null(x)) return("")
         if (is.tkwin(x)){ current.win <<- x ; return (.Tk.ID(x)) }
-	if (inherits(x,"tclVar")) return(ls(unclass(x)$env))
+	if (inherits(x,"tclVar")) return(names(unclass(x)$env))
         if (isCallback(x)){
 	    # Jump through some hoops to protect from GC...
 	    ref <- local({value <- x; envir <- pframe; environment()})
@@ -137,7 +137,7 @@
     val2obj <- function(x) {
         if (is.null(x)) return(NULL)
         if (is.tkwin(x)){current.win <<- x ; return(as.tclObj(.Tk.ID(x)))}
-	if (inherits(x,"tclVar")) return(as.tclObj(ls(unclass(x)$env)))
+	if (inherits(x,"tclVar")) return(as.tclObj(names(unclass(x)$env)))
         if (isCallback(x)){
 	    # Jump through some hoops to protect from GC...
 	    ref <- local({value <- x; envir <- pframe; environment()})
@@ -166,14 +166,14 @@
 .Tk.ID <- function(win) win$ID
 
 .Tk.newwin <- function(ID) {
-    win <- list(ID = ID, env = evalq(new.env(), .GlobalEnv))
-    evalq(num.subwin <- 0, win$env)
+    win <- list(ID = ID, env = new.env(parent = emptyenv()))
+    win$env$num.subwin <- 0
     class(win) <- "tkwin"
     win
 }
 
 .Tk.subwin <- function(parent) {
-    ID <- paste(parent$ID, evalq(num.subwin <- num.subwin + 1, parent$env),
+    ID <- paste(parent$ID, parent$env$num.subwin <- parent$env$num.subwin + 1,
                 sep = ".")
     win <- .Tk.newwin(ID)
     assign(ID, win, envir = parent$env)
@@ -192,11 +192,11 @@ tkdestroy  <- function(win) {
 is.tkwin <- function(x) inherits(x, "tkwin")
 
 tclVar <- function(init = "") {
-   n <- evalq(TclVarCount <- TclVarCount + 1L, .TkRoot$env)
+   n <- .TkRoot$env$TclVarCount <- .TkRoot$env$TclVarCount + 1L
    name <- paste0("::RTcl", n)
    l <- list(env = new.env())
    assign(name, NULL, envir = l$env)
-   reg.finalizer(l$env, function(env) tcl("unset", ls(env)))
+   reg.finalizer(l$env, function(env) tcl("unset", names(env)))
    class(l) <- "tclVar"
    tclvalue(l) <- init
    l
@@ -206,14 +206,14 @@ tclObj <- function(x) UseMethod("tclObj")
 "tclObj<-" <- function(x, value) UseMethod("tclObj<-")
 
 tclObj.tclVar <- function(x){
-    z <- .External(.C_RTcl_ObjFromVar, ls(x$env))
+    z <- .External(.C_RTcl_ObjFromVar, names(x$env))
     class(z) <- "tclObj"
     z
 }
 
 "tclObj<-.tclVar" <- function(x, value){
     value <- as.tclObj(value)
-    .External(.C_RTcl_AssignObjToVar, ls(x$env), value)
+    .External(.C_RTcl_AssignObjToVar, names(x$env), value)
     x
 }
 
@@ -229,7 +229,7 @@ print.tclObj <- function(x,...) {
 }
 
 "tclvalue<-.tclVar" <- function(x, value) {
-    name <- ls(unclass(x)$env)
+    name <- names(unclass(x)$env)
     tcl("set", name, value)
     x
 }
@@ -242,7 +242,7 @@ tclvalue.default <- function(x) tclvalue(tcl("set", as.character(x)))
     x
 }
 
-as.character.tclVar <- function(x, ...) ls(unclass(x)$env)
+as.character.tclVar <- function(x, ...) names(unclass(x)$env)
 
 as.character.tclObj <- function(x, ...)
     .External(.C_RTcl_ObjAsCharVector, x)
@@ -281,7 +281,7 @@ tclServiceMode <- function(on = NULL)
 
 .TkRoot <- .Tk.newwin("")
 tclvar  <- structure(NULL, class = "tclvar")
-evalq(TclVarCount <- 0, .TkRoot$env)
+.TkRoot$env$TclVarCount <- 0
 
 
 # ------ Widgets ------
@@ -493,12 +493,11 @@ tkaddtag        <- function(widget, ...) tcl(widget, "addtag", ...)
 tkbbox          <- function(widget, ...) tcl(widget, "bbox", ...)
 tkcanvasx       <- function(widget, ...) tcl(widget, "canvasx", ...)
 tkcanvasy       <- function(widget, ...) tcl(widget, "canvasy", ...)
+tkcget          <- function(widget, ...) tcl(widget, "cget", ...)
 tkcompare       <- function(widget, ...) tcl(widget, "compare", ...)
 tkconfigure     <- function(widget, ...) tcl(widget, "configure", ...)
 tkcoords        <- function(widget, ...) tcl(widget, "coords", ...)
 tkcreate        <- function(widget, ...) tcl(widget, "create", ...)
-tkcget          <- function(widget, ...) tcl(widget, "cget", ...)
-tkcoords        <- function(widget, ...) tcl(widget, "coords", ...)
 tkcurselection  <- function(widget, ...) tcl(widget, "curselection", ...)
 tkdchars        <- function(widget, ...) tcl(widget, "dchars", ...)
 tkdebug         <- function(widget, ...) tcl(widget, "debug", ...)
@@ -508,8 +507,8 @@ tkdeselect      <- function(widget, ...) tcl(widget, "deselect", ...)
 tkdlineinfo     <- function(widget, ...) tcl(widget, "dlineinfo", ...)
 tkdtag          <- function(widget, ...) tcl(widget, "dtag", ...)
 tkdump          <- function(widget, ...) tcl(widget, "dump", ...)
-tkentryconfigure <- function(widget, ...) tcl(widget, "entryconfigure", ...)
 tkentrycget     <- function(widget, ...) tcl(widget, "entrycget", ...)
+tkentryconfigure <- function(widget, ...) tcl(widget, "entryconfigure", ...)
 tkfind          <- function(widget, ...) tcl(widget, "find", ...)
 tkflash         <- function(widget, ...) tcl(widget, "flash", ...)
 tkfraction      <- function(widget, ...) tcl(widget, "fraction", ...)
@@ -538,8 +537,8 @@ tknearest       <- function(widget, ...) tcl(widget, "nearest", ...)
 tkpost          <- function(widget, ...) tcl(widget, "post", ...)
 tkpostcascade   <- function(widget, ...) tcl(widget, "postcascade", ...)
 tkpostscript    <- function(widget, ...) tcl(widget, "postscript", ...)
-tkscan.mark     <- function(widget, ...) tcl(widget, "scan", "mark", ...)
 tkscan.dragto   <- function(widget, ...) tcl(widget, "scan", "dragto", ...)
+tkscan.mark     <- function(widget, ...) tcl(widget, "scan", "mark", ...)
 tksearch        <- function(widget, ...) tcl(widget, "search", ...)
 tksee           <- function(widget, ...) tcl(widget, "see", ...)
 tkselect        <- function(widget, ...) tcl(widget, "select", ...)

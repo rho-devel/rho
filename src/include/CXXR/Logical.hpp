@@ -45,7 +45,9 @@ namespace CXXR {
     class Logical {
     public:
 	Logical() {}
-	explicit Logical(int i) : m_value(i) {}
+	explicit Logical(int i) : m_value(i) {
+	    assert(i == 0 || i == 1 || i == NA_LOGICAL);
+	}
 	/*implicit*/ Logical(bool b) : m_value(b ? 1 : 0) {}
 	
 	explicit operator int() const { return m_value; }
@@ -54,7 +56,7 @@ namespace CXXR {
 	bool isTrue() const  { return m_value == TRUE; }
 	bool isFalse() const { return m_value == FALSE; }
 	bool isNA() const    { return m_value == NA_LOGICAL; }
-	
+
 	static Logical NA() { return Logical(NA_LOGICAL); }
 
  	/** @brief NA aware equality operator.
@@ -80,6 +82,7 @@ namespace CXXR {
 	Logical operator||(Logical other) const;
 	Logical operator&&(Logical other) const;
 
+	static void initialize();
     private:
 	// The value.  Allowed values are TRUE, FALSE and NA_LOGICAL.
 	int m_value;

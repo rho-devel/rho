@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2005   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,13 +17,13 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#include <R.h>
-#include <Rdefines.h>
-#define NewEnvironment		Rf_NewEnvironment
-#define substitute		Rf_substitute
-#include "methods.h"
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#define NO_NLS
+#include <Defn.h>
 
-extern SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho);
+#include "methods.h"
 
 /* substitute in an _evaluated_ object, with an explicit list as
    second arg (although old-style lists and environments are allowed).

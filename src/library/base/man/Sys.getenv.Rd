@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.getenv.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Sys.getenv}
@@ -40,8 +40,9 @@ Sys.getenv(x = NULL, unset = "", names = NA)
   there names including \code{=} are truncated just before the first
   \code{=}.)
 
-  Argument \code{names} was introduced in \R 2.13.0 to avoid needing the
-  common use of \code{as.vector(Sys.getenv())}.
+  When \code{x} is missing and \code{names} is not false, the result is
+  of class \code{"Dlist"} in order to get a nice
+  \code{\link{print}} method.
 }
 \seealso{
   \code{\link{Sys.setenv}},
@@ -56,6 +57,7 @@ Sys.getenv(x = NULL, unset = "", names = NA)
 Sys.getenv(c("R_HOME", "R_PAPERSIZE", "R_PRINTCMD", "HOST"))
 
 names(s <- Sys.getenv()) # all settings (the values could be very long)
+head(s, 12)# using the Dlist print() method
 
 ## Language and Locale settings -- but rather use Sys.getlocale()
 s[grep("^L(C|ANG)", names(s))]

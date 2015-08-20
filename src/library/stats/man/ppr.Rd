@@ -1,13 +1,11 @@
 % File src/library/stats/man/ppr.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 % file stats/man/ppr.Rd
 % copyright (C) 1995-8 B. D. Ripley
 % copyright (C) 2000-3   The R Core Team
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{ppr}
 \alias{ppr}
@@ -169,7 +167,7 @@ method functions.
   Friedman, J. H. (1984)
   SMART User's Guide.
   Laboratory for Computational Statistics, Stanford University Technical
-  Report No. 1.
+  Report No.\sspace{}1.
 
   Venables, W. N. and Ripley, B. D. (2002)
   \emph{Modern Applied Statistics with S.}  Springer.

@@ -37,11 +37,11 @@ INT_HEADERS = Defn.h Errormsg.h Fileio.h Graphics.h GraphicsBase.h \
    IOStuff.h Internal.h Parse.h Print.h Rconnections.h \
    Rdynpriv.h Rgraphics.h Rinlinedfuns.h Startup.h rlocale.h
 
-DISTFILES = Makefile.in Makefile.win README $(INT_HEADERS) $(SRC_HEADERS) \
-  config.h.in stamp-h.in Rmath.h0.in memcheck.h valgrind.h
+DISTFILES = Makefile.in Makefile.win $(INT_HEADERS) $(SRC_HEADERS) \
+  config.h.in stamp-h.in Rmath.h0.in
 
 SUBDIRS = R_ext CXXR/
-SUBDIRS_WITH_NO_BUILD = Rmodules
+SUBDIRS_WITH_NO_BUILD = Rmodules vg
 
 TIMESTAMPS = $(SRC_HEADERS:.h=.ts) $(OBJ_HEADERS:.h=.tsa)
 
@@ -84,7 +84,7 @@ $(srcdir)/stamp-h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.ac $(top_bu
 	@$(ECHO) timestamp > $@ 2> /dev/null
 Rconfig.h: config.h $(top_srcdir)/tools/GETCONFIG
 	@$(SHELL) $(top_srcdir)/tools/GETCONFIG > $@
-Rversion.h: $(top_srcdir)/VERSION $(top_srcdir)/tools/GETVERSION $(top_builddir)/SVN-REVISION
+Rversion.h: $(top_srcdir)/VERSION $(top_srcdir)/tools/GETVERSION $(top_builddir)/GIT-REVISION
 	@$(SHELL) $(top_srcdir)/tools/GETVERSION > $@
 
 ## <NOTE>

@@ -1,9 +1,7 @@
 % File src/library/stats/man/dist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{dist}
 \alias{dist}
@@ -56,21 +54,20 @@ as.dist(m, diag = FALSE, upper = FALSE)
   Available distance measures are (written for two vectors \eqn{x} and
   \eqn{y}):
   \describe{
-    \item{\code{euclidean}:}{Usual square distance between the two
-      vectors (2 norm).}
+    \item{\code{euclidean}:}{Usual distance between the two vectors (2
+      norm aka \eqn{L_2}), \eqn{\sqrt{\sum_i (x_i - y_i)^2}}{sqrt(sum((x_i - y_i)^2))}.}
 
     \item{\code{maximum}:}{Maximum distance between two components of \eqn{x}
       and \eqn{y} (supremum norm)}
 
-    \item{\code{manhattan}:}{Absolute distance between the two vectors
-      (1 norm).}
+    \item{\code{manhattan}:}{Absolute distance between the two vectors (1 norm aka \eqn{L_1}).}
 
     \item{\code{canberra}:}{
       \eqn{\sum_i |x_i - y_i| / |x_i + y_i|}{sum(|x_i - y_i| / |x_i + y_i|)}.
       Terms with zero numerator and denominator are omitted from the sum
       and treated as if the values were missing.
 
-      This is intended for non-negative values (e.g. counts): taking the
+      This is intended for non-negative values (e.g., counts): taking the
       absolute value of the denominator is a 1998 \R modification to
       avoid negative distances.
     }

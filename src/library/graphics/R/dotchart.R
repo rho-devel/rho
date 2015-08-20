@@ -1,7 +1,7 @@
 #  File src/library/graphics/R/dotchart.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,8 @@ function(x, labels = NULL, groups = NULL, gdata = NULL, cex = par("cex"),
 	goffset <- 0.4
     }
     if (!(is.null(labels) && is.null(glabels))) {
+        ## The intention seems to be to balance the whitespace
+        ## on each side of the labels+plot.
 	nmai <- par("mai")
 	nmai[2L] <- nmai[4L] + max(linch + goffset, ginch) + 0.1
 	par(mai = nmai)

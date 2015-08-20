@@ -1,9 +1,20 @@
 % File src/library/stats/man/family.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{family}
+\alias{family}
+\alias{binomial}
+\alias{gaussian}
+\alias{Gamma}
+\alias{inverse.gaussian}
+\alias{poisson}
+\alias{quasi}
+\alias{quasibinomial}
+\alias{quasipoisson}
+%\alias{print.family}
+
 \title{Family Objects for Models}
 \usage{
 family(object, \dots)
@@ -17,16 +28,6 @@ quasi(link = "identity", variance = "constant")
 quasibinomial(link = "logit")
 quasipoisson(link = "log")
 }
-\alias{family}
-\alias{binomial}
-\alias{gaussian}
-\alias{Gamma}
-\alias{inverse.gaussian}
-\alias{poisson}
-\alias{quasi}
-\alias{quasibinomial}
-\alias{quasipoisson}
-\alias{print.family}
 \arguments{
   \item{link}{a specification for the model link function.  This can be
     a name/expression, a literal character string, a length-one character
@@ -78,11 +79,24 @@ quasipoisson(link = "log")
   \code{family} is a generic function with methods for classes
   \code{"glm"} and \code{"lm"} (the latter returning \code{gaussian()}).
 
+  
+  For the \code{binomial} and \code{quasibinomial} families the response
+  can be specified in one of three ways:
+  \enumerate{
+    \item As a factor: \sQuote{success} is interpreted as the factor not
+    having the first level (and hence usually of having the second level).
+    \item As a numerical vector with values  between \code{0} and
+    \code{1}, interpreted as the proportion of successful cases (with the
+    total number of cases given by the \code{weights}).
+    \item As a two-column integer matrix: the first column gives the
+    number of successes and the second the number of failures.
+  }
+    
   The \code{quasibinomial} and \code{quasipoisson} families differ from
   the \code{binomial} and \code{poisson} families only in that the
   dispersion parameter is not fixed at one, so they can model
   over-dispersion.  For the binomial case see McCullagh and Nelder
-  (1989, pp. 124--8).  Although they show that there is (under some
+  (1989, pp.\sspace{}124--8).  Although they show that there is (under some
   restrictions) a model with
   variance proportional to mean as in the quasi-binomial model, note
   that \code{glm} does not compute maximum-likelihood estimates in that

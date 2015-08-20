@@ -1,6 +1,6 @@
 % File src/library/utils/man/capture.output.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{capture.output}
@@ -35,15 +35,17 @@ capture.output(\dots, file = NULL, append = FALSE)
 
 \examples{
 require(stats)
-glmout <- capture.output(example(glm))
+glmout <- capture.output(summary(glm(case ~ spontaneous+induced,
+                                     data = infert, family = binomial())))
 glmout[1:5]
 capture.output(1+1, 2+2)
 capture.output({1+1; 2+2})
-\dontrun{
-## on Unix with enscript available
-ps <- pipe("enscript -o tempout.ps","w")
-capture.output(example(glm), file = ps)
-close(ps)
-}
+
+\dontrun{## on Unix-alike with a2ps available%% ?? pandoc with obeylines, obeyspaces
+op <- options(useFancyQuotes=FALSE)
+pdf <- pipe("a2ps -o - | ps2pdf - tempout.pdf", "w")
+capture.output(example(glm), file = pdf)
+close(pdf); options(op) ; system("evince tempout.pdf &")
+}% dont
 }
 \keyword{utilities}

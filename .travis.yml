@@ -12,6 +12,7 @@ install:
           libboost1.48-all-dev
           gfortran
 script:
+        - tools/rsync-recommended
         - ./configure
           --enable-llvm-jit=yes
           --enable-byte-compiled-packages=no

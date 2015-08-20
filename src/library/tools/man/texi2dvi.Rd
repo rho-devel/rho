@@ -1,6 +1,6 @@
 % File src/library/tools/man/texi2dvi.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{texi2dvi}
@@ -53,8 +53,8 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   \env{BSTINPUTS} settings.
 
   MiKTeX has a \code{texi2dvi} executable but no other Windows TeX
-  installation that we know of does, so emulation is used on e.g. TeXLive
-  installations on Windows.
+  installation that we know of does, so emulation is used on
+  e.g.\sspace{}TeXLive installations on Windows.
 
   Occasionally indices contain special characters which cause indexing
   to fail (particularly when using the \samp{hyperref} LaTeX package)
@@ -75,6 +75,9 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   Unix-alike \code{texi2dvi} script removes ancillary files that already
   exist but the other two approaches do not (and may get confused by
   such files).
+  
+  Where supported (\command{texi2dvi} 5.x and \command{texify}),
+  option \option{--max-iterations=20} is used to avoid infinite retries.
 }
 \value{
   Invisible \code{NULL}.  Used for the side effect of creating a dvi or

@@ -17,8 +17,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file run.c: a simple 'reading' pipe (and a command executor)
- *  Copyright  (C) 1999-2001  Guido Masarotto  and Brian Ripley
- *             (C) 2007-13    The R Core Team
+ *  Copyright  (C) 1999-2001  Guido Masarotto and Brian Ripley
+ *             (C) 2007-2014  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,23 +52,25 @@
 #include "run.h"
 
 #include <Startup.h> /* for CharacterMode and RGui */
-extern UImode  CharacterMode;
+
+#include <trioremap.h>
 
 static char RunError[501] = "";
 
 /* This might be given a command line (whole = 0) or just the
-   executable (whole = 0).  In the later case the path may or may not
+   executable (whole = 1).  In the later case the path may or may not
    be quoted */
 static char *expandcmd(const char *cmd, int whole)
 {
     char c = '\0';
     char *s, *p, *q = NULL, *f, *dest, *src;
     int   d, ext, len = strlen(cmd)+1;
-    char buf[len], fl[len], fn[len];
+    char buf[len], fl[len], fn[MAX_PATH];
 
     /* make a copy as we manipulate in place */
     strcpy(buf, cmd);
 
+    // This is the return value.
     if (!(s = (char *) malloc(MAX_PATH + strlen(cmd)))) {
 	strcpy(RunError, "Insufficient memory (expandcmd)");
 	return NULL;
@@ -78,7 +80,7 @@ static char *expandcmd(const char *cmd, int whole)
     /* find the command itself, possibly double-quoted */
     if (whole) {
 	d = 0;
-    } else {
+    } else { // command line
 	for (q = p, d = 0; *q && ( d || !isspace(*q) ); q++)
 	    if (*q == '\"') d = d ? 0 : 1;
 	if (d) {
@@ -125,11 +127,11 @@ static char *expandcmd(const char *cmd, int whole)
 	return NULL;
     }
     /*
+      NB: as of Windows 7 SearchPath does not return short names any more.
+
       Paranoia : on my system switching to short names is not needed
       since SearchPath already returns 'short names'. However,
       this is not documented so I prefer to be explicit.
-      Problem is that we have removed \" from the executable since
-      SearchPath seems dislikes them
     */
     GetShortPathName(fn, s, MAX_PATH);
     if (!whole) {
@@ -406,19 +408,22 @@ int runcmd(const char *cmd, cetype_t enc, int wait, int visible,
 
     memset(&pi, 0, sizeof(pi));
     pcreate(cmd, enc, !wait, visible, hIN, hOUT, hERR, &pi);
-    if (!pi.hProcess) return NOLAUNCH;
-    if (wait) {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-	cntxt.cend = &terminate_process;
-	cntxt.cenddata = &pi;
-	ret = pwait2(pi.hProcess);
-	endcontext(&cntxt);
-	snprintf(RunError, 501, _("Exit code was %d"), ret);
-	ret &= 0xffff;
-    } else ret = 0;
-    CloseHandle(pi.hProcess);
+    if (pi.hProcess) {
+	if (wait) {
+	    RCNTXT cntxt;
+	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+		     R_NilValue, R_NilValue);
+	    cntxt.cend = &terminate_process;
+	    cntxt.cenddata = &pi;
+	    ret = pwait2(pi.hProcess);
+	    endcontext(&cntxt);
+	    snprintf(RunError, 501, _("Exit code was %d"), ret);
+	    ret &= 0xffff;
+	} else ret = 0;
+	CloseHandle(pi.hProcess);
+    } else {
+    	ret = NOLAUNCH;
+    }
     if (close1) CloseHandle(hIN);
     if (close2) CloseHandle(hOUT);
     if (close3) CloseHandle(hERR);

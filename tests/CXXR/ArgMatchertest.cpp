@@ -245,7 +245,8 @@ int main(int argc, char* argv[]) {
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     ptr_R_ResetConsole = ptr_R_FlushConsole = 
         ptr_R_ClearerrConsole = DoNothing;
-
+    
+    Rf_InitArithmetic();
     Rf_InitMemory();
     Rf_InitNames();
     Rf_InitGlobalEnv();

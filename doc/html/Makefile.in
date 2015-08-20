@@ -15,7 +15,7 @@ INSTFILES = \
 	NEWS.2.html R.css Search.html SearchOn.html \
 	favicon.ico left.jpg logo.jpg logosm.jpg right.jpg up.jpg \
 	about.html packages-head-utf8.html
-NON_SVN_INSTFILES = resources.html NEWS.html
+NON_GIT_INSTFILES = resources.html NEWS.html
 DISTFILES = Makefile.in $(INSTFILES) index-default.html
 OBJECTS = index.html
 ## <FIXME>
@@ -29,15 +29,15 @@ all: Makefile R
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
-R: Makefile $(OBJECTS) svnonly
+R: Makefile $(OBJECTS) gitonly
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
 	  $(MAKE) rdocdir=$(top_builddir)/doc install-sources; \
 	fi
 
-svnonly:
+gitonly:
 	@if test -f "$(srcdir)/resources.html"; then \
 	  if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
-	    for f in $(NON_SVN_INSTFILES); do \
+	    for f in $(NON_GIT_INSTFILES); do \
 	      $(INSTALL_DATA) $(srcdir)/$${f} . ; \
 	    done \
 	  fi \
@@ -48,11 +48,11 @@ index.html: FORCE
 	@$(INSTALL_DATA) $(srcdir)/index-default.html $@
 FORCE:
 
-install: svnonly install-message installdirs install-sources
+install: gitonly install-message installdirs install-sources
 	@for f in $(OBJECTS); do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rdocdir)/html"; \
 	done
-	@for f in $(NON_SVN_INSTFILES); do \
+	@for f in $(NON_GIT_INSTFILES); do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rdocdir)/html"; \
 	done
 installdirs:
@@ -66,7 +66,7 @@ install-sources: installdirs
 install-strip: install
 uninstall:
 	@$(ECHO) "uninstalling $(subdir) ..."
-	@for f in $(CLEANFILES) $(INSTFILES) $(NON_SVN_INSTFILES) $(OBJECTS); do \
+	@for f in $(CLEANFILES) $(INSTFILES) $(NON_GIT_INSTFILES) $(OBJECTS); do \
 	  rm -f "$(DESTDIR)$(rdocdir)/html/$${f}"; \
 	done
 	@rmdir "$(DESTDIR)$(rdocdir)/html" 2>/dev/null \
@@ -80,7 +80,7 @@ clean:
 	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 distclean: clean
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
-	  rm -f $(NON_SVN_INSTFILES); \
+	  rm -f $(NON_GIT_INSTFILES); \
 	fi
 	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 maintainer-clean: distclean
@@ -91,6 +91,6 @@ distdir: $(DISTFILES)
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
-	@for f in $(NON_SVN_INSTFILES); do \
+	@for f in $(NON_GIT_INSTFILES); do \
 	  cp -p $${f} $(distdir)/$${f}; \
 	done

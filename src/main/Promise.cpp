@@ -119,6 +119,7 @@ bool Promise::isMissingSymbol() const
 void Promise::setValue(RObject* val)
 {
     m_value = val;
+    SET_NAMED(val, 2);
     if (val != Symbol::unboundValue())
 	m_environment = nullptr;
 }
@@ -149,6 +150,12 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
     GCStackRoot<> exprt(expr);
     GCStackRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
     return new Promise(exprt, rhort);
+}
+
+SEXP R_mkEVPROMISE(SEXP expr, SEXP value)
+{
+    return Promise::createEvaluatedPromise(
+	SEXP_downcast<Expression*>(expr), value);
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

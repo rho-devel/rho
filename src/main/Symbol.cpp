@@ -65,8 +65,6 @@ Symbol::Symbol(const String* the_name)
     if (m_name) {
 	if (m_name->size() == 0)
 	    Rf_error(_("attempt to use zero-length variable name"));
-	if (m_name->size() > maxLength())
-	    Rf_error(_("variable names are limited to %d bytes"), maxLength());
     }
     // If this is a ..n symbol, extract the value of n.
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
@@ -113,7 +111,7 @@ RObject* Symbol::evaluate(Environment* env)
     if (val == unboundValue())
 	Rf_error(_("object '%s' not found"), name()->c_str());
     if (val == missingArgument() && !isDotDotSymbol()) {
-	if (name())
+	if (m_name)
 	    Rf_error(_("argument \"%s\" is missing, with no default"),
 		     name()->c_str());
 	else Rf_error(_("argument is missing, with no default"));
@@ -141,6 +139,8 @@ void Symbol::initialize()
     C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);
 #include "CXXR/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
+
+    // DISABLE_REFCNT(R_LastvalueSymbol);
 }
 
 Symbol* Symbol::missingArgument()
@@ -173,6 +173,15 @@ Symbol* Symbol::obtain(const std::string& name)
 {
     GCStackRoot<const String> str(String::obtain(name));
     return Symbol::obtain(str);
+}
+
+Symbol* Symbol::obtainS3Signature(const char *methodName,
+				  const char *className)
+{
+    std::string signature = methodName;
+    signature.push_back('.');
+    signature.append(className);
+    return obtain(signature);
 }
 
 Symbol* Symbol::obtainDotDotSymbol(unsigned int n)

@@ -3,7 +3,7 @@
  *  file console.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004-8      The R Foundation
- *  Copyright (C) 2004-13     The R Core Team
+ *  Copyright (C) 2004-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -36,6 +36,7 @@ extern Rboolean mbcslocale;
 
 #define USE_MDI 1
 extern void R_ProcessEvents(void);
+extern void R_WaitEvent(void);
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
@@ -53,7 +54,7 @@ extern void R_ProcessEvents(void);
 #include "consolestructs.h"
 #include "rui.h"
 #include "getline/wc_history.h"
-#include "Startup.h" /* for UImode */
+#include "Startup.h" /* for CharacterMode */
 #include <Fileio.h>
 
 #include <stdint.h>
@@ -74,8 +75,6 @@ extern void R_ProcessEvents(void);
 # undef alloca
 # define alloca(x) __builtin_alloca((x))
 #endif
-
-extern UImode  CharacterMode;
 
 static void performCompletion(control c);
 
@@ -365,7 +364,6 @@ newconsoledata(font f, int rows, int cols, int bufbytes, int buflines,
     p->clp = NULL;
     p->r = -1;
     p->overwrite = 0;
-    p->lazyupdate = 1;
     p->needredraw = 0;
     p->wipe_completion = 0;
     p->my0 = p->my1 = -1;
@@ -1003,11 +1001,12 @@ static void performCompletion(control c)
 	consolewrites(c, buf1);
 
 	for (i = 0; i < min(alen, max_show); i++) {
+            consolewrites(c, "\n");
 	    consolewrites(c, CHAR(STRING_ELT(VECTOR_ELT(ans, POSSIBLE), i)));
-	    consolewrites(c, "\n");
 	}
 	if (alen > max_show)
-	    consolewrites(c, "\n[...truncated]\n");
+	    consolewrites(c, "\n[...truncated]");
+	consolewrites(c, "\n");
 	p->wipe_completion = 1;
     }
 
@@ -1552,7 +1551,10 @@ int consolewrites(control c, const char *s)
 	xbufaddxs(p->lbuf, buf, 1);
     }
     if (strchr(s, '\n')) p->needredraw = 1;
-    if (!p->lazyupdate || (p->r >= 0))
+    if (!p->lazyupdate) {
+	setfirstvisible(c, NUMLINES - ROWS);
+	REDRAW;
+    } else if (p->r >= 0)
 	setfirstvisible(c, NUMLINES - ROWS);
     else {
 	p->newfv = NUMLINES - ROWS;
@@ -1587,7 +1589,7 @@ static wchar_t consolegetc(control c)
     p = getdata(c);
     while((p->numkeys == 0) && (!p->clp))
     {
-	if (!peekevent()) WaitMessage();
+	R_WaitEvent();
 	R_ProcessEvents();
     }
     if (p->sel) {

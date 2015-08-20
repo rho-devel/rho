@@ -1,6 +1,6 @@
 % File src/library/utils/man/apropos.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{apropos}
@@ -79,7 +79,7 @@ rm(cor)
 # need a DOUBLE backslash '\\\\' (in case you don't see it anymore)
 apropos("\\\\[")
 
-\dontrun{# everything % not diff-able
+\donttest{# everything % not diff-able
 length(apropos("."))
 
 # those starting with 'pr'
