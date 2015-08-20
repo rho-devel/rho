@@ -1095,8 +1095,8 @@ SEXP Rf_installChar(SEXP charSXP)
     return Symbol::obtain(name);
 }
 
-attribute_hidden
 extern "C"
+attribute_hidden
 SEXP Rf_installS3Signature(const char *methodName, const char *className) {
     return Symbol::obtainS3Signature(methodName, className);
 }
