@@ -426,7 +426,7 @@ extern "C" {
      *
      * @return Pointer to the created vector.
      */
-    SEXP Rf_allocVector(SEXPTYPE stype, R_xlen_t length);
+    /*SEXP Rf_allocVector(SEXPTYPE stype, R_xlen_t length);*/
 
     /** @brief Is an RObject a vector?
      *
