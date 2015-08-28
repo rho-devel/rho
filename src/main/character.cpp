@@ -88,6 +88,8 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 
 #include <rlocale.h>
 
+#include "CXXR/RAllocStack.h"
+
 using namespace CXXR;
 
 /* We use a shared buffer here to avoid reallocing small buffers, and

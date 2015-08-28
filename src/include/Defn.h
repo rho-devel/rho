@@ -46,10 +46,6 @@
 #ifndef DEFN_H_
 #define DEFN_H_
 
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/errors.h"
-
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
 # define attribute_visible __attribute__ ((visibility ("default")))
 # define attribute_hidden __attribute__ ((visibility ("hidden")))

@@ -50,6 +50,8 @@
 
 #include "IOStuff.h"
 
+#include "CXXR/RAllocStack.h"
+
 
 /* Move the iob->write_buf pointer to the next */
 /* BufferListItem in the chain. If there no next */
