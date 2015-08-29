@@ -32,12 +32,6 @@
 #include <R_ext/Print.h>
 
 #ifdef __cplusplus
-// namespace CXXR {
-//     unsigned int stringWidth(unsigned int minwidth,
-//                              const CXXR::String* string);
-//     unsigned int stringWidthQuote(unsigned int minwidth,
-// 			          const CXXR::String* string);
-// }
 
 extern "C" {
 #endif
