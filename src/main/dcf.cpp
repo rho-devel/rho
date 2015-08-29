@@ -33,6 +33,8 @@
 
 #include <tre/tre.h>
 
+#include "CXXR/RAllocStack.h"
+
 static SEXP allocMatrixNA(SEXPTYPE, int, int);
 static void transferVector(SEXP s, SEXP t);
 

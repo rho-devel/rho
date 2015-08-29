@@ -43,6 +43,7 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ProvenanceTracker.h"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/WeakRef.h"
 

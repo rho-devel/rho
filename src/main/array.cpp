@@ -36,6 +36,7 @@
 #include <R_ext/Applic.h> /* for dgemm */
 
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/Subscripting.hpp"
 
 using namespace CXXR;

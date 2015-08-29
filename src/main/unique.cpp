@@ -35,6 +35,7 @@
 #include "basedecl.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/RAllocStack.h"
 
 using namespace CXXR;
 

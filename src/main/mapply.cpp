@@ -30,6 +30,8 @@
 #include <Defn.h>
 #include <Internal.h>
 
+#include "CXXR/RAllocStack.h"
+
 SEXP attribute_hidden
 do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {

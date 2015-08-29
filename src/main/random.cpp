@@ -36,6 +36,7 @@
 #include "basedecl.h"
 #include <errno.h>
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/RAllocStack.h"
 
 using namespace CXXR;
 

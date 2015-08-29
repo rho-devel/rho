@@ -96,6 +96,7 @@
 #include <cstdarg>
 
 #include "CXXR/ProvenanceTracker.h"
+#include "CXXR/RAllocStack.h"
 
 using namespace std;
 using namespace CXXR;
@@ -6212,4 +6213,3 @@ SEXP R_new_custom_connection(const char *description, const char *mode, const ch
 
     return ans;
 }
-

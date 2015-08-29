@@ -56,6 +56,7 @@
 #include "basedecl.h"
 #include <vector>
 #include "CXXR/Evaluator.h"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/StackChecker.hpp"
 #include "CXXR/StringVector.h"
 
