@@ -35,8 +35,6 @@
 # include <stddef.h> /* for size_t */
 #endif
 
-#include "CXXR/RAllocStack.h"
-
 #ifdef  __cplusplus
 extern "C" {
 #endif

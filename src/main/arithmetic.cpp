@@ -69,6 +69,7 @@
 
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/UnaryFunction.hpp"
 
 using namespace CXXR;

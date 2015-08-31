@@ -35,6 +35,8 @@
 
 # include <rlocale.h>
 
+#include "CXXR/RAllocStack.h"
+
 int R_GE_getVersion()
 {
     return R_GE_version;

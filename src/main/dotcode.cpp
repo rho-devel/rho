@@ -39,6 +39,7 @@
 #include <boost/preprocessor.hpp>
 
 #include "CXXR/ClosureContext.hpp"
+#include "CXXR/RAllocStack.h"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))

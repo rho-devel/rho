@@ -43,6 +43,8 @@
 #include <io.h> /* for mkdir */
 #endif
 
+#include "CXXR/RAllocStack.h"
+
 /* cf do_dircreate in platform.c */
 static int R_mkdir(char *path)
 {

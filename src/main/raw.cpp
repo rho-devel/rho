@@ -30,6 +30,8 @@
 #include <Defn.h>
 #include <Internal.h>
 
+#include "CXXR/RAllocStack.h"
+
 #define isRaw(x) (TYPEOF(x) == RAWSXP)
 
 /* charToRaw works at byte level, ignores encoding */

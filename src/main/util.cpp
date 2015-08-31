@@ -36,6 +36,7 @@
 #include <vector>
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/ClosureContext.hpp"
+#include "CXXR/RAllocStack.h"
 
 #include <ctype.h>		/* for isspace */
 #include <float.h>		/* for DBL_MAX */

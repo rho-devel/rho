@@ -317,6 +317,13 @@ namespace CXXR {
      * empty string.
      */
     bool isASCII(const std::string& str);
+
+
+    // Designed for use with std::accumulate():
+    unsigned int stringWidth(unsigned int minwidth, const String* string);
+
+    // Designed for use with std::accumulate():
+    unsigned int stringWidthQuote(unsigned int minwidth, const String* string);
 }  // namespace CXXR
 
 extern "C" {
