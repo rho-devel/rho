@@ -145,6 +145,7 @@ reg-plot-latin1.Rout: reg-plot-latin1.R
 
 R-valgrind = $(R) --debugger="valgrind --tool=memcheck"
 
+
 .R.Rout-valgct:
 	@$(ECHO) "running gctorture() + valgrind + '$<'"
 	@($(ECHO) '.ptime <- proc.time(); gctorture()' ; \
@@ -153,17 +154,11 @@ R-valgrind = $(R) --debugger="valgrind --tool=memcheck"
 
 # TODO(kmillar): add testr to all-basic-tests once it passes.
 all-basic-tests = CXXR CXXR2 Examples Specific Reg Internet
-test-all-basics:
-	@for name in $(all-basic-tests); do \
-	  $(MK) test-$${name} || exit 1; \
-	done
+test-all-basics: $(addprefix test-, $(all-basic-tests))
 
 all-devel-tests = DateTime Docs IsAs Random Demo Primitive Regexp \
     Internet2 Segfault Standalone Packages
-test-all-devel:
-	@for name in $(all-devel-tests); do \
-	  $(MK) test-$${name} || exit 1; \
-	done
+test-all-devel: $(addprefix test-, $(all-devel-tests))
 
 test-Examples:
 	@(cd Examples && $(MK) $@)
