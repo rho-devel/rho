@@ -26,7 +26,6 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 
 @BYTE_COMPILE_PACKAGES_FALSE@R_NO_BASE_COMPILE = true
 
-## FIXME: do some of this in parallel?
 ## Beware there is a bootstrapping problem here: tools uses tools to
 ## dump its namespace. So it works initially, but not to update.
 ## When base is made we need to use 'date' to set the timestamp in
@@ -46,9 +45,9 @@ R:
 	    (cd $${pkg} && $(MAKE) Rlazy) || exit 1; \
 	  done; \
 	fi
-	@for pkg in $(R_PKGS_BASE1); do \
-	  (cd $${pkg} && $(MAKE) all) || exit 1; \
-	done
+
+	$(MAKE) $(addsuffix -pkg, $(R_PKGS_BASE1))
+
 	@(cd base && $(MAKE) mkdesc)
 	@$(ECHO) "tools:::.vinstall_package_descriptions_as_RDS(\"$(top_builddir)/library\", \"$(R_PKGS_BASE)\")" | \
 	  R_DEFAULT_PACKAGES=tools LC_ALL=C $(R_EXE) > /dev/null
@@ -56,6 +55,9 @@ R:
 	@rm -f $(top_builddir)/library/tools/Meta/nsInfo.rds
 	@$(ECHO) "tools:::.vinstall_package_namespaces_as_RDS(\"$(top_builddir)/library\", \"$(R_PKGS_BASE)\")" | \
 	  R_DEFAULT_PACKAGES=tools LC_ALL=C $(R_EXE) > /dev/null
+
+%-pkg:
+	$(MAKE) -C $* all
 
 ## do Rdobjects before metadata before help indices
 docs:
