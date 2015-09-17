@@ -145,7 +145,6 @@ reg-plot-latin1.Rout: reg-plot-latin1.R
 
 R-valgrind = $(R) --debugger="valgrind --tool=memcheck"
 
-
 .R.Rout-valgct:
 	@$(ECHO) "running gctorture() + valgrind + '$<'"
 	@($(ECHO) '.ptime <- proc.time(); gctorture()' ; \
@@ -174,31 +173,9 @@ test-Specific:
 	@$(MK) test-Specific-sloppy RVAL_IF_DIFF=0
 
 test-Packages:
-	@if test -n "${TEST_MC_CORES}"; then \
-	  $(ECHO) "Using ${TEST_MC_CORES} cores to check packages"; \
-	  $(MK) -j ${TEST_MC_CORES} test-Packages2; \
-	else \
-	  $(MK) test-Packages1; \
-	fi
-
-test-Packages1:
-	@for p in $(R_PKGS_BASE); do \
-	  $(ECHO) "checking package '$${p}'"; \
-	  _R_CHECK_FF_CALLS_=registration \
-	  $(top_builddir)/bin/R CMD check --install=skip \
-	    --no-build-vignettes \
-	    $(top_srcdir)/src/library/$${p} || $(ECHO); \
-	done
-
-PKG_OBJECTS = $(R_PKGS_BASE:=.log)
-
-test-Packages2:
-	@for p in $(R_PKGS_BASE); do \
-	  touch $${p}.tsin; \
-	done
-	+@$(MK) stamp-Packages
+	touch $(R_PKGS_BASE:=.tsin)
+	+@$(MK) $(R_PKGS_BASE:=.log)
 	@rm -f *.tsin
-stamp-Packages: $(PKG_OBJECTS)
 
 .tsin.log:
 	@$(ECHO) "begin checking package '`basename $@ .log`'"
@@ -221,7 +198,7 @@ test-DateTime:
 test-Docs:
 	@$(ECHO) "running tests of documentation examples"
 	@cp ${top_srcdir}/doc/manual/*.R .
-	@$(MK) R-intro.Rout RVAL_IF_DIFF=0
+	@$(MK) R-intro.Rout RVAL_IF_DIFF=1
 	@cp ${top_srcdir}/doc/manual/R-exts.c .
 	@$(top_builddir)/bin/R CMD SHLIB R-exts.c
 	@$(MK) R-exts.Rout
@@ -229,7 +206,7 @@ test-Docs:
 
 test-Demo:
 	@$(ECHO) "running demos from base and stats"
-	@$(MK) $(test-out-demo) RVAL_IF_DIFF=0
+	@$(MK) $(test-out-demo) RVAL_IF_DIFF=1
 
 test-IsAs:
 	@$(ECHO) "running tests of consistency of as/is.*"
@@ -241,7 +218,7 @@ test-Internet2:
 
 test-Primitive:
 	@$(ECHO) "running tests of primitives"
-	@$(MK) $(test-out-primitive) RVAL_IF_DIFF=0
+	@$(MK) $(test-out-primitive) RVAL_IF_DIFF=1
 
 test-Random:
 	@$(ECHO) "running tests of random deviate generation"
@@ -254,7 +231,7 @@ test-Reg:
 	else \
 	  $(MK) $(test-out-reg) RVAL_IF_DIFF=1; \
 	fi
-	@$(MK) $(test-out-reg3) RVAL_IF_DIFF=0
+	@$(MK) $(test-out-reg3) RVAL_IF_DIFF=1
 
 test-Regexp:
 	@$(ECHO) "running regexp regression tests"
@@ -389,35 +366,10 @@ test-undoc:
 	done
 
 test-Packages-Recommended:
-	@if test -n "${TEST_MC_CORES}"; then \
-	  $(ECHO) "Using ${TEST_MC_CORES} cores to check packages"; \
-	  $(MK) -j ${TEST_MC_CORES} test-Packages2-Recommended; \
-	else \
-	  $(MK) test-Packages1-Recommended; \
-	fi
-
-test-Packages1-Recommended:
 	@test -d RecPackages || mkdir RecPackages
-	@for p in $(R_PKGS_RECOMMENDED); do \
-	  rm -rf RecPackages/$${p}; \
-	  gzip -dc "$(top_srcdir)/src/library/Recommended/$${p}.tgz" | \
-	    (cd RecPackages && $(TAR) xf -) ; \
-	  $(ECHO) "checking package '$${p}'"; \
-	  R_LIBS="$(top_builddir)/library:$${R_LIBS}" \
-	    _R_CHECK_FORCE_SUGGESTS_=FALSE $(R3) --install=skip \
-	    --library="$(top_builddir)/library" RecPackages/$${p} || $(ECHO); \
-	done
-
-PKG_ROBJECTS = $(R_PKGS_RECOMMENDED:=.log)
-
-test-Packages2-Recommended:
-	@test -d RecPackages || mkdir RecPackages
-	@for p in $(R_PKGS_RECOMMENDED); do \
-	  touch $${p}.trin; \
-	done
-	+@$(MK) stamp-Packages2
+	@touch $(R_PKGS_RECOMMENDED:=.trin)
+	+@$(MK) $(R_PKGS_RECOMMENDED:=.log)
 	@rm -f *.trin
-stamp-Packages2: $(PKG_ROBJECTS)
 
 .trin.log:
 	@p=`basename $@ .log`; \

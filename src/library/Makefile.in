@@ -59,6 +59,15 @@ R:
 %-pkg:
 	$(MAKE) -C $* all
 
+stats-pkg: graphics-pkg grDevices-pkg utils-pkg
+graphics-pkg: grDevices-pkg
+grid-pkg: grDevices-pkg
+methods-pkg: utils-pkg
+parallel-pkg: tools-pkg
+splines-pkg: graphics-pkg stats-pkg
+stats4-pkg: graphics-pkg methods-pkg stats-pkg
+tcltk-pkg: utils-pkg
+
 ## do Rdobjects before metadata before help indices
 docs:
 	@$(MAKE) Rdobjects
@@ -79,7 +88,7 @@ RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdt
 
 Rdobjects:
 	@$(ECHO) "installing parsed Rd"
-	@for pkg in $(R_PKGS_BASE); do touch $${pkg}.inn; done
+	@touch $(R_PKGS_BASE:=.inn)
 	@$(MAKE) $(RD-TS)
 
 .inn.Rdh:
@@ -89,7 +98,7 @@ RD-H = $(R_PKGS_BASE:=.Rdh)
 
 help-indices:
 	@$(ECHO) "writing package indices"
-	@for pkg in $(R_PKGS_BASE); do touch $${pkg}.inn; done
+	@touch $(R_PKGS_BASE:=.inn)
 	@$(MAKE) $(RD-H)
 
 ## FIXME: do this in parallel (but avoid interleaving output)
