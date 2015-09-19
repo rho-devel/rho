@@ -59,6 +59,7 @@ R:
 %-pkg:
 	$(MAKE) -C $* all
 
+datasets-pkg: stats-pkg
 stats-pkg: graphics-pkg grDevices-pkg utils-pkg
 graphics-pkg: grDevices-pkg
 grid-pkg: grDevices-pkg
