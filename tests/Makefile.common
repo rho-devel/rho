@@ -137,7 +137,7 @@ reg-plot-latin1.Rout: reg-plot-latin1.R
 	@($(ECHO) '.ptime <- proc.time(); gctorture()' ; \
 	  cat $< $(srcdir)/gct-foot.R) | $(R) > $@ 2>&1
 	@mv $@ $@.fail; Ro=`basename $@ .Rout-gct`.Rout; \
-	  if test ! -r $${Ro}; then $(MK) $${Ro}; fi; \
+	  if test ! -r $${Ro}; then $(MAKE) $(MK_EXTRA_FLAGS) $${Ro}; fi; \
 	  $(ECHO) $(ECHO_N) "  comparing '$@' to '$${Ro}' ...$(ECHO_C)"; \
 	  grep -v 'gctorture()' $@.fail | $(RDIFF) - $${Ro} 1 || exit 1; \
 	  mv $@.fail $@; \
@@ -160,21 +160,21 @@ all-devel-tests = DateTime Docs IsAs Random Demo Primitive Regexp \
 test-all-devel: $(addprefix test-, $(all-devel-tests))
 
 test-Examples:
-	@(cd Examples && $(MK) $@)
+	@(cd Examples && $(MAKE) $(MK_EXTRA_FLAGS) $@)
 test-Examples-Recommended:
-	@(cd Examples && $(MK) $@)
+	@(cd Examples && $(MAKE) $(MK_EXTRA_FLAGS) $@)
 
 test-Specific-strict: $(test-out-strict)
 test-Specific-sloppy: $(test-out-sloppy)
 test-Specific:
 	@$(ECHO) "running strict specific tests"
-	@$(MK) test-Specific-strict RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) test-Specific-strict RVAL_IF_DIFF=1
 	@$(ECHO) "running sloppy specific tests"
-	@$(MK) test-Specific-sloppy RVAL_IF_DIFF=0
+	@$(MAKE) $(MK_EXTRA_FLAGS) test-Specific-sloppy RVAL_IF_DIFF=0
 
 test-Packages:
 	touch $(R_PKGS_BASE:=.tsin)
-	+@$(MK) $(R_PKGS_BASE:=.log)
+	+@$(MAKE) $(MK_EXTRA_FLAGS) $(R_PKGS_BASE:=.log)
 	@rm -f *.tsin
 
 .tsin.log:
@@ -193,45 +193,45 @@ test-DateTime:
 	@$(ECHO) "running tests of date-time printing"
 	@$(ECHO) "  expect platform-specific differences"
 	@$(RM) -f $(test-out-dt)
-	@$(MK) $(test-out-dt) RVAL_IF_DIFF=0
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-dt) RVAL_IF_DIFF=0
 
 test-Docs:
 	@$(ECHO) "running tests of documentation examples"
 	@cp ${top_srcdir}/doc/manual/*.R .
-	@$(MK) R-intro.Rout RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) R-intro.Rout RVAL_IF_DIFF=1
 	@cp ${top_srcdir}/doc/manual/R-exts.c .
 	@$(top_builddir)/bin/R CMD SHLIB R-exts.c
-	@$(MK) R-exts.Rout
+	@$(MAKE) $(MK_EXTRA_FLAGS) R-exts.Rout
 	@rm R-exts.*
 
 test-Demo:
 	@$(ECHO) "running demos from base and stats"
-	@$(MK) $(test-out-demo) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-demo) RVAL_IF_DIFF=1
 
 test-IsAs:
 	@$(ECHO) "running tests of consistency of as/is.*"
-	@$(MK) $(test-out-isas) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-isas) RVAL_IF_DIFF=1
 
 test-Internet2:
 	@$(ECHO) "running more Internet and socket tests"
-	@$(MK) $(test-out-internet2) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-internet2) RVAL_IF_DIFF=1
 
 test-Primitive:
 	@$(ECHO) "running tests of primitives"
-	@$(MK) $(test-out-primitive) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-primitive) RVAL_IF_DIFF=1
 
 test-Random:
 	@$(ECHO) "running tests of random deviate generation"
-	@$(MK) $(test-out-random) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-random) RVAL_IF_DIFF=1
 
 test-Reg:
 	@$(ECHO) "running regression tests ..."
 	@if test -n "${TEST_MC_CORES}"; then \
-	  $(MK) -j ${TEST_MC_CORES} $(test-out-reg) RVAL_IF_DIFF=1; \
+	  $(MAKE) $(MK_EXTRA_FLAGS) -j ${TEST_MC_CORES} $(test-out-reg) RVAL_IF_DIFF=1; \
 	else \
-	  $(MK) $(test-out-reg) RVAL_IF_DIFF=1; \
+	  $(MAKE) $(MK_EXTRA_FLAGS) $(test-out-reg) RVAL_IF_DIFF=1; \
 	fi
-	@$(MK) $(test-out-reg3) RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-reg3) RVAL_IF_DIFF=1
 
 test-Regexp:
 	@$(ECHO) "running regexp regression tests"
@@ -239,7 +239,7 @@ test-Regexp:
 
 test-Segfault:
 	@$(ECHO) "running tests to possibly trigger segfaults"
-	@$(MK) $(test-out-segfault) RVAL_IF_DIFF=0
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-segfault) RVAL_IF_DIFF=0
 	-@rm -rf data dumpdata.R F.Rd c0.Rd df0.Rd l0.Rd m0.Rd Rprof.out Rplots* PACKAGES PACKAGES.gz FALSE-package.Rd FALSE.* ./-Ex.R
 
 ## Avoid site library, which could be very large
@@ -368,7 +368,7 @@ test-undoc:
 test-Packages-Recommended:
 	@test -d RecPackages || mkdir RecPackages
 	@touch $(R_PKGS_RECOMMENDED:=.trin)
-	+@$(MK) $(R_PKGS_RECOMMENDED:=.log)
+	+@$(MAKE) $(MK_EXTRA_FLAGS) $(R_PKGS_RECOMMENDED:=.log)
 	@rm -f *.trin
 
 .trin.log:
