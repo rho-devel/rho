@@ -1,3 +1,4 @@
+sudo: false
 language: cpp
 compiler:
         - clang
@@ -5,12 +6,19 @@ compiler:
 matrix:
   allow_failures:
     - compiler: gcc
-before_install: sudo apt-get update -qq
 install:
-        - sudo apt-get install -y
-          llvm-3.4-dev
-          libboost1.48-all-dev
-          gfortran
+        - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+addons:
+  apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        - boost-latest
+        packages:
+        - llvm-3.4-dev
+        - libboost1.55-all-dev
+        - gcc-4.8
+        - g++-4.8
+        - gfortran
 script:
         - tools/rsync-recommended
         - ./configure

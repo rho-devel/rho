@@ -26,7 +26,6 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 
 @BYTE_COMPILE_PACKAGES_FALSE@R_NO_BASE_COMPILE = true
 
-## FIXME: do some of this in parallel?
 ## Beware there is a bootstrapping problem here: tools uses tools to
 ## dump its namespace. So it works initially, but not to update.
 ## When base is made we need to use 'date' to set the timestamp in
@@ -46,9 +45,9 @@ R:
 	    (cd $${pkg} && $(MAKE) Rlazy) || exit 1; \
 	  done; \
 	fi
-	@for pkg in $(R_PKGS_BASE1); do \
-	  (cd $${pkg} && $(MAKE) all) || exit 1; \
-	done
+
+	$(MAKE) $(addsuffix -pkg, $(R_PKGS_BASE1))
+
 	@(cd base && $(MAKE) mkdesc)
 	@$(ECHO) "tools:::.vinstall_package_descriptions_as_RDS(\"$(top_builddir)/library\", \"$(R_PKGS_BASE)\")" | \
 	  R_DEFAULT_PACKAGES=tools LC_ALL=C $(R_EXE) > /dev/null
@@ -56,6 +55,20 @@ R:
 	@rm -f $(top_builddir)/library/tools/Meta/nsInfo.rds
 	@$(ECHO) "tools:::.vinstall_package_namespaces_as_RDS(\"$(top_builddir)/library\", \"$(R_PKGS_BASE)\")" | \
 	  R_DEFAULT_PACKAGES=tools LC_ALL=C $(R_EXE) > /dev/null
+
+%-pkg:
+	$(MAKE) -C $* all
+
+# This might be an overly-conserative list of dependencies.
+graphics-pkg: grDevices-pkg
+stats-pkg: graphics-pkg grDevices-pkg utils-pkg
+datasets-pkg: stats-pkg
+methods-pkg: utils-pkg stats-pkg
+grid-pkg: grDevices-pkg stats-pkg utils-pkg
+splines-pkg: graphics-pkg stats-pkg
+stats4-pkg: graphics-pkg methods-pkg stats-pkg splines-pkg
+tcltk-pkg: utils-pkg
+parallel-pkg: tools-pkg stats-pkg utils-pkg
 
 ## do Rdobjects before metadata before help indices
 docs:
@@ -77,7 +90,7 @@ RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdt
 
 Rdobjects:
 	@$(ECHO) "installing parsed Rd"
-	@for pkg in $(R_PKGS_BASE); do touch $${pkg}.inn; done
+	@touch $(R_PKGS_BASE:=.inn)
 	@$(MAKE) $(RD-TS)
 
 .inn.Rdh:
@@ -87,7 +100,7 @@ RD-H = $(R_PKGS_BASE:=.Rdh)
 
 help-indices:
 	@$(ECHO) "writing package indices"
-	@for pkg in $(R_PKGS_BASE); do touch $${pkg}.inn; done
+	@touch $(R_PKGS_BASE:=.inn)
 	@$(MAKE) $(RD-H)
 
 ## FIXME: do this in parallel (but avoid interleaving output)

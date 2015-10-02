@@ -40,7 +40,7 @@ R2 = R_DEFAULT_PACKAGES= $(top_builddir)/bin/R --vanilla
 R3 = $(top_builddir)/bin/R CMD check
 RDIFF = $(top_builddir)/bin/R CMD Rdiff
 RDCONV = LC_CTYPE=C $(top_builddir)/bin/R CMD Rdconv
-MK = $(MAKE)
+MK_EXTRA_FLAGS =
 
 all check test-all-basics test-all-devel: Makefile $(srcdir)/Makefile.common
 
@@ -52,7 +52,7 @@ test-system2: $(srcdir)/test-system2.c
 	@$(MAIN_LD) -o $@ $(srcdir)/test-system2.c
 
 test-System: test-system2
-	-@$(MAKE) test-system.Rout
+	@$(MAKE) test-system.Rout
 
 test-CXXR:
 	cd CXXR && $(MAKE) check

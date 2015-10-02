@@ -828,6 +828,13 @@ X2 0           1  0
 +  detach("package:Matrix", unload=TRUE)
 + }##{Matrix}
 Loading required package: Matrix
+
+Attaching package: 'Matrix'
+
+The following objects are masked from 'package:base':
+
+    crossprod, det, tcrossprod
+
 3 x 8 Matrix of class "dgeMatrix"
               a b c  d
 [1,] 1 4 7 10 1 4 7 10

@@ -29,7 +29,7 @@ ECHO = echo
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-MK = $(MAKE) -f Makefile.win
+MK_EXTRA_FLAGS = -f Makefile.win
 TAR = tar
 
 ## override Makefile.common
@@ -40,7 +40,7 @@ all check test-all-basics test-all-devel: Makefile.win Makefile.common
 test-system2.exe: test-system2.c
 
 test-System: test-system2.exe
-	@$(MK) test-system.Rout
+	@$(MAKE) $(MK_EXTRA_FLAGS) test-system.Rout
 
 
 internet.Rout2:
@@ -54,9 +54,9 @@ test-Internet:
 	@$(RM) -f internet.Rout internet.Rout2
 	@$(ECHO) "running tests of Internet functions"
 	@$(ECHO) "  expect some differences"
-	-@$(MK) $(test-out-internet) RVAL_IF_DIFF=0 || \
+	-@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-internet) RVAL_IF_DIFF=0 || \
 	  $(ECHO) " testing standard internet connectivity failed"
-	@$(MK) internet.Rout2 RVAL_IF_DIFF=0
+	@$(MAKE) $(MK_EXTRA_FLAGS) internet.Rout2 RVAL_IF_DIFF=0
 	-@diff internet.Rout internet.Rout2
 
 test-Standalone:
@@ -78,12 +78,12 @@ clean:
 	@rm -rf anRpackage myTst* myLib
 	@rm -f *.tar.gz
 	@rm -f keepsource.tex test-system2.exe test-system.Rout
-	@$(MK) -C Examples $@
-	@$(MK) -C Embedding $@
+	@$(MAKE) $(MK_EXTRA_FLAGS) -C Examples $@
+	@$(MAKE) $(MK_EXTRA_FLAGS) -C Embedding $@
 	-@rm -f *.log *.tsin *.trin
 
 distclean: clean
-	@$(MK) -C Examples $@
+	@$(MAKE) $(MK_EXTRA_FLAGS) -C Examples $@
 	@rm -rf *.Rcheck RecPackages
 	-@rm -f *.fail
 
