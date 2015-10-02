@@ -52,7 +52,7 @@ test-system2: $(srcdir)/test-system2.c
 	@$(MAIN_LD) -o $@ $(srcdir)/test-system2.c
 
 test-System: test-system2
-	-@$(MAKE) test-system.Rout
+	@$(MAKE) test-system.Rout
 
 test-CXXR:
 	cd CXXR && $(MAKE) check
