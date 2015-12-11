@@ -192,20 +192,6 @@ while ((t = *data++) != XCL_END)
         return !negated;
       break;
 
-      case PT_UCNC:
-      if (c < 0xa0)
-        {
-        if ((c == CHAR_DOLLAR_SIGN || c == CHAR_COMMERCIAL_AT ||
-             c == CHAR_GRAVE_ACCENT) == isprop)
-          return !negated;
-        }
-      else
-        {
-        if ((c < 0xd800 || c > 0xdfff) == isprop)
-          return !negated;
-        }
-      break;
-
       /* The following three properties can occur only in an XCLASS, as there
       is no \p or \P coding for them. */
 
