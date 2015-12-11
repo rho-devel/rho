@@ -38,6 +38,8 @@
 #include <config.h>
 #endif
 
+#include <numeric>  // For accumulate.
+
 #include "Defn.h"
 #include "Print.h"
 
@@ -142,7 +144,7 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 							\
     if (!isNull(rl)) {					\
 	StringVector::const_iterator beg = rl->begin(); \
-        rlabw = accumulate(beg, beg + r, 0, stringWidth); \
+        rlabw = std::accumulate(beg, beg + r, 0, stringWidth);  \
     } else						\
 	rlabw = IndexWidth(r + 1) + 3;			\
 							\

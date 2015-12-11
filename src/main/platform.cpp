@@ -2888,8 +2888,10 @@ SEXP attribute_hidden do_mkjunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 #  define U_MAX_VERSION_LENGTH 4
 #  define U_MAX_VERSION_STRING_LENGTH 20
 typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
+extern "C" {
 void u_versionToString(const UVersionInfo versionArray, char *versionString);
 void u_getVersion(UVersionInfo versionArray);
+}
 # endif
 #endif
 

@@ -120,7 +120,7 @@ const String* Provenance::getTime() const
     char buffer[32];
     struct tm* lt = localtime(&m_timestamp.tv_sec);
     size_t p = strftime(buffer, 32, "%x %X", lt);
-    sprintf(&buffer[p], ".%ld", m_timestamp.tv_usec);
+    sprintf(&buffer[p], ".%ld", static_cast<long>(m_timestamp.tv_usec));
     return String::obtain(buffer);
 }
 
