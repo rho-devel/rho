@@ -61,6 +61,9 @@ namespace CXXR {
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
+        explicit Expression(RObject* function,
+                            std::initializer_list<RObject*> unnamed_args);
+
 	/** @brief Copy constructor.
 	 *
 	 * @param pattern Expression to be copied.
@@ -68,6 +71,14 @@ namespace CXXR {
 	Expression(const Expression& pattern)
 	    : ConsCell(pattern)
 	{}
+
+        const RObject* getFunction() const {
+            return car();
+        }
+
+        const PairList* getArgs() const {
+            return tail();
+        }
 
 	/** @brief The name by which this type is known in R.
 	 *

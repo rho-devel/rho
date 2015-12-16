@@ -77,6 +77,19 @@ namespace CXXR {
 	      m_status(status)
 	{}
 
+	/** @brief Constructor.
+	 *
+	 * @param args List, possibly empty, of the arguments to pass.
+	 *          The argument list has no names, so argument matching
+	 *          will be done solely by position.
+	 *
+	 * @param status The Status of the argument list provided by
+	 *          \a args.  No check is made that the \a args list
+	 *          is actually consistent with the value of \a status.
+	 */
+	ArgList(std::initializer_list<RObject*> args, Status status)
+	    : ArgList(PairList::make(args.size(), args.begin()), status) { }
+
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
 	 * Except as regards the handling of ... and missing values

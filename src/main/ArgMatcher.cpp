@@ -285,3 +285,14 @@ void ArgMatcher::visitReferents(const_visitor* v) const
     if (m_formals)
 	(*v)(m_formals);
 }
+
+PairList* ArgMatcher::makePairList(std::initializer_list<const char*> arg_names)
+{
+    PairList* result = PairList::make(arg_names.size());
+    auto result_iter = result->begin();
+    for (const char* arg : arg_names) {
+	result_iter->setTag(Symbol::obtain(arg));
+	++result_iter;
+    }
+    return result;
+}

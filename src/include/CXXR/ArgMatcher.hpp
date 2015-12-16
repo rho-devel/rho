@@ -65,6 +65,17 @@ namespace CXXR {
 	 */
 	explicit ArgMatcher(const PairList* formals);
 
+	/** @brief Constructor.
+	 *
+	 * @param arg_names The names of the formal parameters, possibly empty.
+	 *          The elements of this list must be distinct and at most one
+	 *          can be "...".
+	 *
+	 * The constructed argument matcher does not supply default values.
+	 */
+	explicit ArgMatcher(std::initializer_list<const char*> arg_names)
+	    : ArgMatcher(makePairList(arg_names)) { }
+
 	/** @brief Enable/disable warning if tag partially matched.
 	 *
 	 * @param on true iff the class is to be configured to raise a warning
@@ -314,6 +325,9 @@ namespace CXXR {
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in supplied_list.
 	static void unusedArgsError(const SuppliedList& supplied_list);
+
+	static PairList* makePairList(
+	    std::initializer_list<const char*> arg_names);
     };
 }
 
