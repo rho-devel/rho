@@ -124,13 +124,10 @@ mkexec:
 	  done; \
 	fi
 
-## only used if byte-compilation is disabled
 mklazy:
 	@$(INSTALL_DATA) all.R $(top_builddir)/library/$(pkg)/R/$(pkg)
 	@$(ECHO) "tools:::makeLazyLoading(\"$(pkg)\")" | \
 	  R_DEFAULT_PACKAGES=$(DEFPKGS) LC_ALL=C $(R_EXE) > /dev/null
-
-mklazycomp: $(top_builddir)/library/$(pkg)/R/$(pkg).rdb
 
 mkRsimple:
 	@$(INSTALL_DATA) all.R $(top_builddir)/library/$(pkg)/R/$(pkg)

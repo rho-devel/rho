@@ -30,7 +30,6 @@
 #include "CXXR/ConsCell.h"
 
 #include <iostream>
-#include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/PairList.h"

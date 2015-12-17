@@ -42,7 +42,6 @@
 
 #include <cstdarg>
 #include <vector>
-#include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StdFrame.hpp"
@@ -183,7 +182,6 @@ using namespace CXXR;
 static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table);
 static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream);
 static SEXP ReadItem(SEXP ref_table, R_inpstream_t stream);
-static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream);
 static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream);
 
 /*
@@ -979,16 +977,6 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
     int i;
     SEXP t;
 
-    if (R_compile_pkgs && TYPEOF(s) == CLOSXP && TYPEOF(BODY(s)) != BCODESXP) {
-	SEXP new_s;
-	R_compile_pkgs = FALSE;
-	PROTECT(new_s = R_cmpfun(s));
-	WriteItem (new_s, ref_table, stream);
-	UNPROTECT(1);
-	R_compile_pkgs = TRUE;
-	return;
-    }
-
  tailcall:
     R_CheckStack();
     if ((t = GetPersistentName(stream, s)) != R_NilValue) {
@@ -1156,9 +1144,6 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    for (R_xlen_t ix = 0; ix < len; ix++)
 		WriteItem(XVECTOR_ELT(s, ix), ref_table, stream);
 	    break;
-	case BCODESXP:
-	    WriteBC(s, ref_table, stream);
-	    break;
 	case RAWSXP:
 	    len = XLENGTH(s);
 	    WriteLENGTH(stream, s);
@@ -1219,16 +1204,8 @@ static void ScanForCircles1(SEXP s, CircleFinder* cf)
 	    ScanForCircles1(CDR(s), cf);
 	}
 	break;
-    case BCODESXP:
-	{
-	    int i, n;
-	    SEXP consts = static_cast<ByteCode*>(s)->constants();
-	    n = LENGTH(consts);
-	    for (i = 0; i < n; i++)
-		ScanForCircles1(VECTOR_ELT(consts, i), cf);
-	}
+    default:
 	break;
-    default: break;
     }
 }
 
@@ -1245,94 +1222,6 @@ static SEXP findrep(SEXP x, SEXP reps)
 	if (x == CAR(reps))
 	    return reps;
     return R_NilValue;
-}
-
-static void WriteBCLang(SEXP s, SEXP ref_table, SEXP reps,
-			R_outpstream_t stream)
-{
-    int type = TYPEOF(s);
-    if (type == LANGSXP || type == LISTSXP) {
-	SEXP r = findrep(s, reps);
-	int output = TRUE;
-	if (r != R_NilValue) {
-	    /* we have a cell referenced more than once */
-	    if (TAG(r) == R_NilValue) {
-		/* this is the first reference, so update and register
-		   the counter */
-		int i = INTEGER(CAR(reps))[0]++;
-		SET_TAG(r, Rf_allocVector(INTSXP, 1));
-		INTEGER(TAG(r))[0] = i;
-		OutInteger(stream, BCREPDEF);
-		OutInteger(stream, i);
-	    }
-	    else {
-		/* we've seen it before, so just put out the index */
-		OutInteger(stream, BCREPREF);
-		OutInteger(stream, INTEGER(TAG(r))[0]);
-		output = FALSE;
-	    }
-	}
-	if (output) {
-	    SEXP attr = ATTRIB(s);
-	    if (attr != R_NilValue) {
-		switch(type) {
-		case LANGSXP: type = ATTRLANGSXP; break;
-		case LISTSXP: type = ATTRLISTSXP; break;
-		}
-	    }
-	    OutInteger(stream, type);
-	    if (attr != R_NilValue)
-		WriteItem(attr, ref_table, stream);
-	    WriteItem(TAG(s), ref_table, stream);
-	    WriteBCLang(CAR(s), ref_table, reps, stream);
-	    WriteBCLang(CDR(s), ref_table, reps, stream);
-	}
-    }
-    else {
-	OutInteger(stream, 0); /* pad */
-	WriteItem(s, ref_table, stream);
-    }
-}
-
-static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
-{
-    int i, n;
-    SEXP code, consts;
-    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
-    PROTECT(code = bc->decode());
-    WriteItem(code, ref_table, stream);
-    consts = bc->constants();
-    n = LENGTH(consts);
-    OutInteger(stream, n);
-    for (i = 0; i < n; i++) {
-	SEXP c = VECTOR_ELT(consts, i);
-	int type = TYPEOF(c);
-	switch (type) {
-	case BCODESXP:
-	    OutInteger(stream, type);
-	    WriteBC1(c, ref_table, reps, stream);
-	    break;
-	case LANGSXP:
-	case LISTSXP:
-	    WriteBCLang(c, ref_table, reps, stream);
-	    break;
-	default:
-	    OutInteger(stream, type);
-	    WriteItem(c, ref_table, stream);
-	}
-    }
-    UNPROTECT(1);
-}
-
-static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream)
-{
-    SEXP reps = ScanForCircles(s);
-    PROTECT(reps = CONS(R_NilValue, reps));
-    OutInteger(stream, Rf_length(reps));
-    SETCAR(reps, Rf_allocVector(INTSXP, 1));
-    INTEGER(CAR(reps))[0] = 0;
-    WriteBC1(s, ref_table, reps, stream);
-    UNPROTECT(1);
 }
 
 void R_Serialize(SEXP s, R_outpstream_t stream)
@@ -1878,6 +1767,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    s = R_NilValue; /* keep compiler happy */
 	    Rf_error(_("ReadItem: unknown type %i, perhaps written by later version of R"), type);
 	}
+
 	if (type != CHARSXP) SETLEVELS(s, levs);
 	{
 	    ++R_ReadItemDepth;
@@ -1978,8 +1868,8 @@ static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
     GCStackRoot<> code(ReadItem(ref_table, stream));
     R_ReadItemDepth--;
     GCStackRoot<> constants(ReadBCConsts(ref_table, reps, stream));
-    return new ByteCode(SEXP_downcast<IntVector*>(code.get()),
-			SEXP_downcast<ListVector*>(constants.get()));
+    // The first item in constants in the uncompiled code.  Return that.
+    return VECTOR_ELT(constants, 0);
 }
 
 static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream)

@@ -805,8 +805,7 @@ typedef struct RCNTXT @{
 @end example
 
 @noindent
-plus additional fields for the byte-code compiler.  The `types'
-are from
+The `types' are from
 
 @example
 enum @{

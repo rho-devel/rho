@@ -251,16 +251,13 @@ SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::Buil
 {
     op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
-	return duplicate(BODY_EXPR(args[0]));
+	return duplicate(BODY(args[0]));
     else return R_NilValue;
 }
 
 SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-    if (TYPEOF(args[0]) == CLOSXP)
-	return duplicate(BODY(args[0]));
-    else return R_NilValue;
+    return do_body(call, op, rho, args, num_args, tags);
 }
 
 /* get environment from a subclass if possible; else return NULL */
@@ -294,13 +291,6 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
 	if(MAYBE_SHARED(s))
 	    /* this copies but does not duplicate args or code */
 	    s = duplicate(s);
-	if (TYPEOF(BODY(s)) == BCODESXP) {
-	    /* switch to interpreted version if compiled */
-	    Closure* clos = static_cast<Closure*>(s.get());
-	    s = new Closure(clos->matcher()->formalArgs(),
-			    R_ClosureExpr(clos),
-			    clos->environment());
-	}
 	SET_CLOENV(s, env);
     }
     else if (isNull(env) || isEnvironment(env) ||

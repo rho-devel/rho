@@ -37,8 +37,7 @@ all: Makefile DESCRIPTION
 	@$(ECHO) "building package '$(pkg)'"
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)
 	@$(MAKE) mkR2 mkdesc
-@BYTE_COMPILE_PACKAGES_FALSE@	@$(MAKE) mklazy
-@BYTE_COMPILE_PACKAGES_TRUE@	@$(MAKE) mklazycomp
+	@$(MAKE) mklazy
 
 mkR: mkR2
 

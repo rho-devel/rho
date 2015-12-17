@@ -31,7 +31,7 @@ Rdiff(from, to, useDiff = FALSE, forEx = FALSE,
     BATCH} are removed from both files, together with lines about
   loading packages.  UTF-8 fancy quotes (see \code{\link{sQuote}}) and
   on Windows, Windows' so-called \sQuote{smart quotes}, are mapped to
-  a simple quote.  Addresses of environments, compiled bytecode and
+  a simple quote.  Addresses of environments and
   other exotic types expressed as hex addresses
   (e.g. \code{<environment: 0x12345678>}) are mapped to
   \code{0x00000000}.  In addition, CXXR replaces a program location
@@ -63,4 +63,3 @@ Rdiff(from, to, useDiff = FALSE, forEx = FALSE,
 }
 
 \keyword{utilities}
-

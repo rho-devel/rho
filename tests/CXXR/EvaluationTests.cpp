@@ -188,17 +188,6 @@ public:
     }
 };
 
-class BytecodeExecutor : public CompilingExecutor {
-public:
-    Closure* compile(Closure* closure) const override {
-	return dynamic_cast<Closure*>(R_cmpfun(closure));
-    }
-};
-
-Executor* Executor::BytecodeExecutor() {
-    return new class BytecodeExecutor();
-}
-
 #ifdef ENABLE_LLVM_JIT
 class JITExecutor : public CompilingExecutor {
 public:

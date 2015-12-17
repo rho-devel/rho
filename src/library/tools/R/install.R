@@ -169,8 +169,8 @@
             "      --with-keep.source",
             "      --without-keep.source",
             "			use (or not) 'keep.source' for R code",
-            "      --byte-compile	byte-compile R code",
-            "      --no-byte-compile	do not byte-compile R code",
+            "      --byte-compile	byte-compile R code (ignored)",
+            "      --no-byte-compile	do not byte-compile R code (ignored)",
             "      --no-test-load	skip test of loading installed package",
             "      --no-clean-on-error	do not remove installed package on error",
             "      --merge-multiarch	multi-arch by merging (from a single tarball only)",
@@ -1088,20 +1088,7 @@
 
 	## LazyLoading/Compiling
 	if (install_R && dir.exists("R") && length(dir("R"))) {
-            BC <- if (!is.na(byte_compile)) byte_compile
-            else
-                parse_description_field(desc, "ByteCompile", default = FALSE)
-            rcp <- as.numeric(Sys.getenv("R_COMPILE_PKGS"))
-            BC <- BC || (!is.na(rcp) && rcp > 0)
-            if (BC) {
-                starsmsg(stars,
-                         "byte-compile and prepare package for lazy loading")
-                ## need to disable JIT
-                Sys.setenv(R_ENABLE_JIT = 0L)
-                compiler::compilePKGS(1L)
-                compiler::setCompilerOptions(suppressUndefined = TRUE)
-            } else
-                starsmsg(stars, "preparing package for lazy loading")
+            starsmsg(stars, "preparing package for lazy loading")
             keep.source <-
                 parse_description_field(desc, "KeepSource",
                                         default = keep.source)
@@ -1120,7 +1107,6 @@
                 suppressPackageStartupMessages(.getRequiredPackages(quietly = TRUE))
                 makeLazyLoading(pkg_name, lib, keep.source = keep.source)
             })
-            if (BC) compiler::compilePKGS(0L)
 	    if (inherits(res, "try-error"))
 		pkgerrmsg("lazy loading failed", pkg_name)
             if (!is.null(libs0)) .libPaths(libs0)
@@ -1258,7 +1244,6 @@
     fake <- FALSE
 ##    lazy <- TRUE
     lazy_data <- FALSE
-    byte_compile <- NA # means take from DESCRIPTION file.
     ## Next is not very useful unless R CMD INSTALL reads a startup file
     lock <- getOption("install.lock", NA) # set for overall or per-package
     pkglock <- FALSE  # set for per-package locking
@@ -1399,9 +1384,9 @@
         } else if (a == "--without-keep.source") {
             keep.source <- FALSE
         } else if (a == "--byte-compile") {
-            byte_compile <- TRUE
+            # ignore
         } else if (a == "--no-byte-compile") {
-            byte_compile <- FALSE
+            # ignore
         } else if (a == "--dsym") {
             dsym <- TRUE
         } else if (substr(a, 1, 18) == "--built-timestamp=") {

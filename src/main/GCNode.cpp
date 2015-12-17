@@ -36,7 +36,6 @@
 #include <iostream>
 #include <limits>
 #include "CXXR/AddressSanitizer.h"
-#include "CXXR/ByteCode.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/GCStackFrameBoundary.hpp"
@@ -168,7 +167,6 @@ void GCNode::gc(bool markSweep)
     GCManager::GCInhibitor inhibitor;
 
     ProtectStack::protectAll();
-    ByteCode::protectAll();
     incRefCount(R_Srcref);
 
     if (markSweep) {
@@ -253,7 +251,6 @@ void GCNode::mark()
     GCRootBase::visitRoots(&marker);
     GCStackRootBase::visitRoots(&marker);
     ProtectStack::visitRoots(&marker);
-    ByteCode::visitRoots(&marker);
     WeakRef::markThru();
     if (R_Srcref)
 	marker(R_Srcref);
