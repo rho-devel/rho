@@ -217,6 +217,14 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
     return pair<bool, RObject*>(false, nullptr);
 }
 
+bool ArgList::has3Dots() const {
+  for (const ConsCell& cell : *list()) {
+    if (cell.car() == R_DotsSymbol)
+      return true;
+  }
+  return false;
+}
+
 void ArgList::stripTags()
 {
     for (PairList* p = mutable_list(); p; p = p->tail())

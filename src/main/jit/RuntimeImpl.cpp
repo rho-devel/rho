@@ -142,7 +142,7 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
     IncrementStackDepthScope scope;
 
     ArgList arglist(args, ArgList::RAW);
-    return function->apply(&arglist, environment, call);
+    return call->evaluateFunctionCall(function, environment, &arglist);
 }
 
 void cxxr_runtime_do_break(Environment* environment) {

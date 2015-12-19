@@ -47,25 +47,6 @@ namespace CXXR {
      */
     class FunctionBase : public RObject {
     public:
-	/** @brief Apply the function.
-	 *
-	 * @param arglist Non-null pointer to the ArgList containing
-	 *          the list of arguments with which the function is
-	 *          to be invoked.
-	 *
-	 * @param env Pointer to the Environment in which the function
-	 *          is to be evaluated.
-	 *
-	 * @param call Pointer to the Expression calling the function.
-	 *
-	 * @return The result of applying the function.
-         *
-         * @note Using \a arglist after calls to this function may
-         *    result in arguments being evaluated multiple time.
-	 */
-	virtual RObject* apply(ArgList* arglist, Environment* env,
-			       const Expression* call) const = 0;
-
 	/** @brief Enable/disable function tracing.
 	 *
 	 * @param on True iff function tracing is to be enabled.

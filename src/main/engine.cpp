@@ -36,6 +36,7 @@
 # include <rlocale.h>
 
 #include "CXXR/RAllocStack.h"
+#include "CXXR/Expression.h"
 
 int R_GE_getVersion()
 {
@@ -2771,16 +2772,17 @@ void GEplayDisplayList(pGEDevDesc dd)
 	savedDevice = curDevice();
 	selectDevice(devnum);
 	while (theList != R_NilValue && plotok) {
-	    SEXP theOperation = CAR(theList);
+            using namespace CXXR;
+            Expression* theOperation
+                = dynamic_cast<Expression*>(CAR(theList));
+            // We can't call the_expression->evaluate() here, because the
+            // arguments have already been evaluated.
 	    SEXP op = CAR(theOperation);
-	    SEXP args = CADR(theOperation);
-	    if (TYPEOF(op) == BUILTINSXP || TYPEOF(op) == SPECIALSXP) {
-		using namespace CXXR;
-
+	    if (TYPEOF(op) == BUILTINSXP) {
 		BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
-		ArgList arglist(SEXP_downcast<const PairList*>(args),
+		ArgList arglist(theOperation->getArgs(),
 				ArgList::EVALUATED);
-		builtin->apply(&arglist, nullptr, nullptr);
+		theOperation->applyBuiltIn(builtin, nullptr, &arglist);
 		/* Check with each graphics system that the plotting went ok
 		 */
 		if (!GEcheckState(dd)) {

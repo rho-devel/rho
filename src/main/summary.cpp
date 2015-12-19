@@ -796,7 +796,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     Expression* callx = SEXP_downcast<Expression*>(call);
     ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
     Environment* callenv = SEXP_downcast<Environment*>(env);
-    ans = closure->invoke(callenv, &arglist, callx);
+    ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(3);
     return(ans);
 }

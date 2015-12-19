@@ -147,35 +147,6 @@ namespace CXXR {
 	 */
 	RObject* execute(Environment* env) const;
 
-	/** @brief Invoke the function.
-	 *
-	 * This differs from apply() in that it is assumed that any
-	 * required wrapping of the function arguments in Promise
-	 * objects will have been carried out before invoke() is
-	 * called, whereas apply() carries out this wrapping itself.
-	 *
-	 * @param env Non-null pointer to the Environment in which the
-	 *          function is to be evaluated.
-	 *
-	 * @param arglist Non-null pointer to the promise-wrapped
-	 *          ArgList containing the arguments with which the
-	 *          function is to be invoked.
-	 *
-	 * @param call Pointer to the Expression calling the function.
-	 *
-	 * @param method_bindings This pointer will be non-null if and
-	 *          only if this invocation represents a method call,
-	 *          in which case it points to a Frame containing
-	 *          Bindings that should be added to the working
-	 *          environment, for example bindings of the Symbols
-	 *          \c .Generic and \c .Class.
-	 *
-	 * @return The result of applying the function.
-	 */
-	RObject* invoke(Environment* env, const ArgList* arglist,
-			const Expression* call,
-			const Frame* method_bindings = nullptr) const;
-
 	/** @brief Access the ArgMatcher of this Closure.
 	 *
 	 * @return const pointer to this Closure's ArgMatcher object.
@@ -184,6 +155,10 @@ namespace CXXR {
 	{
 	    return m_matcher;
 	}
+
+	/** @brief Create an environment suitable for evaluating this closure.
+	 */
+        Environment* createExecutionEnv() const;
 
 	/** @brief Set debugging status.
 	 *
@@ -229,10 +204,6 @@ namespace CXXR {
 	{
 	    m_matcher->stripFormals(input_frame);
 	}
-
-	// Virtual function of FunctionBase:
-	RObject* apply(ArgList* arglist, Environment* env,
-		       const Expression* call) const override;
 
 	// Virtual functions of RObject:
         Closure* clone() const override;
@@ -297,10 +268,6 @@ namespace CXXR {
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
         static bool s_debugging_enabled;
-
-	RObject* invokeImpl(Environment* env, const ArgList* arglist,
-                            const Expression* call,
-                            const Frame* method_bindings = nullptr) const;
 
 	// Declared private to ensure that Closure objects are
 	// created only using 'new':

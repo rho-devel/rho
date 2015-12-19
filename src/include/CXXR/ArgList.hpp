@@ -146,7 +146,7 @@ namespace CXXR {
 	 * @note This function is intended within CXXR to supersede
 	 * CR's evalList() and evalListKeepMissing().
 	 */
-	void evaluate(Environment* env, bool allow_missing = false);
+        void evaluate(Environment* env, bool allow_missing = false);
 
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
@@ -265,6 +265,10 @@ namespace CXXR {
 	{
 	    return m_status;
 	}
+
+	/** @brief Does this arglist contain an unexpanded '...'?
+         */
+        bool has3Dots() const;
 
 	/** @brief Remove argument names.
 	 *

@@ -99,16 +99,15 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
 			    ArgList* arglist, Environment* env,
 			    Frame* method_bindings)
 {
-    RObject* ans;
     if (func->sexptype() == CLOSXP) {
 	const Closure* clos = static_cast<const Closure*>(func);
-	ans = clos->invoke(env, arglist, call, method_bindings);
+	return call->invokeClosure(clos, env, arglist, method_bindings);
     } else {
 	GCStackRoot<Environment>
 	    newenv(new Environment(nullptr, method_bindings));
-	ans = func->apply(arglist, newenv, call);
+        return call->applyBuiltIn(static_cast<const BuiltInFunction*>(func),
+                                  newenv, arglist);
     }
-    return ans;
 }
 
 
@@ -1412,7 +1411,7 @@ static RObject *call_closure_from_prim(Closure *func, PairList *args,
 	args = pargs;
     }
     ArgList al(args, ArgList::PROMISED);
-    return func->invoke(call_env, &al, call_expression);
+    return call_expression->invokeClosure(func, call_env, &al);
 }
 
 /* try to dispatch the formal method for this primitive op, by calling

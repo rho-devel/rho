@@ -235,6 +235,11 @@ namespace CXXR {
 	    return s_function_table[m_offset].gram.precedence;
 	}
 
+	// SOFT_ON signifies that result printing should be enabled
+	// before calling m_function, but that if m_function disables
+	// result printing, this should not be overridden.
+	enum ResultPrintingMode {FORCE_ON = 0, FORCE_OFF, SOFT_ON};
+
 	/** @brief (Not for general use.)
 	 *
 	 * This function is used to implement PRIMPRINT, and is likely
@@ -244,7 +249,7 @@ namespace CXXR {
 	 *         as documented in names.cpp for the eval field of
 	 *         the function table.
 	 */
-	int printHandling() const
+	ResultPrintingMode printHandling() const
 	{
 	    return m_result_printing_mode;
 	}
@@ -292,12 +297,37 @@ namespace CXXR {
 	    return (s_function_table[m_offset].flags%100)/10 == 1;
 	}
 
+	/** @brief Does this function create a frame visible in traceback()?
+	 */
+	bool createsStackFrame() const
+	{
+	    return !m_transparent;
+	}
+
 	// Virtual function of RObject:
 	const char* typeName() const override;
 
-	// Virtual function of FunctionBase:
-	RObject* apply(ArgList* arglist, Environment* env,
-		       const Expression* call) const override;
+        bool hasDirectCall() const {
+            return m_quick_function;
+        }
+
+	RObject* invoke(const Expression* call, Environment* env,
+                        ArgList* args) const
+	{
+            assert(m_function);
+            return m_function(const_cast<Expression*>(call),
+                              const_cast<BuiltInFunction*>(this),
+                              const_cast<PairList*>(args->list()),
+                              env);
+        }
+
+        RObject* invoke(const Expression* call, Environment* env,
+                        RObject* const* args, int num_args,
+                        const PairList* tags) const {
+            assert(m_quick_function);
+            return m_quick_function(const_cast<Expression*>(call),
+                                    this, env, args, num_args, tags);
+        }
 
 	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
 	// dispatch on the first argument (first two for 'Ops').
@@ -393,11 +423,6 @@ namespace CXXR {
                      PPinfo);
 	};
 
-	// SOFT_ON signifies that result printing should be enabled
-	// before calling m_function, but that if m_function disables
-	// result printing, this should not be overridden.
-	enum ResultPrintingMode {FORCE_ON = 0, FORCE_OFF, SOFT_ON};
-
 	static TableEntry s_function_table[];
 
 	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
@@ -440,16 +465,6 @@ namespace CXXR {
 	 * given name.
 	 */
 	static int indexInTable(const char* name);
-
-        RObject* evaluateAndInvoke(Environment* env,
-                                   ArgList* arglist,
-                                   const Expression* call) const;
-
-        RObject* quickEvaluateAndInvoke(Environment* env,
-					ArgList* arglist,
-					const Expression* call) const;
-
-        bool argsNeedEvaluating(const ArgList* arglist) const;
 
 	// Internal dispatch is used a lot, but there most of the time
 	// no dispatch is needed because no objects are involved.

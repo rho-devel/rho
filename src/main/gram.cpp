@@ -3304,9 +3304,10 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 	    UNPROTECT_PTR(prevSrcrefs);
 	}
 	else
-	    PROTECT(anslist = a2);
+	    PROTECT(ans = a2);
 	/* CXXR: Transform anslist to class Expression: */
 	{
+            anslist = ans;
 	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
 	    SET_TAG(ans, TAG(anslist));
 	    DUPLICATE_ATTRIB(ans, anslist);

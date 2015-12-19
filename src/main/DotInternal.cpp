@@ -71,5 +71,5 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 	Rf_errorcall(call, _("there is no .Internal function \"%s\""),
 		     funsym->name()->c_str());
     ArgList al(innercall->tail(), ArgList::RAW);
-    return func->apply(&al, envir, innercall);
+    return callx->applyBuiltIn(func, envir, &al);
 }

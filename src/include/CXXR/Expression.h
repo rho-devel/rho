@@ -36,6 +36,12 @@
 #ifdef __cplusplus
 
 namespace CXXR {
+    class ArgList;
+    class BuiltInFunction;
+    class Closure;
+    class Frame;
+    class FunctionBase;
+
     /** @brief Singly linked list representing an R expression.
      *
      * R expression, represented as a LISP-like singly-linked list,
@@ -89,18 +95,86 @@ namespace CXXR {
 	    return "language";
 	}
 
+        // Used by jit/RuntimeImpl.cpp and Expression.cpp
+        RObject* evaluateFunctionCall(const FunctionBase* func,
+                                      Environment* env,
+                                      ArgList* raw_arglist) const;
+
+        // Used by Expression.cpp, engine.cpp (with evaluated arguments),
+        // objects.cpp (with promised arguments) and DotInternal.cpp
+	RObject* applyBuiltIn(const BuiltInFunction* func,
+                              Environment* env,
+                              ArgList* arglist) const;
+
+	/** @brief Invoke the function.
+	 *
+	 * This differs from apply() in that it is assumed that any
+	 * required wrapping of the function arguments in Promise
+	 * objects will have been carried out before invoke() is
+	 * called, whereas apply() carries out this wrapping itself.
+	 *
+	 * @param env Non-null pointer to the Environment in which the
+	 *          function is to be evaluated.
+	 *
+	 * @param arglist Non-null pointer to the promise-wrapped
+	 *          ArgList containing the arguments with which the
+	 *          function is to be invoked.
+	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
+	 * @param method_bindings This pointer will be non-null if and
+	 *          only if this invocation represents a method call,
+	 *          in which case it points to a Frame containing
+	 *          Bindings that should be added to the working
+	 *          environment, for example bindings of the Symbols
+	 *          \c .Generic and \c .Class.
+	 *
+	 * @return The result of applying the function.
+         *
+         * @note This function is used mainly by code that implements method
+         *         dispatch.
+	 */
+        RObject* invokeClosure(const Closure* func,
+                               Environment* calling_env,
+                               ArgList* arglist,
+                               const Frame* method_bindings = nullptr) const;
+
 	// Virtual functions of RObject:
 	Expression* clone() const override;
-	RObject* evaluate(Environment* env) override;
+        RObject* evaluate(Environment* env) override;
 	const char* typeName() const override;
     private:
 	// Declared private to ensure that Expression objects are
 	// allocated only using 'new':
 	~Expression() {}
 
-	// Not implemented yet.  Declared to prevent
-	// compiler-generated versions:
-	Expression& operator=(const Expression&);
+        RObject* evaluateClosureCall(const Closure* func,
+				     Environment* env,
+                                     ArgList* arglist,
+                                     const Frame* method_bindings) const;
+
+        RObject* invokeClosureImpl(const Closure* func,
+                                   Environment* calling_env,
+                                   ArgList* arglist,
+                                   const Frame* method_bindings) const;
+
+	RObject* evaluateBuiltInCall(const BuiltInFunction* func,
+                                     Environment* env,
+                                     ArgList* arglist) const;
+
+	RObject* evaluateDirectBuiltInCall(const BuiltInFunction* func,
+                                           Environment* env,
+                                           ArgList* arglist) const;
+
+	RObject* evaluateIndirectBuiltInCall(const BuiltInFunction* func,
+                                            Environment* env,
+                                            ArgList* arglist) const;
+
+        static void importMethodBindings(const Frame* method_bindings,
+                                         Frame* newframe);
+        static Environment* getMethodCallingEnv();
+
+        Expression& operator=(const Expression&) = delete;
     };
 } // namespace CXXR
 

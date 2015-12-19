@@ -1711,7 +1711,8 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(s) != CLOSXP)
 	Rf_error(_("'Recall' called from outside a closure"));
     Closure* closure = SEXP_downcast<Closure*>(s);
-    ans = closure->invoke(cptr->callEnvironment(), &arglist, cptr->call());
+    ans = cptr->call()->invokeClosure(closure, cptr->callEnvironment(),
+                                      &arglist);
     UNPROTECT(1);
     return ans;
 }
@@ -1959,7 +1960,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	if (isOps)
 	    arglist.stripTags();
 	Closure* func = SEXP_downcast<Closure*>(m->function());
-	*ans = func->invoke(callenv, &arglist, newcall, supp_frame);
+	*ans = newcall->invokeClosure(func, callenv, &arglist, supp_frame);
     }
     return 1;
 }

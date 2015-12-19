@@ -77,13 +77,6 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 Closure::~Closure() {
 }
 
-RObject* Closure::apply(ArgList* arglist, Environment* env,
-			const Expression* call) const
-{
-    arglist->wrapInPromises(env);
-    return invoke(env, arglist, call);
-}
-
 Closure* Closure::clone() const
 {
     return new Closure(*this);
@@ -143,66 +136,6 @@ RObject* Closure::execute(Environment* env) const
     return ans;
 }
 
-RObject* Closure::invoke(Environment* env, const ArgList* arglist,
-			 const Expression* call,
-			 const Frame* method_bindings) const
-{
-    return GCStackFrameBoundary::withStackFrameBoundary(
-	[=]() { return invokeImpl(env, arglist, call, method_bindings); });
-}
-
-RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
-			     const Expression* call,
-			     const Frame* method_bindings) const
-{
-#ifndef NDEBUG
-    if (arglist->status() != ArgList::PROMISED)
-	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
-#endif
-    GCStackRoot<Frame> newframe(
-#ifdef ENABLE_LLVM_JIT
-	m_compiled_body ? m_compiled_body->createFrame() :
-#endif
-	new ListFrame);
-    GCStackRoot<Environment>
-	newenv(new Environment(environment(), newframe));
-    // Perform argument matching:
-    {
-        ClosureContext cntxt(const_cast<Expression*>(call), env, this,
-			     environment(), arglist->list());
-	m_matcher->match(newenv, arglist);
-    }
-
-    // Set up context and perform evaluation.  Note that ans needs to
-    // be protected in case the destructor of ClosureContext executes
-    // an on.exit function.
-    GCStackRoot<> ans;
-    {
-	Environment* syspar = env;
-	// If this is a method call, change syspar and merge in
-	// supplementary bindings:
-	if (method_bindings) {
-	    method_bindings->visitBindings([&](const Frame::Binding* binding) {
-		    const Symbol* sym = binding->symbol();
-		    if (!newframe->binding(sym)) {
-			newframe->importBinding(binding);
-		    }
-		});
-	    FunctionContext* fctxt = FunctionContext::innermost();
-	    while (fctxt && fctxt->function()->sexptype() == SPECIALSXP)
-		fctxt = FunctionContext::innermost(fctxt->nextOut());
-	    syspar = (fctxt ? fctxt->callEnvironment() : Environment::global());
-	}
-	ClosureContext cntxt(const_cast<Expression*>(call),
-			     syspar, this, newenv, arglist->list());
-	ans = execute(newenv);
-    }
-    Environment::monitorLeaks(ans);
-    newenv->maybeDetachFrame();
-
-    return ans;
-}
-
 void Closure::compile() const {
 #ifdef ENABLE_LLVM_JIT
     try {
@@ -211,6 +144,15 @@ void Closure::compile() const {
 	// Compilation failed.  Continue on with the interpreter.
     }
 #endif
+}
+
+Environment* Closure::createExecutionEnv() const {
+    Frame* frame =
+#ifdef ENABLE_LLVM_JIT
+        m_compiled_body ? m_compiled_body->createFrame():
+#endif
+        new ListFrame;
+    return new Environment(environment(), frame);
 }
 
 const char* Closure::typeName() const
