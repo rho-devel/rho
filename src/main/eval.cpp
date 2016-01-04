@@ -515,8 +515,7 @@ void Closure::DebugScope::startDebugging() const
     }
     Rprintf("debug: ");
     Rf_PrintValue(m_closure->m_body);
-    do_browser(const_cast<Expression*>(call), const_cast<Closure*>(m_closure),
-	       const_cast<PairList*>(ctxt->promiseArgs()), working_env);
+    do_browser(nullptr, nullptr, nullptr, working_env);
 }
 
 void Closure::DebugScope::endDebugging() const
@@ -711,7 +710,7 @@ namespace {
 	if (bgn && ENV_DEBUG(rho)) {
 	    Rf_SrcrefPrompt("debug", R_Srcref);
 	    Rf_PrintValue(CAR(args));
-	    do_browser(call, op, nullptr, rho);
+	    do_browser(nullptr, nullptr, nullptr, rho);
 	}
     }
 
@@ -754,7 +753,7 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( ENV_DEBUG(rho) && !BodyHasBraces(Stmt)) {
 	Rf_SrcrefPrompt("debug", R_Srcref);
 	Rf_PrintValue(Stmt);
-	do_browser(call, op, R_NilValue, rho);
+	do_browser(nullptr, nullptr, nullptr, rho);
     }
     UNPROTECT(1);
     if( vis ) {
@@ -1079,7 +1078,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (ENV_DEBUG(rho)) {
 		Rf_SrcrefPrompt("debug", R_Srcref);
 		Rf_PrintValue(CAR(args));
-		do_browser(call, op, R_NilValue, rho);
+		do_browser(nullptr, nullptr, nullptr, rho);
 	    }
 	    {
 		BailoutContext bcntxt;
