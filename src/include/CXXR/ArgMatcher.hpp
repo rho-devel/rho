@@ -32,13 +32,16 @@
 #include <list>
 #include <map>
 #include <vector>
+#include "boost/range.hpp"
+#include "CXXR/ArgList.hpp"
+#include "CXXR/Frame.hpp"
 #include "CXXR/GCEdge.hpp"
+#include "CXXR/Promise.h"
 #include "CXXR/String.h"
 
 namespace CXXR {
-    class ArgList;
+    class ArgMatchInfo;
     class Environment;
-    class Frame;
     class PairList;
     class RObject;
     class Symbol;
@@ -104,7 +107,7 @@ namespace CXXR {
 	 */
 	bool has3Dots() const
 	{
-	    return m_has_dots;
+            return m_dots_position >= 0;
 	}
 
 	/** @brief Create ArgMatcher with specified formal argument names.
@@ -185,6 +188,9 @@ namespace CXXR {
 	 */
 	void match(Environment* target_env, const ArgList* supplied) const;
 
+        void match(Environment* target_env, const ArgList* supplied,
+		   const ArgMatchInfo* matching) const;
+
 	/** @brief Number of formal arguments.
 	 *
 	 * @return the number of formal arguments. '<tt>...</tt>' is
@@ -192,8 +198,25 @@ namespace CXXR {
 	 */
 	size_t numFormals() const
 	{
-	    return m_formal_data.size() + m_has_dots;
+	    return m_formal_data.size();
 	}
+
+	/** @brief Store information required to match arguments quickly.
+	 *
+	 * This function runs the normal argument matching algorithm, but
+	 * instead of creating bindings in a frame, it generates an object
+	 * summarizing how the matching is done.  This can be passed to future
+	 * calls to match() that use arglist with the same tags as \a args,
+	 * resulting in dramatically faster matching.
+	 *
+	 * This function returns nullptr if the matching can't be cached (e.g.
+	 * because \a args contains <tt>...</tt> and throws an error if the
+	 * arguments don't match this matcher's formals.
+	 *
+	 * @param args An arglist with the pattern of tags to match against.
+	 *           The values of the arguments are ignored.
+	 */
+	const ArgMatchInfo* createMatchInfo(const ArgList* args) const;
 
 	/** @brief Copy formal bindings from one Environment to another.
 	 *
@@ -260,6 +283,8 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
+
+	class MatchCallback;
     protected:
 	// Virtual function of GCNode:
 	void detachReferents() override;
@@ -271,13 +296,14 @@ namespace CXXR {
 	    bool follows_dots;  // true if ... occurs earlier in the
 				// formals list.
 	    RObject* value;
+	    unsigned int index;
 	};
 
 	enum MatchStatus {UNMATCHED = 0, EXACT_TAG, PARTIAL_TAG, POSITIONAL};
 
 	GCEdge<const PairList> m_formals;
 
-	// Data on formals (other than "...") in order of occurrence:
+	// Data on formals (including "...") in order of occurrence:
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
 	FormalVector m_formal_data;
 
@@ -289,12 +315,13 @@ namespace CXXR {
 	};
 
 	// Mapping from tag names to index within m_formal_data:
+	// Doesn't include '...'.
 	typedef std::map<const String*, unsigned int, Comparator,
 			 Allocator<std::pair<const String*,
 					     unsigned int> > > FormalMap;
 	FormalMap m_formal_index;
 
-	bool m_has_dots;  // True if formals include "..."
+	int m_dots_position;  // -1 if formals doesn't include "..."
 
 	struct SuppliedData {
 	    const Symbol* tag;
@@ -307,9 +334,9 @@ namespace CXXR {
 	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 
-	// Turn remaining arguments, if any, into a DottedArgs object
-	// bound to '...'.  Leave supplied_list empty.
-	static void handleDots(Frame* frame, SuppliedList* supplied_list);
+        void match(const ArgList* supplied, MatchCallback* callback) const;
+        void matchWithCache(const ArgList* supplied, MatchCallback* callback,
+			    const ArgMatchInfo* matching) const;
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
@@ -320,6 +347,7 @@ namespace CXXR {
 	// appropriately.  Default values are wrapped in Promises
 	// keyed to target_env.
 	static void makeBinding(Environment* target_env, const FormalData& fdata,
+				Frame::Binding::Origin origin,
 				RObject* supplied_value);
 
 	// Raise an error because there are unused supplied arguments,
@@ -329,6 +357,28 @@ namespace CXXR {
 	static PairList* makePairList(
 	    std::initializer_list<const char*> arg_names);
     };
+
+    class ArgMatchInfo {
+    public:
+	ArgMatchInfo(int num_formals);
+
+	int getSindex(int findex) const {
+	    return m_values[findex];
+	}
+
+	boost::iterator_range<std::vector<int>::const_iterator> getDotArgs() const {
+	    return boost::make_iterator_range(m_values.begin() + m_num_formals,
+					      m_values.end());
+	}
+
+	// TODO: This should be private.
+	int m_num_formals;
+	std::vector<int> m_values;
+
+    	// TODO: ArgMatchInfos, ArgMatchers and ArgLists are all good candidates
+    	//   for interning, which would likely save significant memory.
+    };
 }
+
 
 #endif  // ARGMATCHER_HPP

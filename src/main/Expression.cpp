@@ -65,36 +65,42 @@ Expression* Expression::clone() const
     return new Expression(*this);
 }
 
+FunctionBase* Expression::getFunction(Environment* env) const
+{
+    RObject* head = car();
+    if (head->sexptype() == SYMSXP) {
+	Symbol* symbol = static_cast<Symbol*>(head);
+	FunctionBase* func = findFunction(symbol, env);
+	if (!func)
+	    error(_("could not find function \"%s\""),
+		  symbol->name()->c_str());
+	return func;
+    } else {
+	RObject* val = Evaluator::evaluate(head, env);
+	if (!FunctionBase::isA(val))
+	    error(_("attempt to apply non-function"));
+	return static_cast<FunctionBase*>(val);
+    }
+}
+
 RObject* Expression::evaluate(Environment* env)
 {
     IncrementStackDepthScope scope;
     RAllocStack::Scope ras_scope;
     ProtectStack::Scope ps_scope;
 
-    FunctionBase* func;
-    RObject* head = car();
-    if (head->sexptype() == SYMSXP) {
-	Symbol* symbol = static_cast<Symbol*>(head);
-	func = findFunction(symbol, env);
-	if (!func)
-	    error(_("could not find function \"%s\""),
-		  symbol->name()->c_str());
-    } else {
-	RObject* val = Evaluator::evaluate(head, env);
-	if (!FunctionBase::isA(val))
-	    error(_("attempt to apply non-function"));
-	func = static_cast<FunctionBase*>(val);
-    }
-    func->maybeTrace(this);
+    FunctionBase* function = getFunction(env);
 
     ArgList arglist(tail(), ArgList::RAW);
-    return evaluateFunctionCall(func, env, &arglist);
+    return evaluateFunctionCall(function, env, &arglist);
 }
 
 RObject* Expression::evaluateFunctionCall(const FunctionBase* func,
                                           Environment* env,
                                           ArgList* raw_arglist) const
 {
+    func->maybeTrace(this);
+
     if (func->sexptype() == CLOSXP) {
       return invokeClosure(static_cast<const Closure*>(func), env,
                            raw_arglist, nullptr);
@@ -200,22 +206,56 @@ RObject* Expression::invokeClosure(const Closure* func,
                                        method_bindings); });
 }
 
+static bool argListTagsMatch(const PairList* args1,
+			     const PairList* args2) {
+    while (args1 != nullptr && args2 != nullptr) {
+	if (args1->tag() != args2->tag())
+	    return false;
+	args1 = args1->tail();
+	args2 = args2->tail();
+    }
+    return args1 == args2;
+}
+
+void Expression::matchArgsIntoEnvironment(const Closure* func,
+                                          Environment* calling_env,
+                                          ArgList* arglist,
+                                          Environment* execution_env) const
+{
+    const ArgMatcher* matcher = func->matcher();
+
+    if (!m_cache.m_function) {
+	// TODO: Don't cache the matching the first time that the function is
+	// called.  This eliminates additional work and storage for
+	// functions that are only called once.
+	m_cache.m_function = func;
+	ArgList args(getArgs(), ArgList::RAW);
+	m_cache.m_arg_match_info = matcher->createMatchInfo(&args);
+    }
+
+    if (m_cache.m_function == func
+	&& m_cache.m_arg_match_info
+	&& argListTagsMatch(arglist->list(), getArgs()))
+    {
+	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
+	return;
+    }
+
+    // We weren't able to cache a matching, probably because getArgs()
+    // contains '...'.  Run the full matching algorithm instead.
+    ClosureContext context(this, calling_env, func, func->environment(),
+			   arglist->list());
+    matcher->match(execution_env, arglist);
+}
+
 RObject* Expression::invokeClosureImpl(const Closure* func,
                                        Environment* calling_env,
                                        ArgList* arglist,
                                        const Frame* method_bindings) const
 {
-  if (arglist->status() != ArgList::PROMISED)
-    arglist->wrapInPromises(calling_env);
-
     Environment* execution_env = func->createExecutionEnv();
-
-    // Perform argument matching:
-    {
-        ClosureContext context(this, calling_env, func,
-                               func->environment(), arglist->list());
-	func->matcher()->match(execution_env, arglist);
-    }
+    arglist->wrapInPromises(calling_env);
+    matchArgsIntoEnvironment(func, calling_env, arglist, execution_env);
 
     // If this is a method call, merge in supplementary bindings and modify
     // calling_env.
@@ -254,7 +294,20 @@ Environment* Expression::getMethodCallingEnv() {
   while (fctxt && fctxt->function()->sexptype() == SPECIALSXP)
       fctxt = FunctionContext::innermost(fctxt->nextOut());
   return (fctxt ? fctxt->callEnvironment() : Environment::global());
+}
 
+void Expression::visitReferents(const_visitor* v) const
+{
+    const GCNode* function = m_cache.m_function.get();
+    ConsCell::visitReferents(v);
+    if (function)
+	(*v)(function);
+}
+
+void Expression::detachReferents()
+{
+    m_cache.m_function = nullptr;
+    ConsCell::detachReferents();
 }
 
 const char* Expression::typeName() const

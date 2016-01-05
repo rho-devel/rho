@@ -217,6 +217,22 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
     return pair<bool, RObject*>(false, nullptr);
 }
 
+RObject* ArgList::get(int position) const {
+    ConsCell* cell = m_list.get();
+    for (int i = 0; i < position && cell != nullptr; i++) {
+	cell = cell->tail();
+    }
+    return cell ? cell->car() : nullptr;
+}
+
+const RObject* ArgList::getTag(int position) const {
+    ConsCell* cell = m_list.get();
+    for (int i = 0; i < position && cell != nullptr; i++) {
+	cell = cell->tail();
+    }
+    return cell ? cell->tag() : nullptr;
+}
+
 bool ArgList::has3Dots() const {
   for (const ConsCell& cell : *list()) {
     if (cell.car() == R_DotsSymbol)

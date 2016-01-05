@@ -221,6 +221,14 @@ namespace CXXR {
 	 */
 	std::pair<bool, RObject*> firstArg(Environment* env);
 
+        /** @brief Return the argument at the specified position.
+         */
+        RObject* get(int position) const;
+
+        /** @brief Return the tag at the specified position.
+         */
+        const RObject* getTag(int position) const;
+
 	/** @brief Access the argument list as a PairList.
 	 *
 	 * @return pointer, possibly null, to the list of arguments in

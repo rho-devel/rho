@@ -31,12 +31,14 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
+#include "CXXR/FunctionBase.h"
 #include "CXXR/PairList.h"
 
 #ifdef __cplusplus
 
 namespace CXXR {
     class ArgList;
+    class ArgMatchInfo;
     class BuiltInFunction;
     class Closure;
     class Frame;
@@ -143,10 +145,17 @@ namespace CXXR {
 	Expression* clone() const override;
         RObject* evaluate(Environment* env) override;
 	const char* typeName() const override;
+
+	// For GCNode
+	void visitReferents(const_visitor* v) const override;
+    protected:
+	void detachReferents() override;
     private:
 	// Declared private to ensure that Expression objects are
 	// allocated only using 'new':
 	~Expression() {}
+
+        FunctionBase* getFunction(Environment* env) const;
 
         RObject* evaluateClosureCall(const Closure* func,
 				     Environment* env,
@@ -174,7 +183,22 @@ namespace CXXR {
                                          Frame* newframe);
         static Environment* getMethodCallingEnv();
 
-        Expression& operator=(const Expression&) = delete;
+	void matchArgsIntoEnvironment(const Closure* func,
+				      Environment* calling_env,
+				      ArgList* arglist,
+				      Environment* execution_env) const;
+
+	// Object used for recording details from previous evaluations of
+	// this expression, for the purpose of optimizing future evaluations.
+	// In the future, this will likely include type recording as well.
+        mutable struct {
+	    GCEdge<const FunctionBase> m_function;
+	    GCEdge<const PairList> m_args;
+
+            const ArgMatchInfo* m_arg_match_info;
+	} m_cache;
+
+	Expression& operator=(const Expression&) = delete;
     };
 } // namespace CXXR
 
