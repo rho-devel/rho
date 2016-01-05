@@ -65,10 +65,8 @@ String::String(char* character_storage,
       m_symbol(nullptr),
       m_ascii(isAscii)
 {
-    if (character_storage) {
-	memcpy(character_storage, text.data(), text.size());
-	character_storage[text.size()] = '\0';  // Null terminated.
-    }
+    memcpy(character_storage, text.data(), text.size());
+    character_storage[text.size()] = '\0';  // Null terminated.
     m_data = character_storage;
 
     switch(m_encoding) {
