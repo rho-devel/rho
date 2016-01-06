@@ -36,6 +36,7 @@
 #ifdef __cplusplus
 
 #include <map>
+#include <vector>
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
@@ -62,10 +63,6 @@ namespace CXXR {
      * arguments passed to BuiltInFunction::apply() are evaluated
      * before being passed on to the encapsulated C/C++ function (CR's
      * BUILTINSXP), or are passed on unevaluated (SPECIALSXP).
-     *
-     * A BuiltInFunction object is implemented essentially as an
-     * offset into a table of function information, which in CXXR is a
-     * private static member (<tt>s_function_table</tt>) of this class.
      */
     class BuiltInFunction : public FunctionBase {
     public:
@@ -126,7 +123,7 @@ namespace CXXR {
 	 */
 	int arity() const
 	{
-	    return s_function_table[m_offset].arity;
+            return m_arity;
 	}
 
 	/** @brief Report error if argument list is wrong length.
@@ -168,7 +165,7 @@ namespace CXXR {
 	 */
 	Kind kind() const
 	{
-	    return s_function_table[m_offset].gram.kind;
+	    return m_gram.kind;
 	}
 
 	/** @brief Name of function.
@@ -177,7 +174,7 @@ namespace CXXR {
 	 */
 	const char* name() const
 	{
-	    return s_function_table[m_offset].name;
+	    return m_name.c_str();
 	}
 
 	/** @brief Get a pointer to a BuiltInFunction object.
@@ -232,7 +229,7 @@ namespace CXXR {
 	 */
 	Precedence precedence() const
 	{
-	    return s_function_table[m_offset].gram.precedence;
+	    return m_gram.precedence;
 	}
 
 	// SOFT_ON signifies that result printing should be enabled
@@ -260,7 +257,7 @@ namespace CXXR {
 	 */
 	bool rightAssociative() const
 	{
-	    return s_function_table[m_offset].gram.rightassoc;
+	    return m_gram.rightassoc;
 	}
 
 	/** @brief The names by which this type is known in R.
@@ -284,7 +281,7 @@ namespace CXXR {
 	 */
 	unsigned int variant() const
 	{
-	    return s_function_table[m_offset].variant;
+	    return m_variant;
 	}
 
 	/** @brief Must this function be called via .Internal()?
@@ -294,7 +291,7 @@ namespace CXXR {
 	 */
 	bool viaDotInternal() const
 	{
-	    return (s_function_table[m_offset].flags%100)/10 == 1;
+	    return m_via_dot_internal;
 	}
 
 	/** @brief Does this function create a frame visible in traceback()?
@@ -398,32 +395,42 @@ namespace CXXR {
 	    unsigned int rightassoc;
 	};
 
-	struct TableEntry {
-	    const char* name;  // name of function
-	    CCODE cfun;        // pointer to relevant do_xxx function
-            QuickInvokeFunction quick_function;
-	    unsigned int variant;  // used to select alternative
-				   // behaviours within the do_xxx
-				   // function
-	    unsigned int flags;  // misc flags: see names.cpp
-	    int	arity;  // function arity; -1 means 'any'
-	    PPinfo gram;  // 'pretty-print' information
+	BuiltInFunction(const char*,
+			CCODE,
+			unsigned int,
+			unsigned int,
+			int,
+			PPinfo,
+			unsigned int offset);
+	BuiltInFunction(const char*,
+			QuickInvokeFunction,
+			unsigned int,
+			unsigned int,
+			int,
+			PPinfo,
+			unsigned int offset);
+	BuiltInFunction(const char*,
+			unsigned int,
+			unsigned int,
+			int,
+			PPinfo,
+			unsigned int offset);
 
-          TableEntry(const char*,
-                     CCODE,
-                     unsigned int,
-                     unsigned int,
-                     int, 
-                     PPinfo);
-          TableEntry(const char*,
-                     QuickInvokeFunction,
-                     unsigned int,
-                     unsigned int,
-                     int, 
-                     PPinfo);
+	struct TableEntry {
+	    template<typename FUNCTION>
+	    TableEntry(const char* name, FUNCTION function,
+		       unsigned int variant, unsigned int flags, int arity,
+		       PPinfo ppinfo)
+		: function(new BuiltInFunction(name, function, variant,
+					       flags, arity, ppinfo,
+					       s_next_offset++))
+	    {}
+
+	    BuiltInFunction* function;
+	    static unsigned int s_next_offset;
 	};
 
-	static TableEntry s_function_table[];
+	static const std::vector<TableEntry>& getFunctionTable();
 
 	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
         static std::pair<map*, map*> getLookupTables();
@@ -438,33 +445,21 @@ namespace CXXR {
 	CCODE m_function;
         QuickInvokeFunction m_quick_function;
 
+	std::string m_name;  // name of function
+	unsigned int m_variant;  // used to select alternative
+	                         // behaviours within the do_xxx
+	    			 // function
 	ResultPrintingMode m_result_printing_mode;
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
 			     // applied.
-
-	/** @brief Constructor.
-	 *
-	 * @param offset The required table offset.  (Not
-	 *          range-checked in any way.)  Whether the
-	 *          constructed object is a BUILTINSXP or a SPECIALSXP
-	 *          is determined from the table entry.
-	 */
-	BuiltInFunction(unsigned int offset);
+	bool m_via_dot_internal; // Must this function be called via .Internal?
+	int m_arity;         // function arity; -1 means 'any'
+	PPinfo m_gram;       // 'pretty-print' information
 
 	// Declared private to ensure that BuiltInFunction objects are
 	// allocated only using 'new'.
 	~BuiltInFunction();
-
-	/** @brief Find a built-in function within the function table.
-	 *
-	 * @param name Name of the sought built-in function.
-	 *
-	 * @return Index (counting from 0) of the function within the
-	 * table, or -1 if there is no built-in function with the
-	 * given name.
-	 */
-	static int indexInTable(const char* name);
 
 	// Internal dispatch is used a lot, but there most of the time
 	// no dispatch is needed because no objects are involved.

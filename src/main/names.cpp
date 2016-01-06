@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
 #include <Defn.h>
@@ -99,7 +100,9 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
+const std::vector<BuiltInFunction::TableEntry>&
+BuiltInFunction::getFunctionTable() {
+    static std::vector<BuiltInFunction::TableEntry> s_function_table = {
 
 /* printname	c-entry		quick-entry    offset	eval	arity	pp-kind	     precedence	rightassoc
  * ---------	-------		------	----	-----	-------      ----------	----------*/
@@ -982,10 +985,9 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"curlVersion", do_curlVersion, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"curlGetHeaders",do_curlGetHeaders,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"curlDownload",do_curlDownload, 0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-
-{NULL,          (CCODE)NULL,    0,      0,      0,      {PP_INVALID, PREC_FN,   0}},
 };
-
+    return s_function_table;
+}
 
 /* Table of special names.  These are marked as special with
    SET_SPECIAL_SYMBOL.  Environments on the function call stack that
@@ -1013,18 +1015,18 @@ const char *Symbol::s_special_symbol_names[] = {
 std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
 BuiltInFunction::createLookupTables()
 {
+    GCManager::GCInhibitor no_gc;
     map* primitive_function_cache = new map();
     map* internal_function_cache = new map();
 
-    for (int i = 0; s_function_table[i].name; ++i) {
-	const char* symname = s_function_table[i].name;
-	Symbol* sym = Symbol::obtain(symname);
-	GCStackRoot<BuiltInFunction> bif(new BuiltInFunction(i));
-	if (bif->viaDotInternal()) {
-	    (*internal_function_cache)[sym] = bif;
+    for (BuiltInFunction::TableEntry entry : getFunctionTable()) {
+	BuiltInFunction* function = entry.function;
+	Symbol* sym = Symbol::obtain(function->name());
+	if (function->viaDotInternal()) {
+	    (*internal_function_cache)[sym] = function;
 	}
 	else {
-	    (*primitive_function_cache)[sym] = bif;
+	    (*primitive_function_cache)[sym] = function;
 	}
     }
     return std::make_pair(primitive_function_cache, internal_function_cache);

@@ -53,7 +53,9 @@ namespace CXXR {
     }
 }
 
-// s_function_table is in names.cpp
+// BuiltInFunction::getFunctionTable() is in names.cpp
+
+unsigned int BuiltInFunction::TableEntry::s_next_offset = 0;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -76,14 +78,43 @@ namespace CXXR {
 // using Rf_errorcall() rather than Rf_error(), so that it can
 // specifically be attributed to the 'syntactical' function.
 
-BuiltInFunction::BuiltInFunction(unsigned int offset)
-    : FunctionBase(s_function_table[offset].flags%10
-		   ? BUILTINSXP : SPECIALSXP),
-      m_offset(offset), m_function(s_function_table[offset].cfun),
-      m_quick_function(s_function_table[offset].quick_function)
+BuiltInFunction::BuiltInFunction(const char* name,
+				 CCODE cfun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
 {
-    const std::string& name = s_function_table[offset].name;
-    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
+    m_function = cfun;
+    m_quick_function = nullptr;
+}
+
+BuiltInFunction::BuiltInFunction(const char* name,
+				 QuickInvokeFunction fun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+{
+    m_function = nullptr;
+    m_quick_function = fun;
+}
+
+BuiltInFunction::BuiltInFunction(const char* name,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
+      m_name(name), m_variant(variant), m_arity(arity), m_gram(ppinfo),
+      m_via_dot_internal((flags%100)/10 == 1), m_offset(offset)
+{
+    unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
     m_transparent = (viaDotInternal()
 		     || m_function == do_External
@@ -99,8 +130,8 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_while
 		     || m_quick_function == do_paren
 		     || (m_function != do_set
-		     	 && name.length() > 2
-		     	 && name.substr(name.length() - 2) == "<-"));
+		     	 && m_name.length() > 2
+		     	 && m_name.substr(m_name.length() - 2) == "<-"));
 }
 
 BuiltInFunction::~BuiltInFunction()
@@ -131,14 +162,6 @@ void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
 			       "%d arguments passed to '%s' which requires %d",
 			       nargs),
 		     nargs, name(), arity());
-}
-
-int BuiltInFunction::indexInTable(const char* name)
-{
-    for (int i = 0; s_function_table[i].name; ++i)
-	if (strcmp(name, s_function_table[i].name) == 0)
-	    return i;
-    return -1;
 }
 
 // BuiltInFunction::createLookupTables() is in names.cpp
@@ -239,23 +262,3 @@ BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generi
 					env, &result, 1, 1);
     return std::make_pair(dispatched, result);
 }
-
-BuiltInFunction::TableEntry::TableEntry(const char* name_,
-					CCODE cfun_,
-					unsigned int variant_,
-					unsigned int flags_,
-					int arity_,
-					PPinfo gram_)
-    : name(name_), cfun(cfun_), quick_function(nullptr),
-      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
-{}
-
-BuiltInFunction::TableEntry::TableEntry(const char* name_,
-					QuickInvokeFunction qfun_,
-					unsigned int variant_,
-					unsigned int flags_,
-					int arity_,
-					PPinfo gram_)
-    : name(name_), cfun(nullptr), quick_function(qfun_),
-      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
-{}
