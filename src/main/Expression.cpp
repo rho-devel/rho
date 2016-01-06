@@ -228,9 +228,9 @@ void Expression::matchArgsIntoEnvironment(const Closure* func,
 	// TODO: Don't cache the matching the first time that the function is
 	// called.  This eliminates additional work and storage for
 	// functions that are only called once.
-	m_cache.m_function = func;
 	ArgList args(getArgs(), ArgList::RAW);
 	m_cache.m_arg_match_info = matcher->createMatchInfo(&args);
+	m_cache.m_function = func;
     }
 
     if (m_cache.m_function == func
@@ -250,12 +250,16 @@ void Expression::matchArgsIntoEnvironment(const Closure* func,
 
 RObject* Expression::invokeClosureImpl(const Closure* func,
                                        Environment* calling_env,
-                                       ArgList* arglist,
+                                       ArgList* parglist,
                                        const Frame* method_bindings) const
 {
+    // We can't modify *parglist, as it's on the other side of a
+    // GCStackFrameboundary, so make a copy instead.
+    ArgList arglist(parglist->list(), parglist->status());
+    arglist.wrapInPromises(calling_env);
+
     Environment* execution_env = func->createExecutionEnv();
-    arglist->wrapInPromises(calling_env);
-    matchArgsIntoEnvironment(func, calling_env, arglist, execution_env);
+    matchArgsIntoEnvironment(func, calling_env, &arglist, execution_env);
 
     // If this is a method call, merge in supplementary bindings and modify
     // calling_env.
@@ -268,7 +272,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     {
       // Evaluate the function.
       ClosureContext context(this, calling_env, func,
-                             execution_env, arglist->list());
+                             execution_env, arglist.list());
       result = func->execute(execution_env);
     }
 
