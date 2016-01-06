@@ -37,6 +37,8 @@
 #include "CXXR/Promise.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
+#include "boost/functional/hash.hpp"
+#include "sparsehash/dense_hash_set"
 
 using namespace std;
 using namespace CXXR;
@@ -156,6 +158,15 @@ void ArgMatcher::matchWithCache(const ArgList* supplied,
     }
 }
 
+struct ArgMatchInfo::Hash {
+    size_t operator()(const ArgMatchInfo* item) const {
+	size_t seed = 0;
+	boost::hash_combine(seed, item->m_num_formals);
+	boost::hash_combine(seed, item->m_values);
+	return seed;
+    }
+};
+
 namespace {
 
 class ClosureMatchCallback : public ArgMatcher::MatchCallback
@@ -241,19 +252,48 @@ private:
     ArgMatchInfo* m_matching;
 };
 
+template<class T>
+struct DereferencedEquality {
+    bool operator()(const T* lhs, const T* rhs) const {
+	if (lhs != nullptr && rhs != nullptr) {
+	    return *lhs == *rhs;
+	}
+	return lhs == rhs;
+    }
+};
+
+typedef google::dense_hash_set<const ArgMatchInfo*, ArgMatchInfo::Hash,
+			       DereferencedEquality<ArgMatchInfo>>
+	ArgMatchInfoCache;
+
+ArgMatchInfoCache createMatchInfoCache() {
+    ArgMatchInfoCache cache;
+    cache.set_empty_key(nullptr);
+    return cache;
+}
+
 }  // namespace
 
 ArgMatchInfo::ArgMatchInfo(int num_formals)
     : m_num_formals(num_formals), m_values(num_formals, -1) { }
 
 const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
+    static ArgMatchInfoCache s_interned_match_infos = createMatchInfoCache();
+
     if (args->has3Dots())
 	return nullptr;
 
     ArgMatchInfo* matching = new ArgMatchInfo(numFormals());
     RecordArgMatchInfoCallback callback(matching);
     match(args, &callback);
-    return matching;
+
+    // If there is an existing ArgMatchInfo with the same values, use that
+    // instead to conserve memory use.
+    auto inserted = s_interned_match_infos.insert(matching);
+    if (!inserted.second) {
+	delete matching;
+    }
+    return *inserted.first;
 }
 
 void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const

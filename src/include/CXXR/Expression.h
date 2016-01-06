@@ -193,8 +193,6 @@ namespace CXXR {
 	// In the future, this will likely include type recording as well.
         mutable struct {
 	    GCEdge<const FunctionBase> m_function;
-	    GCEdge<const PairList> m_args;
-
             const ArgMatchInfo* m_arg_match_info;
 	} m_cache;
 
