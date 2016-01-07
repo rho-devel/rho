@@ -89,6 +89,23 @@ BuiltInFunction::BuiltInFunction(const char* name,
 {
     m_function = cfun;
     m_quick_function = nullptr;
+
+    if (m_function == do_External
+	|| m_function == do_Externalgr
+	|| m_function == do_begin
+	|| m_function == do_break
+	|| m_function == do_dotcall
+	|| m_function == do_for
+	|| m_function == do_if
+	|| m_function == do_internal
+	|| m_function == do_repeat
+	|| m_function == do_return
+	|| m_function == do_while) {
+	m_transparent = true;
+    }
+    if (m_function == do_set) {
+	m_transparent = false;
+    }
 }
 
 BuiltInFunction::BuiltInFunction(const char* name,
@@ -102,6 +119,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 {
     m_function = nullptr;
     m_quick_function = fun;
+
+    if (m_quick_function == do_paren)
+	m_transparent = true;
 }
 
 BuiltInFunction::BuiltInFunction(const char* name,
@@ -111,26 +131,13 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 PPinfo ppinfo,
 				 unsigned int offset)
     : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
-      m_name(name), m_variant(variant), m_arity(arity), m_gram(ppinfo),
-      m_via_dot_internal((flags%100)/10 == 1), m_offset(offset)
+      m_offset(offset), m_name(name), m_variant(variant),
+      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity), m_gram(ppinfo)
 {
     unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
     m_transparent = (viaDotInternal()
-		     || m_function == do_External
-		     || m_function == do_Externalgr
-		     || m_function == do_begin
-		     || m_function == do_break
-		     || m_function == do_dotcall
-		     || m_function == do_for
-		     || m_function == do_if
-		     || m_function == do_internal
-		     || m_function == do_repeat
-		     || m_function == do_return
-		     || m_function == do_while
-		     || m_quick_function == do_paren
-		     || (m_function != do_set
-		     	 && m_name.length() > 2
+		     || (m_name.length() > 2
 		     	 && m_name.substr(m_name.length() - 2) == "<-"));
 }
 
