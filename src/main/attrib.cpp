@@ -1485,7 +1485,8 @@ SEXP attribute_hidden do_slotgets(SEXP call, SEXP op, SEXP args, SEXP env)
     SETCADR(args, input);
     UNPROTECT(1); // 'input' is now protected
     
-    if(DispatchOrEval(call, op, "@<-", args, env, &ans, 0, 0))
+    if(DispatchOrEval(call, op, "@<-", args, env, &ans,
+		      MissingArgHandling::Keep, 0))
 	return(ans);
     
     PROTECT(obj = CAR(ans));

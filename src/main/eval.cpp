@@ -1498,7 +1498,8 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden Rf_evalListKeepMissing(SEXP el, SEXP rho)
 {
     ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
-    arglist.evaluate(SEXP_downcast<Environment*>(rho), true);
+    arglist.evaluate(SEXP_downcast<Environment*>(rho),
+		     MissingArgHandling::Keep);
     return const_cast<PairList*>(arglist.list());
 }
 
@@ -1728,7 +1729,8 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
  */
 attribute_hidden
 int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
-		   SEXP rho, SEXP *ans, int dropmissing, int argsevald)
+		      SEXP rho, SEXP *ans, MissingArgHandling dropmissing,
+		      int argsevald)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
     FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
@@ -1803,7 +1805,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	}
     }
     if (arglist.status() != ArgList::EVALUATED)
-	arglist.evaluate(callenv, !dropmissing);
+	arglist.evaluate(callenv, dropmissing);
     *ans = const_cast<PairList*>(arglist.list());
     return 0;
 }

@@ -801,7 +801,8 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Attempt method dispatch. */
 
-    if (DispatchOrEval(call, op, "c", args, env, &ans, 1, 1))
+    if (DispatchOrEval(call, op, "c", args, env, &ans, MissingArgHandling::Drop,
+		       1))
 	return(ans);
     return do_c_dflt(call, op, ans, env);
 }

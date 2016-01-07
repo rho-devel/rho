@@ -199,7 +199,7 @@ namespace CXXR {
 	 *
 	 * @return the specified element.
 	 */
-	RObject* const operator[](size_t index) const
+	const RObject* operator[](size_t index) const
 	{
 	    return m_vector[index];
 	}

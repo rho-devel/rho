@@ -35,6 +35,12 @@
 namespace CXXR {
     class DottedArgs;
 
+    enum class MissingArgHandling {
+	Drop,
+	Keep,
+	Error,
+    };
+
     /** @brief Class encapsulating the argument list of a FunctionBase.
      *
      * ArgList objects must be declared on the processor stack
@@ -146,7 +152,9 @@ namespace CXXR {
 	 * @note This function is intended within CXXR to supersede
 	 * CR's evalList() and evalListKeepMissing().
 	 */
-        void evaluate(Environment* env, bool allow_missing = false);
+        void evaluate(Environment* env,
+		      MissingArgHandling allow_missing
+		        = MissingArgHandling::Error);
 
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
@@ -183,7 +191,8 @@ namespace CXXR {
 	 */
 	void evaluateToArray(Environment* env,
 			     int num_args, RObject** evaluated_args,
-			     bool allow_missing = false);
+			     MissingArgHandling allow_missing
+			         = MissingArgHandling::Error);
 
 	/** @brief Get the first argument.
 	 *
@@ -375,7 +384,7 @@ namespace CXXR {
 
 	RObject* evaluateSingleArgument(const RObject* arg,
 					Environment* env,
-					bool allow_missing,
+					MissingArgHandling allow_missing,
 					int arg_number);
 
 	void setList(PairList* list) {

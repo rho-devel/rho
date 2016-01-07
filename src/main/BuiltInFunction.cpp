@@ -259,6 +259,7 @@ BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generi
 					const_cast<BuiltInFunction*>(this),
 					generic,
 					const_cast<PairList*>(arglist.list()),
-					env, &result, 1, 1);
+					env, &result, MissingArgHandling::Drop,
+					1);
     return std::make_pair(dispatched, result);
 }

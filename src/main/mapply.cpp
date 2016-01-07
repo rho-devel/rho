@@ -55,9 +55,11 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
 	    if (length_op == nullptr) length_op = R_Primitive("length");
 	    // DispatchOrEval() needs 'args' to be a pairlist
 	    SEXP ans, tmp2 = PROTECT(list1(tmp1));
-	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans, 0, 1))
+	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans,
+			       CXXR::MissingArgHandling::Keep, 1)) {
 		lengths[i] = R_xlen_t( (TYPEOF(ans) == REALSXP ?
 					REAL(ans)[0] : asInteger(ans)));
+	    }
 	    UNPROTECT(1);
 	}
 	if (lengths[i] == 0) zero++;
