@@ -59,7 +59,7 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
     BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
     PairList* argspl = SEXP_downcast<PairList*>(args);
     Environment* envir = SEXP_downcast<Environment*>(env);
-    opfun->checkNumArgs(argspl, callx);
+    opfun->checkNumArgs(listLength(argspl), callx);
     Expression* innercall = dynamic_cast<Expression*>(argspl->car());
     if (!innercall)
 	Rf_errorcall(call, _("invalid .Internal() argument"));

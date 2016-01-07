@@ -503,7 +503,7 @@ void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
     BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
     PairList* arglist = SEXP_downcast<PairList*>(args);
     Expression* callx = SEXP_downcast<Expression*>(call);
-    func->checkNumArgs(arglist, callx);
+    func->checkNumArgs(listLength(arglist), callx);
 }
 
 void attribute_hidden Rf_check1arg(const RObject* arg, const RObject* call,

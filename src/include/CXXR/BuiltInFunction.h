@@ -128,21 +128,6 @@ namespace CXXR {
 
 	/** @brief Report error if argument list is wrong length.
 	 *
-	 * This function raises an error if \a args is not of a
-	 * permissible length for all call to this BuiltInFunction.
-	 *
-	 * @param args Argument list to be checked, possibly null.
-	 *
-	 * @param call The call being processed (for error reporting).
-	 *
-	 * @note This would be called checkArity(), except that in
-	 * code inherited from CR this would get macro-expanded to
-	 * Rf_checkArityCall.
-	 */
-	void checkNumArgs(const PairList* args, const Expression* call) const;
-
-	/** @brief Report error if argument list is wrong length.
-	 *
 	 * This function raises an error if \a num_args is not a
 	 * permissible length for all call to this BuiltInFunction.
 	 *
@@ -521,27 +506,6 @@ namespace CXXR {
 
 // Old-style accessor functions.  Get rid of these in due course.
 
-inline int PRIMARITY(SEXP x)
-{
-    using namespace CXXR;
-    BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-    return bif.arity();
-}
-
-inline int PRIMINTERNAL(SEXP x)
-{
-    using namespace CXXR;
-    BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-    return bif.viaDotInternal();
-}
-
-inline int PRIMPRINT(SEXP x)
-{
-    using namespace CXXR;
-    BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-    return bif.printHandling();
-}
-  
 extern "C" {
 #endif
 

@@ -146,14 +146,6 @@ BuiltInFunction::~BuiltInFunction()
     assert(0 && "BuiltInFunction's destructor should never be called");
 }
 
-void BuiltInFunction::checkNumArgs(const PairList* args,
-				   const Expression* call) const
-{
-    if (arity() >= 0) {
-	checkNumArgs(listLength(args), call);
-    }
-}
-
 void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
     const
 {
@@ -224,14 +216,6 @@ BuiltInFunction* BuiltInFunction::obtainInternal(const Symbol* name)
 const char* BuiltInFunction::typeName() const
 {
     return sexptype() == SPECIALSXP ? "special" : "builtin";
-}
-
-static bool anyArgHasClass(int num_args, RObject **args) {
-    for (int i = 0; i < num_args; i++) {
-	if (Rf_isObject(args[i]))
-	    return true;
-    }
-    return false;
 }
 
 std::pair<bool, RObject*>
