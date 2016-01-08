@@ -40,7 +40,6 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue;
 
-    checkArity(op,args);
 #define find_char_fun \
     if (isValidString(CAR(args))) {				\
 	SEXP s;							\
@@ -75,7 +74,6 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* primitives .primTrace and .primUntrace */
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     check1arg(args, call, "x");
 
     find_char_fun
@@ -101,7 +99,6 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP onOff = args[0];
     bool trace = op->variant() == 0;  // Otherwise it's debug.
     Rboolean prev = Rboolean(trace ? FunctionBase::tracingEnabled()
@@ -138,7 +135,6 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP object;
     char buffer[21];
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     object = args[0];
@@ -162,7 +158,6 @@ SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR
 {
     SEXP object;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     object=args[0];

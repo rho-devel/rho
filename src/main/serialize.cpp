@@ -2162,8 +2162,6 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
     R_pstream_format_t type;
     SEXP (*hook)(SEXP, SEXP);
 
-    op->checkNumArgs(num_args, call);
-
     object = args[0];
     con = getConnection(Rf_asInteger(args[1]));
 
@@ -2230,8 +2228,6 @@ do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunc
     SEXP fun, ans;
     SEXP (*hook)(SEXP, SEXP);
     Rboolean wasopen;
-
-    op->checkNumArgs(num_args, call);
 
     con = getConnection(Rf_asInteger(args[0]));
 
@@ -2611,8 +2607,6 @@ static char *ptr[NC];
 SEXP attribute_hidden 
 do_lazyLoadDBflush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     int i;
     const char *cfile = CHAR(STRING_ELT(args[0], 0));
 
@@ -2816,7 +2810,6 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
     Rboolean err = FALSE;
     SEXP val;
 
-    op->checkNumArgs(num_args, call);
     key = args[0]; args = (args + 1);
     file = args[0]; args = (args + 1);
     compsxp = args[0]; args = (args + 1);
@@ -2845,7 +2838,6 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
 SEXP attribute_hidden
 do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_getVarsFromFrame(args[0], args[1], args[2]);
 }
 
@@ -2853,7 +2845,6 @@ do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunctio
 SEXP attribute_hidden
 do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP value, file, ascii, compsxp, hook;
     value = args[0]; args = (args + 1);
     file = args[0]; args = (args + 1);
@@ -2866,7 +2857,6 @@ do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
 SEXP attribute_hidden
 do_serialize(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     if (op->variant() == 2) return R_unserialize(args[0], args[1]);
 
     SEXP object, icon, type, ver, fun;

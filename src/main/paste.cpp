@@ -72,8 +72,6 @@ SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	use_sep = (op->variant() == 0);
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
-
     /* We use formatting and so we must initialize printing. */
 
     PrintDefaults();
@@ -295,8 +293,6 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
     const char *s, *csep, *cbuf;
     char *buf;
 
-    op->checkNumArgs(num_args, call);
-
     /* Check the arguments */
 
     x = args[0];
@@ -387,7 +383,6 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
     const char *strp;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     PrintDefaults();
     scikeep = R_print.scipen;
 
@@ -597,7 +592,6 @@ SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR
     SEXP x;
     int digits, nsmall, no = 1, w, d, e, wi, di, ei;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     R_xlen_t n = XLENGTH(x);
     PrintDefaults();

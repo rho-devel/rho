@@ -115,7 +115,6 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
     regamatch_t match;
     int rc, cflags = REG_NOSUB;
 
-    op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
     vec = args[0]; args = (args + 1);
     opt_icase = asLogical(args[0]); args = (args + 1);
@@ -511,7 +510,6 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     int rc, cflags = REG_EXTENDED;
 
-    op->checkNumArgs(num_args, call);
     x = args[0]; args = (args + 1);
     y = args[0]; args = (args + 1);
     opt_costs = args[0]; args = (args + 1);
@@ -756,8 +754,6 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
     int j, so, patlen;
     R_xlen_t i, n;
     int rc, cflags = REG_EXTENDED;
-
-    op->checkNumArgs(num_args, call);
 
     pat = args[0]; args = (args + 1);
     vec = args[0]; args = (args + 1);

@@ -507,7 +507,6 @@ SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP ans, rng, norm;
 
-    op->checkNumArgs(num_args, call);
     GetRNGstate(); /* might not be initialized */
     PROTECT(ans = allocVector(INTSXP, 2));
     INTEGER(ans)[0] = RNG_kind;
@@ -531,7 +530,6 @@ SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::
     SEXP skind, nkind;
     int seed;
 
-    op->checkNumArgs(num_args, call);
     if(!isNull(args[0])) {
 	seed = asInteger(args[0]);
 	if (seed == NA_INTEGER)

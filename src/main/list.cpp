@@ -101,8 +101,6 @@ SEXP attribute_hidden do_allnames(/*const*/ CXXR::Expression* call, const CXXR::
     int i, savecount;
     NameWalkData data = {nullptr, 0, 0, 0, 0, 0};
 
-    op->checkNumArgs(num_args, call);
-
     expr = args[0];
     args = (args + 1);
 

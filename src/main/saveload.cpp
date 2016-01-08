@@ -1947,9 +1947,6 @@ SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int len, j, version, ep;
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
-
     if (TYPEOF(args[0]) != STRSXP)
 	error(_("first argument must be a character vector"));
     if (!isValidStringF(args[1]))
@@ -2066,8 +2063,6 @@ SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP fname, aenv;
     GCStackRoot<> val;
     FILE *fp;
-
-    op->checkNumArgs(num_args, call);
 
     if (!isValidString(fname = args[0]))
 	error(_("first argument must be a file name"));
@@ -2231,8 +2226,6 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
     R_pstream_format_t type;
     CXXRCONST char *magic;
 
-    op->checkNumArgs(num_args, call);
-
     if (TYPEOF(args[0]) != STRSXP)
 	error(_("first argument must be a character vector"));
     list = args[0];
@@ -2337,8 +2330,6 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
     unsigned char buf[6];
     size_t count;
     Rboolean wasopen;
-
-    op->checkNumArgs(num_args, call);
 
     con = getConnection(asInteger(args[0]));
     wasopen = con->isopen;

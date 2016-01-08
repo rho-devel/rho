@@ -233,13 +233,11 @@ char *R_HomeDir(void)
 /* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_interactive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return ScalarLogical( (R_Interactive) ? 1 : 0 );
 }
 
 SEXP attribute_hidden do_tempdir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return mkString(R_TempDir);
 }
 
@@ -251,7 +249,6 @@ SEXP attribute_hidden do_tempfile(/*const*/ CXXR::Expression* call, const CXXR::
     char *tm;
     int i, n1, n2, n3, slen;
 
-    op->checkNumArgs(num_args, call);
     pattern = args[0]; n1 = length(pattern); args = (args + 1);
     tempdir = args[0]; n2 = length(tempdir); args = (args + 1);
     fileext = args[0]; n3 = length(fileext);
@@ -356,8 +353,6 @@ SEXP attribute_hidden do_getenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int i, j;
     SEXP ans;
 
-    op->checkNumArgs(num_args, call);
-
     if (!isString(args[0]))
 	error(_("wrong type for argument"));
 
@@ -451,8 +446,6 @@ SEXP attribute_hidden do_setenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int i, n;
     SEXP ans, nm, vars;
 
-    op->checkNumArgs(num_args, call);
-
     if (!isString(nm = args[0]))
 	error(_("wrong type for argument"));
     if (!isString(vars = args[1]))
@@ -488,8 +481,6 @@ SEXP attribute_hidden do_unsetenv(/*const*/ CXXR::Expression* call, const CXXR::
 {
     int i, n;
     SEXP ans, vars;
-
-    op->checkNumArgs(num_args, call);
 
     if (!isString(vars = args[0]))
 	error(_("wrong type for argument"));
@@ -583,7 +574,6 @@ SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::Bui
     R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
     Rboolean isRawlist = FALSE;
 
-    op->checkNumArgs(num_args, call);
     if(isNull(x)) {  /* list locales */
 #ifdef HAVE_ICONVLIST
 	cnt = 0;
@@ -1788,7 +1778,6 @@ SEXP attribute_hidden do_proctime(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP ans, nm;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(ans = allocVector(REALSXP, 5));
     PROTECT(nm = allocVector(STRSXP, 5));
     R_getProcTime(REAL(ans));
@@ -1829,7 +1818,6 @@ do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* o
 	old_elapsed = elapsedLimitValue;
     int transient;
 
-    op->checkNumArgs(num_args, call);
     cpu = asReal(args[0]);
     elapsed = asReal(args[1]);
     transient = asLogical(args[2]);
@@ -1854,7 +1842,6 @@ do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunc
 {
     double cpu, elapsed, data[5];
 
-    op->checkNumArgs(num_args, call);
     cpu = asReal(args[0]);
     elapsed = asReal(args[1]);
     R_getProcTime(data);
@@ -1897,7 +1884,6 @@ SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::Buil
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 #endif
 
-    op->checkNumArgs(num_args, call);
     if (!isString(x = args[0]))
 	error(_("invalid '%s' argument"), "paths");
     if (!XLENGTH(x)) return allocVector(STRSXP, 0);

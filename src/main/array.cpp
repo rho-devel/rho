@@ -75,7 +75,6 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
     R_xlen_t lendat;
 
-    op->checkNumArgs(num_args, call);
     vals = args[0]; args = (args + 1);
     switch(TYPEOF(vals)) {
 	case LGLSXP:
@@ -309,7 +308,6 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP xdims;
     int i, n, shorten;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     if ((xdims = getAttrib(x, R_DimSymbol)) != R_NilValue) {
 	n = LENGTH(xdims);
@@ -328,7 +326,6 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     SEXP x = args[0];
@@ -428,7 +425,6 @@ SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP x, ans;
     int i, j, nr, nc;
 
-    op->checkNumArgs(num_args, call);
     /* This is the dimensions vector */
     x = args[0];
     if (!isInteger(x) || LENGTH(x) != 2)
@@ -951,7 +947,6 @@ SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR:
     int ldim, ncol = 0, nrow = 0;
     R_xlen_t len = 0;
 
-    op->checkNumArgs(num_args, call);
     a = args[0];
 
     if (isVector(a)) {
@@ -1091,8 +1086,6 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
-
-    op->checkNumArgs(num_args, call);
 
     a = args[0];
     if (!isArray(a))
@@ -1260,7 +1253,6 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int type;
     Rboolean NaRm, keepNA;
 
-    op->checkNumArgs(num_args, call);
     x = args[0]; args = (args + 1);
     R_xlen_t n = asVecSize(args[0]); args = (args + 1);
     R_xlen_t p = asVecSize(args[0]); args = (args + 1);
@@ -1430,7 +1422,6 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
 
-    op->checkNumArgs(num_args, call);
     vals = args[0];
     /* at least NULL can get here */
     switch(TYPEOF(vals)) {
@@ -1548,7 +1539,6 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     snr = args[1];
     snc = args[2];
@@ -1600,7 +1590,6 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
 SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int nprot = 1;
-    op->checkNumArgs(num_args, call);
 
     SEXP r = args[0]; args = (args + 1);
     SEXP b = args[0]; args = (args + 1);
@@ -1644,7 +1633,6 @@ SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR:
 /* max.col(m, ties.method) */
 SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP m = args[0];
     int method = asInteger(args[1]);
     int nr = nrows(m), nc = ncols(m), nprot = 1;

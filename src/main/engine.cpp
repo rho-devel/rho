@@ -2926,14 +2926,12 @@ void GEplaySnapshot(SEXP snapshot, pGEDevDesc dd)
 /* recordPlot() */
 SEXP do_getSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
     return GEcreateSnapshot(GEcurrentDevice());
 }
 
 /* replayPlot() */
 SEXP do_playSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
     GEplaySnapshot(CAR(args), GEcurrentDevice());
     return R_NilValue;
 }

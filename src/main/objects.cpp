@@ -791,7 +791,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 /* primitive */
 SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     RObject* object = args[0];
@@ -878,8 +877,6 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
 
 SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     return inherits3(/* x = */ args[0],
 		     /* what = */ args[1],
 		     /* which = */ args[2]);
@@ -1106,9 +1103,6 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "f");
-
     if(!ptr) {
 	Rf_warningcall(call,
 		    _("'standardGeneric' called without methods dispatch enabled (will be ignored)"));
@@ -1116,10 +1110,11 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
 	ptr = R_get_standardGeneric_ptr();
     }
 
-    op->checkNumArgs(num_args, call); /* set to -1 */
     if (num_args == 0 || !Rf_isValidStringF(args[0]))
 	Rf_errorcall(call,
 		  _("argument to 'standardGeneric' must be a non-empty character string"));
+
+    Rf_check1arg(tags, call, "f");
     arg = args[0];
 
     PROTECT(fdef = get_this_generic(args, num_args));
@@ -1556,7 +1551,6 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 
 SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP object = args[0];
     int flag = Rf_asLogical(args[1]), complete = Rf_asInteger(args[2]);
     if(length(args[1]) != 1 || flag == NA_INTEGER)

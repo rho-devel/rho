@@ -94,8 +94,6 @@ SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR
 {
     int onexit;
 
-    op->checkNumArgs(num_args, call);
-
     if (TYPEOF(args[0]) != ENVSXP && TYPEOF(args[0]) != EXTPTRSXP)
 	error(_("first argument must be environment or external pointer"));
     if (TYPEOF(args[1]) != CLOSXP)
@@ -130,8 +128,6 @@ SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR:
     int gap;
     SEXP old = ScalarLogical(gc_force_wait > 0);
 
-    op->checkNumArgs(num_args, call);
-
     if (isLogical(args[0])) {
 	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
 	if (on == NA_LOGICAL) gap = NA_INTEGER;
@@ -151,7 +147,6 @@ SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR
     Rboolean inhibit;
     SEXP old = ScalarInteger(gc_force_gap);
 
-    op->checkNumArgs(num_args, call);
     gap = asInteger(args[0]);
     wait = asInteger(args[1]);
     inhibit = CXXRCONSTRUCT(Rboolean, asLogical(args[2]));
@@ -162,7 +157,6 @@ SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR
 
 SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     std::ostream* report_os = GCManager::setReporting(nullptr);
     int want_reporting = asLogical(args[0]);
     if (want_reporting != NA_LOGICAL)
@@ -187,7 +181,6 @@ void attribute_hidden get_current_mem(size_t *smallvsize,
 
 SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     std::ostream* report_os
 	= GCManager::setReporting(asLogical(args[0]) ? &std::cerr : nullptr);
     bool reset_max = asLogical(args[1]);
@@ -425,7 +418,6 @@ void R_gc(void)
 SEXP attribute_hidden do_memlimits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    op->checkNumArgs(num_args, call);
     PROTECT(ans = allocVector(INTSXP, 2));
     INTEGER(ans)[0] = NA_INTEGER;
     INTEGER(ans)[1] = NA_INTEGER;

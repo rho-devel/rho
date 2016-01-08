@@ -77,7 +77,6 @@ R_xlen_t asVecSize(SEXP x)
 SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
-    op->checkNumArgs(num_args, call);
 
     if (!isString(args[0]) || length(args[0]) == 0)
 	error(_("invalid first argument"));
@@ -114,7 +113,6 @@ SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP names, values, val, expr, eenv, aenv, expr0;
     R_xlen_t i;
 
-    op->checkNumArgs(num_args, call);
     names = args[0]; args = (args + 1);
     if (!isString(names))
 	error(_("invalid first argument"));
@@ -195,7 +193,6 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
 
-    checkArity(op,args);
     if (TYPEOF(CAR(args)) == STRSXP && length(CAR(args))==1) {
 	PROTECT(s = installTrChar(STRING_ELT(CAR(args), 0)));
 	SETCAR(args, findFun(s, rho));
@@ -240,7 +237,6 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
 	return duplicate(FORMALS(args[0]));
     else
@@ -249,7 +245,6 @@ SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::B
 
 SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
 	return duplicate(BODY(args[0]));
     else return R_NilValue;
@@ -266,7 +261,6 @@ SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::
 
 SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
 	return CLOENV(args[0]);
     else if (args[0] == R_NilValue)
@@ -276,7 +270,6 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
 SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     GCStackRoot<> s(args[0]);
@@ -311,8 +304,6 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP enclos, size, ans;
     int hash;
 
-    op->checkNumArgs(num_args, call);
-
     hash = asInteger(args[0]);
     args = (args + 1);
     enclos = args[0];
@@ -338,7 +329,6 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP arg = args[0];
 
     if( !isEnvironment(arg)  &&
@@ -370,7 +360,6 @@ static Rboolean R_IsImportsEnv(SEXP env)
 SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP env, parent;
-    op->checkNumArgs(num_args, call);
 
     env = args[0];
     if (isNull(env)) {
@@ -403,7 +392,6 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
 
 SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP env = args[0], ans=mkString(""), res;
 
     if (TYPEOF(env) == ENVSXP ||
@@ -520,8 +508,6 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
     int i, iobj, n, nobjs, pwidth, width, sepw, lablen, ntot, nlsep, nlines;
     char buf[512];
     const char *p = "";
-
-    op->checkNumArgs(num_args, call);
 
     /* Use standard printing defaults */
     PrintDefaults();
@@ -747,7 +733,6 @@ SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR
     R_xlen_t len;
     SEXP s;
     SEXPTYPE mode;
-    op->checkNumArgs(num_args, call);
     if (length(args[1]) != 1) error(_("invalid '%s' argument"), "length");
     len = asVecSize(args[1]);
     if (len < 0) error(_("invalid '%s' argument"), "length");
@@ -896,7 +881,6 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
 {
     SEXP x, ans;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     x = args[0];

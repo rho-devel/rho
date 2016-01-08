@@ -1370,8 +1370,10 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
 
     /* Method dispatch has failed, we now just */
     /* run the generic internal code */
+    if (type == RAWSXP) {
+	op->checkNumArgs(num_args, 1, call);
+    }
 
-    op->checkNumArgs(num_args, call);
     x = num_args ? args[0] : nullptr;
     if(TYPEOF(x) == type) {
 	if(ATTRIB(x) == R_NilValue) return x;
@@ -1399,7 +1401,7 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
     /* Method dispatch has failed, we now just */
     /* run the generic internal code */
 
-    op->checkNumArgs(num_args, call);
+    op->checkNumArgs(num_args, 2, call);
     x = args[0];
 
     if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
@@ -1475,8 +1477,6 @@ SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR
     SEXP arglist, envir, names, args, pargs, body;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-
     /* Check the arguments; we need a list and environment. */
 
     arglist = args_[0];
@@ -1526,7 +1526,6 @@ SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP ap, ans, names;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     RObject* args = args_[0];
@@ -1723,7 +1722,6 @@ Rcomplex Rf_asComplex(SEXP x)
 /* return the type (= "detailed mode") of the SEXP */
 SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return Rf_type2rstr(TYPEOF(args[0]));
 }
 
@@ -1733,7 +1731,6 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     /* These are all builtins, so we do not need to worry about
@@ -1905,7 +1902,6 @@ SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, a, x;
     const char *stype;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
 	errorcall_return(call, R_MSG_mode);
@@ -1980,7 +1976,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     auto dispatched = op->InternalDispatch(call, "is.na", num_args, args, tags,
@@ -2230,7 +2225,6 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     auto dispatched = op->InternalDispatch(call, "is.nan", num_args, args, tags,
@@ -2293,7 +2287,6 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     auto dispatched = op->InternalDispatch(call, "is.finite",
@@ -2355,7 +2348,6 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
     double xr, xi;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     auto dispatched = op->InternalDispatch(call, "is.infinite",
@@ -2451,8 +2443,6 @@ SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     SEXP c, fun, names, envir;
     int i, n;
-
-    op->checkNumArgs(num_args, call);
 
     fun = args_[0];
     envir = args_[2];
@@ -2641,7 +2631,6 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     Rf_check1arg(args, call, "expr");
     SEXP val = CAR(args);
     /* Make sure expression has NAMED == 2 before being returning
@@ -2798,7 +2787,6 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 
 SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     return R_set_class(args[0], args[1], call);
@@ -2811,7 +2799,6 @@ SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CX
     SEXP obj, value, ans;
     SEXPTYPE type;
 
-    op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
 
     obj = args[0];

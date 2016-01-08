@@ -738,7 +738,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
 
-    checkArity(op, args);
     check1arg(args, call, "x");
 
     if (DispatchGroup("Math", call, op, args, env, &s))
@@ -805,7 +804,6 @@ SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::Bui
 					    tags);
     if (result.first)
 	return result.second;
-    op->checkNumArgs(num_args, call); /* but is -1 in names.c */
     check1arg(tags, call, "x");
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
     if (isComplex(arg))
@@ -822,7 +820,6 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, s = R_NilValue /* -Wall */;
 
-    checkArity(op, args);
     check1arg(args, call, "x");
     x = CAR(args);
 
@@ -1036,8 +1033,6 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 
 SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
-
     if (isComplex(CAR(args)) ||
 	(PRIMVAL(op) == 0 && isComplex(CADR(args))))
 	return complex_math2(call, op, args, env);
@@ -1143,7 +1138,6 @@ SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP res, call2, args2, tmp = R_NilValue /* -Wall */;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     auto dispatch = op->InternalGroupDispatch("Math", call, env, num_args, args,
@@ -1413,8 +1407,6 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 
 SEXP attribute_hidden do_math3(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     switch (op->variant()) {
 
     case  1:  return Math3_1(args, dbeta);
@@ -1635,9 +1627,6 @@ namespace {
 
 SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
-
-
     switch (PRIMVAL(op)) {
     case  1: return Math4_1(args, dhyper);
     case  2: return Math4_2(args, phyper);
@@ -1755,7 +1744,6 @@ static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
 
 SEXP attribute_hidden do_math5(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
     lcall = call;
 
     switch (PRIMVAL(op)) {

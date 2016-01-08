@@ -76,7 +76,6 @@ SEXP attribute_hidden do_random1(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP x, a;
     R_xlen_t i, n, na;
-    op->checkNumArgs(num_args, call);
     if (!isVector(args[0]) || !isNumeric(args[1]))
 	invalid(call);
     if (XLENGTH(args[0]) == 1) {
@@ -155,7 +154,6 @@ SEXP attribute_hidden do_random2(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP x, a, b;
     R_xlen_t i, n, na, nb;
-    op->checkNumArgs(num_args, call);
     if (!isVector(args[0]) ||
 	!isNumeric(args[1]) ||
 	!isNumeric(args[2]))
@@ -250,7 +248,6 @@ SEXP attribute_hidden do_random3(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP x, a, b, c;
     R_xlen_t i, n, na, nb, nc;
-    op->checkNumArgs(num_args, call);
     if (!isVector(args[0])) invalid(call);
     if (LENGTH(args[0]) == 1) {
 #ifdef LONG_VECTOR_SUPPORT
@@ -470,7 +467,6 @@ SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     SEXP x, y, sn, sk, prob, sreplace;
 
-    op->checkNumArgs(num_args, call);
     sn = args[0]; args = (args + 1);
     sk = args[0]; args = (args + 1); /* size */
     sreplace = args[0]; args = (args + 1);

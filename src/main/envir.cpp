@@ -705,7 +705,6 @@ SEXP attribute_hidden do_assign(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     SEXP name=R_NilValue, val, aenv;
     int ginherits = 0;
-    op->checkNumArgs(num_args, call);
 
     if (!isString(args[0]) || length(args[0]) == 0)
 	error(_("invalid first argument"));
@@ -740,7 +739,6 @@ SEXP attribute_hidden do_list2env(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP x, xnms, envir;
     int n;
-    op->checkNumArgs(num_args, call);
 
     if (TYPEOF(args[0]) != VECSXP)
 	error(_("first argument must be a named list"));
@@ -798,7 +796,6 @@ SEXP attribute_hidden do_remove(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP name, envarg, tsym, tenv;
     int ginherits = 0;
     int done, i;
-    op->checkNumArgs(num_args, call);
 
     name = args[0];
     if (!isString(name))
@@ -853,7 +850,6 @@ SEXP attribute_hidden do_get(/*const*/ CXXR::Expression* call, const CXXR::Built
     SEXP rval, genv, t1 = R_NilValue;
     SEXPTYPE gmode;
     int ginherits = 0, where;
-    op->checkNumArgs(num_args, call);
 
     /* The first arg is the object name */
     /* It must be present and a non-empty string */
@@ -979,8 +975,6 @@ SEXP attribute_hidden do_mget(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, env, x, mode, ifnotfound;
     int ginherits = 0, nvals, nmode, nifnfnd;
 
-    op->checkNumArgs(num_args, call);
-
     x = args[0];
 
     nvals = length(x);
@@ -1085,7 +1079,6 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> rval;
     GCStackRoot<> t;  // Binding defined in PairList form
 
-    checkArity(op, args);
     check1arg(args, call, "x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
@@ -1144,7 +1137,6 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_globalenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_GlobalEnv;
 }
 
@@ -1159,7 +1151,6 @@ SEXP attribute_hidden do_globalenv(/*const*/ CXXR::Expression* call, const CXXR:
 
 SEXP attribute_hidden do_baseenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_BaseEnv;
 }
 
@@ -1174,7 +1165,6 @@ SEXP attribute_hidden do_baseenv(/*const*/ CXXR::Expression* call, const CXXR::B
 
 SEXP attribute_hidden do_emptyenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_EmptyEnv;
 }
 
@@ -1193,8 +1183,6 @@ SEXP attribute_hidden do_attach(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     SEXP x;
     GCStackRoot<Environment> env_to_attach;
-
-    op->checkNumArgs(num_args, call);
 
     int pos = asInteger(args[1]);
     if (pos == NA_INTEGER)
@@ -1244,7 +1232,6 @@ SEXP attribute_hidden do_attach(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 SEXP attribute_hidden do_detach(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     int pos = asInteger(args[0]);
 
     return Environment::detachFromSearchPath(pos);
@@ -1265,7 +1252,6 @@ SEXP attribute_hidden do_search(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP ans, name, t;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
     n = 2;
     for (t = ENCLOS(R_GlobalEnv); t != R_BaseEnv ; t = ENCLOS(t))
 	n++;
@@ -1378,8 +1364,6 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
 
 SEXP attribute_hidden do_ls(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     RObject* env = args[0];
 
     int all = asLogical(args[1]);
@@ -1419,8 +1403,6 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
 
 SEXP attribute_hidden do_env2list(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     SEXP env = args[0];
     if (ISNULL(env))
 	error(_("use of NULL environment is defunct"));
@@ -1466,8 +1448,6 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP env, ans, R_fcall, FUN, tmp, tmp2, ind;
     int i, k, k2;
     int /* boolean */ all, useNms;
-
-    checkArity(op, args);
 
     env = eval(CAR(args), rho);
     if (ISNULL(env))
@@ -1544,7 +1524,6 @@ SEXP attribute_hidden do_builtins(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP ans;
     int intern, nelts;
-    op->checkNumArgs(num_args, call);
     intern = asLogical(args[0]);
     if (intern == NA_INTEGER) intern = 0;
     nelts = BuiltinSize(1, intern);
@@ -1604,7 +1583,6 @@ SEXP attribute_hidden do_pos2env(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP env, pos;
     int i, npos;
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     PROTECT(pos = coerceVector(args[0], INTSXP));
@@ -1646,7 +1624,6 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "object");
 
     SEXP arg = args[0], ans;
@@ -1726,7 +1703,6 @@ SEXP do_lockEnv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* o
 {
     SEXP frame;
     Rboolean bindings;
-    op->checkNumArgs(num_args, call);
     frame = args[0];
     bindings = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     R_LockEnvironment(frame, bindings);
@@ -1735,7 +1711,6 @@ SEXP do_lockEnv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* o
 
 SEXP attribute_hidden do_envIsLocked(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return ScalarLogical(R_EnvironmentIsLocked(args[0]));
 }
 
@@ -1836,7 +1811,6 @@ Rboolean R_HasFancyBindings(SEXP rho)
 SEXP attribute_hidden do_lockBnd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sym, env;
-    op->checkNumArgs(num_args, call);
     sym = args[0];
     env = args[1];
     switch(op->variant()) {
@@ -1855,7 +1829,6 @@ SEXP attribute_hidden do_lockBnd(/*const*/ CXXR::Expression* call, const CXXR::B
 SEXP attribute_hidden do_bndIsLocked(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sym, env;
-    op->checkNumArgs(num_args, call);
     sym = args[0];
     env = args[1];
     return ScalarLogical(R_BindingIsLocked(sym, env));
@@ -1864,7 +1837,6 @@ SEXP attribute_hidden do_bndIsLocked(/*const*/ CXXR::Expression* call, const CXX
 SEXP attribute_hidden do_mkActiveBnd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sym, fun, env;
-    op->checkNumArgs(num_args, call);
     sym = args[0];
     fun = args[1];
     env = args[2];
@@ -1875,7 +1847,6 @@ SEXP attribute_hidden do_mkActiveBnd(/*const*/ CXXR::Expression* call, const CXX
 SEXP attribute_hidden do_bndIsActive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sym, env;
-    op->checkNumArgs(num_args, call);
     sym = args[0];
     env = args[1];
     return ScalarLogical(R_BindingIsActive(sym, env));
@@ -1885,7 +1856,6 @@ SEXP attribute_hidden do_bndIsActive(/*const*/ CXXR::Expression* call, const CXX
 SEXP attribute_hidden do_mkUnbound(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sym;
-    op->checkNumArgs(num_args, call);
     sym = args[0];
 
     if (TYPEOF(sym) != SYMSXP) error(_("not a symbol"));
@@ -1975,7 +1945,6 @@ Rboolean R_IsNamespaceEnv(SEXP rho)
 
 SEXP attribute_hidden do_isNSEnv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_IsNamespaceEnv(args[0]) ? mkTrue() : mkFalse();
 }
 
@@ -2045,7 +2014,6 @@ static SEXP checkNSname(SEXP call, SEXP name)
 SEXP attribute_hidden do_regNS(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name, val;
-    op->checkNumArgs(num_args, call);
     name = checkNSname(call, args[0]);
     val = args[1];
     if (findVarInFrame(R_NamespaceRegistry, name) != R_UnboundValue)
@@ -2057,7 +2025,6 @@ SEXP attribute_hidden do_regNS(/*const*/ CXXR::Expression* call, const CXXR::Bui
 SEXP attribute_hidden do_unregNS(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name;
-    op->checkNumArgs(num_args, call);
     name = checkNSname(call, args[0]);
     if (findVarInFrame(R_NamespaceRegistry, name) == R_UnboundValue)
 	errorcall(call, _("namespace not registered"));
@@ -2068,7 +2035,6 @@ SEXP attribute_hidden do_unregNS(/*const*/ CXXR::Expression* call, const CXXR::B
 SEXP attribute_hidden do_getRegNS(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name, val;
-    op->checkNumArgs(num_args, call);
     name = checkNSname(call, coerceVector(args[0], SYMSXP));
     val = findVarInFrame(R_NamespaceRegistry, name);
 
@@ -2088,7 +2054,6 @@ SEXP attribute_hidden do_getRegNS(/*const*/ CXXR::Expression* call, const CXXR::
 
 SEXP attribute_hidden do_getNSRegistry(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return R_NamespaceRegistry;
 }
 
@@ -2102,8 +2067,6 @@ SEXP attribute_hidden do_importIntoEnv(/*const*/ CXXR::Expression* call, const C
     int i, n;
 
     GCStackRoot<> binding;  // represented in PairList form.
-
-    op->checkNumArgs(num_args, call);
 
     impenv = args[0]; args = (args + 1);
     impnames = args[0]; args = (args + 1);
@@ -2194,7 +2157,6 @@ SEXP topenv(SEXP target, SEXP envir) {
  * @return
  */
 SEXP attribute_hidden do_topenv(SEXP call, SEXP op, SEXP args, SEXP rho) {
-    checkArity(op, args);
     SEXP envir = CAR(args);
     SEXP target = CADR(args); // = matchThisEnv
     if (TYPEOF(envir) != ENVSXP) envir = rho; // target = parent.frame()

@@ -146,37 +146,14 @@ SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::Bui
 						   args, tags);
     if (dispatched.first)
 	return dispatched.second;
-    op->checkNumArgs(num_args, call);
     switch (op->variant()) {
     case 1:
     case 2:
+	op->checkNumArgs(num_args, 2, call);
 	return lbinary(op, args[0], args[1]);
     case 3:
+	op->checkNumArgs(num_args, 1, call);
 	return lnot(args[0]);
-    default:
-	error(_("internal error in do_logic"));
-    }
-    return nullptr;  // -Wall
-}
-
-SEXP attribute_hidden do_logic_slow(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP ans;
-
-    // It would be logical to test the arity before calling
-    // DispatchGroup, but tests/primitives.R assumes otherwise.
-    if (DispatchGroup("Ops",call, op, args, env, &ans))
-	return ans;
-    checkArity(op, args);
-    switch (PRIMVAL(op)) {
-
-
-    case 1:
-    case 2:
-	return lbinary(SEXP_downcast<BuiltInFunction*>(op),
-		       CAR(args), CADR(args));
-    case 3:
-	return lnot(CAR(args));
     default:
 	error(_("internal error in do_logic"));
     }

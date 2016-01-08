@@ -853,8 +853,6 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP input, nlist, ans;
 
-    checkArity(op, args);
-
     /* first translate CADR of args into a string so that we can
        pass it down to DispatchorEval and have it behave correctly */
     input = PROTECT(allocVector(STRSXP, 1));

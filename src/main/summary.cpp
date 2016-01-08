@@ -807,7 +807,6 @@ SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR:
     double s, *r;
     int i, n, indx;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(sx = coerceVector(args[0], REALSXP));
     if (!isNumeric(sx))
 	error(_("non-numeric argument"));
@@ -851,7 +850,6 @@ SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP v, v_nms, ans, ans_nms = R_NilValue;
     int i, j = 0, len, *buf;
 
-    op->checkNumArgs(num_args, call);
     v = args[0];
     if (!isLogical(v))
         error(_("argument to 'which' is not logical"));

@@ -40,7 +40,6 @@ SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR:
     SEXP ans, x = args[0];
     int nc;
 
-    op->checkNumArgs(num_args, call);
     if (!isString(x) || LENGTH(x) == 0)
 	error(_("argument must be a character vector of length 1"));
     if (LENGTH(x) > 1)
@@ -56,7 +55,6 @@ SEXP attribute_hidden do_rawToChar(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans, x = args[0];
 
-    op->checkNumArgs(num_args, call);
     if (!isRaw(x))
 	error(_("argument 'x' must be a raw vector"));
     int multiple = asLogical(args[1]);
@@ -276,7 +274,6 @@ SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR:
     const char *s;
     R_xlen_t i, j, nc;
 
-    op->checkNumArgs(num_args, call);
     if (!isString(x) || LENGTH(x) == 0)
 	error(_("argument must be a character vector of length 1"));
     if (LENGTH(x) > 1)
@@ -330,7 +327,6 @@ SEXP attribute_hidden do_intToUtf8(/*const*/ CXXR::Expression* call, const CXXR:
     size_t used, len;
     char buf[10], *tmp;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = coerceVector(args[0], INTSXP));
     if (!isInteger(x))
 	error(_("argument 'x' must be an integer vector"));

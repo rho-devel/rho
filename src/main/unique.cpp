@@ -668,7 +668,6 @@ SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR
     int fromLast, nmax = NA_INTEGER;
     R_xlen_t i, k, n;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     incomp = args[1];
     if (Rf_length(args[2]) < 1)
@@ -918,8 +917,6 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 
 SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     if ((!isVector(args[0]) && !isNull(args[0]))
 	|| (!isVector(args[1]) && !isNull(args[1])))
 	error(_("'match' requires vector arguments"));
@@ -958,7 +955,6 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
     Rboolean no_dups;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
 
-    op->checkNumArgs(num_args, call);
     input = args[0];
     R_xlen_t n_input = XLENGTH(input);
     target = args[1];
@@ -1099,8 +1095,6 @@ SEXP attribute_hidden do_charmatch(/*const*/ CXXR::Expression* call, const CXXR:
     SEXP ans, input, target;
     const char *ss, *st;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
-
-    op->checkNumArgs(num_args, call);
 
     input = args[0];
     R_xlen_t n_input = LENGTH(input);
@@ -1267,8 +1261,6 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
     int expdots;
-
-    checkArity(op,args);
 
     funcall = CADR(args);
 
@@ -1517,7 +1509,6 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 
 SEXP attribute_hidden do_rowsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     if(op->variant() == 1)
 	return rowsum_df(args[0], args[1], args[2], args[3],
 			 args[4]);
@@ -1571,7 +1562,6 @@ SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR
     const char *csep, *ss;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     names = args[0];
     if(!isString(names))
 	error(_("'names' must be a character vector"));
@@ -1679,7 +1669,6 @@ static R_INLINE double ru()
 
 SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP ans;
     double dn = asReal(args[0]);
     int k = asInteger(args[1]);

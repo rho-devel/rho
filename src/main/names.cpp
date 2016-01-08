@@ -129,11 +129,11 @@ BuiltInFunction::getFunctionTable() {
 {"[[",		do_subset2,	2,	0,	-1,	{PP_SUBSET,  PREC_SUBSET, 0}},
 {"$",		do_subset3,	3,	0,	2,	{PP_DOLLAR,  PREC_DOLLAR, 0}},
 {"@",		do_AT,		0,	0,	2,	{PP_DOLLAR,  PREC_DOLLAR, 0}},
-{"[<-",		do_subassign,	0,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
-{"[[<-",	do_subassign2,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
+{"[<-",		do_subassign,	0,	0,	-1,	{PP_SUBASS,  PREC_LEFT,	  1}},
+{"[[<-",	do_subassign2,	1,	0,	-1,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"$<-",		do_subassign3,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"switch",	do_switch,	0,	200,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"browser",	do_browser,	0,	101,	4,	{PP_FUNCALL, PREC_FN,	  0}},
+{"browser",	do_browser,	0,	101,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".primTrace",	do_trace,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".primUntrace",do_trace,	1,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".Internal",	do_internal,	0,	200,	1,	{PP_FUNCALL, PREC_FN,	  0}},
@@ -143,7 +143,7 @@ BuiltInFunction::getFunctionTable() {
 {"substitute",	do_substitute,	0,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"missing",	do_missing,	1,	0,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"nargs",	do_nargs,	1,	1,	0,	{PP_FUNCALL, PREC_FN,	0}},
-{"on.exit",	do_onexit,	0,	100,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"on.exit",	do_onexit,	0,	100,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
 
 /* .Internals */
 
@@ -186,22 +186,22 @@ BuiltInFunction::getFunctionTable() {
 {"%/%",		do_arith, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
 {"%*%",		do_matprod,	0,	1,	2,	{PP_BINARY,  PREC_PERCENT,0}},
 
-{"==",		do_relop, EQOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{"!=",		do_relop, NEOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{"<",		do_relop, LTOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{"<=",		do_relop, LEOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{">=",		do_relop, GEOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{">",		do_relop, GTOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},
-{"&",		do_logic,	1,	1,	2,	{PP_BINARY,  PREC_AND,	  0}},
-{"|",		do_logic,	2,	1,	2,	{PP_BINARY,  PREC_OR,	  0}},
-{"!",		do_logic,	3,	1,	1,	{PP_UNARY,   PREC_NOT,	  0}},
+{"==",		do_relop, EQOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{"!=",		do_relop, NEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{"<",		do_relop, LTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{"<=",		do_relop, LEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{">=",		do_relop, GEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{">",		do_relop, GTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
+{"&",		do_logic,	1,	1,	-1,	{PP_BINARY,  PREC_AND,	  0}},
+{"|",		do_logic,	2,	1,	-1,	{PP_BINARY,  PREC_OR,	  0}},
+{"!",		do_logic,	3,	1,	-1,	{PP_UNARY,   PREC_NOT,	  0}},
 
 /* specials as conditionally evaluate second arg */
 {"&&",		do_logic2,	1,	0,	2,	{PP_BINARY,  PREC_AND,	  0}},
 {"||",		do_logic2,	2,	0,	2,	{PP_BINARY,  PREC_OR,	  0}},
 {":",		do_colon,	0,	1,	2,	{PP_BINARY2, PREC_COLON,  0}},
 /* does not evaluate */
-{"~",		do_tilde,	0,	0,	2,	{PP_BINARY,  PREC_TILDE,  0}},
+{"~",		do_tilde,	0,	0,	-1,	{PP_BINARY,  PREC_TILDE,  0}},
 
 
 /* Logic Related Functions */
@@ -264,7 +264,7 @@ BuiltInFunction::getFunctionTable() {
 {"duplicated",	do_duplicated,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"unique",	do_duplicated,	1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"anyDuplicated",do_duplicated,	2,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"anyNA",	do_anyNA,	0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"anyNA",	do_anyNA,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"which",	do_which,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"which.min",	do_first_min,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"pmin",	do_pmin,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -523,12 +523,12 @@ BuiltInFunction::getFunctionTable() {
 {"as.double",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.complex",	do_asatomic,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.logical",	do_asatomic,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.raw",	do_asatomic,	5,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.raw",	do_asatomic,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.call",	do_ascall,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.environment",do_as_environment,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"storage.mode<-",do_storage_mode,0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"as.vector",	do_asvector,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.vector",	do_asvector,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"paste",	do_paste,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"paste0",	do_paste,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.path",	do_filepath,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -626,7 +626,7 @@ BuiltInFunction::getFunctionTable() {
 {"withVisible", do_withVisible,	1,	10,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"expression",	do_expression,	1,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"interactive",	do_interactive,	0,	1,	0,	{PP_FUNCALL, PREC_FN,	0}},
-{"invisible",	do_invisible,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"invisible",	do_invisible,	0,	101,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rep",		do_rep,		0,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rep.int",	do_rep_int,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"rep_len",	do_rep_len,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -690,7 +690,7 @@ BuiltInFunction::getFunctionTable() {
 {"quit",	do_quit,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"readline",	do_readln,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"print.default",do_printdefault,0,	111,	9,	{PP_FUNCALL, PREC_FN,	0}},
-{"print.function",do_printfunction,0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"print.function",do_printfunction,0,	111,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"prmatrix",	do_prmatrix,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"gc",		do_gc,		0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"gcinfo",	do_gcinfo,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -739,7 +739,7 @@ BuiltInFunction::getFunctionTable() {
 {"environmentName",do_envirName,0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"env2list",	do_env2list,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"reg.finalizer",do_regFinaliz,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"options",	do_options,	0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"options",	do_options,	0,	211,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"getOption",	do_getOption,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sink",	do_sink,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"sink.number",	do_sinknumber,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -1040,7 +1040,6 @@ SEXP attribute_hidden R_Primitive(const char *primname)
 SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name, prim;
-    op->checkNumArgs(num_args, call);
     name = args[0];
     if (!isString(name) || Rf_length(name) != 1 ||
 	STRING_ELT(name, 0) == R_NilValue)

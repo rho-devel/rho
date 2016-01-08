@@ -64,7 +64,6 @@ SEXP attribute_hidden do_version(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP value, names;
     char buf[128];
 
-    op->checkNumArgs(num_args, call);
     PROTECT(value = allocVector(VECSXP,14));
     PROTECT(names = allocVector(STRSXP,14));
 

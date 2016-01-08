@@ -256,7 +256,6 @@ CXXR::quick_builtin do_localeconv;
 SEXP do_log(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_log1arg;
 CXXR::quick_builtin do_logic;
-SEXP do_logic_slow(SEXP, SEXP, SEXP, SEXP); // slow version of the above, used by the bytecode interpreter.
 SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_ls;

@@ -146,21 +146,21 @@ BuiltInFunction::~BuiltInFunction()
     assert(0 && "BuiltInFunction's destructor should never be called");
 }
 
-void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
-    const
+void BuiltInFunction::badArgumentCountError(int nargs, int arity,
+					    const Expression* call) const
 {
     if (viaDotInternal())
 	Rf_error(
 	    ngettext("%d argument passed to .Internal(%s) which requires %d",
 		     "%d arguments passed to .Internal(%s) which requires %d",
 		     nargs),
-	    nargs, name(), arity());
+	    nargs, name(), arity);
     else
 	Rf_errorcall(const_cast<Expression*>(call),
 		      ngettext("%d argument passed to '%s' which requires %d",
 			       "%d arguments passed to '%s' which requires %d",
 			       nargs),
-		     nargs, name(), arity());
+		     nargs, name(), arity);
 }
 
 // BuiltInFunction::createLookupTables() is in names.cpp

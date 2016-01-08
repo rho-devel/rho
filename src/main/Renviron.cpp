@@ -321,8 +321,6 @@ void process_user_Renviron()
 
 SEXP attribute_hidden do_readEnviron(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-
-    op->checkNumArgs(num_args, call);
     SEXP x = args[0];
     if (Rf_length(x) != 1 || !isString(x))
 	errorcall(call, _("argument '%s' must be a character string"), "x");

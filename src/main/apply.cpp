@@ -41,7 +41,6 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     PROTECT_INDEX px;
 
-    checkArity(op, args);
     SEXP X, XX, FUN;
     PROTECT_WITH_INDEX(X =CAR(args), &px);
     XX = PROTECT(eval(CAR(args), rho));
@@ -101,7 +100,6 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXPTYPE commonType;
     PROTECT_INDEX index = 0; /* initialize to avoid a warning */
 
-    checkArity(op, args);
     PROTECT(X = CAR(args));
     PROTECT(XX = eval(CAR(args), rho));
     FUN = CADR(args);  /* must be unevaluated for use in e.g. bquote */
@@ -328,7 +326,6 @@ SEXP attribute_hidden do_rapply(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int i, n;
     Rboolean replace;
 
-    op->checkNumArgs(num_args, call);
     X = args[0]; args = (args + 1);
     FUN = args[0]; args = (args + 1);
     if(!isFunction(FUN)) error(_("invalid '%s' argument"), "f");
@@ -381,7 +378,6 @@ SEXP attribute_hidden do_islistfactor(/*const*/ CXXR::Expression* call, const CX
     Rboolean lans = TRUE, recursive;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
     X = args[0];
     recursive = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     n = Rf_length(X);

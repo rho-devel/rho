@@ -690,7 +690,6 @@ SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     char oldtz[1001] = "";
     const char *tz = nullptr;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = coerceVector(args[0], REALSXP));
     if(!isString((stz = args[1])) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
@@ -790,7 +789,6 @@ SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR:
     stm tm;
     double tmp;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = duplicate(args[0])); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");
@@ -880,7 +878,6 @@ SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const C
     char oldtz[20] = "";
     stm tm;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = duplicate(args[0])); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");
@@ -1044,7 +1041,6 @@ SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::
     double psecs = 0.0;
     R_xlen_t n, m, N;
 
-    op->checkNumArgs(num_args, call);
     if(!isString((x = args[0])))
 	error(_("invalid '%s' argument"), "x");
     if(!isString((sformat = args[1])) || XLENGTH(sformat) == 0)
@@ -1189,7 +1185,6 @@ SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     int valid, day, y, tmp, mon;
     stm tm;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = coerceVector(args[0], REALSXP));
     n = XLENGTH(x);
     PROTECT(ans = allocVector(VECSXP, 9));
@@ -1250,7 +1245,6 @@ SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR:
     R_xlen_t n = 0, nlen[9];
     stm tm;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(x = duplicate(args[0]));
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");

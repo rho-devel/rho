@@ -721,7 +721,6 @@ SEXP attribute_hidden do_geterrmessage(/*const*/ CXXR::Expression* call, const C
 {
     SEXP res;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(res = allocVector(STRSXP, 1));
     SET_STRING_ELT(res, 0, mkChar(errbuf));
     UNPROTECT(1);
@@ -889,7 +888,6 @@ SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP ans, string = args[1];
     int i, n = LENGTH(string);
 
-    op->checkNumArgs(num_args, call);
     if(isNull(string) || !n) return string;
 
     if(!isString(string)) errorcall(call, _("invalid '%s' value"), "string");
@@ -994,7 +992,6 @@ SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP msg1 = args[1], msg2 = args[2];
     int n = asInteger(args[0]);
 
-    op->checkNumArgs(num_args, call);
     if(n == NA_INTEGER || n < 0) error(_("invalid '%s' argument"), "n");
     if(!isString(msg1) || LENGTH(msg1) != 1)
 	error(_("'%s' must be a character string"), "msg1");
@@ -1049,7 +1046,6 @@ SEXP attribute_hidden do_bindtextdomain(/*const*/ CXXR::Expression* call, const 
 #ifdef ENABLE_NLS
     char *res;
 
-    op->checkNumArgs(num_args, call);
     if(!isString(args[0]) || LENGTH(args[0]) != 1)
 	errorcall(call, _("invalid '%s' value"), "domain");
     if(isNull(args[1])) {
@@ -1279,7 +1275,6 @@ SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR:
 {
     int skip;
     
-    op->checkNumArgs(num_args, call);
     skip = asInteger(args[0]);
     
     if (skip == NA_INTEGER || skip < 0 )
@@ -1480,8 +1475,6 @@ SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CX
     int calling, i, n;
     PROTECT_INDEX osi;
 
-    op->checkNumArgs(num_args, call);
-
     classes = args[0]; args = (args + 1);
     handlers = args[0]; args = (args + 1);
     parentenv = args[0]; args = (args + 1);
@@ -1517,7 +1510,6 @@ SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CX
 
 SEXP attribute_hidden do_resetCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     R_HandlerStack = args[0];
     return R_NilValue;
 }
@@ -1630,8 +1622,6 @@ SEXP attribute_hidden do_signalCondition(/*const*/ CXXR::Expression* call, const
 {
     SEXP list, cond, msg, ecall, oldstack;
 
-    op->checkNumArgs(num_args, call);
-
     cond = args[0];
     msg = args[1];
     ecall = args[2];
@@ -1739,8 +1729,6 @@ SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::
     const char *msg;
     SEXP ecall;
 
-    op->checkNumArgs(num_args, call);
-
     if (TYPEOF(args[0]) != STRSXP || LENGTH(args[0]) != 1)
 	error(_("bad error message"));
     msg = translateChar(STRING_ELT(args[0], 0));
@@ -1754,8 +1742,6 @@ SEXP attribute_hidden NORET do_dfltStop(/*const*/ CXXR::Expression* call, const 
 {
     const char *msg;
     SEXP ecall;
-
-    op->checkNumArgs(num_args, call);
 
     if (TYPEOF(args[0]) != STRSXP || LENGTH(args[0]) != 1)
 	error(_("bad error message"));
@@ -1774,7 +1760,6 @@ SEXP attribute_hidden do_getRestart(/*const*/ CXXR::Expression* call, const CXXR
 {
     int i;
     SEXP list;
-    op->checkNumArgs(num_args, call);
     i = asInteger(args[0]);
     for (list = R_RestartStack;
 	 list != R_NilValue && i > 1;
@@ -1804,7 +1789,6 @@ namespace {
 
 SEXP attribute_hidden do_addRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     CHECK_RESTART(args[0]);
     R_RestartStack = CONS(args[0], R_RestartStack);
     return R_NilValue;
@@ -1841,7 +1825,6 @@ static void NORET invokeRestart(SEXP r, SEXP arglist)
 
 SEXP attribute_hidden NORET do_invokeRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     CHECK_RESTART(args[0]);
     invokeRestart(args[0], args[1]);
 }
@@ -1850,7 +1833,6 @@ SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const C
 {
     SEXP msg;
 
-    op->checkNumArgs(num_args, call);
     msg = args[0];
     if(!isString(msg) || LENGTH(msg) != 1)
 	error(_("error message must be a character string"));
@@ -1861,7 +1843,6 @@ SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const C
 SEXP attribute_hidden
 do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     R_PrintDeferredWarnings();
     return R_NilValue;
 }

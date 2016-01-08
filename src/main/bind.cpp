@@ -797,8 +797,6 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
 
-    checkArity(op, args);
-
     /* Attempt method dispatch. */
 
     if (DispatchOrEval(call, op, "c", args, env, &ans, MissingArgHandling::Drop,
@@ -919,7 +917,6 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
     struct NameData nameData;
 
 /*    data.deparse_level = 1; */
-    op->checkNumArgs(num_args, call);
 
     /* Attempt method dispatch. */
 

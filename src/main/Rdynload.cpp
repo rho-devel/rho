@@ -892,7 +892,6 @@ SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::B
     char buf[2 * PATH_MAX];
     DllInfo *info;
 
-    op->checkNumArgs(num_args, call);
     if (!isString(args[0]) || LENGTH(args[0]) != 1)
 	error(_("character argument expected"));
     GetFullDLLPath(call, buf, translateChar(STRING_ELT(args[0], 0)));
@@ -908,7 +907,6 @@ SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR:
 {
     char buf[2 * PATH_MAX];
 
-    op->checkNumArgs(num_args, call);
     if (!isString(args[0]) || LENGTH(args[0]) != 1)
 	error(_("character argument expected"));
     GetFullDLLPath(call, buf, translateChar(STRING_ELT(args[0], 0)));
@@ -1325,7 +1323,6 @@ do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
     SEXP sym = R_NilValue;
     DL_FUNC f = nullptr;
 
-    op->checkNumArgs(num_args, call);
     SEXP sname = args[0], spackage = args[1], 
 	withRegistrationInfo = args[2];
 
@@ -1353,8 +1350,6 @@ SEXP attribute_hidden
 do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nm;
-
-    op->checkNumArgs(num_args, call);
 
  again:
     PROTECT(ans = allocVector(VECSXP, CountDLL));
@@ -1385,7 +1380,6 @@ do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
 {
     const char * const names[] = {".C", ".Call", ".Fortran", ".External"};
 
-    op->checkNumArgs(num_args, call);
     SEXP dll = args[0], ans, snames;
 
     if(TYPEOF(dll) != EXTPTRSXP &&

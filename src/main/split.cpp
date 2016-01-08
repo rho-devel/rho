@@ -46,8 +46,6 @@ SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP x, f, counts, vec, nm, nmj;
     Rboolean have_names;
 
-    op->checkNumArgs(num_args, call);
-
     x = args[0];
     f = args[1];
     if (!isVector(x))

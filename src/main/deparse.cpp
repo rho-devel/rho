@@ -160,8 +160,6 @@ SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP ca1;
     int  cut0, backtick, opts, nlines;
 
-    op->checkNumArgs(num_args, call);
-
     ca1 = args[0]; args = (args + 1);
     cut0 = DEFAULT_Cutoff;
     if(!isNull(args[0])) {
@@ -340,8 +338,6 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int opts;
     Rconnection con = Rconnection( 1); /* stdout */
 
-    op->checkNumArgs(num_args, call);
-
     tval = args[0];
     saveenv = R_NilValue;	/* -Wall */
     if (TYPEOF(tval) == CLOSXP) {
@@ -404,8 +400,6 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
     Rconnection con;
     int opts;
     const char *obj_name;
-
-    op->checkNumArgs(num_args, call);
 
     names = args[0];
     file = args[1];

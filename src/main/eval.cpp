@@ -930,8 +930,6 @@ static SEXP do_while_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> t;
     volatile SEXP body;
 
-    checkArity(op, args);
-
     /* CXXR FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
@@ -991,8 +989,6 @@ static SEXP do_repeat_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile int bgn;
     GCStackRoot<> t;
     volatile SEXP body;
-
-    checkArity(op, args);
 
     /* CXXR FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
@@ -1063,7 +1059,6 @@ RObject* attribute_hidden do_paren(/*const*/ Expression* call,
 				   int num_args,
 				   const PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     return args[0];
 }
 
@@ -1403,16 +1398,6 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 }
 
-/* Defunct in 1.5.0
-SEXP attribute_hidden do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    checkArity(op,args);
-    Rprintf(".Alias is deprecated; there is no replacement \n");
-    SET_NAMED(CAR(args), 0);
-    return CAR(args);
-}
-*/
-
 /*  Assignment in its various forms  */
 
 SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1546,7 +1531,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     int frame;
 
-    checkArity(op, args);
     expr = CAR(args);
     env = CADR(args);
     encl = CADDR(args);
@@ -1662,7 +1646,6 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, nm, ret;
 
-    checkArity(op, args);
     x = CAR(args);
     x = Rf_eval(x, rho);
     PROTECT(x);
@@ -1981,8 +1964,6 @@ SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP file, s;
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
     PROTECT(file = Rf_coerceVector(args[0], STRSXP));
 
     if (! Rf_isValidStringF(file))
@@ -2002,8 +1983,6 @@ SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::
 {
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
     if (!Rf_isValidStringF(args[1]))
 	Rf_errorcall(call, _("'file' must be non-empty string"));
     if (TYPEOF(args[2]) != LGLSXP)
@@ -2022,7 +2001,6 @@ SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::
 SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_num_math_threads, newi;
-    op->checkNumArgs(num_args, call);
     newi = Rf_asInteger(args[0]);
     if (newi >= 0 && newi <= R_max_num_math_threads)
 	R_num_math_threads = newi;
@@ -2032,7 +2010,6 @@ SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const C
 SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_max_num_math_threads, newi;
-    op->checkNumArgs(num_args, call);
     newi = Rf_asInteger(args[0]);
     if (newi >= 0) {
 	R_max_num_math_threads = newi;

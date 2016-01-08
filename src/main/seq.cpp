@@ -157,7 +157,6 @@ SEXP attribute_hidden do_colon(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP s1, s2;
     double n1, n2;
 
-    op->checkNumArgs(num_args, call);
     if (inherits(args[0], "factor") && inherits(args[1], "factor"))
 	return(cross_colon(call, args[0], args[1]));
 
@@ -345,7 +344,6 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
 
 SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP s = args[0], ncopy = args[1];
     R_xlen_t nc;
     SEXP a;
@@ -403,7 +401,6 @@ SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::B
     R_xlen_t ns, na;
     SEXP a, s, len;
 
-    op->checkNumArgs(num_args, call);
     s = args[0];
 
     if (!isVector(s) && s != R_NilValue)
@@ -952,7 +949,6 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "along.with");
 
     static BuiltInFunction* length_op = BuiltInFunction::obtainPrimitive(
@@ -988,7 +984,6 @@ SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP ans;
     R_xlen_t len;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "length.out");
     if(length(args[0]) != 1)
 	warningcall(call, _("first element used of '%s' argument"),

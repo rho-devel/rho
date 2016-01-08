@@ -68,8 +68,6 @@ do_setGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
     pGEDevDesc gdd;
     pDevDesc dd;
 
-    checkArity(op, args);
-    
     devnum = INTEGER(CAR(args))[0] - 1;
     if(devnum < 1 || devnum > R_MaxDevices)
 	error(_("invalid graphical device number"));
@@ -104,8 +102,6 @@ do_getGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int devnum;
     pGEDevDesc gdd;
-    
-    checkArity(op, args);
     
     devnum = INTEGER(CAR(args))[0] - 1;
     if(devnum < 1 || devnum > R_MaxDevices)
@@ -146,8 +142,6 @@ do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     pDevDesc dd;
     pGEDevDesc gd;
     int i, count=0, devNum;
-    
-    checkArity(op, args);
     
     prompt = CAR(args);
     if (!isString(prompt) || !length(prompt)) error(_("invalid prompt"));

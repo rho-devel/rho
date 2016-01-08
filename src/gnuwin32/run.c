@@ -800,7 +800,6 @@ SEXP do_syswhich(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP nm, ans;
     int i, n;
 
-    checkArity(op, args);
     nm = CAR(args);
     if(!isString(nm))
 	error(_("'names' is not a character vector"));

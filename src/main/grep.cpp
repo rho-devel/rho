@@ -152,7 +152,6 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
     const void *vmax, *vmax2;
     int nwarn = 0;
 
-    op->checkNumArgs(num_args, call);
     x = args[0]; args = (args + 1);
     tok = args[0]; args = (args + 1);
     fixed_opt = asLogical(args[0]); args = (args + 1);
@@ -760,7 +759,6 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     const void *vmax;
     int nwarn = 0;
 
-    op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
     text = args[0]; args = (args + 1);
     igcase_opt = asLogical(args[0]); args = (args + 1);
@@ -1053,7 +1051,6 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
     R_size_t res_ptr, offset, i;
     int igcase_opt, fixed_opt, all, value, invert;
 
-    op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
     text = args[0]; args = (args + 1);
     offset = asInteger(args[0]); args = (args + 1);
@@ -1508,7 +1505,6 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
     const unsigned char *tables = nullptr;
     const void *vmax = vmaxget();
 
-    op->checkNumArgs(num_args, call);
 
     global = op->variant();
 
@@ -2328,7 +2324,6 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP capture_names = R_NilValue;
     int nwarn = 0;
 
-    op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
     text = args[0]; args = (args + 1);
     igcase_opt = asLogical(args[0]); args = (args + 1);
@@ -2639,8 +2634,6 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
     int j, so;
     int rc, cflags = REG_EXTENDED;
 
-    op->checkNumArgs(num_args, call);
-
     pat = args[0]; args = (args + 1);
     vec = args[0]; args = (args + 1);
     opt_icase = asLogical(args[0]); args = (args + 1);
@@ -2785,7 +2778,6 @@ SEXP attribute_hidden do_pcre_config(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int res;
 
-    checkArity(op, args);
     SEXP ans = PROTECT(allocVector(LGLSXP, 3));
     int *lans = LOGICAL(ans);
     SEXP nm = allocVector(STRSXP, 3);

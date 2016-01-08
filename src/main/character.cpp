@@ -113,7 +113,6 @@ SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP x, ans;
     R_xlen_t i, len;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     if (isFactor(args[0]))
@@ -142,7 +141,6 @@ SEXP attribute_hidden do_nchar(/*const*/ CXXR::Expression* call, const CXXR::Bui
     wchar_t *wc;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     if (isFactor(args[0]))
 	error(_("'%s' requires a character vector"), "nchar()");
     PROTECT(x = coerceVector(args[0], STRSXP));
@@ -269,7 +267,6 @@ SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::Bu
     const char *ss;
     char *buf;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     sa = args[1];
     so = args[2];
@@ -363,7 +360,6 @@ SEXP attribute_hidden do_substrgets(/*const*/ CXXR::Expression* call, const CXXR
     char *buf;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     sa = args[1];
     so = args[2];
@@ -573,7 +569,6 @@ SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::Bu
     const char *s;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
 
     if (!isString(x))
@@ -614,7 +609,6 @@ SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR:
     Rboolean need_prefix;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     arg = args[0];
     if (!isString(arg))
 	error(_("non-character names"));
@@ -717,7 +711,6 @@ SEXP attribute_hidden do_tolower(/*const*/ CXXR::Expression* call, const CXXR::B
     Rboolean use_UTF8 = FALSE;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     ul = op->variant(); /* 0 = tolower, 1 = toupper */
 
     x = args[0];
@@ -1057,7 +1050,6 @@ SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::Bu
     Rboolean use_UTF8 = FALSE;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     old = args[0]; args = (args + 1);
     _new = args[0]; args = (args + 1);
     x = args[0];
@@ -1294,7 +1286,6 @@ SEXP attribute_hidden do_strtrim(/*const*/ CXXR::Expression* call, const CXXR::B
     mbstate_t mb_st;
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
     /* as.character happens at R level now */
     if (!isString(x = args[0]))
 	error(_("strtrim() requires a character vector"));
@@ -1360,8 +1351,6 @@ SEXP attribute_hidden do_strtoi(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP ans, x, b;
     R_xlen_t i, n;
     int base;
-
-    op->checkNumArgs(num_args, call);
 
     x = args[0]; args = (args + 1);
     b = args[0];

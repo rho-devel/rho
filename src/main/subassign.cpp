@@ -1331,8 +1331,6 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP nlist, ans, input;
     int iS;
 
-    checkArity(op, args);
-
     /* Note the RHS has already been evaluated at this point */
 
     input = allocVector(STRSXP, 1);

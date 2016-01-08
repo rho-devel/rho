@@ -181,8 +181,6 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
 
 SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     auto dispatched = op->InternalDispatch(call, "is.unsorted",
 					   num_args, args, tags, rho);
     if (dispatched.first)
@@ -338,8 +336,6 @@ SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::Buil
 {
     SEXP ans;
     Rboolean decreasing;
-
-    op->checkNumArgs(num_args, call);
 
     decreasing = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     if(decreasing == NA_LOGICAL)
@@ -617,7 +613,6 @@ Psort0(SEXP x, R_xlen_t lo, R_xlen_t hi, R_xlen_t *ind, int nind)
 /* FUNCTION psort(x, indices) */
 SEXP attribute_hidden do_psort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP x = args[0], p = args[1];
 
     if (!isVectorAtomic(x))
@@ -1318,7 +1313,6 @@ SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::Buil
     enum {AVERAGE, MAX, MIN} ties_kind = AVERAGE;
     Rboolean isLong = FALSE;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     if(TYPEOF(x) == RAWSXP)
 	error(_("raw vectors cannot be sorted"));
@@ -1412,8 +1406,6 @@ SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR:
     R_xlen_t i, n;
     int tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
 
-    op->checkNumArgs(num_args, call);
-
     x = args[0];
     nalast = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     if(nalast == NA_LOGICAL)
@@ -1505,7 +1497,6 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP fn, ans;
 
-    checkArity(op, args);
     check1arg(args, call, "x");
 
     if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans,

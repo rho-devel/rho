@@ -112,7 +112,6 @@ SEXP attribute_hidden do_setInternet2(SEXP call, SEXP op, SEXP args, SEXP env)
     
     PROTECT(retval = ScalarLogical(UseInternet2));
     
-    checkArity(op, args);
     newval = CAR(args);
     if (length(newval) != 1) error(_("bad value"));
     newUseInternet2 = asLogical(newval);
@@ -389,4 +388,3 @@ R_newCurlUrl(const char *description, const char * const mode, int type)
     }
     return (Rconnection)0; /* -Wall */
 }
-

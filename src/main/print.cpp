@@ -126,7 +126,7 @@ SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR:
 	check1arg(tags, call, "x");
 	return args[0];
     default:
-	op->checkNumArgs(num_args, call); /* must fail */
+	op->checkNumArgs(num_args, 1, call);
 	return call;/* never used, just for -Wall */
     }
 }
@@ -145,7 +145,6 @@ SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP a, x, rowlab, collab, naprint;
     char *rowname = nullptr, *colname = nullptr;
 
-    op->checkNumArgs(num_args, call);
     PrintDefaults();
     x = args[0]; args = (args + 1);
     rowlab = args[0]; args = (args + 1);
@@ -240,7 +239,6 @@ SEXP attribute_hidden do_printdefault(/*const*/ CXXR::Expression* call, const CX
     int tryS4;
     Rboolean callShow = FALSE;
 
-    op->checkNumArgs(num_args, call);
     PrintDefaults();
 
     x = args[0]; args = (args + 1);

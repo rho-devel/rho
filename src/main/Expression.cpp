@@ -146,8 +146,11 @@ RObject* Expression::evaluateDirectBuiltInCall(
     if (arglist->has3Dots())
         arglist->evaluate(env);
 
-    // Create an array on stack to write arguments to.
+    // Check the number of arguments.
     int num_evaluated_args = listLength(arglist->list());
+    func->checkNumArgs(num_evaluated_args, this);
+
+    // Create an array on stack to write arguments to.
     RObject** evaluated_arg_array = (RObject**)alloca(
         num_evaluated_args * sizeof(RObject*));
 
@@ -179,6 +182,10 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     {
       arglist->evaluate(env);
     }
+
+    // Check the number of arguments.
+    int num_evaluated_args = listLength(arglist->list());
+    func->checkNumArgs(num_evaluated_args, this);
 
     if (func->printHandling() == BuiltInFunction::SOFT_ON) {
 	Evaluator::enableResultPrinting(true);

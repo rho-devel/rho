@@ -85,8 +85,6 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
     const char *field_name;
     int offset = 0; /* -Wall */
 
-    op->checkNumArgs(num_args, call);
-
     file = args[0];
     con = getConnection(asInteger(file));
     wasopen = con->isopen;

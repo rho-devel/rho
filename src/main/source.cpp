@@ -200,7 +200,6 @@ SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::Bui
     const char *encoding;
     ParseStatus status;
 
-    op->checkNumArgs(num_args, call);
     if(!inherits(args[0], "connection"))
 	error(_("'file' must be a character string or connection"));
     R_ParseError = 0;

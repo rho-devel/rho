@@ -55,7 +55,6 @@ SEXP attribute_hidden do_qsort(/*const*/ CXXR::Expression* call, const CXXR::Bui
     int *ivx = nullptr;
     Rboolean x_real, x_int;
 
-    op->checkNumArgs(num_args, call);
     x = args[0];
     if (!isNumeric(x))
 	error(_("argument is not a numeric vector"));

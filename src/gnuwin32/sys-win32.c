@@ -179,7 +179,6 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     int   vis = 0, flag = 2, i = 0, j, ll = 0;
     SEXP  cmd, fin, Stdout, Stderr, tlist = R_NilValue, tchar, rval;
 
-    checkArity(op, args);
     cmd = CAR(args);
     if (!isString(cmd) || LENGTH(cmd) != 1)
 	errorcall(call, _("character string expected as first argument"));

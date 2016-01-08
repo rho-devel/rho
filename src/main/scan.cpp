@@ -834,8 +834,6 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
 		      FALSE, 0, FALSE, FALSE, FALSE, FALSE};
     data.NAstrings = R_NilValue;
 
-    op->checkNumArgs(num_args, call);
-
     file = args[0];		   args = (args + 1);
     what = args[0];		   args = (args + 1);
     nmax = asInteger(args[0]);   args = (args + 1);
@@ -1000,8 +998,6 @@ SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::Bu
     char buffer[MAXELTSIZE], *bufp = buffer;
     SEXP ans, prompt;
 
-    op->checkNumArgs(num_args, call);
-
     prompt = args[0];
     if (prompt == R_NilValue) {
 	ConsolePrompt[0] = '\0'; /* precaution */
@@ -1040,4 +1036,3 @@ SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::Bu
     UNPROTECT(1);
     return ans;
 }
-

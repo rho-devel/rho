@@ -136,10 +136,26 @@ namespace CXXR {
 	 * @param call The call being processed (for error reporting).
 	 */
 	void checkNumArgs(int num_args, const Expression* call) const {
-          if (num_args == arity() || arity() < 0) {
+	    checkNumArgs(num_args, arity(), call);
+        }
+
+	/** @brief Report error if argument list is wrong length.
+	 *
+	 * This function raises an error if \a num_args is not a
+	 * permissible length for all call to this BuiltInFunction.
+	 *
+	 * @param num_args The number of arguments that were passed.
+	 *
+	 * @param arity The expected number of arguments.
+	 *
+	 * @param call The call being processed (for error reporting).
+	 */
+	void checkNumArgs(int num_args, int arity, const Expression* call)
+	    const {
+          if (num_args == arity || arity < 0) {
             return;
           }
-          badArgumentCountError(num_args, call);
+          badArgumentCountError(num_args, arity, call);
         }
 
 	/** @brief Kind of built-in function.
@@ -498,9 +514,12 @@ namespace CXXR {
 	 *
 	 * @param num_args The number of args passed.
 	 *
+	 * @param arity The expected number of args passed.
+
 	 * @param call The call.
 	 */
-        void badArgumentCountError(int num_args, const Expression* call) const;
+        void badArgumentCountError(int num_args, int arity,
+				   const Expression* call) const;
     };
 }  // namespace CXXR
 

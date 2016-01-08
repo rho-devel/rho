@@ -102,8 +102,6 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
     char *title;
 #endif
 
-	checkArity(op, args);
-
     vmaxsave = vmaxget();
 
     x = CAR(args); args = CDR(args);

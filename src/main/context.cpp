@@ -176,7 +176,6 @@ SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR
 {
     int n;
 
-    op->checkNumArgs(num_args, call);
     n = asInteger(args[0]);
     if(n < 1 ) error(_("number of contexts must be positive"));
 
@@ -228,7 +227,6 @@ SEXP attribute_hidden do_sys(/*const*/ CXXR::Expression* call, const CXXR::Built
     SEXP rval, t;
     ClosureContext *cptr;
 
-    op->checkNumArgs(num_args, call);
     /* first find the context that sys.xxx needs to be evaluated in */
     cptr = ClosureContext::innermost();
     t = cptr->callEnvironment();
@@ -305,7 +303,6 @@ SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXX
     SEXP t;
     ClosureContext *cptr;
 
-    op->checkNumArgs(num_args, call);
     t = num_args ? args[0] : nullptr;
     n = asInteger(t);
 

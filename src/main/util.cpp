@@ -497,7 +497,6 @@ SEXP attribute_hidden EnsureString(SEXP s)
     return s;
 }
 
-/* FIXME: ngettext reguires unsigned long, but %u would seem appropriate */
 void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 {
     BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
@@ -623,7 +622,6 @@ SEXP attribute_hidden do_merge(/*const*/ CXXR::Expression* call, const CXXR::Bui
     int all_x = 0, all_y = 0, ll = 0/* "= 0" : for -Wall */;
     int nnx, nny;
 
-    op->checkNumArgs(num_args, call);
     xi = args[0];
     // NB: long vectors are not supported for input
     if ( !isInteger(xi) || !(nx = LENGTH(xi)) )
@@ -733,8 +731,6 @@ SEXP static intern_getwd(void)
 
 SEXP attribute_hidden do_getwd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     return(intern_getwd());
 }
 
@@ -747,7 +743,6 @@ SEXP attribute_hidden do_setwd(/*const*/ CXXR::Expression* call, const CXXR::Bui
 {
     SEXP s = R_NilValue, wd = R_NilValue;	/* -Wall */
 
-    op->checkNumArgs(num_args, call);
     if (num_args == 0 || !isValidString(s = args[0]))
 	error(_("character argument expected"));
     if (STRING_ELT(s, 0) == NA_STRING)
@@ -784,7 +779,6 @@ SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
     const wchar_t *pp;
     int i, n;
 
-    checkArity(op, args);
     if (TYPEOF(s = CAR(args)) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
@@ -818,7 +812,6 @@ SEXP attribute_hidden do_basename(/*const*/ CXXR::Expression* call, const CXXR::
     const char *pp;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(s = args[0]) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
@@ -859,7 +852,6 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
     char sp[4*PATH_MAX];
     int i, n;
 
-    checkArity(op, args);
     if (TYPEOF(s = CAR(args)) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
@@ -901,7 +893,6 @@ SEXP attribute_hidden do_dirname(/*const*/ CXXR::Expression* call, const CXXR::B
     const char *pp;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(s = args[0]) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
@@ -947,7 +938,6 @@ SEXP attribute_hidden do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
     const char *path;
     char abspath[PATH_MAX+1];
 
-    checkArity(op, args);
     if (!isString(paths))
 	error(_("'path' must be a character vector"));
 
@@ -1031,7 +1021,6 @@ SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CX
     const char *cs;
     Rboolean findWidth;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(x = args[0]) != STRSXP)
 	error(_("a character vector argument expected"));
     if(isNull(args[1])) w = NA_INTEGER;
@@ -1090,7 +1079,6 @@ SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::
     R_xlen_t i, n;
     CXXRCONST char *tmp;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(x = args[0]) != STRSXP)
 	error(_("a character vector argument expected"));
     n = XLENGTH(x);
@@ -1113,7 +1101,6 @@ SEXP attribute_hidden do_setencoding(/*const*/ CXXR::Expression* call, const CXX
     R_xlen_t i, n;
     const char *thiss;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(x = args[0]) != STRSXP)
 	error(_("a character vector argument expected"));
     if (TYPEOF(enc = args[1]) != STRSXP)
@@ -1726,7 +1713,6 @@ SEXP attribute_hidden do_enc2(/*const*/ CXXR::Expression* call, const CXXR::Buil
     R_xlen_t i;
     Rboolean duped = FALSE;
 
-    op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
     if (!isString(args[0]))
@@ -1983,7 +1969,6 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_ICUget(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *ans = "unknown", *res;
-    checkArity(op, args);
 
     if (collationLocaleSet == 2) {
         ans = "ASCII";
@@ -2051,7 +2036,6 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_ICUget(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     return mkString("ICU not in use");
 }
 
@@ -2091,7 +2075,6 @@ int Scollate(SEXP a, SEXP b)
 
 SEXP attribute_hidden do_crc64(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP in = args[0];
     uint64_t crc = 0;
     char ans[17];
@@ -2139,7 +2122,6 @@ bincode(double *x, R_xlen_t n, double *breaks, int nb,
 /* 'breaks' cannot be a long vector as the return codes are integer. */
 SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP x, breaks, right, lowest;
     x = args[0]; args = (args + 1);
     breaks = args[0]; args = (args + 1);
@@ -2165,7 +2147,6 @@ SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::B
 
 SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP in = args[0], nbin = args[1];
     if (TYPEOF(in) != INTSXP)  error("invalid input");
     R_xlen_t n = XLENGTH(in);
@@ -2184,7 +2165,6 @@ SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::
 /* x can be a long vector but xt cannot since the result is integer */
 SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP xt, x, right, inside;
     xt = args[0]; args = (args + 1);
     x = args[0]; args = (args + 1);
@@ -2224,7 +2204,6 @@ SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CX
 #include <R_ext/Applic.h>
 SEXP attribute_hidden do_pretty(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP ans, nm, hi;
     double l = asReal(args[0]); args = (args + 1);
     if (!R_FINITE(l)) error(_("invalid '%s' argument"), "l");
@@ -2272,7 +2251,6 @@ str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 
 SEXP attribute_hidden do_formatC(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
     SEXP x = args[0]; args = (args + 1);
     if (!isVector(x)) error(_("'x' must be a vector"));
     R_xlen_t n = XLENGTH(x);

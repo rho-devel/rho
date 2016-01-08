@@ -51,7 +51,6 @@ static void La_Init(void)
 SEXP attribute_hidden
 do_lapack(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    checkArity(op, args);
     if(!initialized) La_Init();
     if(initialized > 0)
 	return (*ptr->do_lapack)(call, op, args, env);

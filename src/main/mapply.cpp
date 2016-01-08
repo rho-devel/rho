@@ -35,8 +35,6 @@
 SEXP attribute_hidden
 do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-
     SEXP f = args[0], varyingArgs = args[1], constantArgs = args[2];
     int m, zero = 0;
     R_xlen_t *lengths, *counters, longest = 0;
