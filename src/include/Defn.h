@@ -777,6 +777,9 @@ std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
 int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*,
 		      CXXR::MissingArgHandling, int);
 
+R_xlen_t get_object_length(CXXR::RObject* object, CXXR::Expression* call,
+			   CXXR::Environment* rho);
+
 extern "C"
 void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
 extern "C" {

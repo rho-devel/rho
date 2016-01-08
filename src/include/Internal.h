@@ -245,7 +245,7 @@ CXXR::quick_builtin do_lazyLoadDBflush;
 CXXR::quick_builtin do_lazyLoadDBinsertValue;
 CXXR::quick_builtin do_length;
 CXXR::quick_builtin do_lengthgets;
-SEXP do_lengths(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_lengths;
 CXXR::quick_builtin do_levelsgets;
 CXXR::quick_builtin do_listdirs;
 CXXR::quick_builtin do_listfiles;

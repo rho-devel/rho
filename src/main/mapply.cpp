@@ -48,20 +48,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
     lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
     for (int i = 0; i < m; i++) {
 	SEXP tmp1 = VECTOR_ELT(varyingArgs, i);
-	lengths[i] = xlength(tmp1);
-	if (isObject(tmp1)) { // possibly dispatch on length()
-	    /* Cache the .Primitive: unclear caching is worthwhile. */
-	    static CXXR::GCRoot<> length_op = nullptr;
-	    if (length_op == nullptr) length_op = R_Primitive("length");
-	    // DispatchOrEval() needs 'args' to be a pairlist
-	    SEXP ans, tmp2 = PROTECT(list1(tmp1));
-	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans,
-			       CXXR::MissingArgHandling::Keep, 1)) {
-		lengths[i] = R_xlen_t( (TYPEOF(ans) == REALSXP ?
-					REAL(ans)[0] : asInteger(ans)));
-	    }
-	    UNPROTECT(1);
-	}
+	lengths[i] = get_object_length(tmp1, call, rho);
 	if (lengths[i] == 0) zero++;
 	if (lengths[i] > longest) longest = lengths[i];
     }

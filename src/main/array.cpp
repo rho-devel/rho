@@ -355,26 +355,30 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ScalarInteger(length(x));
 }
 
-static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
-    static SEXP length_op = NULL;
-    SEXP x_elt = VECTOR_ELT(x, i);
-    if (isObject(x_elt)) {
-        SEXP args, len;
-        PROTECT(args = list1(x_elt));
-        if (length_op == NULL) {
-            length_op = R_Primitive("length");
-        }
-        if (DispatchOrEval(call, length_op, "length", args, rho, &len,
-			   MissingArgHandling::Keep, 1)) {
-          return (R_xlen_t)
-	      (TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
-        }
-        UNPROTECT(1);
-    }
-    return(xlength(x_elt));
+static R_xlen_t getElementLength(SEXP x, R_xlen_t i, Expression* call,
+				 Environment* rho) {
+    return get_object_length(VECTOR_ELT(x, i), call, rho);
 }
 
-static SEXP do_lengths_long(SEXP x, SEXP call, SEXP rho)
+R_xlen_t get_object_length(RObject* object, Expression* call, Environment* rho)
+{
+    static BuiltInFunction* length_op
+	= BuiltInFunction::obtainPrimitive("length");
+
+    if (isObject(object))
+    {
+	auto dispatched = length_op->InternalDispatch(
+	    call, "length", 1, &object, call->getArgs(), rho);
+	if (dispatched.first) {
+	    RObject* len = dispatched.second;
+	    return (R_xlen_t)
+		(TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
+	}
+    }
+    return(xlength(object));
+}
+
+static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
 {
     SEXP ans;
     R_xlen_t x_len, i;
@@ -389,9 +393,9 @@ static SEXP do_lengths_long(SEXP x, SEXP call, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_lengths(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_lengths(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP x = CAR(args), ans;
+    SEXP x = args[0], ans;
     R_xlen_t x_len, i;
     int *ans_elt;
 
