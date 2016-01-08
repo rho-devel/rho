@@ -2041,17 +2041,3 @@ SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, cons
     }
     return Rf_ScalarInteger(old);
 }
-
-#include "CXXR/ArgMatcher.hpp"
-
-/* Create a promise to evaluate each argument.	Although this is most */
-/* naturally attacked with a recursive algorithm, we use the iterative */
-/* form below because it is does not cause growth of the pointer */
-/* protection stack, and because it is a little more efficient. */
-
-SEXP attribute_hidden Rf_promiseArgs(SEXP el, SEXP rho)
-{
-    ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
-    arglist.wrapInPromises(SEXP_downcast<Environment*>(rho));
-    return const_cast<PairList*>(arglist.list());
-}

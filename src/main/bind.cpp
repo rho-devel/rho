@@ -1099,7 +1099,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
      *	  drop through to the default code.
      */
 
-    PROTECT(args = promiseArgs(args, env));
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    arglist.wrapInPromises(SEXP_downcast<Environment*>(env));
+    args = const_cast<PairList*>(arglist.list());
 
     const char *generic = ((PRIMVAL(op) == 1) ? "cbind" : "rbind");
     const char *klass = "";
@@ -1172,7 +1174,6 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* zero-extent matrices shouldn't give NULL, but cbind(NULL) should: */
     if (!data.ans_flags && !data.ans_length) {
-	UNPROTECT(1);
 	return R_NilValue;
     }
 
@@ -1208,7 +1209,6 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 	a = cbind(call, args, mode, rho, deparse_level);
     else
 	a = rbind(call, args, mode, rho, deparse_level);
-    UNPROTECT(1);
     return a;
 }
 

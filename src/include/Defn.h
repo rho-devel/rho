@@ -635,7 +635,6 @@ LibExtern Rboolean UseInternet2;
 # define PrintVersion_part_1	Rf_PrintVersion_part_1
 # define PrintVersionString    	Rf_PrintVersionString
 # define PrintWarnings		Rf_PrintWarnings
-# define promiseArgs		Rf_promiseArgs
 # define RealFromComplex	Rf_RealFromComplex
 # define RealFromInteger	Rf_RealFromInteger
 # define RealFromLogical	Rf_RealFromLogical
@@ -831,7 +830,6 @@ void Rf_PrintWarnings(void);
 void process_site_Renviron(void);
 void process_system_Renviron(void);
 void process_user_Renviron(void);
-SEXP Rf_promiseArgs(SEXP, SEXP);
 void Rcons_vprintf(const char *, va_list);
 SEXP R_data_class(SEXP , Rboolean);
 SEXP R_data_class2(SEXP);

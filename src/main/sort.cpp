@@ -1503,7 +1503,7 @@ SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR:
 
 SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP fn, prargs, ans;
+    SEXP fn, ans;
 
     checkArity(op, args);
     check1arg(args, call, "x");
@@ -1512,14 +1512,15 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 		      MissingArgHandling::Keep, 1)) return ans;
     /* otherwise dispatch the default method */
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
-    PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
-    SET_PRVALUE(CAR(prargs), CAR(args));
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    arglist.wrapInPromises(Environment::global());
+
     Closure* closure = SEXP_downcast<Closure*>(fn);
     Expression* callx = SEXP_downcast<Expression*>(call);
-    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
     ans = callx->invokeClosure(closure, callenv, &arglist);
-    UNPROTECT(2);
+    UNPROTECT(1);
     return ans;
 
 }
