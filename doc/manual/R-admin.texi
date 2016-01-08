@@ -916,13 +916,6 @@ There are many other installation options, most of which are listed by
 this manual are either standard @command{autoconf} options not relevant
 to @R{} or intended for specialist uses by the @R{} developers.
 
-One that may be useful when working on @R{} itself is the option
-@option{--disable-byte-compiled-packages}, which ensures that the base
-and recommended packages are lazyloaded but not byte-compiled.
-(Alternatively the (make or environment) variable
-@env{R_NO_BASE_COMPILE} can be set to a non-empty value for the duration
-of the build.)
-
 Option @option{--with-internal-tzcode} makes use of @R{}'s own code and
 copy of the Olson database for managing timezones.  This will be
 preferred where there are issues with the system implementation, usually
@@ -1247,12 +1240,6 @@ make vignettes
 @noindent
 but this is only likely to be worthwhile on a multi-core machine with
 ample memory, and is not 100% reliable.
-
-@item 
-It is possible (mainly for those working on @R{} itself) to set the
-(make or environment) variable @env{R_NO_BASE_COMPILE} to a non-empty
-value, which inhibits the byte-compilation of the base and recommended
-packages.
 
 @end itemize
 
@@ -1915,7 +1902,6 @@ library paths, separated by colons (semicolons on Windows).
 * OS X packages::               
 * Customizing package compilation::  
 * Multiple sub-architectures::  
-* Byte-compilation::            
 @end menu
 
 
@@ -2203,7 +2189,7 @@ appropriate).  This is read immediately after @file{Makeconf}, and an
 alternative file can be specified by environment variable
 @env{R_MAKEVARS_SITE}.
 
-@node Multiple sub-architectures, Byte-compilation, Customizing package compilation, Installing packages
+@node Multiple sub-architectures, Customizing package compilation, Installing packages
 @subsection Multiple sub-architectures
 
 When installing packages from their sources, there are some extra
@@ -2243,26 +2229,6 @@ using the path to @command{R} or @command{R --arch} to select the
 additional sub-architecture.  There is also @command{R CMD INSTALL
 --merge-multiarch} to build and merge the two architectures, starting
 with a source tarball.
-
-@node Byte-compilation,  , Multiple sub-architectures, Installing packages
-@subsection Byte-compilation
-
-The base and recommended packages are byte-compiled by default.  Other
-packages can be byte-compiled on installation by using @command{R CMD
-INSTALL} with option @option{--byte-compile} or by
-@code{install.packages(type = "source", INSTALL_opts =
-"--byte-compile")}.
-
-Not all contributed packages work correctly when byte-compiled (for
-example because they interfere with the sealing of namespaces).  For
-most packages (especially those which make extensive use of compiled
-code) the speed-up is small.  Unless a package is used frequently the
-time spent in byte-compilation can outweigh the time saved in execution:
-also byte-compilation can add substantially to the installed size of the
-package.
-
-Byte-compilation can be controlled on a per-package basis by the
-@samp{ByteCompile} field in the @file{DESCRIPTION} file.
 
 @node Updating packages, Removing packages, Installing packages, Add-on packages
 @section Updating packages

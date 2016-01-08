@@ -2159,7 +2159,8 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 	call2 = PROTECT(Rf_duplicate(call));
 	for (i = 0; i < n; i++, x = CDR(x)) {
 	    SETCAR(args2, CAR(x)); SETCADR(call2, CAR(x));
-	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans, 0, 1)
+	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans,
+				   MissingArgHandling::Keep, 1)
 		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
 		UNPROTECT(2);
 		return TRUE;
@@ -2175,7 +2176,8 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 	call2 = PROTECT(Rf_duplicate(call));
 	for (i = 0; i < n; i++) {
 	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
-	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans, 0, 1)
+	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans,
+				   MissingArgHandling::Keep, 1)
 		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
 		UNPROTECT(2);
 		return TRUE;
@@ -2200,7 +2202,8 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(args) < 1 || length(args) > 2)
 	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
 
-    if (Rf_DispatchOrEval(call, op, "anyNA", args, rho, &ans, 0, 1))
+    if (Rf_DispatchOrEval(call, op, "anyNA", args, rho, &ans,
+			  MissingArgHandling::Keep, 1))
 	return ans;
 
     if(length(args) == 1) {

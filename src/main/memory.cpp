@@ -38,7 +38,6 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "CXXR/ByteCode.hpp"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
@@ -262,10 +261,6 @@ void InitMemory()
     GCManager::setGCThreshold(R_VSize);
 
     ::CXXR::initializeMemorySubsystem();
-
-#ifdef BYTECODE
-    ByteCode::initialize();
-#endif
 }
 
 

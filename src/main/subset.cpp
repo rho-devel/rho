@@ -387,7 +387,7 @@ int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
 	UNPROTECT(1);
     }
     PROTECT(args);
-    int disp = DispatchOrEval(call, op, generic, args, rho, ans, 0, 0);
+    int disp = DispatchOrEval(call, op, generic, args, rho, ans, MissingArgHandling::Keep, 0);
     if (prom) DECREMENT_REFCNT(PRVALUE(prom));
     UNPROTECT(1);
     return disp;

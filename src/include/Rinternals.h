@@ -605,10 +605,6 @@ SEXP R_WeakRefKey(SEXP w);
 SEXP R_WeakRefValue(SEXP w);
 void R_RunWeakRefFinalizer(SEXP w);
 
-SEXP R_ClosureExpr(SEXP);
-void R_initialize_bcode(void);
-#define BODY_EXPR(e) R_ClosureExpr(e)
-
 /* Protected evaluation */
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data);
 SEXP R_ExecWithCleanup(SEXP (*fun)(void *), void *data,

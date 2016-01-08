@@ -801,7 +801,8 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Attempt method dispatch. */
 
-    if (DispatchOrEval(call, op, "c", args, env, &ans, 1, 1))
+    if (DispatchOrEval(call, op, "c", args, env, &ans, MissingArgHandling::Drop,
+		       1))
 	return(ans);
     return do_c_dflt(call, op, ans, env);
 }
@@ -1154,7 +1155,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 	Expression* callx = SEXP_downcast<Expression*>(call);
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
 	Environment* callenv = SEXP_downcast<Environment*>(env);
-	ans = closure->invoke(callenv, &arglist, callx);
+	ans = callx->invokeClosure(closure, callenv, &arglist);
 	UNPROTECT(1);
 	return ans;
     }

@@ -364,7 +364,8 @@ static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
         if (length_op == NULL) {
             length_op = R_Primitive("length");
         }
-        if (DispatchOrEval(call, length_op, "length", args, rho, &len, 0, 1)) {
+        if (DispatchOrEval(call, length_op, "length", args, rho, &len,
+			   MissingArgHandling::Keep, 1)) {
           return (R_xlen_t)
 	      (TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
         }

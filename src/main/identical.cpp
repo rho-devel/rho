@@ -253,10 +253,8 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     }
     case CLOSXP:
 	return Rboolean(R_compute_identical(FORMALS(x), FORMALS(y), flags) &&
-			R_compute_identical(BODY_EXPR(x), BODY_EXPR(y), flags) &&
-			(CLOENV(x) == CLOENV(y) ? TRUE : FALSE) &&
-			(IGNORE_BYTECODE || R_compute_identical(BODY(x), BODY(y), flags))
-			);
+			R_compute_identical(BODY(x), BODY(y), flags) &&
+			(CLOENV(x) == CLOENV(y) ? TRUE : FALSE));
     case SPECIALSXP:
     case BUILTINSXP:
 	return(PRIMOFFSET(x) == PRIMOFFSET(y) ? TRUE : FALSE);

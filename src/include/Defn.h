@@ -66,6 +66,8 @@
 #include <R_ext/Complex.h>
 
 #ifdef __cplusplus
+#include "CXXR/ArgList.hpp"
+
 extern "C" {
 #endif
 
@@ -746,7 +748,6 @@ SEXP Rf_deparse1(SEXP,Rboolean,int);
 SEXP Rf_deparse1w(SEXP,Rboolean,int);
 SEXP Rf_deparse1line(SEXP,Rboolean);
 SEXP Rf_deparse1s(SEXP call);
-int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int Rf_DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated(SEXP, Rboolean);
@@ -774,6 +775,9 @@ void R_InitialData(void);
 #ifdef __cplusplus
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*,
+		      CXXR::MissingArgHandling, int);
+
 extern "C"
 void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
 extern "C" {

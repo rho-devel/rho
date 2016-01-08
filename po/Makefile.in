@@ -17,7 +17,7 @@ LANGS = `cd $(srcdir); ls *.po | sed -e 's/\.po//' -e /^RGui/d`
 ## LANGS = da en en_GB es fr de it ja ko nn pl pt_BR ru tr zh_CN zh_TW en@quot
 
 ## datasets does not have any translations
-R_PKGS_PO = base compiler grDevices graphics grid methods parallel splines stats stats4 tcltk tools utils
+R_PKGS_PO = base grDevices graphics grid methods parallel splines stats stats4 tcltk tools utils
 
 .SUFFIXES:
 

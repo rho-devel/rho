@@ -54,4 +54,4 @@ mkR:
 
 
 # dummy targets
-Rsimple Rlazy Rlazycomp:
+Rsimple Rlazy:

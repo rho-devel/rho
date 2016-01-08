@@ -188,7 +188,6 @@ The following table describes the possible values returned by
 @item @code{"any"} @tab a special type that matches all types: there are no objects of this type
 @item @code{"expression"} @tab an expression object
 @item @code{"list"} @tab a list
-@item @code{"bytecode"} @tab byte code (internal only) ***
 @item @code{"externalptr"} @tab an external pointer object
 @item @code{"weakref"} @tab a weak reference object
 @item @code{"raw"} @tab a vector containing bytes

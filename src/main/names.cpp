@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
 #include <Defn.h>
@@ -99,7 +100,9 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
+const std::vector<BuiltInFunction::TableEntry>&
+BuiltInFunction::getFunctionTable() {
+    static std::vector<BuiltInFunction::TableEntry> s_function_table = {
 
 /* printname	c-entry		quick-entry    offset	eval	arity	pp-kind	     precedence	rightassoc
  * ---------	-------		------	----	-----	-------      ----------	----------*/
@@ -230,7 +233,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"attributes<-",do_attributesgets,0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
 {"attr",	do_attr,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"attr<-",	do_attrgets,	0,	1,	3,	{PP_FUNCALL, PREC_LEFT,	1}},
-{"@<-",		do_attrgets,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
+{"@<-",		do_slotgets,	0,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"levels<-",	do_levelsgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
 
 /* .Internals */
@@ -824,18 +827,18 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"Date2POSIXlt",do_D2POSIXlt,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"POSIXlt2Date",do_POSIXlt2D,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"mkCode",     do_mkcode,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
-{"bcClose",    do_bcclose,      0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
-{"is.builtin.internal",    do_is_builtin_internal,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"disassemble", do_disassemble, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"bcVersion", do_bcversion,     0,      11,     0,      {PP_FUNCALL, PREC_FN, 0}},
-{"load.from.file", do_loadfile, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"save.to.file", do_savefile,   0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
-{"growconst", do_growconst,     0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"putconst", do_putconst,       0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
-{"getconst", do_getconst,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
-{"enableJIT",    do_enablejit,  0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"compilePKGS", do_compilepkgs, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"mkCode",     do_mkcode,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
+// {"bcClose",    do_bcclose,      0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
+// {"is.builtin.internal",    do_is_builtin_internal,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"disassemble", do_disassemble, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"bcVersion", do_bcversion,     0,      11,     0,      {PP_FUNCALL, PREC_FN, 0}},
+// {"load.from.file", do_loadfile, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"save.to.file", do_savefile,   0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
+// {"growconst", do_growconst,     0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"putconst", do_putconst,       0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
+// {"getconst", do_getconst,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
+// {"enableJIT",    do_enablejit,  0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+// {"compilePKGS", do_compilepkgs, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 
 {"setNumMathThreads", do_setnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 {"setMaxNumMathThreads", do_setmaxnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
@@ -982,10 +985,9 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"curlVersion", do_curlVersion, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"curlGetHeaders",do_curlGetHeaders,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"curlDownload",do_curlDownload, 0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-
-{NULL,          (CCODE)NULL,    0,      0,      0,      {PP_INVALID, PREC_FN,   0}},
 };
-
+    return s_function_table;
+}
 
 /* Table of special names.  These are marked as special with
    SET_SPECIAL_SYMBOL.  Environments on the function call stack that
@@ -1013,18 +1015,18 @@ const char *Symbol::s_special_symbol_names[] = {
 std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
 BuiltInFunction::createLookupTables()
 {
+    GCManager::GCInhibitor no_gc;
     map* primitive_function_cache = new map();
     map* internal_function_cache = new map();
 
-    for (int i = 0; s_function_table[i].name; ++i) {
-	const char* symname = s_function_table[i].name;
-	Symbol* sym = Symbol::obtain(symname);
-	GCStackRoot<BuiltInFunction> bif(new BuiltInFunction(i));
-	if (bif->viaDotInternal()) {
-	    (*internal_function_cache)[sym] = bif;
+    for (BuiltInFunction::TableEntry entry : getFunctionTable()) {
+	BuiltInFunction* function = entry.function;
+	Symbol* sym = Symbol::obtain(function->name());
+	if (function->viaDotInternal()) {
+	    (*internal_function_cache)[sym] = function;
 	}
 	else {
-	    (*primitive_function_cache)[sym] = bif;
+	    (*primitive_function_cache)[sym] = function;
 	}
     }
     return std::make_pair(primitive_function_cache, internal_function_cache);
@@ -1059,8 +1061,6 @@ void attribute_hidden Rf_InitNames()
     String::initialize();
     Symbol::initialize();
     R_print.na_string = NA_STRING;
- 
-    R_initialize_bcode();
 }
 
 	/* Internal code for the ~ operator */

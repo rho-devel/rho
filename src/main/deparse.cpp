@@ -834,7 +834,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    print2buff(") ", d);
 
 	    writeline(d);
-	    deparse2buff(BODY_EXPR(s), d);
+	    deparse2buff(BODY(s), d);
 	    d->opts = localOpts;
 	}
 	if (localOpts & SHOWATTRIBUTES) attr2(s, d);

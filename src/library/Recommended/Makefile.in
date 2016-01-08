@@ -42,7 +42,7 @@ stamp-recommended: $(OBJECTS)
 
 ## need to allow parallel installs
 INSTALL_OPTS = --pkglock --data-compress=xz
-INSTALL_OPTS2 =@BYTE_COMPILE_PACKAGES_TRUE@ --byte-compile
+INSTALL_OPTS2 =
 
 ## On e.g. Solaris/FreeBSD if the top-level make is GNU make it will
 ## pass flags such as -j and -w down: so need to ensure that INSTALL
@@ -51,15 +51,9 @@ INSTALL_OPTS2 =@BYTE_COMPILE_PACKAGES_TRUE@ --byte-compile
 	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
 	@rm -f $@.out
 ## Avoid user/site libraries, pass down MAKE
-	@if test -n "$(R_NO_BASE_COMPILE)"; then \
-	  MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
+	MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
 	  _R_CHECK_INSTALL_DEPENDS_=no \
-	  $(R) CMD INSTALL $(INSTALL_OPTS) --no-byte-compile -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
-	else \
-	  MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
-	  _R_CHECK_INSTALL_DEPENDS_=no \
-	  $(R) CMD INSTALL $(INSTALL_OPTS) $(INSTALL_OPTS2) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
-	fi
+	  $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
 	@cat $@.out; rm $@.out
 	@touch $@
 

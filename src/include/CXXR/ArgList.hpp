@@ -35,6 +35,12 @@
 namespace CXXR {
     class DottedArgs;
 
+    enum class MissingArgHandling {
+	Drop,
+	Keep,
+	Error,
+    };
+
     /** @brief Class encapsulating the argument list of a FunctionBase.
      *
      * ArgList objects must be declared on the processor stack
@@ -76,6 +82,19 @@ namespace CXXR {
 	      m_list(const_cast<PairList*>(args)),
 	      m_status(status)
 	{}
+
+	/** @brief Constructor.
+	 *
+	 * @param args List, possibly empty, of the arguments to pass.
+	 *          The argument list has no names, so argument matching
+	 *          will be done solely by position.
+	 *
+	 * @param status The Status of the argument list provided by
+	 *          \a args.  No check is made that the \a args list
+	 *          is actually consistent with the value of \a status.
+	 */
+	ArgList(std::initializer_list<RObject*> args, Status status)
+	    : ArgList(PairList::make(args.size(), args.begin()), status) { }
 
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
@@ -133,7 +152,9 @@ namespace CXXR {
 	 * @note This function is intended within CXXR to supersede
 	 * CR's evalList() and evalListKeepMissing().
 	 */
-	void evaluate(Environment* env, bool allow_missing = false);
+        void evaluate(Environment* env,
+		      MissingArgHandling allow_missing
+		        = MissingArgHandling::Error);
 
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
@@ -170,7 +191,8 @@ namespace CXXR {
 	 */
 	void evaluateToArray(Environment* env,
 			     int num_args, RObject** evaluated_args,
-			     bool allow_missing = false);
+			     MissingArgHandling allow_missing
+			         = MissingArgHandling::Error);
 
 	/** @brief Get the first argument.
 	 *
@@ -207,6 +229,14 @@ namespace CXXR {
 	 * to the value of the first argument.
 	 */
 	std::pair<bool, RObject*> firstArg(Environment* env);
+
+        /** @brief Return the argument at the specified position.
+         */
+        RObject* get(int position) const;
+
+        /** @brief Return the tag at the specified position.
+         */
+        const RObject* getTag(int position) const;
 
 	/** @brief Access the argument list as a PairList.
 	 *
@@ -252,6 +282,10 @@ namespace CXXR {
 	{
 	    return m_status;
 	}
+
+	/** @brief Does this arglist contain an unexpanded '...'?
+         */
+        bool has3Dots() const;
 
 	/** @brief Remove argument names.
 	 *
@@ -350,7 +384,7 @@ namespace CXXR {
 
 	RObject* evaluateSingleArgument(const RObject* arg,
 					Environment* env,
-					bool allow_missing,
+					MissingArgHandling allow_missing,
 					int arg_number);
 
 	void setList(PairList* list) {

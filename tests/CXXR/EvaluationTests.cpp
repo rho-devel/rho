@@ -184,20 +184,9 @@ public:
 	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
 	GCStackRoot<Expression> call(new Expression(closure));
-	return closure->invoke(env, &args, call);
+	return call->invokeClosure(closure, env, &args);
     }
 };
-
-class BytecodeExecutor : public CompilingExecutor {
-public:
-    Closure* compile(Closure* closure) const override {
-	return dynamic_cast<Closure*>(R_cmpfun(closure));
-    }
-};
-
-Executor* Executor::BytecodeExecutor() {
-    return new class BytecodeExecutor();
-}
 
 #ifdef ENABLE_LLVM_JIT
 class JITExecutor : public CompilingExecutor {

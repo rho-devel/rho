@@ -56,11 +56,9 @@ browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L)
     \item{\code{f}}{finish execution of the current loop or function} 
     \item{\code{help}}{print this list of commands}
     \item{\code{n}}{evaluate the next statement, stepping over 
-      function calls.  For byte compiled functions interrupted by
-      \code{browser} calls, \code{n} is equivalent to \code{c}.}
+      function calls.}
     \item{\code{s}}{evaluate the next statement, stepping into
-      function calls.  Again, byte compiled functions make
-      \code{s} equivalent to \code{c}.}
+      function calls.}
     \item{\code{where}}{print a stack trace of all active function calls.}
     \item{\code{Q}}{exit the browser and the current evaluation and
       return to the top-level prompt.}

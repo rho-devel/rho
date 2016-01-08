@@ -53,7 +53,9 @@ namespace CXXR {
     }
 }
 
-// s_function_table is in names.cpp
+// BuiltInFunction::getFunctionTable() is in names.cpp
+
+unsigned int BuiltInFunction::TableEntry::s_next_offset = 0;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -76,159 +78,72 @@ namespace CXXR {
 // using Rf_errorcall() rather than Rf_error(), so that it can
 // specifically be attributed to the 'syntactical' function.
 
-BuiltInFunction::BuiltInFunction(unsigned int offset)
-    : FunctionBase(s_function_table[offset].flags%10
-		   ? BUILTINSXP : SPECIALSXP),
-      m_offset(offset), m_function(s_function_table[offset].cfun),
-      m_quick_function(s_function_table[offset].quick_function)
+BuiltInFunction::BuiltInFunction(const char* name,
+				 CCODE cfun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
 {
-    const std::string& name = s_function_table[offset].name;
-    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
+    m_function = cfun;
+    m_quick_function = nullptr;
+
+    if (m_function == do_External
+	|| m_function == do_Externalgr
+	|| m_function == do_begin
+	|| m_function == do_break
+	|| m_function == do_dotcall
+	|| m_function == do_for
+	|| m_function == do_if
+	|| m_function == do_internal
+	|| m_function == do_repeat
+	|| m_function == do_return
+	|| m_function == do_while) {
+	m_transparent = true;
+    }
+    if (m_function == do_set) {
+	m_transparent = false;
+    }
+}
+
+BuiltInFunction::BuiltInFunction(const char* name,
+				 QuickInvokeFunction fun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+{
+    m_function = nullptr;
+    m_quick_function = fun;
+
+    if (m_quick_function == do_paren)
+	m_transparent = true;
+}
+
+BuiltInFunction::BuiltInFunction(const char* name,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
+      m_offset(offset), m_name(name), m_variant(variant),
+      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity), m_gram(ppinfo)
+{
+    unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
     m_transparent = (viaDotInternal()
-		     || m_function == do_External
-		     || m_function == do_Externalgr
-		     || m_function == do_begin
-		     || m_function == do_break
-		     || m_function == do_dotcall
-		     || m_function == do_for
-		     || m_function == do_if
-		     || m_function == do_internal
-		     || m_function == do_repeat
-		     || m_function == do_return
-		     || m_function == do_while
-		     || m_quick_function == do_paren
-		     || (m_function != do_set
-		     	 && name.length() > 2
-		     	 && name.substr(name.length() - 2) == "<-"));
+		     || (m_name.length() > 2
+		     	 && m_name.substr(m_name.length() - 2) == "<-"));
 }
 
 BuiltInFunction::~BuiltInFunction()
 {
     assert(0 && "BuiltInFunction's destructor should never be called");
-}
-
-RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
-				const Expression* call) const
-{
-    RAllocStack::Scope ras_scope;
-    ProtectStack::Scope ps_scope;
-#ifndef NDEBUG
-    size_t pps_size = ProtectStack::size();
-#endif
-
-#ifdef Win32
-    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
-    // and resets the precision, rounding and exception modes of a
-    // ix86 fpu.
-    // It gets called prior to every builtin function, just in case a badly
-    // behaved DLL has changed the fpu control word.
-    __asm__ ( "fninit" );
-#endif
-
-    GCStackRoot<> ans;
-    if (m_transparent) {
-	PlainContext cntxt;
-	ans = evaluateAndInvoke(env, arglist, call);
-    } else {
-	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	ans = evaluateAndInvoke(env, arglist, call);
-    }
-    if (m_result_printing_mode != SOFT_ON)
-	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-#ifndef NDEBUG
-    if (pps_size != ProtectStack::size())
-	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-		 name(), pps_size, ProtectStack::size());
-#endif
-    return ans;
-}
-
-static bool hasDotArgs(const ArgList* arglist) {
-    const PairList* list = arglist->list();
-    if (!list)
-	return false;
-    for (const ConsCell& cell : *list) {
-	if (cell.car() == R_DotsSymbol)
-	    return true;
-    }
-    return false;
-}
-
-bool BuiltInFunction::argsNeedEvaluating(const ArgList* arglist) const {
-    return sexptype() == BUILTINSXP && arglist->status() != ArgList::EVALUATED;
-}
-
-RObject* BuiltInFunction::evaluateAndInvoke(Environment* env, ArgList* arglist,
-					    const Expression* call) const
-{
-    if (m_quick_function) {
-	return quickEvaluateAndInvoke(env, arglist, call);
-    }
-
-    if (argsNeedEvaluating(arglist)) {
-	arglist->evaluate(env);
-    }
-
-    Evaluator::enableResultPrinting(true);
-    return m_function(const_cast<Expression*>(call),
-		      const_cast<BuiltInFunction*>(this),
-		      const_cast<PairList*>(arglist->list()),
-		      env);
-}
-
-static void copyArgsToArray(const PairList* args, RObject** array) {
-    int i = 0;
-    for (const ConsCell& cell : *args) {
-	array[i] = cell.car();
-	i++;
-    }
-}
-
-RObject* BuiltInFunction::quickEvaluateAndInvoke(
-    Environment* env, ArgList* arglist, const Expression* call) const
-{
-    bool args_need_evaluating = argsNeedEvaluating(arglist);
-    if (args_need_evaluating && hasDotArgs(arglist)) {
-	// This is slow, but handles '...' correctly.
-	arglist->evaluate(env);
-	args_need_evaluating = false;
-    }
-
-    const PairList* args = arglist->list();
-    if (!args) {
-	Evaluator::enableResultPrinting(true);
-	return m_quick_function(const_cast<Expression*>(call),
-				this, env, nullptr, 0, nullptr);
-    }
-
-    int num_args = listLength(args);
-    
-    // Rather than creating a linked list of evaluated arguments, this
-    // simply stores them in an on-stack array.
-    RObject** evaluated_args = static_cast<RObject**>(
-	alloca(num_args * sizeof(RObject*)));
-    if (args_need_evaluating) {
-	arglist->evaluateToArray(env, num_args, evaluated_args);
-    } else {
-	copyArgsToArray(args, evaluated_args);
-    }
-
-    // Since builtins don't do argument matching 'args' has the correct
-    // tags.
-    const PairList* tags = args;
-    
-    Evaluator::enableResultPrinting(true);
-    return m_quick_function(const_cast<Expression*>(call),
-			    this, env, evaluated_args, num_args, tags);
-}
-
-void BuiltInFunction::checkNumArgs(const PairList* args,
-				   const Expression* call) const
-{
-    if (arity() >= 0) {
-	checkNumArgs(listLength(args), call);
-    }
 }
 
 void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
@@ -246,14 +161,6 @@ void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
 			       "%d arguments passed to '%s' which requires %d",
 			       nargs),
 		     nargs, name(), arity());
-}
-
-int BuiltInFunction::indexInTable(const char* name)
-{
-    for (int i = 0; s_function_table[i].name; ++i)
-	if (strcmp(name, s_function_table[i].name) == 0)
-	    return i;
-    return -1;
 }
 
 // BuiltInFunction::createLookupTables() is in names.cpp
@@ -311,14 +218,6 @@ const char* BuiltInFunction::typeName() const
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
 
-static bool anyArgHasClass(int num_args, RObject **args) {
-    for (int i = 0; i < num_args; i++) {
-	if (Rf_isObject(args[i]))
-	    return true;
-    }
-    return false;
-}
-
 std::pair<bool, RObject*>
 BuiltInFunction::RealInternalGroupDispatch(
     const char* group, const Expression* call, Environment* env,
@@ -351,26 +250,7 @@ BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generi
 					const_cast<BuiltInFunction*>(this),
 					generic,
 					const_cast<PairList*>(arglist.list()),
-					env, &result, 1, 1);
+					env, &result, MissingArgHandling::Drop,
+					1);
     return std::make_pair(dispatched, result);
 }
-
-BuiltInFunction::TableEntry::TableEntry(const char* name_,
-					CCODE cfun_,
-					unsigned int variant_,
-					unsigned int flags_,
-					int arity_,
-					PPinfo gram_)
-    : name(name_), cfun(cfun_), quick_function(nullptr),
-      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
-{}
-
-BuiltInFunction::TableEntry::TableEntry(const char* name_,
-					QuickInvokeFunction qfun_,
-					unsigned int variant_,
-					unsigned int flags_,
-					int arity_,
-					PPinfo gram_)
-    : name(name_), cfun(nullptr), quick_function(qfun_),
-      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
-{}

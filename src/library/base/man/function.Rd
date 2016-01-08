@@ -45,10 +45,6 @@
   list), its \code{\link{body}} (\code{expr} in the \sQuote{Usage}
   section) and its \code{\link{environment}} which provides the
   enclosure of the evaluation frame when the closure is used.
-
-  There is an optional further component if the closure has been
-  byte-compiled.  This is not normally user-visible, but it indicated
-  when functions are printed.
 }
 
 \seealso{

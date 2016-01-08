@@ -626,7 +626,8 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     static SEXP do_rep_formals = NULL;
 
     /* includes factors, POSIX[cl]t, Date */
-    if (DispatchOrEval(call, op, "rep", args, rho, &ans, 0, 0))
+    if (DispatchOrEval(call, op, "rep", args, rho, &ans,
+		       MissingArgHandling::Keep, 0))
 	return(ans);
 
     /* This has evaluated all the non-missing arguments into ans */
@@ -750,7 +751,8 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t i, lout = NA_INTEGER;
     static SEXP do_seq_formals = NULL;
 
-    if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 1))
+    if (DispatchOrEval(call, op, "seq", args, rho, &ans,
+		       MissingArgHandling::Keep, 1))
 	return(ans);
 
     /* This is a primitive and we manage argument matching ourselves.

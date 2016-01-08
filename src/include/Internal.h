@@ -88,7 +88,7 @@ CXXR::quick_builtin do_asvector;
 SEXP do_AT(SEXP call, SEXP op, SEXP args, SEXP env);  // Special
 CXXR::quick_builtin do_attach;
 SEXP do_attr(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
-SEXP do_attrgets(SEXP, SEXP, SEXP, SEXP);  // Special
+SEXP do_attrgets(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 CXXR::quick_builtin do_attributes;
 CXXR::quick_builtin do_attributesgets;
 CXXR::quick_builtin do_backsolve;
@@ -376,6 +376,7 @@ CXXR::quick_builtin do_shortRowNames;
 CXXR::quick_builtin do_signalCondition;
 CXXR::quick_builtin do_sink;
 CXXR::quick_builtin do_sinknumber;
+SEXP do_slotgets(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_sort;
 CXXR::quick_builtin do_split;
 CXXR::quick_builtin do_sprintf;

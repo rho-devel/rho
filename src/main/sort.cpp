@@ -1508,7 +1508,8 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     check1arg(args, call, "x");
 
-    if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans, 0, 1)) return ans;
+    if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans,
+		      MissingArgHandling::Keep, 1)) return ans;
     /* otherwise dispatch the default method */
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
@@ -1517,7 +1518,7 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     Expression* callx = SEXP_downcast<Expression*>(call);
     ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
-    ans = closure->invoke(callenv, &arglist, callx);
+    ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(2);
     return ans;
 

@@ -24,8 +24,6 @@ all: Makefile R
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
-@BYTE_COMPILE_PACKAGES_FALSE@R_NO_BASE_COMPILE = true
-
 ## Beware there is a bootstrapping problem here: tools uses tools to
 ## dump its namespace. So it works initially, but not to update.
 ## When base is made we need to use 'date' to set the timestamp in
@@ -33,18 +31,12 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 
 R:
 	@$(MKINSTALLDIRS) $(top_builddir)/library
-	@for pkg in profile translations base tools compiler; do \
+	@for pkg in profile translations base tools; do \
 	  (cd $${pkg} && $(MAKE) all) || exit 1; \
 	done
-	@if test -z "$(R_NO_BASE_COMPILE)"; then \
-	  for pkg in base tools; do \
-	    (cd $${pkg} && $(MAKE) mklazycomp) || exit 1; \
-	  done; \
-	else \
-	  for pkg in base tools; do \
-	    (cd $${pkg} && $(MAKE) Rlazy) || exit 1; \
-	  done; \
-	fi
+	for pkg in base tools; do \
+	  (cd $${pkg} && $(MAKE) Rlazy) || exit 1; \
+	done;
 
 	$(MAKE) $(addsuffix -pkg, $(R_PKGS_BASE1))
 
@@ -79,7 +71,7 @@ docs:
 	@touch stamp-docs
 
 # fix the order to make best use of parallel builds
-RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdts datasets.Rdts grid.Rdts tools.Rdts tcltk.Rdts splines.Rdts stats4.Rdts compiler.Rdts parallel.Rdts
+RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdts datasets.Rdts grid.Rdts tools.Rdts tcltk.Rdts splines.Rdts stats4.Rdts parallel.Rdts
 # RD-TS = $(R_PKGS_BASE:=.Rdts)
 
 .inn.Rdts:

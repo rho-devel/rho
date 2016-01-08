@@ -37,6 +37,8 @@
 #include "CXXR/Promise.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
+#include "boost/functional/hash.hpp"
+#include "sparsehash/dense_hash_set"
 
 using namespace std;
 using namespace CXXR;
@@ -44,7 +46,7 @@ using namespace CXXR;
 bool ArgMatcher::s_warn_on_partial_match = false;
 
 ArgMatcher::ArgMatcher(const PairList* formals)
-    : m_has_dots(false)
+    : m_dots_position(-1)
 {
     m_formals = formals;
 
@@ -53,20 +55,22 @@ ArgMatcher::ArgMatcher(const PairList* formals)
 	if (!sym)
 	    Rf_error(_("invalid formal arguments for 'function'"));
 	if (sym == DotsSymbol) {
-	    if (m_has_dots)
+	    if (has3Dots())
 		Rf_error(_("formals list contains more than one '...'"));
 	    if (f->car() != Symbol::missingArgument())
 		Rf_error(_("'...' formal cannot have a default value"));
-	    m_has_dots = true;
+	    m_dots_position = m_formal_data.size();
 	} else {
-	    FormalData fdata = {sym, m_has_dots, f->car()};
 	    pair<FormalMap::const_iterator, bool> pr =
 		m_formal_index.insert(make_pair(sym->name(),
 						m_formal_data.size()));
 	    if (!pr.second)
 		Rf_error(_("duplicated name in formals list"));
-	    m_formal_data.push_back(fdata);
 	}
+
+	FormalData fdata = {sym, has3Dots(), f->car(),
+			    static_cast<unsigned>(m_formal_data.size()) };
+	m_formal_data.push_back(fdata);
     }
 }
 
@@ -77,24 +81,6 @@ void ArgMatcher::detachReferents()
     m_formal_index.clear();
 }
 
-void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
-{
-    Frame::Binding* bdg = frame->obtainBinding(DotsSymbol);
-    if (!supplied_list->empty()) {
-	SuppliedList::iterator first = supplied_list->begin();
-	DottedArgs* dotted_args
-	    = new DottedArgs((*first).value, nullptr, (*first).tag);
-	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
-	supplied_list->erase(first);
-	GCStackRoot<PairList> tail;
-	for (SuppliedList::const_reverse_iterator rit = supplied_list->rbegin();
-	     rit != supplied_list->rend(); ++rit)
-	    tail = PairList::cons((*rit).value, tail, (*rit).tag);
-	dotted_args->setTail(tail);
-	supplied_list->clear();
-    }
-}
-	     
 bool ArgMatcher::isPrefix(const String* shorter, const String* longer)
 {
     size_t length = shorter->size();
@@ -121,32 +107,219 @@ ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,
 }
 
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
-			     RObject* supplied_value)
+			     Frame::Binding::Origin origin,
+			     RObject* value)
 {
-    RObject* value = supplied_value;
-    Frame::Binding::Origin origin = Frame::Binding::EXPLICIT;
-    if (value == Symbol::missingArgument()
-	&& fdata.value != Symbol::missingArgument()) {
-	origin = Frame::Binding::DEFAULTED;
-	value = new Promise(fdata.value, target_env);
+    if (origin == Frame::Binding::DEFAULTED) {
+	if (fdata.value != Symbol::missingArgument())
+	    value = new Promise(fdata.value, target_env);
     }
     Frame::Binding* bdg = target_env->frame()->obtainBinding(fdata.symbol);
     // Don't trump a previous binding with Symbol::missingArgument() :
     if (value != Symbol::missingArgument())
 	bdg->setValue(value, origin);
 }
-    
+
+class ArgMatcher::MatchCallback {
+public:
+    typedef ArgMatcher::FormalData FormalData;
+    typedef ArgMatcher::SuppliedData SuppliedData;
+    typedef ArgMatcher::SuppliedList SuppliedList;
+    typedef boost::iterator_range<std::vector<int>::const_iterator> ArgIndices;
+
+    virtual void matchedArgument(const FormalData& formal,
+				 int arg_index,
+				 RObject* value) = 0;
+
+    virtual void defaultValue(const FormalData& formal) = 0;
+
+    virtual void dottedArgs(const FormalData& formal,
+			    ArgIndices arg_indices,
+			    const ArgList* all_args) = 0;
+};
+
+void ArgMatcher::matchWithCache(const ArgList* supplied,
+				MatchCallback* callback,
+				const ArgMatchInfo* matching) const
+{
+    for (int findex = 0; findex < m_formal_data.size(); findex++) {
+	const FormalData& fdata = m_formal_data[findex];
+	int sindex = matching->getSindex(findex);
+	if (sindex >= 0) {
+	    // This assumes that random access in an ArgList is O(1).
+	    callback->matchedArgument(fdata, sindex, supplied->get(sindex));
+	}
+	else if (fdata.symbol != R_DotsSymbol) {
+	    callback->defaultValue(fdata);
+	}
+	else {
+	    callback->dottedArgs(fdata, matching->getDotArgs(), supplied);
+	}
+    }
+}
+
+struct ArgMatchInfo::Hash {
+    size_t operator()(const ArgMatchInfo* item) const {
+	size_t seed = 0;
+	boost::hash_combine(seed, item->m_num_formals);
+	boost::hash_combine(seed, item->m_values);
+	return seed;
+    }
+};
+
+namespace {
+
+class ClosureMatchCallback : public ArgMatcher::MatchCallback
+{
+public:
+    ClosureMatchCallback(Environment* target_env)
+	: m_target_env(target_env) { }
+
+    void matchedArgument(const FormalData& formal,
+			 int arg_index, RObject* value) override
+    {
+	// If the value was missing, then use the default instead.
+	if (value == Symbol::missingArgument()) {
+	    defaultValue(formal);
+	    return;
+	}
+
+	m_target_env->frame()->bind(formal.symbol, value,
+				    Frame::Binding::EXPLICIT);
+    }
+
+    void defaultValue(const FormalData& formal) override
+    {
+    	if (formal.value == Symbol::missingArgument()) {
+    	    // Create a value bound to Symbol::missingArgument()
+    	    m_target_env->frame()->obtainBinding(formal.symbol);
+	} else {
+	    RObject* value = new Promise(formal.value, m_target_env);
+	    m_target_env->frame()->bind(formal.symbol, value,
+					Frame::Binding::DEFAULTED);
+	}
+    }
+
+    void dottedArgs(const FormalData& formal,
+		    ArgIndices arg_indices,
+		    const ArgList* all_args)  {
+	if (arg_indices.empty()) {
+	    m_target_env->frame()->obtainBinding(DotsSymbol);
+	    return;
+	}
+
+	ConsCell* dots = nullptr;
+	for (int index : arg_indices) {
+	    RObject* value = all_args->get(index);
+	    const RObject* tag = all_args->getTag(index);
+	    if (dots) {
+		PairList* next_item = new PairList(value, nullptr, tag);
+		dots->setTail(next_item);
+		dots = next_item;
+	    } else {
+		dots = new DottedArgs(value, nullptr, tag);
+		m_target_env->frame()->bind(DotsSymbol, dots,
+					    Frame::Binding::EXPLICIT);
+	    }
+	}
+    }
+
+private:
+    Environment* m_target_env;
+};
+
+class RecordArgMatchInfoCallback : public ArgMatcher::MatchCallback
+{
+public:
+    RecordArgMatchInfoCallback(ArgMatchInfo* matching) : m_matching(matching) {}
+
+    void matchedArgument(const FormalData& formal,
+			 int arg_index, RObject* value) override {
+	m_matching->m_values[formal.index] = arg_index;
+    }
+
+    void defaultValue(const FormalData& formal) override {
+	m_matching->m_values[formal.index] = -1;
+    }
+
+    void dottedArgs(const FormalData& formal,
+		    ArgIndices arg_indices,
+		    const ArgList* all_args) {
+	m_matching->m_values.insert(m_matching->m_values.end(),
+				    arg_indices.begin(), arg_indices.end());
+    }
+private:
+    ArgMatchInfo* m_matching;
+};
+
+template<class T>
+struct DereferencedEquality {
+    bool operator()(const T* lhs, const T* rhs) const {
+	if (lhs != nullptr && rhs != nullptr) {
+	    return *lhs == *rhs;
+	}
+	return lhs == rhs;
+    }
+};
+
+typedef google::dense_hash_set<const ArgMatchInfo*, ArgMatchInfo::Hash,
+			       DereferencedEquality<ArgMatchInfo>>
+	ArgMatchInfoCache;
+
+ArgMatchInfoCache createMatchInfoCache() {
+    ArgMatchInfoCache cache;
+    cache.set_empty_key(nullptr);
+    return cache;
+}
+
+}  // namespace
+
+ArgMatchInfo::ArgMatchInfo(int num_formals)
+    : m_num_formals(num_formals), m_values(num_formals, -1) { }
+
+const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
+    static ArgMatchInfoCache s_interned_match_infos = createMatchInfoCache();
+
+    if (args->has3Dots())
+	return nullptr;
+
+    ArgMatchInfo* matching = new ArgMatchInfo(numFormals());
+    RecordArgMatchInfoCallback callback(matching);
+    match(args, &callback);
+
+    // If there is an existing ArgMatchInfo with the same values, use that
+    // instead to conserve memory use.
+    auto inserted = s_interned_match_infos.insert(matching);
+    if (!inserted.second) {
+	delete matching;
+    }
+    return *inserted.first;
+}
+
 void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 {
-    Frame* frame = target_env->frame();
+    ClosureMatchCallback callback(target_env);
+    match(supplied, &callback);
+}
+
+void ArgMatcher::match(Environment* target_env, const ArgList* supplied,
+		       const ArgMatchInfo* matching) const
+{
+    ClosureMatchCallback callback(target_env);
+    matchWithCache(supplied, &callback, matching);
+}
+
+
+void ArgMatcher::match(const ArgList* supplied,
+		       MatchCallback* callback) const
+{
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
     SuppliedList supplied_list;
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (const PairList* s = supplied->list(); s; s = s->tail()) {
-	    ++sindex;
+	for (const PairList* s = supplied->list(); s; s = s->tail(), ++sindex) {
 	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
 	    const String* name = (tag ? tag->name() : nullptr);
 	    RObject* value = s->car();
@@ -156,9 +329,9 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	    if (fmit != m_formal_index.end() && (*fmit).first == name) {
 		// Exact tag match:
 		unsigned int findex = (*fmit).second;
-		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = EXACT_TAG;
-		makeBinding(target_env, fdata, value);
+		callback->matchedArgument(m_formal_data[findex], sindex,
+					  value);
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
@@ -200,15 +373,14 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 		if (fmit != m_formal_index.end()
 		    && isPrefix(supplied_name, (*fmit).first))
 		    Rf_error(_("argument %d matches multiple formal arguments"),
-			     supplied_data.index);
+			     supplied_data.index + 1);
 		// Partial match is OK:
 		if (s_warn_on_partial_match)
 		    Rf_warning(_("partial argument match of '%s' to '%s'"),
 			       supplied_name->c_str(),
 			       (*fmit).first->c_str());
-		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = PARTIAL_TAG;
-		makeBinding(target_env, fdata, supplied_data.value);
+		callback->matchedArgument(m_formal_data[findex], supplied_data.index, supplied_data.value);
 		supplied_list.erase(slit);
 	    }
 	    slit = next;
@@ -221,7 +393,6 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	for (unsigned int findex = 0; findex < numformals; ++findex) {
 	    if (formals_status[findex] == UNMATCHED) {
 		const FormalData& fdata = m_formal_data[findex];
-		RObject* value = Symbol::missingArgument();
 		// Skip supplied arguments with tags:
 		while (slit != supplied_list.end() && (*slit).tag)
 		    ++slit;
@@ -229,18 +400,28 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 		    && !fdata.follows_dots) {
 		    // Handle positional match:
 		    const SuppliedData& supplied_data = *slit;
-		    value = supplied_data.value;
 		    formals_status[findex] = POSITIONAL;
+		    callback->matchedArgument(fdata, supplied_data.index,
+					      supplied_data.value);
 		    supplied_list.erase(slit++);
+		} else if (findex != m_dots_position) {
+		    callback->defaultValue(fdata);
 		}
-		makeBinding(target_env, fdata, value);
 	    }
 	}
     }
+
     // Any remaining supplied args are either rolled into ... or
     // there's an error:
-    if (m_has_dots)
-	handleDots(frame, &supplied_list);
+    if (has3Dots()) {
+	vector<int> dotted_arg_indices;
+	for (const auto& sitem : supplied_list) {
+	    dotted_arg_indices.push_back(sitem.index);
+	}
+	callback->dottedArgs(m_formal_data[m_dots_position],
+			     boost::make_iterator_range(dotted_arg_indices),
+			     supplied);
+    }
     else if (!supplied_list.empty())
 	unusedArgsError(supplied_list);
 }
@@ -257,18 +438,21 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 		       "in environment of the generic function"),
 		     symbol->name()->c_str());
 	RObject* val = frombdg->unforcedValue();
-	// Discard generic's defaults:
-	if (frombdg->origin() != Frame::Binding::EXPLICIT)
-	    val = Symbol::missingArgument();
-	makeBinding(toenv, fdata, val);
+	if (frombdg->origin() == Frame::Binding::EXPLICIT) {
+	    makeBinding(toenv, fdata, Frame::Binding::EXPLICIT, val);
+	} else {
+	    // Discard generic's defaults:
+	    makeBinding(toenv, fdata, Frame::Binding::DEFAULTED,
+			fdata.value);
+	}
     }
     // m_formal_data excludes '...', so:
-    if (m_has_dots) {
+    if (has3Dots()) {
 	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
 	toenv->frame()->importBinding(frombdg);
     }
 }
-	    
+
 void ArgMatcher::stripFormals(Frame* input_frame) const
 {
     const PairList* fcell = m_formals;
@@ -284,4 +468,15 @@ void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals)
 	(*v)(m_formals);
+}
+
+PairList* ArgMatcher::makePairList(std::initializer_list<const char*> arg_names)
+{
+    PairList* result = PairList::make(arg_names.size());
+    auto result_iter = result->begin();
+    for (const char* arg : arg_names) {
+	result_iter->setTag(Symbol::obtain(arg));
+	++result_iter;
+    }
+    return result;
 }

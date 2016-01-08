@@ -1461,6 +1461,42 @@ static void check_slot_assign(SEXP obj, SEXP input, SEXP value, SEXP env)
 }
 
 
+SEXP attribute_hidden do_slotgets(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    /*  attr@nlist  <-  value  */
+
+    checkArity(op, args);
+
+    SEXP obj, input, nlist, ans, value;
+    PROTECT(input = allocVector(STRSXP, 1));
+    
+    nlist = CADR(args);
+    if (isSymbol(nlist))
+	SET_STRING_ELT(input, 0, PRINTNAME(nlist));
+    else if(isString(nlist) )
+	SET_STRING_ELT(input, 0, STRING_ELT(nlist, 0));
+    else {
+	error(_("invalid type '%s' for slot name"),
+	      type2char(TYPEOF(nlist)));
+	return R_NilValue; /*-Wall*/
+    }
+    
+    /* replace the second argument with a string */
+    SETCADR(args, input);
+    UNPROTECT(1); // 'input' is now protected
+    
+    if(DispatchOrEval(call, op, "@<-", args, env, &ans,
+		      MissingArgHandling::Keep, 0))
+	return(ans);
+    
+    PROTECT(obj = CAR(ans));
+    PROTECT(value = CADDR(ans));
+    check_slot_assign(obj, input, value, env);
+    value = R_do_slot_assign(obj, input, value);
+    UNPROTECT(2);
+    return value;
+}
+
 SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /*  attr(x, which = "<name>")  <-  value  */
@@ -1468,37 +1504,6 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
     static SEXP do_attrgets_formals = NULL;
 
     checkArity(op, args);
-
-    if(PRIMVAL(op)) { /* @<- */
-	SEXP input, nlist, ans, value;
-	PROTECT(input = allocVector(STRSXP, 1));
-
-	nlist = CADR(args);
-	if (isSymbol(nlist))
-	    SET_STRING_ELT(input, 0, PRINTNAME(nlist));
-	else if(isString(nlist) )
-	    SET_STRING_ELT(input, 0, STRING_ELT(nlist, 0));
-	else {
-	    error(_("invalid type '%s' for slot name"),
-		  type2char(TYPEOF(nlist)));
-	    return R_NilValue; /*-Wall*/
-	}
-
-	/* replace the second argument with a string */
-	SETCADR(args, input);
-	UNPROTECT(1); // 'input' is now protected
-
- 	if(DispatchOrEval(call, op, "@<-", args, env, &ans, 0, 0))
-	    return(ans);
-
-	PROTECT(obj = CAR(ans));
-	PROTECT(value = CADDR(ans));
-	check_slot_assign(obj, input, value, env);
-	value = R_do_slot_assign(obj, input, value);
-	UNPROTECT(2);
-	return value;
-    }
-
 
     obj = CAR(args);
     if (MAYBE_SHARED(obj))

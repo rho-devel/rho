@@ -51,8 +51,10 @@ PairList* ArgList::append(PairList* object, PairList* last_element) {
 
 void ArgList::evaluateToArray(Environment* env,
 			      int num_args, RObject** evaluated_args,
-			      bool allow_missing)
+			      MissingArgHandling allow_missing)
 {
+    assert(allow_missing != MissingArgHandling::Drop);
+
     if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
@@ -79,8 +81,11 @@ void ArgList::evaluateToArray(Environment* env,
 }
 
 
-void ArgList::evaluate(Environment* env, bool allow_missing)
+void ArgList::evaluate(Environment* env,
+		       MissingArgHandling allow_missing)
 {
+    assert(allow_missing != MissingArgHandling::Drop);
+
     if (m_status == EVALUATED)
 	return;
     if (m_first_arg_env && env != m_first_arg_env)
@@ -127,21 +132,23 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 
 RObject* ArgList::evaluateSingleArgument(const RObject* arg,
 					 Environment* env,
-					 bool allow_missing,
+					 MissingArgHandling allow_missing,
 					 int arg_number) {
+    assert(allow_missing != MissingArgHandling::Drop);
+
     if (m_first_arg_env) {
 	RObject* value = m_first_arg;
 	m_first_arg = nullptr;
 	m_first_arg_env = nullptr;
 	return value;
-    } else if (arg && arg->sexptype() == SYMSXP) {
+     } else if (arg && arg->sexptype() == SYMSXP) {
 	const Symbol* sym = static_cast<const Symbol*>(arg);
 	if (sym == Symbol::missingArgument()) {
-	    if (allow_missing)
+	    if (allow_missing == MissingArgHandling::Keep)
 		return Symbol::missingArgument();
 	    else Rf_error(_("argument %d is empty"), arg_number);
 	} else if (isMissingArgument(sym, env->frame())) {
-	    if (allow_missing)
+	    if (allow_missing == MissingArgHandling::Keep)
 		return Symbol::missingArgument();
 	    else Rf_error(_("argument \"%s\" is missing, with no default"),
 			  sym->name()->c_str());
@@ -215,6 +222,30 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	elt = elt->tail();  // elt was unbound or missing DotsSymbol
     }
     return pair<bool, RObject*>(false, nullptr);
+}
+
+RObject* ArgList::get(int position) const {
+    ConsCell* cell = m_list.get();
+    for (int i = 0; i < position && cell != nullptr; i++) {
+	cell = cell->tail();
+    }
+    return cell ? cell->car() : nullptr;
+}
+
+const RObject* ArgList::getTag(int position) const {
+    ConsCell* cell = m_list.get();
+    for (int i = 0; i < position && cell != nullptr; i++) {
+	cell = cell->tail();
+    }
+    return cell ? cell->tag() : nullptr;
+}
+
+bool ArgList::has3Dots() const {
+  for (const ConsCell& cell : *list()) {
+    if (cell.car() == R_DotsSymbol)
+      return true;
+  }
+  return false;
 }
 
 void ArgList::stripTags()
