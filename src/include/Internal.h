@@ -49,16 +49,6 @@ namespace CXXR {
                                   RObject* const* args,
                                   int num_args,
                                   const PairList* tags);
-#if Win32
-SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
-SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
-SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
-SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
-SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
-#else
-SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
-#endif
-
 }  // namespace CXXR
 
 /* Function Names */
@@ -519,17 +509,18 @@ CXXR::quick_builtin do_untracemem;
 extern "C" {
 #endif  // __cplusplus
 
-// Functions that are defined in or called from C.
 
 #if Win32
-SEXP do_mkjun3ction(SEXP, SEXP, SEXP, SEXP);
+SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
 SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
 SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
+SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
 #else
 SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
 #endif
 
+// Functions that are defined in or called from C.
 SEXP do_complex(SEXP, SEXP, SEXP, SEXP);
 SEXP do_contourLines(SEXP, SEXP, SEXP, SEXP);
 SEXP do_edit(SEXP, SEXP, SEXP, SEXP);
