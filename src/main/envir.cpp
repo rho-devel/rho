@@ -1852,22 +1852,6 @@ SEXP attribute_hidden do_bndIsActive(/*const*/ CXXR::Expression* call, const CXX
     return ScalarLogical(R_BindingIsActive(sym, env));
 }
 
-/* This is a .Internal with no wrapper, currently unused in base R */
-SEXP attribute_hidden do_mkUnbound(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    SEXP sym;
-    sym = args[0];
-
-    if (TYPEOF(sym) != SYMSXP) error(_("not a symbol"));
-    /* This does not allow active bindings to be unbound */
-    if (R_BindingIsLocked(sym, R_BaseEnv))
-	error(_("cannot unbind a locked binding"));
-    if (R_BindingIsActive(sym, R_BaseEnv))
-	error(_("cannot unbind an active binding"));
-    SET_SYMVALUE(sym, R_UnboundValue);
-    return R_NilValue;
-}
-
 Rboolean R_IsPackageEnv(SEXP rho)
 {
     if (TYPEOF(rho) == ENVSXP) {

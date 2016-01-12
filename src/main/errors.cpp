@@ -1508,12 +1508,6 @@ SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CX
     return oldstack;
 }
 
-SEXP attribute_hidden do_resetCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    R_HandlerStack = args[0];
-    return R_NilValue;
-}
-
 static SEXP findSimpleErrorHandler(void)
 {
     SEXP list;
@@ -1847,14 +1841,6 @@ do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_interruptsSuspended(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    int orig_value = R_interrupts_suspended;
-    if (num_args != 0)
-	R_interrupts_suspended = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
-    return ScalarLogical(orig_value);
-}
-	
 /* These functions are to be used in error messages, and available for others to use in the API 
    GetCurrentSrcref returns the first non-NULL srcref after skipping skip of them.  If it
    doesn't find one it returns NULL. */

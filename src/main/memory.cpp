@@ -415,16 +415,6 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memlimits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    SEXP ans;
-    PROTECT(ans = allocVector(INTSXP, 2));
-    INTEGER(ans)[0] = NA_INTEGER;
-    INTEGER(ans)[1] = NA_INTEGER;
-    UNPROTECT(1);
-    return ans;
-}
-
 SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nms;

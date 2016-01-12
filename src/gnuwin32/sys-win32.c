@@ -111,11 +111,6 @@ const char *R_ExpandFileName(const char *s)
  *  7) PLATFORM DEPENDENT FUNCTIONS
  */
 
-SEXP do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    return mkString("Win32");
-}
-
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 

@@ -93,7 +93,6 @@ SEXP do_bind(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_bindtextdomain;
 CXXR::quick_builtin do_bitwise;
 CXXR::quick_builtin do_body;
-CXXR::quick_builtin do_bodyCode;
 SEXP do_break(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_browser(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 CXXR::quick_builtin do_builtins;
@@ -114,7 +113,6 @@ CXXR::quick_builtin do_commandArgs;
 CXXR::quick_builtin do_comment;
 CXXR::quick_builtin do_commentgets;
 CXXR::quick_builtin do_copyDFattr;
-CXXR::quick_builtin do_crc64;
 CXXR::quick_builtin do_Cstack_info;
 CXXR::quick_builtin do_cum;
 SEXP do_curlDownload(SEXP, SEXP, SEXP, SEXP);
@@ -214,7 +212,6 @@ CXXR::quick_builtin do_inspect;
 CXXR::quick_builtin do_intToUtf8;
 CXXR::quick_builtin do_interactive;
 SEXP do_internal(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_interruptsSuspended;
 CXXR::quick_builtin do_intToBits;
 CXXR::quick_builtin do_invisible;
 CXXR::quick_builtin do_invokeRestart NORET;
@@ -262,7 +259,6 @@ SEXP do_matprod(SEXP, SEXP, SEXP, SEXP);
 SEXP do_Math2(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_matrix;
 CXXR::quick_builtin do_maxcol;
-CXXR::quick_builtin do_memlimits;
 CXXR::quick_builtin do_memoryprofile;
 CXXR::quick_builtin do_merge;
 CXXR::quick_builtin do_mget;
@@ -303,9 +299,6 @@ CXXR::quick_builtin do_qsort;
 CXXR::quick_builtin do_quit;
 SEXP do_quote(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_radixsort;
-CXXR::quick_builtin do_random1;
-CXXR::quick_builtin do_random2;
-CXXR::quick_builtin do_random3;
 SEXP do_range(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_rank;
 CXXR::quick_builtin do_rapply;
@@ -329,7 +322,6 @@ SEXP do_rep(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_rep_int;
 CXXR::quick_builtin do_rep_len;
 SEXP do_repeat(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_resetCondHands;
 SEXP do_return(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_returnValue(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_Rhome;
@@ -493,7 +485,6 @@ CXXR::quick_builtin do_lockBnd;
 CXXR::quick_builtin do_bndIsLocked;
 CXXR::quick_builtin do_mkActiveBnd;
 CXXR::quick_builtin do_bndIsActive;
-CXXR::quick_builtin do_mkUnbound;
 CXXR::quick_builtin do_isNSEnv;
 CXXR::quick_builtin do_regNS;
 CXXR::quick_builtin do_unregNS;
@@ -527,7 +518,6 @@ SEXP do_edit(SEXP, SEXP, SEXP, SEXP);
 SEXP do_filechoose(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getGraphicsEvent(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
-SEXP do_machine(SEXP, SEXP, SEXP, SEXP);
 SEXP do_normalizepath(SEXP, SEXP, SEXP, SEXP);
 SEXP do_polyroot(SEXP, SEXP, SEXP, SEXP);
 SEXP do_saveplot(SEXP, SEXP, SEXP, SEXP);

@@ -2071,22 +2071,6 @@ int Scollate(SEXP a, SEXP b)
 # endif
 #endif
 
-#include <lzma.h>
-
-SEXP attribute_hidden do_crc64(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    SEXP in = args[0];
-    uint64_t crc = 0;
-    char ans[17];
-    if (!isString(in)) error("input must be a character string");
-    const char *str = CHAR(STRING_ELT(in, 0));
-
-    /* Seems this is really 64-bit only on 64-bit platforms */
-    crc = lzma_crc64(reinterpret_cast<CXXRCONST uint8_t *>(str), strlen(str), crc);
-    snprintf(ans, 17, "%lx", static_cast<long unsigned int>( crc));
-    return mkString(ans);
-}
-
 static void
 bincode(double *x, R_xlen_t n, double *breaks, int nb,
 	int *code, int right, int include_border)

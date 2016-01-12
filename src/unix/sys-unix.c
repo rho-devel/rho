@@ -163,11 +163,6 @@ const char *R_ExpandFileName(const char *s)
  *  7) PLATFORM DEPENDENT FUNCTIONS
  */
 
-SEXP attribute_hidden do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    return mkString("Unix");
-}
-
 # ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h> /* times */
 # endif

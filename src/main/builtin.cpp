@@ -250,11 +250,6 @@ SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else return R_NilValue;
 }
 
-SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
-{
-    return do_body(call, op, rho, args, num_args, tags);
-}
-
 /* get environment from a subclass if possible; else return NULL */
 #define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
 

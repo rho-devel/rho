@@ -131,13 +131,6 @@ SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR:
     }
 }
 
-#if 0
-SEXP attribute_hidden do_visibleflag(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    return ScalarLogical(R_Visible);
-}
-#endif
-
 /* This is *only* called via outdated R_level prmatrix() : */
 SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
