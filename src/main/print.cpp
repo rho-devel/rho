@@ -132,20 +132,20 @@ SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* This is *only* called via outdated R_level prmatrix() : */
-SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* rowlab_, CXXR::RObject* collab_, CXXR::RObject* quote_, CXXR::RObject* right_, CXXR::RObject* na_print_)
 {
     int quote;
     SEXP a, x, rowlab, collab, naprint;
     char *rowname = nullptr, *colname = nullptr;
 
     PrintDefaults();
-    x = args[0]; args = (args + 1);
-    rowlab = args[0]; args = (args + 1);
-    collab = args[0]; args = (args + 1);
+    x = x_;
+    rowlab = rowlab_;
+    collab = collab_;
 
-    quote = asInteger(args[0]); args = (args + 1);
-    R_print.right = Rprt_adj( asInteger(args[0])); args = (args + 1);
-    naprint = args[0];
+    quote = asInteger(quote_);
+    R_print.right = Rprt_adj( asInteger(right_));
+    naprint = na_print_;
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
 	    error(_("invalid 'na.print' specification"));

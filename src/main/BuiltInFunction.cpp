@@ -89,6 +89,7 @@ BuiltInFunction::BuiltInFunction(const char* name,
 {
     m_function = cfun;
     m_quick_function = nullptr;
+    m_fixed_arity_fn = nullptr;
 
     if (m_function == do_External
 	|| m_function == do_Externalgr
@@ -119,8 +120,23 @@ BuiltInFunction::BuiltInFunction(const char* name,
 {
     m_function = nullptr;
     m_quick_function = fun;
+    m_fixed_arity_fn = nullptr;
+}
 
-    if (m_quick_function == do_paren)
+BuiltInFunction::BuiltInFunction(const char* name,
+				 FixedArityFnStorage cfun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+{
+    m_function = nullptr;
+    m_quick_function = nullptr;
+    m_fixed_arity_fn = cfun;
+
+    if (m_fixed_arity_fn == reinterpret_cast<FixedArityFnStorage>(do_paren))
 	m_transparent = true;
 }
 

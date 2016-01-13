@@ -139,7 +139,7 @@ static SEXP mkCharW(const wchar_t *wc)
  * list is the collection of splits for the corresponding element of x.
 */
 
-SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* split_, CXXR::RObject* fixed_, CXXR::RObject* perl_, CXXR::RObject* useBytes_)
 {
     SEXP ans, tok, x;
     R_xlen_t i, itok, len, tlen;
@@ -152,11 +152,11 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
     const void *vmax, *vmax2;
     int nwarn = 0;
 
-    x = args[0]; args = (args + 1);
-    tok = args[0]; args = (args + 1);
-    fixed_opt = asLogical(args[0]); args = (args + 1);
-    perl_opt = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]);
+    x = x_;
+    tok = split_;
+    fixed_opt = asLogical(fixed_);
+    perl_opt = asLogical(perl_);
+    useBytes = asLogical(useBytes_);
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
     if (useBytes == NA_INTEGER) useBytes = 0;
@@ -744,7 +744,7 @@ static int fgrep_one_bytes(const char *pat, const char *target, int len,
     return -1;
 }
 
-SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* value_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_, CXXR::RObject* invert_)
 {
     SEXP pat, text, ind, ans;
     regex_t reg;
@@ -759,14 +759,14 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     const void *vmax;
     int nwarn = 0;
 
-    pat = args[0]; args = (args + 1);
-    text = args[0]; args = (args + 1);
-    igcase_opt = asLogical(args[0]); args = (args + 1);
-    value_opt = asLogical(args[0]); args = (args + 1);
-    perl_opt = asLogical(args[0]); args = (args + 1);
-    fixed_opt = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]); args = (args + 1);
-    invert = asLogical(args[0]);
+    pat = pattern_;
+    text = x_;
+    igcase_opt = asLogical(ignore_case_);
+    value_opt = asLogical(value_);
+    perl_opt = asLogical(perl_);
+    fixed_opt = asLogical(fixed_);
+    useBytes = asLogical(useBytes_);
+    invert = asLogical(invert_);
     if (igcase_opt == NA_INTEGER) igcase_opt = 0;
     if (value_opt == NA_INTEGER) value_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
@@ -1039,7 +1039,7 @@ static R_size_t fgrepraw1(SEXP pat, SEXP text, R_size_t offset) {
 
 /* grepRaw(pattern, text, offset, ignore.case, fixed, value, all, invert) */
 // FIXME:  allow long vectors.
-SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* offset_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* value_, CXXR::RObject* all_, CXXR::RObject* invert_)
 {
     SEXP pat, text, ans, res_head, res_tail;
     regex_t reg;
@@ -1051,14 +1051,14 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
     R_size_t res_ptr, offset, i;
     int igcase_opt, fixed_opt, all, value, invert;
 
-    pat = args[0]; args = (args + 1);
-    text = args[0]; args = (args + 1);
-    offset = asInteger(args[0]); args = (args + 1);
-    igcase_opt = asLogical(args[0]); args = (args + 1);
-    fixed_opt = asLogical(args[0]); args = (args + 1);
-    value = asLogical(args[0]); args = (args + 1);
-    all = asLogical(args[0]); args = (args + 1);
-    invert = asLogical(args[0]);
+    pat = pattern_;
+    text = x_;
+    offset = asInteger(offset_);
+    igcase_opt = asLogical(ignore_case_);
+    fixed_opt = asLogical(fixed_);
+    value = asLogical(value_);
+    all = asLogical(all_);
+    invert = asLogical(invert_);
     if (igcase_opt == NA_INTEGER) igcase_opt = 0;
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
     if (all == NA_INTEGER) all = 0;
@@ -1487,7 +1487,7 @@ static int wcount_subs(const wchar_t *repl)
  * either once or globally.
  * The functions are loosely patterned on the "sub" and "gsub" in "nawk". */
 
-SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* replacement_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
 {
     SEXP pat, rep, text, ans;
     regex_t reg;
@@ -1508,13 +1508,13 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
     global = op->variant();
 
-    pat = args[0]; args = (args + 1);
-    rep = args[0]; args = (args + 1);
-    text = args[0]; args = (args + 1);
-    igcase_opt = asLogical(args[0]); args = (args + 1);
-    perl_opt = asLogical(args[0]); args = (args + 1);
-    fixed_opt = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]); args = (args + 1);
+    pat = pattern_;
+    rep = replacement_;
+    text = x_;
+    igcase_opt = asLogical(ignore_case_);
+    perl_opt = asLogical(perl_);
+    fixed_opt = asLogical(fixed_);
+    useBytes = asLogical(useBytes_);
     if (igcase_opt == NA_INTEGER) igcase_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
@@ -2304,7 +2304,7 @@ static SEXP gregexpr_BadStringAns(void)
     return ans;
 }
 
-SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
 {
     SEXP pat, text, ans;
     regex_t reg;
@@ -2324,12 +2324,12 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP capture_names = R_NilValue;
     int nwarn = 0;
 
-    pat = args[0]; args = (args + 1);
-    text = args[0]; args = (args + 1);
-    igcase_opt = asLogical(args[0]); args = (args + 1);
-    perl_opt = asLogical(args[0]); args = (args + 1);
-    fixed_opt = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]); args = (args + 1);
+    pat = pattern_;
+    text = text_;
+    igcase_opt = asLogical(ignore_case_);
+    perl_opt = asLogical(perl_);
+    fixed_opt = asLogical(fixed_);
+    useBytes = asLogical(useBytes_);
     if (igcase_opt == NA_INTEGER) igcase_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
@@ -2618,7 +2618,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     return ans;
 }
 
-SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
 {
     SEXP pat, vec, ans, matchpos, matchlen;
     int opt_icase, opt_fixed, useBytes;
@@ -2634,11 +2634,11 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
     int j, so;
     int rc, cflags = REG_EXTENDED;
 
-    pat = args[0]; args = (args + 1);
-    vec = args[0]; args = (args + 1);
-    opt_icase = asLogical(args[0]); args = (args + 1);
-    opt_fixed = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]);
+    pat = pattern_;
+    vec = text_;
+    opt_icase = asLogical(ignore_case_);
+    opt_fixed = asLogical(fixed_);
+    useBytes = asLogical(useBytes_);
     
     if(opt_icase == NA_INTEGER) opt_icase = 0;
     if(opt_fixed == NA_INTEGER) opt_fixed = 0;

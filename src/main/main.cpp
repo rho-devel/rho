@@ -1334,7 +1334,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP attribute_hidden do_quit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_quit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* save_, CXXR::RObject* status_, CXXR::RObject* runLast_)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;
@@ -1345,9 +1345,9 @@ SEXP attribute_hidden do_quit(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	warning(_("cannot quit from browser"));
 	return R_NilValue;
     }
-    if( !isString(args[0]) )
+    if( !isString(save_) )
 	errorcall(call, _("one of \"yes\", \"no\", \"ask\" or \"default\" expected."));
-    tmp = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
+    tmp = CHAR(STRING_ELT(save_, 0)); /* ASCII */
     if( !strcmp(tmp, "ask") ) {
 	ask = SA_SAVEASK;
 	if(!R_Interactive)
@@ -1360,12 +1360,12 @@ SEXP attribute_hidden do_quit(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	ask = SA_DEFAULT;
     else
 	errorcall(call, _("unrecognized value of 'save'"));
-    status = asInteger(args[1]);
+    status = asInteger(status_);
     if (status == NA_INTEGER) {
 	warning(_("invalid 'status', 0 assumed"));
 	runLast = 0;
     }
-    runLast = asLogical(args[2]);
+    runLast = asLogical(runLast_);
     if (runLast == NA_LOGICAL) {
 	warning(_("invalid 'runLast', FALSE assumed"));
 	runLast = 0;

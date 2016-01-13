@@ -155,30 +155,27 @@ static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
 static void deparse2(SEXP, SEXP, LocalParseData *);
 
-SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* expr_, CXXR::RObject* width_cutoff_, CXXR::RObject* backtick_, CXXR::RObject* control_, CXXR::RObject* nlines_)
 {
     SEXP ca1;
     int  cut0, backtick, opts, nlines;
 
-    ca1 = args[0]; args = (args + 1);
+    ca1 = expr_;
     cut0 = DEFAULT_Cutoff;
-    if(!isNull(args[0])) {
-	cut0 = asInteger(args[0]);
+    if(!isNull(width_cutoff_)) {
+	cut0 = asInteger(width_cutoff_);
 	if(cut0 == NA_INTEGER|| cut0 < MIN_Cutoff || cut0 > MAX_Cutoff) {
 	    warning(_("invalid 'cutoff' value for 'deparse', using default"));
 	    cut0 = DEFAULT_Cutoff;
 	}
     }
-    args = (args + 1);
     backtick = 0;
-    if(!isNull(args[0]))
-	backtick = asLogical(args[0]);
-    args = (args + 1);
+    if(!isNull(backtick_))
+	backtick = asLogical(backtick_);
     opts = SHOWATTRIBUTES;
-    if(!isNull(args[0]))
-	opts = asInteger(args[0]);
-    args = (args + 1);
-    nlines = asInteger(args[0]);
+    if(!isNull(control_))
+	opts = asInteger(control_);
+    nlines = asInteger(nlines_);
     if (nlines == NA_INTEGER) nlines = -1;
     ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRCONSTRUCT(Rboolean, backtick), opts, nlines);
     return ca1;
@@ -330,7 +327,7 @@ SEXP attribute_hidden deparse1s(SEXP call)
 
 #include "Rconnections.h"
 
-SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* file_, CXXR::RObject* control_)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
@@ -338,26 +335,26 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int opts;
     Rconnection con = Rconnection( 1); /* stdout */
 
-    tval = args[0];
+    tval = x_;
     saveenv = R_NilValue;	/* -Wall */
     if (TYPEOF(tval) == CLOSXP) {
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
     opts = SHOWATTRIBUTES;
-    if(!isNull(args[2]))
-	opts = asInteger(args[2]);
+    if(!isNull(control_))
+	opts = asInteger(control_);
 
     tval = deparse1(tval, CXXRFALSE, opts);
-    if (TYPEOF(args[0]) == CLOSXP) {
-	SET_CLOENV(args[0], saveenv);
+    if (TYPEOF(x_) == CLOSXP) {
+	SET_CLOENV(x_, saveenv);
 	UNPROTECT(1);
     }
     PROTECT(tval); /* against Rconn_printf */
 
-    if(!inherits(args[1], "connection"))
+    if(!inherits(file_, "connection"))
 	error(_("'file' must be a character string or connection"));
-    ifile = asInteger(args[1]);
+    ifile = asInteger(file_);
 
     wasopen = CXXRTRUE;
     try {
@@ -389,10 +386,10 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    con->close(con);
 	throw;
     }
-    return (args[0]);
+    return (x_);
 }
 
-SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* envir_, CXXR::RObject* opts_, CXXR::RObject* evaluate_)
 {
     SEXP file, names, o, objs, tval, source, outnames;
     int i, j, nobjs, nout, res;
@@ -401,8 +398,8 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int opts;
     const char *obj_name;
 
-    names = args[0];
-    file = args[1];
+    names = list_;
+    file = file_;
     if(!inherits(file, "connection"))
 	error(_("'file' must be a character string or connection"));
     if(!isString(names))
@@ -410,14 +407,14 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
     nobjs = length(names);
     if(nobjs < 1 || length(file) < 1)
 	error(_("zero-length argument"));
-    source = args[2];
+    source = envir_;
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
-    opts = asInteger(args[3]);
+    opts = asInteger(opts_);
     /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 1024)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(args[4]));
+    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(evaluate_));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));

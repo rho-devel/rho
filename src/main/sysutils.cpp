@@ -231,27 +231,27 @@ char *R_HomeDir(void)
 }
 
 /* This is a primitive (with no arguments) */
-SEXP attribute_hidden do_interactive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_interactive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     return ScalarLogical( (R_Interactive) ? 1 : 0 );
 }
 
-SEXP attribute_hidden do_tempdir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tempdir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     return mkString(R_TempDir);
 }
 
 
-SEXP attribute_hidden do_tempfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tempfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* tmpdir_, CXXR::RObject* fileext_)
 {
     SEXP  ans, pattern, fileext, tempdir;
     const char *tn, *td, *te;
     char *tm;
     int i, n1, n2, n3, slen;
 
-    pattern = args[0]; n1 = length(pattern); args = (args + 1);
-    tempdir = args[0]; n2 = length(tempdir); args = (args + 1);
-    fileext = args[0]; n3 = length(fileext);
+    pattern = pattern_; n1 = length(pattern);
+    tempdir = tmpdir_; n2 = length(tempdir);
+    fileext = fileext_; n3 = length(fileext);
     if (!isString(pattern))
 	error(_("invalid filename pattern"));
     if (!isString(tempdir))
@@ -477,12 +477,12 @@ SEXP attribute_hidden do_setenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #endif
 }
 
-SEXP attribute_hidden do_unsetenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unsetenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     int i, n;
     SEXP ans, vars;
 
-    if (!isString(vars = args[0]))
+    if (!isString(vars = x_))
 	error(_("wrong type for argument"));
     n = LENGTH(vars);
 
@@ -563,9 +563,9 @@ write_one (unsigned int namescount, const char * const *names, void *data)
 #include "RBufferUtils.h"
 
 /* iconv(x, from, to, sub, mark) */
-SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* sub_, CXXR::RObject* mark_, CXXR::RObject* toRaw_)
 {
-    SEXP ans, x = args[0], si;
+    SEXP ans, x = x_, si;
     void * obj;
     const char *inbuf;
     char *outbuf;
@@ -589,25 +589,20 @@ SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	const char *from, *to;
 	Rboolean isLatin1 = FALSE, isUTF8 = FALSE;
 
-	args = (args + 1);
-	if(!isString(args[0]) || length(args[0]) != 1)
+	if(!isString(from_) || length(from_) != 1)
 	    error(_("invalid '%s' argument"), "from");
-	from = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
-	args = (args + 1);
-	if(!isString(args[0]) || length(args[0]) != 1)
+	from = CHAR(STRING_ELT(from_, 0)); /* ASCII */
+	if(!isString(to_) || length(to_) != 1)
 	    error(_("invalid '%s' argument"), "to");
-	to = CHAR(STRING_ELT(args[0], 0));
-	args = (args + 1);
-	if(!isString(args[0]) || length(args[0]) != 1)
+	to = CHAR(STRING_ELT(to_, 0));
+	if(!isString(sub_) || length(sub_) != 1)
 	    error(_("invalid '%s' argument"), "sub");
-	if(STRING_ELT(args[0], 0) == NA_STRING) sub = nullptr;
-	else sub = translateChar(STRING_ELT(args[0], 0));
-	args = (args + 1);
-	mark = asLogical(args[0]);
+	if(STRING_ELT(sub_, 0) == NA_STRING) sub = nullptr;
+	else sub = translateChar(STRING_ELT(sub_, 0));
+	mark = asLogical(mark_);
 	if(mark == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "mark");	
-	args = (args + 1);
-	toRaw = asLogical(args[0]);
+	toRaw = asLogical(toRaw_);
 	if(toRaw == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "toRaw");	
 	/* some iconv's allow "UTF8", but libiconv does not */
@@ -1774,7 +1769,7 @@ char * R_tmpnam2(const char *prefix, const char *tempdir, const char *fileext)
     return res;
 }
 
-SEXP attribute_hidden do_proctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_proctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, nm;
 
@@ -1812,15 +1807,15 @@ void attribute_hidden resetTimeLimits()
 }
 
 SEXP attribute_hidden
-do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_, CXXR::RObject* transient_)
 {
     double cpu, elapsed, old_cpu = cpuLimitValue,
 	old_elapsed = elapsedLimitValue;
     int transient;
 
-    cpu = asReal(args[0]);
-    elapsed = asReal(args[1]);
-    transient = asLogical(args[2]);
+    cpu = asReal(cpu_);
+    elapsed = asReal(elapsed_);
+    transient = asLogical(transient_);
 
     if (R_FINITE(cpu) && cpu > 0) cpuLimitValue = cpu; else cpuLimitValue = -1;
 
@@ -1838,12 +1833,12 @@ do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* o
 }
 
 SEXP attribute_hidden
-do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_)
 {
     double cpu, elapsed, data[5];
 
-    cpu = asReal(args[0]);
-    elapsed = asReal(args[1]);
+    cpu = asReal(cpu_);
+    elapsed = asReal(elapsed_);
     R_getProcTime(data);
 
     if (R_FINITE(cpu) && cpu > 0)
@@ -1874,7 +1869,7 @@ do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunc
 #  define GLOB_QUOTE 0
 # endif
 #endif
-SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* dirmark_)
 {
     SEXP x, ans;
     R_xlen_t i, n; 
@@ -1884,10 +1879,10 @@ SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::Buil
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 #endif
 
-    if (!isString(x = args[0]))
+    if (!isString(x = paths_))
 	error(_("invalid '%s' argument"), "paths");
     if (!XLENGTH(x)) return allocVector(STRSXP, 0);
-    dirmark = asLogical(args[1]);
+    dirmark = asLogical(dirmark_);
     if (dirmark == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "dirmark");
 #ifndef GLOB_MARK

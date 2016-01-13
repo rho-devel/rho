@@ -172,11 +172,11 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
-SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_)
 {
     int n;
 
-    n = asInteger(args[0]);
+    n = asInteger(n_);
     if(n < 1 ) error(_("number of contexts must be positive"));
 
     switch (op->variant()) {

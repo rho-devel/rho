@@ -2150,7 +2150,7 @@ static SEXP CallHook(SEXP x, SEXP fun)
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden
-do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* refhook_)
 {
     /* serializeToConn(object, conn, ascii, version, hook) */
 
@@ -2162,26 +2162,26 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
     R_pstream_format_t type;
     SEXP (*hook)(SEXP, SEXP);
 
-    object = args[0];
-    con = getConnection(Rf_asInteger(args[1]));
+    object = object_;
+    con = getConnection(Rf_asInteger(con_));
 
-    if (TYPEOF(args[2]) != LGLSXP)
+    if (TYPEOF(ascii_) != LGLSXP)
 	Rf_error(_("'ascii' must be logical"));
-    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(args[2])[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
     if (ascii == NA_LOGICAL) type = R_pstream_asciihex_format;
     else if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
 
-    if (args[3] == R_NilValue)
+    if (version_ == R_NilValue)
 	version = R_DefaultSerializeVersion;
     else
-	version = Rf_asInteger(args[3]);
+	version = Rf_asInteger(version_);
     if (version == NA_INTEGER || version <= 0)
 	Rf_error(_("bad version value"));
     if (version < 2)
 	Rf_error(_("cannot save to connections in version %d format"), version);
 
-    fun = args[4];
+    fun = refhook_;
     hook = fun != R_NilValue ? CallHook : nullptr;
 
     /* Now we need to do some sanity checking of the arguments.
@@ -2219,7 +2219,7 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden 
-do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* refhook_)
 {
     /* unserializeFromConn(conn, hook) */
 
@@ -2229,9 +2229,9 @@ do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunc
     SEXP (*hook)(SEXP, SEXP);
     Rboolean wasopen;
 
-    con = getConnection(Rf_asInteger(args[0]));
+    con = getConnection(Rf_asInteger(con_));
 
-    fun = args[1];
+    fun = refhook_;
     hook = fun != R_NilValue ? CallHook : nullptr;
 
     /* Now we need to do some sanity checking of the arguments.
@@ -2802,7 +2802,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
    If the result is a promise, then the promise is forced. */
 
 SEXP attribute_hidden
-do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* key_, CXXR::RObject* file_, CXXR::RObject* compressed_, CXXR::RObject* hook_)
 {
     SEXP key, file, compsxp, hook;
     PROTECT_INDEX vpi;
@@ -2810,10 +2810,10 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
     Rboolean err = FALSE;
     SEXP val;
 
-    key = args[0]; args = (args + 1);
-    file = args[0]; args = (args + 1);
-    compsxp = args[0]; args = (args + 1);
-    hook = args[0];
+    key = key_;
+    file = file_;
+    compsxp = compressed_;
+    hook = hook_;
     compressed = Rf_asInteger(compsxp);
 
     PROTECT_WITH_INDEX(val = readRawFromFile(file, key), &vpi);

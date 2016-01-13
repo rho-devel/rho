@@ -30,6 +30,8 @@
 #include "CXXR/Expression.h"
 
 #include <iostream>
+#include <boost/preprocessor.hpp>
+
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/ArgList.hpp"
@@ -131,32 +133,8 @@ RObject* Expression::applyBuiltIn(const BuiltInFunction* builtin,
     return result;
 }
 
-RObject* Expression::evaluateBuiltInCall(
-    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+static void prepareToInvokeBuiltIn(const BuiltInFunction* func)
 {
-    if (func->hasDirectCall())
-        return evaluateDirectBuiltInCall(func, env, arglist);
-    else
-      return evaluateIndirectBuiltInCall(func, env, arglist);
-}
-
-RObject* Expression::evaluateDirectBuiltInCall(
-    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
-{
-    if (arglist->has3Dots())
-        arglist->evaluate(env);
-
-    // Check the number of arguments.
-    int num_evaluated_args = listLength(arglist->list());
-    func->checkNumArgs(num_evaluated_args, this);
-
-    // Create an array on stack to write arguments to.
-    RObject** evaluated_arg_array = (RObject**)alloca(
-        num_evaluated_args * sizeof(RObject*));
-
-    // Copy the arguments to the stack, evaluating if necessary.
-    arglist->evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
-
     if (func->printHandling() == BuiltInFunction::SOFT_ON) {
 	Evaluator::enableResultPrinting(true);
     }
@@ -169,6 +147,89 @@ RObject* Expression::evaluateDirectBuiltInCall(
     // behaved DLL has changed the fpu control word.
     __asm__ ( "fninit" );
 #endif
+}
+
+template<typename... Args>
+RObject* Expression::evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction* func,
+						      Args... args) const
+{
+    prepareToInvokeBuiltIn(func);
+    return func->invokeFixedArity(this, args...);
+}
+
+template<typename... Args>
+RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Environment* env, bool evaluated, Args... args) const
+{
+    if (evaluated) {
+	return evaluateBuiltInWithEvaluatedArgs(fun, args...);
+    }
+    return evaluateBuiltInWithEvaluatedArgs(fun,
+	(args ? args->evaluate(env) : nullptr)...);
+}
+
+RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
+					       Environment* env,
+					       ArgList* arglist) const
+{
+    size_t arity = func->arity();
+    bool evaluated = arglist->status() == ArgList::EVALUATED;
+    switch(func->arity()) {
+    case 0:
+	return evaluateFixedArityBuiltIn(func, env, evaluated);
+/*  This macro expands out to:
+    case 1:
+	return evaluateFixedArityBuiltIn(func, env, evaluated, arglist->get(1));
+    case 2:
+	return evaluateFixedArityBuiltIn(func, env, evaluated, arglist->get(1), arglist->get(2));
+    ...
+*/
+#define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist->get(N)
+#define CASE_STATEMENT(Z, N, IGNORED)              \
+    case N:                                        \
+	return evaluateFixedArityBuiltIn(func, env, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
+
+	BOOST_PP_REPEAT_FROM_TO(1, 20, CASE_STATEMENT, 0);
+
+ #undef ARGUMENT_LIST
+#undef CASE_STATEMENT
+
+    default:
+	errorcall(const_cast<Expression*>(this),
+		  _("too many arguments, sorry"));
+    }
+}
+
+RObject* Expression::evaluateBuiltInCall(
+    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+{
+    if (func->hasDirectCall() || func->hasFixedArityCall())
+        return evaluateDirectBuiltInCall(func, env, arglist);
+    else
+      return evaluateIndirectBuiltInCall(func, env, arglist);
+}
+
+RObject* Expression::evaluateDirectBuiltInCall(
+    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+{
+    if (arglist->has3Dots())
+        arglist->evaluate(env);
+
+    // Check the number of arguments.
+    int num_evaluated_args = arglist->size();
+    func->checkNumArgs(num_evaluated_args, this);
+
+    if (func->hasFixedArityCall()) {
+	return evaluateFixedArityBuiltIn(func, env, arglist);
+    }
+
+    // Create an array on stack to write arguments to.
+    RObject** evaluated_arg_array = (RObject**)alloca(
+        num_evaluated_args * sizeof(RObject*));
+
+    // Copy the arguments to the stack, evaluating if necessary.
+    arglist->evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
+
+    prepareToInvokeBuiltIn(func);
 
     return func->invoke(this, env, evaluated_arg_array, num_evaluated_args,
                         arglist->list());
@@ -187,18 +248,7 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     int num_evaluated_args = listLength(arglist->list());
     func->checkNumArgs(num_evaluated_args, this);
 
-    if (func->printHandling() == BuiltInFunction::SOFT_ON) {
-	Evaluator::enableResultPrinting(true);
-    }
-
-#ifdef Win32
-    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
-    // and resets the precision, rounding and exception modes of a
-    // ix86 fpu.
-    // It gets called prior to every builtin function, just in case a badly
-    // behaved DLL has changed the fpu control word.
-    __asm__ ( "fninit" );
-#endif
+    prepareToInvokeBuiltIn(func);
 
     return func->invoke(this, env, arglist);
 }

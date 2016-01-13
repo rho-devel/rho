@@ -142,7 +142,7 @@ double currentTime(void)
     return ans;
 }
 
-SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     return ScalarReal(currentTime());
 }

@@ -875,11 +875,11 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
     return rval;
 }
 
-SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* what_, CXXR::RObject* which_)
 {
-    return inherits3(/* x = */ args[0],
-		     /* what = */ args[1],
-		     /* which = */ args[2]);
+    return inherits3(/* x = */ x_,
+		     /* what = */ what_,
+		     /* which = */ which_);
 }
 
 
@@ -1549,11 +1549,11 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 	    Rf_getAttrib(klass, R_PackageSymbol) != R_NilValue) ? TRUE: FALSE;
 }
 
-SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* flag_, CXXR::RObject* complete_)
 {
-    SEXP object = args[0];
-    int flag = Rf_asLogical(args[1]), complete = Rf_asInteger(args[2]);
-    if(length(args[1]) != 1 || flag == NA_INTEGER)
+    SEXP object = object_;
+    int flag = Rf_asLogical(flag_), complete = Rf_asInteger(complete_);
+    if(length(flag_) != 1 || flag == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "flag");
     if(complete == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "complete");

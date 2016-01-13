@@ -190,7 +190,7 @@ void NORET parseError(SEXP call, int linenum)
  .Internal( parse(file, n, text, prompt, srcfile, encoding) )
  If there is text then that is read and the other arguments are ignored.
 */
-SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* n_, CXXR::RObject* text_, CXXR::RObject* prompt_, CXXR::RObject* srcfile_, CXXR::RObject* encoding_)
 {
     SEXP text, prompt, s, source;
     Rconnection con;
@@ -200,28 +200,27 @@ SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::Bui
     const char *encoding;
     ParseStatus status;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(file_, "connection"))
 	error(_("'file' must be a character string or connection"));
     R_ParseError = 0;
     R_ParseErrorMsg[0] = '\0';
 
-    ifile = asInteger(args[0]);                       args = (args + 1);
+    ifile = asInteger(file_);
 
     con = getConnection(ifile);
     wasopen = con->isopen;
-    num = asInteger(args[0]);				args = (args + 1);
+    num = asInteger(n_);
     if (num == 0)
 	return(allocVector(EXPRSXP, 0));
 
-    PROTECT(text = coerceVector(args[0], STRSXP));
-    if(length(args[0]) && !length(text))
+    PROTECT(text = coerceVector(text_, STRSXP));
+    if(length(text_) && !length(text))
 	errorcall(call, _("coercion of 'text' to character was unsuccessful"));
-    args = (args + 1);
-    prompt = args[0];					args = (args + 1);
-    source = args[0];					args = (args + 1);
-    if(!isString(args[0]) || length(args[0]) != 1)
+    prompt = prompt_;
+    source = srcfile_;
+    if(!isString(encoding_) || length(encoding_) != 1)
 	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
+    encoding = CHAR(STRING_ELT(encoding_, 0)); /* ASCII */
     known_to_be_latin1 = known_to_be_utf8 = FALSE;
     /* allow 'encoding' to override declaration on 'text'. */
     if(streql(encoding, "latin1")) {

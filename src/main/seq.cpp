@@ -342,9 +342,9 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
     return a;
 }
 
-SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* times_)
 {
-    SEXP s = args[0], ncopy = args[1];
+    SEXP s = x_, ncopy = times_;
     R_xlen_t nc;
     SEXP a;
 
@@ -396,17 +396,17 @@ SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::B
     return a;
 }
 
-SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* length_out_)
 {
     R_xlen_t ns, na;
     SEXP a, s, len;
 
-    s = args[0];
+    s = x_;
 
     if (!isVector(s) && s != R_NilValue)
 	error(_("attempt to replicate non-vector"));
 
-    len = args[1];
+    len = length_out_;
     if(length(len) != 1)
 	error(_("invalid '%s' value"), "length.out");
 #ifdef LONG_VECTOR_SUPPORT

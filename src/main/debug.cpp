@@ -97,9 +97,9 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace & debug state */
 
-SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_)
 {
-    SEXP onOff = args[0];
+    SEXP onOff = on_;
     bool trace = op->variant() == 0;  // Otherwise it's debug.
     Rboolean prev = Rboolean(trace ? FunctionBase::tracingEnabled()
 			     : Closure::debuggingEnabled());
@@ -167,12 +167,12 @@ SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR
 
 #else
 
-SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }
 
-SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }

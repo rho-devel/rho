@@ -887,29 +887,29 @@ static void GetFullDLLPath(SEXP call, char *buf, const char *const path)
   call routines from "incomplete" DLLs.
  */
 
-SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* local_, CXXR::RObject* now_, CXXR::RObject* dots_)
 {
     char buf[2 * PATH_MAX];
     DllInfo *info;
 
-    if (!isString(args[0]) || LENGTH(args[0]) != 1)
+    if (!isString(x_) || LENGTH(x_) != 1)
 	error(_("character argument expected"));
-    GetFullDLLPath(call, buf, translateChar(STRING_ELT(args[0], 0)));
+    GetFullDLLPath(call, buf, translateChar(STRING_ELT(x_, 0)));
     /* AddDLL does this DeleteDLL(buf); */
-    info = AddDLL(buf, LOGICAL(args[1])[0], LOGICAL(args[2])[0],
-		  translateChar(STRING_ELT(args[3], 0)));
+    info = AddDLL(buf, LOGICAL(local_)[0], LOGICAL(now_)[0],
+		  translateChar(STRING_ELT(dots_, 0)));
     if(!info)
 	error(_("unable to load shared object '%s':\n  %s"), buf, DLLerror);
     return(Rf_MakeDLLInfo(info));
 }
 
-SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     char buf[2 * PATH_MAX];
 
-    if (!isString(args[0]) || LENGTH(args[0]) != 1)
+    if (!isString(x_) || LENGTH(x_) != 1)
 	error(_("character argument expected"));
-    GetFullDLLPath(call, buf, translateChar(STRING_ELT(args[0], 0)));
+    GetFullDLLPath(call, buf, translateChar(STRING_ELT(x_, 0)));
     if(!DeleteDLL(buf))
 	error(_("shared object '%s\' was not loaded"), buf);
     return R_NilValue;
@@ -1347,7 +1347,7 @@ do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
 
 /* .Internal(getLoadedDLLs()) */
 SEXP attribute_hidden
-do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, nm;
 
@@ -1376,11 +1376,11 @@ do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op
 }
 
 SEXP attribute_hidden
-do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* info_)
 {
     const char * const names[] = {".C", ".Call", ".Fortran", ".External"};
 
-    SEXP dll = args[0], ans, snames;
+    SEXP dll = info_, ans, snames;
 
     if(TYPEOF(dll) != EXTPTRSXP &&
        R_ExternalPtrTag(dll) != install("DLLInfo"))

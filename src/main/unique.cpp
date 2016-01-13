@@ -945,7 +945,7 @@ SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::Bui
  * Empty strings are unmatched			      BDR 2000/2/16
  */
 
-SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_, CXXR::RObject* duplicates_ok_)
 {
     SEXP ans, input, target;
     int mtch, n_target, mtch_count, dups_ok, no_match;
@@ -955,12 +955,12 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
     Rboolean no_dups;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
 
-    input = args[0];
+    input = x_;
     R_xlen_t n_input = XLENGTH(input);
-    target = args[1];
+    target = table_;
     n_target = LENGTH(target); // not allowed to be long
-    no_match = asInteger(args[2]);
-    dups_ok = asLogical(args[3]);
+    no_match = asInteger(nomatch_);
+    dups_ok = asLogical(duplicates_ok_);
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
     no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
@@ -1090,20 +1090,20 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* Partial Matching of Strings */
 /* Based on Therneau's charmatch. */
 
-SEXP attribute_hidden do_charmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_charmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_)
 {
     SEXP ans, input, target;
     const char *ss, *st;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
 
-    input = args[0];
+    input = x_;
     R_xlen_t n_input = LENGTH(input);
-    target = args[1];
+    target = table_;
     int n_target = LENGTH(target);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
-    int no_match = asInteger(args[2]);
+    int no_match = asInteger(nomatch_);
 
     for(R_xlen_t i = 0; i < n_input; i++) {
 	if(IS_BYTES(STRING_ELT(input, i))) {
@@ -1553,7 +1553,7 @@ static SEXP duplicated2(SEXP x, HashData *d)
     return ans;
 }
 
-SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* sep_)
 {
     SEXP names, sep, ans, dup, newx;
     int i, cnt, *cnts, dp;
@@ -1562,11 +1562,11 @@ SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR
     const char *csep, *ss;
     const void *vmax;
 
-    names = args[0];
+    names = names_;
     if(!isString(names))
 	error(_("'names' must be a character vector"));
     n = LENGTH(names);
-    sep = args[1];
+    sep = sep_;
     if(!isString(sep) || LENGTH(sep) != 1)
 	error(_("'%s' must be a character string"), "sep");
     csep = translateChar(STRING_ELT(sep, 0));
@@ -1667,11 +1667,11 @@ static R_INLINE double ru()
     return (floor(U*unif_rand()) + unif_rand())/U;
 }
 
-SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* size_)
 {
     SEXP ans;
-    double dn = asReal(args[0]);
-    int k = asInteger(args[1]);
+    double dn = asReal(n_);
+    int k = asInteger(size_);
     if (!R_FINITE(dn) || dn < 0 || dn > 4.5e15 || (k > 0 && dn == 0)) 
 	error(_("invalid first argument"));
     if (k < 0) error(_("invalid '%s' argument"), "size");

@@ -1472,18 +1472,18 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_)
 {
     SEXP arglist, envir, names, args, pargs, body;
     int i, n;
 
     /* Check the arguments; we need a list and environment. */
 
-    arglist = args_[0];
+    arglist = x_;
     if (!Rf_isNewList(arglist))
 	Rf_errorcall(call, _("list argument expected"));
 
-    envir = args_[1];
+    envir = envir_;
     if (Rf_isNull(envir)) {
 	Rf_error(_("use of NULL environment is defunct"));
 	envir = R_BaseEnv;
@@ -1720,9 +1720,9 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
-    return Rf_type2rstr(TYPEOF(args[0]));
+    return Rf_type2rstr(TYPEOF(x_));
 }
 
 /* Define many of the <primitive> "is.xxx" functions :
@@ -1897,16 +1897,16 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
  * It seems to make more sense to check for a dim attribute.
  */
 
-SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* mode_)
 {
     SEXP ans, a, x;
     const char *stype;
 
-    x = args[0];
-    if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
+    x = x_;
+    if (!Rf_isString(mode_) || LENGTH(mode_) != 1)
 	errorcall_return(call, R_MSG_mode);
 
-    stype = CHAR(STRING_ELT(args[1], 0)); /* ASCII */
+    stype = CHAR(STRING_ELT(mode_, 0)); /* ASCII */
 
     /* "name" and "symbol" are synonymous */
     if (streql(stype, "name"))
@@ -1929,8 +1929,8 @@ SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::
 	LOGICAL(ans)[0] = 0;
 
     /* We allow a "names" attribute on any vector. */
-    if (LOGICAL(ans)[0] && ATTRIB(args[0]) != R_NilValue) {
-	a = ATTRIB(args[0]);
+    if (LOGICAL(ans)[0] && ATTRIB(x_) != R_NilValue) {
+	a = ATTRIB(x_);
 	while(a != R_NilValue) {
 	    if (TAG(a) != R_NamesSymbol) {
 		LOGICAL(ans)[0] = 0;
@@ -2056,32 +2056,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     UNPROTECT(1);
     UNPROTECT(1); /*ans*/
     return ans;
-}
-
-namespace {
-    inline int LIST_VEC_NAN(SEXP s)
-    {
-	if (!Rf_isVector(s) || length(s) != 1)
-	    return 0;
-	else {
-	    switch (TYPEOF(s)) {
-	    case LGLSXP:
-	    case INTSXP:
-	    case STRSXP:
-		return 0;
-		break;
-	    case REALSXP:
-		return R_IsNaN(REAL(s)[0]);
-		break;
-	    case CPLXSXP:
-		return (R_IsNaN(COMPLEX(s)[0].r)
-			|| R_IsNaN(COMPLEX(s)[0].i));
-		break;
-	    default:
-		return 0;  // 2007/08/08 arr: Formerly no default
-	    }
-	}
-    }
 }
 
 // Check if x has missing values; the anyNA.default() method
@@ -2439,14 +2413,14 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (rfun);
 }
 
-SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* args_, CXXR::RObject* envir_)
 {
     SEXP c, fun, names, envir;
     int i, n;
 
-    fun = args_[0];
-    envir = args_[2];
-    SEXP args = args_[1];
+    fun = what_;
+    envir = envir_;
+    SEXP args = args_;
 
     /* must be a string or a function:
        zero-length string check used to be here but Rf_install gives

@@ -1228,7 +1228,7 @@ static Rconnection newfifo(const char *description, const char *mode)
     return newconn;
 }
 
-SEXP attribute_hidden do_fifo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fifo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* blocking_, CXXR::RObject* encoding_)
 {
 #if (defined(HAVE_MKFIFO) && defined(HAVE_FCNTL_H)) || defined(_WIN32)
     SEXP sfile, sopen, ans, connclass, enc;
@@ -1236,19 +1236,19 @@ SEXP attribute_hidden do_fifo(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int ncon, block;
     Rconnection con = nullptr;
 
-    sfile = args[0];
+    sfile = description_;
     if(!isString(sfile) || Rf_length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0)); /* for now, like fopen */
-    sopen = args[1];
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    block = asLogical(args[2]);
+    block = asLogical(blocking_);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "block");
-    enc = args[3];
+    enc = encoding_;
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -1386,7 +1386,7 @@ extern Rconnection
 newWpipe(const char *description, int enc, const char *mode);
 #endif
 
-SEXP attribute_hidden do_pipe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pipe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* encoding_)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *file, *open;
@@ -1394,7 +1394,7 @@ SEXP attribute_hidden do_pipe(/*const*/ CXXR::Expression* call, const CXXR::Buil
     cetype_t ienc = CE_NATIVE;
     Rconnection con = nullptr;
 
-    scmd = args[0];
+    scmd = description_;
     if(!isString(scmd) || Rf_length(scmd) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(scmd) > 1)
@@ -1410,11 +1410,11 @@ SEXP attribute_hidden do_pipe(/*const*/ CXXR::Expression* call, const CXXR::Buil
 #else
     file = translateChar(STRING_ELT(scmd, 0));
 #endif
-    sopen = args[1];
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    enc = args[2];
+    enc = encoding_;
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -2006,7 +2006,7 @@ newxzfile(const char *description, const char *mode, int type, int compress)
 }
 
 /* op 0 is gzfile, 1 is bzfile, 2 is xv/lzma */
-SEXP attribute_hidden do_gzfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gzfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* encoding_, CXXR::RObject* compression_)
 {
     SEXP sfile, sopen, ans, connclass, enc;
     const char *file, *open;
@@ -2015,26 +2015,26 @@ SEXP attribute_hidden do_gzfile(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int type = op->variant();
     int subtype = 0;
 
-    sfile = args[0];
+    sfile = description_;
     if(!isString(sfile) || Rf_length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    sopen = args[1];
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    enc = args[2];
+    enc = encoding_;
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
     if(type < 2) {
-	compress = asInteger(args[3]);
+	compress = asInteger(compression_);
 	if(compress == NA_LOGICAL || compress < 0 || compress > 9)
 	    error(_("invalid '%s' argument"), "compress");
     }
     if(type == 2) {
-	compress = asInteger(args[3]);
+	compress = asInteger(compression_);
 	if(compress == NA_LOGICAL || abs(compress) > 9)
 	    error(_("invalid '%s' argument"), "compress");
     }
@@ -2453,7 +2453,7 @@ static Rconnection newterminal(const char *description, const char *mode)
 }
 
 
-SEXP attribute_hidden do_stdin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_stdin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(0);
@@ -2467,7 +2467,7 @@ SEXP attribute_hidden do_stdin(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_stdout(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_stdout(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(R_OutputCon);
@@ -2482,7 +2482,7 @@ SEXP attribute_hidden do_stdout(/*const*/ CXXR::Expression* call, const CXXR::Bu
 }
 
 
-SEXP attribute_hidden do_stderr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_stderr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(2);
@@ -2500,11 +2500,11 @@ SEXP attribute_hidden do_stderr(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #ifdef Win32
 # include <io.h>
 #endif
-SEXP attribute_hidden do_isatty(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isatty(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     int con;
     /* FIXME: is this correct for consoles? */
-    con = asInteger(args[0]);
+    con = asInteger(con_);
     return ScalarLogical(con == NA_LOGICAL ? FALSE : isatty(con) );
 }
 
@@ -2712,15 +2712,15 @@ SEXP attribute_hidden do_rawconnection(/*const*/ CXXR::Expression* call, const C
     return ans;
 }
 
-SEXP attribute_hidden do_rawconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rawconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con=nullptr;
     Rrawconn thisconn;
     SEXP ans;
 
-    if(!inherits(args[0], "rawConnection"))
+    if(!inherits(con_, "rawConnection"))
 	error(_("'con' is not a rawConnection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     if(!con->canwrite)
 	error(_("'con' is not an output rawConnection"));
     thisconn = CXXRSCAST(Rrawconn, con->connprivate);
@@ -3080,28 +3080,28 @@ static Rconnection newouttext(const char *description, SEXP stext,
     return newconn;
 }
 
-SEXP attribute_hidden do_textconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_textconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* nm_, CXXR::RObject* object_, CXXR::RObject* open_, CXXR::RObject* env_, CXXR::RObject* type_)
 {
     SEXP sfile, stext, sopen, ans, connclass, venv;
     const char *desc, *open;
     int ncon, type;
     Rconnection con = nullptr;
 
-    sfile = args[0];
+    sfile = nm_;
     if(!isString(sfile) || Rf_length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     desc = translateChar(STRING_ELT(sfile, 0));
-    stext = args[1];
-    sopen = args[2];
+    stext = object_;
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    venv = args[3];
+    venv = env_;
     if (isNull(venv))
 	error(_("use of NULL environment is defunct"));
     if (!isEnvironment(venv))
 	error(_("invalid '%s' argument"), "environment");
-    type = asInteger(args[4]);
+    type = asInteger(type_);
     if (type == NA_INTEGER)
 	error(_("invalid '%s' argument"), "encoding");
     ncon = NextConnection();
@@ -3140,14 +3140,14 @@ SEXP attribute_hidden do_textconnection(/*const*/ CXXR::Expression* call, const 
     return ans;
 }
 
-SEXP attribute_hidden do_textconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_textconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con=nullptr;
     Routtextconn thisconn;
 
-    if(!inherits(args[0], "textConnection"))
+    if(!inherits(con_, "textConnection"))
 	error(_("'con' is not a textConnection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     if(!con->canwrite)
 	error(_("'con' is not an output textConnection"));
     thisconn = CXXRSCAST(Routtextconn, con->connprivate);
@@ -3160,7 +3160,7 @@ SEXP attribute_hidden do_textconvalue(/*const*/ CXXR::Expression* call, const CX
 
 
 /* socketConnection(host, port, server, blocking, open, encoding) */
-SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* host_, CXXR::RObject* port_, CXXR::RObject* server_, CXXR::RObject* blocking_, CXXR::RObject* open_, CXXR::RObject* encoding_, CXXR::RObject* timeout_)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *host, *open;
@@ -3168,34 +3168,28 @@ SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::
     Rconnection con = nullptr;
 
 #ifdef HAVE_SOCKETS
-    scmd = args[0];
+    scmd = host_;
     if(!isString(scmd) || Rf_length(scmd) != 1)
 	error(_("invalid '%s' argument"), "host");
     host = translateChar(STRING_ELT(scmd, 0));
-    args = (args + 1);
-    port = asInteger(args[0]);
+    port = asInteger(port_);
     if(port == NA_INTEGER || port < 0)
 	error(_("invalid '%s' argument"), "port");
-    args = (args + 1);
-    server = asLogical(args[0]);
+    server = asLogical(server_);
     if(server == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "server");
-    args = (args + 1);
-    blocking = asLogical(args[0]);
+    blocking = asLogical(blocking_);
     if(blocking == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "blocking");
-    args = (args + 1);
-    sopen = args[0];
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    args = (args + 1);
-    enc = args[0];
+    enc = encoding_;
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
-    args = (args + 1);
-    timeout = asInteger(args[0]);
+    timeout = asInteger(timeout_);
 
     ncon = NextConnection();
     con = R_newsock(host, port, server, open, timeout);
@@ -3281,7 +3275,7 @@ SEXP attribute_hidden do_unz(/*const*/ CXXR::Expression* call, const CXXR::Built
 
 /* -------------- open, close, seek, truncate, flush ------------------ */
 
-SEXP attribute_hidden do_open(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_open(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* open_, CXXR::RObject* blocking_)
 {
     int i, block;
     Rconnection con=nullptr;
@@ -3289,19 +3283,19 @@ SEXP attribute_hidden do_open(/*const*/ CXXR::Expression* call, const CXXR::Buil
     const char *open;
     Rboolean success;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    i = asInteger(args[0]);
+    i = asInteger(con_);
     con = getConnection(i);
     if(i < 3) error(_("cannot open standard connections"));
     if(con->isopen) {
 	warning(_("connection is already open"));
 	return R_NilValue;
     }
-    sopen = args[1];
+    sopen = open_;
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    block = asLogical(args[2]);
+    block = asLogical(blocking_);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "blocking");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
@@ -3315,13 +3309,13 @@ SEXP attribute_hidden do_open(/*const*/ CXXR::Expression* call, const CXXR::Buil
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_isopen(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isopen(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* rw_)
 {
     Rconnection con;
     int rw, res;
 
-    con = getConnection(asInteger(args[0]));
-    rw = asInteger(args[1]);
+    con = getConnection(asInteger(con_));
+    rw = asInteger(rw_);
     res = con->isopen != FALSE;
     switch(rw) {
     case 0: break;
@@ -3332,23 +3326,23 @@ SEXP attribute_hidden do_isopen(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ScalarLogical(res);
 }
 
-SEXP attribute_hidden do_isincomplete(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isincomplete(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     return ScalarLogical(con->incomplete != FALSE);
 }
 
-SEXP attribute_hidden do_isseekable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isseekable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     return ScalarLogical(con->canseek != FALSE);
 }
 
@@ -3388,13 +3382,13 @@ static void con_destroy(int i)
 }
 
 
-SEXP attribute_hidden do_close(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_close(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* dots_)
 {
     int i, j;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    i = asInteger(args[0]);
+    i = asInteger(con_);
     if(i < 3) error(_("cannot close standard connections"));
     for(j = 0; j < R_SinkNumber; j++)
 	if(i == SinkCons[j])
@@ -3434,24 +3428,24 @@ SEXP attribute_hidden do_seek(/*const*/ CXXR::Expression* call, const CXXR::Buil
 }
 
 /* truncate(con) */
-SEXP attribute_hidden do_truncate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_truncate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con = nullptr;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     con->truncate(con);
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_flush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_flush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_)
 {
     Rconnection con = nullptr;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     if(con->canwrite) con->fflush(con);
     return R_NilValue;
 }
@@ -3546,7 +3540,7 @@ int Rconn_printf(Rconnection con, const char *format, ...)
 
 /* readLines(con = stdin(), n = 1, ok = TRUE, warn = TRUE) */
 #define BUF_SIZE 1000
-SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* n_, CXXR::RObject* ok_, CXXR::RObject* warn_, CXXR::RObject* encoding_, CXXR::RObject* skipNul_)
 {
     SEXP ans = R_NilValue, ans2;
     int ok, warn, skipNul, c, nbuf, buf_size = BUF_SIZE;
@@ -3557,22 +3551,22 @@ SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR:
     const char *encoding;
     R_xlen_t i, n, nn, nnn, nread;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
-    n = asVecSize(args[1]);
+    con = getConnection(asInteger(con_));
+    n = asVecSize(n_);
     if(n == -999)
 	error(_("invalid '%s' argument"), "n");
-    ok = asLogical(args[2]);
+    ok = asLogical(ok_);
     if(ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "ok");
-    warn = asLogical(args[3]);
+    warn = asLogical(warn_);
     if(warn == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "warn");
-    if(!isString(args[4]) || LENGTH(args[4]) != 1)
+    if(!isString(encoding_) || LENGTH(encoding_) != 1)
 	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(args[4], 0)); /* ASCII */
-    skipNul = asLogical(args[5]);
+    encoding = CHAR(STRING_ELT(encoding_, 0)); /* ASCII */
+    skipNul = asLogical(skipNul_);
     if(skipNul == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "skipNul");
 
@@ -3677,7 +3671,7 @@ SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* writeLines(text, con = stdout(), sep = "\n", useBytes) */
-SEXP attribute_hidden do_writelines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_writelines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* text_, CXXR::RObject* con_, CXXR::RObject* sep_, CXXR::RObject* useBytes_)
 {
     int con_num, useBytes;
     Rboolean wasopen;
@@ -3685,15 +3679,15 @@ SEXP attribute_hidden do_writelines(/*const*/ CXXR::Expression* call, const CXXR
     const char *ssep;
     SEXP text, sep;
 
-    text = args[0];
+    text = text_;
     if(!isString(text)) error(_("invalid '%s' argument"), "text");
-    if(!inherits(args[1], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    con_num = asInteger(args[1]);
+    con_num = asInteger(con_);
     con = getConnection(con_num);
-    sep = args[2];
+    sep = sep_;
     if(!isString(sep)) error(_("invalid '%s' argument"), "sep");
-    useBytes = asLogical(args[3]);
+    useBytes = asLogical(useBytes_);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -3824,7 +3818,7 @@ static SEXP rawOneString(Rbyte *bytes, R_xlen_t nbytes, R_xlen_t *np)
 
 /* readBin(con, what, n, swap) */
 #define BLOCK 8096
-SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* what_, CXXR::RObject* n_, CXXR::RObject* size_, CXXR::RObject* signed_, CXXR::RObject* endian_)
 {
     SEXP ans = R_NilValue, swhat;
     int size, signd, swap, sizedef= 4, mode = 1;
@@ -3835,27 +3829,26 @@ SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::B
     Rbyte *bytes = nullptr;
     R_xlen_t i, n,  m = 0, nbytes = 0, np = 0;
 
-    if(TYPEOF(args[0]) == RAWSXP) {
+    if(TYPEOF(con_) == RAWSXP) {
 	isRaw = TRUE;
-	bytes = RAW(args[0]);
-	nbytes = XLENGTH(args[0]);
+	bytes = RAW(con_);
+	nbytes = XLENGTH(con_);
     } else {
-	con = getConnection(asInteger(args[0]));
+	con = getConnection(asInteger(con_));
 	if(con->text) error(_("can only read from a binary connection"));
     }
 
-    args = (args + 1);
-    swhat = args[0]; args = (args + 1);
+    swhat = what_;
     if(!isString(swhat) || Rf_length(swhat) != 1)
 	error(_("invalid '%s' argument"), "what");
     what = CHAR(STRING_ELT(swhat, 0)); /* ASCII */
-    n = asVecSize(args[0]); args = (args + 1);
+    n = asVecSize(n_);
     if(n < 0) error(_("invalid '%s' argument"), "n");
-    size = asInteger(args[0]); args = (args + 1);
-    signd = asLogical(args[0]); args = (args + 1);
+    size = asInteger(size_);
+    signd = asLogical(signed_);
     if(signd == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "signed");
-    swap = asLogical(args[0]);
+    swap = asLogical(endian_);
     if(swap == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "swap");
     if(!isRaw) {
@@ -4079,7 +4072,7 @@ SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* writeBin(object, con, size, swap, useBytes) */
-SEXP attribute_hidden do_writebin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_writebin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* size_, CXXR::RObject* endian_, CXXR::RObject* useBytes_)
 {
     SEXP object, ans = R_NilValue;
     int i, j, size, swap, len, useBytes;
@@ -4088,24 +4081,24 @@ SEXP attribute_hidden do_writebin(/*const*/ CXXR::Expression* call, const CXXR::
     Rboolean wasopen = TRUE, isRaw = FALSE;
     Rconnection con = nullptr;
 
-    object = args[0];
+    object = object_;
     if(!isVectorAtomic(object))
 	error(_("'x' is not an atomic vector type"));
 
-    if(TYPEOF(args[1]) == RAWSXP) {
+    if(TYPEOF(con_) == RAWSXP) {
 	isRaw = TRUE;
     } else {
-	con = getConnection(asInteger(args[1]));
+	con = getConnection(asInteger(con_));
 	if(con->text) error(_("can only write to a binary connection"));
 	wasopen = con->isopen;
 	if(!con->canwrite) error(_("cannot write to this connection"));
     }
 
-    size = asInteger(args[2]);
-    swap = asLogical(args[3]);
+    size = asInteger(size_);
+    swap = asLogical(endian_);
     if(swap == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "swap");
-    useBytes = asLogical(args[4]);
+    useBytes = asLogical(useBytes_);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
     len = LENGTH(object);
@@ -4423,7 +4416,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 
 
 /* readChar(con, nchars) */
-SEXP attribute_hidden do_readchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* nchars_, CXXR::RObject* useBytes_)
 {
     SEXP ans = R_NilValue, onechar, nchars;
     R_xlen_t i, n, m = 0;
@@ -4432,20 +4425,20 @@ SEXP attribute_hidden do_readchar(/*const*/ CXXR::Expression* call, const CXXR::
     Rconnection con = nullptr;
     Rbyte *bytes = nullptr;
 
-    if(TYPEOF(args[0]) == RAWSXP) {
+    if(TYPEOF(con_) == RAWSXP) {
 	isRaw = TRUE;
-	bytes = RAW(args[0]);
-	nbytes = LENGTH(args[0]);
+	bytes = RAW(con_);
+	nbytes = LENGTH(con_);
     } else {
-	con = getConnection(asInteger(args[0]));
+	con = getConnection(asInteger(con_));
 	if(!con->canread)
 	    error(_("cannot read from this connection"));
     }
     /* We did as.integer in the wrapper */
-    nchars = args[1];
+    nchars = nchars_;
     n = XLENGTH(nchars);
     if(n == 0) return allocVector(STRSXP, 0);
-    useBytes = asLogical(args[2]);
+    useBytes = asLogical(useBytes_);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -4494,7 +4487,7 @@ SEXP attribute_hidden do_readchar(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 /* writeChar(object, con, nchars, sep, useBytes) */
-SEXP attribute_hidden do_writechar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_writechar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* nchars_, CXXR::RObject* eos_, CXXR::RObject* useBytes_)
 {
     SEXP object, nchars, sep, ans = R_NilValue, si;
     R_xlen_t i, n, len;
@@ -4506,22 +4499,22 @@ SEXP attribute_hidden do_writechar(/*const*/ CXXR::Expression* call, const CXXR:
     Rconnection con = nullptr;
     mbstate_t mb_st;
 
-    object = args[0];
+    object = object_;
     if(TYPEOF(object) != STRSXP)
 	error(_("invalid '%s' argument"), "object");
-    if(TYPEOF(args[1]) == RAWSXP) {
+    if(TYPEOF(con_) == RAWSXP) {
 	isRaw = TRUE;
     } else {
-	con = getConnection(asInteger(args[1]));
+	con = getConnection(asInteger(con_));
 	if(!con->canwrite)
 	    error(_("cannot write to this connection"));
 	wasopen = con->isopen;
     }
 
     /* We did as.integer in the wrapper */
-    nchars = args[2];
-    sep = args[3];
-    useBytes = asLogical(args[4]);
+    nchars = nchars_;
+    sep = eos_;
+    useBytes = asLogical(useBytes_);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -4695,7 +4688,7 @@ void con_pushback(Rconnection con, Rboolean newLine, char *line)
 }
 
 
-SEXP attribute_hidden do_pushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* data_, CXXR::RObject* connection_, CXXR::RObject* newLine_, CXXR::RObject* encoding_)
 {
     int i, n, nexists, newLine, type;
     Rconnection con = NULL;
@@ -4703,14 +4696,14 @@ SEXP attribute_hidden do_pushback(/*const*/ CXXR::Expression* call, const CXXR::
     const char *p;
     char **q;
 
-    stext = args[0];
+    stext = data_;
     if(!isString(stext))
 	error(_("invalid '%s' argument"), "data");
-    con = getConnection(asInteger(args[1]));
-    newLine = asLogical(args[2]);
+    con = getConnection(asInteger(connection_));
+    newLine = asLogical(newLine_);
     if(newLine == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "newLine");
-    type = asInteger(args[3]);
+    type = asInteger(encoding_);
     if(!con->canread && !con->isopen)
 	error(_("can only push back on open readable connections"));
     if(!con->text)
@@ -4740,20 +4733,20 @@ SEXP attribute_hidden do_pushback(/*const*/ CXXR::Expression* call, const CXXR::
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_pushbacklength(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pushbacklength(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* connection_)
 {
     Rconnection con = nullptr;
 
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(connection_));
     return ScalarInteger(con->nPushBack);
 }
 
-SEXP attribute_hidden do_clearpushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_clearpushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* connection_)
 {
     int j;
     Rconnection con = nullptr;
 
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(connection_));
 
     if(con->nPushBack > 0) {
 	for(j = 0; j < con->nPushBack; j++) free(con->PushBack[j]);
@@ -4829,17 +4822,17 @@ Rboolean attribute_hidden switch_stdout(int icon, int closeOnExit)
   return switch_or_tee_stdout(icon, closeOnExit, 0);
 }
 
-SEXP attribute_hidden do_sink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* append_, CXXR::RObject* type_, CXXR::RObject* split_)
 {
   int icon, closeOnExit, errcon, tee;
 
-    icon = asInteger(args[0]);
-    closeOnExit = asLogical(args[1]);
+    icon = asInteger(file_);
+    closeOnExit = asLogical(append_);
     if(closeOnExit == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "closeOnExit");
-    errcon = asLogical(args[2]);
+    errcon = asLogical(type_);
     if(errcon == NA_LOGICAL) error(_("invalid '%s' argument"), "type");
-    tee = asLogical(args[3]);
+    tee = asLogical(split_);
     if(tee == NA_LOGICAL) error(_("invalid '%s' argument"), "split");
 
     if(!errcon) {
@@ -4861,9 +4854,9 @@ SEXP attribute_hidden do_sink(/*const*/ CXXR::Expression* call, const CXXR::Buil
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_sinknumber(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sinknumber(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* type_)
 {
-    int errcon = asLogical(args[0]);
+    int errcon = asLogical(type_);
     if(errcon == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "type");
     return ScalarInteger(errcon ? R_SinkNumber : R_ErrorCon);
@@ -4897,7 +4890,7 @@ void attribute_hidden InitConnections()
 }
 
 SEXP attribute_hidden
-do_getallconnections(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getallconnections(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     int i, j=0, n=0;
     SEXP ans;
@@ -4912,13 +4905,13 @@ do_getallconnections(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFuncti
 }
 
 SEXP attribute_hidden
-do_getconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_)
 {
     SEXP ans, connclass;
     int what;
     Rconnection con;
 
-    what = asInteger(args[0]);
+    what = asInteger(what_);
     if (what == NA_INTEGER)
 	error(_("there is no connection NA"));
     if (what < 0 || what >= NCONNECTIONS || !Connections[what]) 
@@ -4936,12 +4929,12 @@ do_getconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
     return ans;
 }
 
-SEXP attribute_hidden do_sumconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sumconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_)
 {
     SEXP ans, names, tmp;
     Rconnection Rcon;
 
-    Rcon = getConnection(asInteger(args[0]));
+    Rcon = getConnection(asInteger(object_));
     PROTECT(ans = allocVector(VECSXP, 7));
     PROTECT(names = allocVector(STRSXP, 7));
     SET_STRING_ELT(names, 0, mkChar("description"));
@@ -5509,7 +5502,7 @@ static int gzcon_fgetc(Rconnection con)
 
 
 /* gzcon(con, level, allowNonCompressed) */
-SEXP attribute_hidden do_gzcon(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gzcon(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* level_, CXXR::RObject* allowNonCompressed_)
 {
     SEXP ans, connclass;
     int icon, level, allow;
@@ -5517,19 +5510,19 @@ SEXP attribute_hidden do_gzcon(/*const*/ CXXR::Expression* call, const CXXR::Bui
     char *m, description[1000];
     CXXRCONST char* mode = nullptr;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(con_, "connection"))
 	error(_("'con' is not a connection"));
-    incon = getConnection(icon = asInteger(args[0]));
-    level = asInteger(args[1]);
+    incon = getConnection(icon = asInteger(con_));
+    level = asInteger(level_);
     if(level == NA_INTEGER || level < 0 || level > 9)
 	error(_("'level' must be one of 0 ... 9"));
-    allow = asLogical(args[2]);
+    allow = asLogical(allowNonCompressed_);
     if(allow == NA_INTEGER)
 	error(_("'allowNonCompression' must be TRUE or FALSE"));
 
     if(incon->isGzcon) {
 	warning(_("this is already a 'gzcon' connection"));
-	return args[0];
+	return con_;
     }
     m = incon->mode;
     if(strcmp(m, "r") == 0 || strncmp(m, "rb", 2) == 0) mode = "rb";
@@ -5747,23 +5740,23 @@ SEXP R_decompress2(SEXP in, Rboolean *err)
 }
 
 
-SEXP attribute_hidden do_sockselect(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sockselect(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* socklist_, CXXR::RObject* write_, CXXR::RObject* timeout_)
 {
     Rboolean immediate = FALSE;
     int nsock, i;
     SEXP insock, write, val, insockfd;
     double timeout;
 
-    insock = args[0];
+    insock = socklist_;
     if (TYPEOF(insock) != VECSXP || LENGTH(insock) == 0)
 	error(_("not a list of sockets"));
     nsock = LENGTH(insock);
 
-    write = args[1];
+    write = write_;
     if (TYPEOF(write) != LGLSXP || LENGTH(write) != nsock)
 	error(_("bad write indicators"));
 
-    timeout = asReal(args[2]);
+    timeout = asReal(timeout_);
 
     PROTECT(insockfd = allocVector(INTSXP, nsock));
     PROTECT(val = allocVector(LGLSXP, nsock));
@@ -5918,14 +5911,14 @@ SEXP R_decompress3(SEXP in, Rboolean *err)
 }
 
 SEXP attribute_hidden
-do_memCompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_memCompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* type_)
 {
     SEXP ans, from;
     int type, res;
 
-    ans = from = args[0];
+    ans = from = from_;
     if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
-    type = asInteger(args[1]);
+    type = asInteger(type_);
     switch(type) {
     case 1: break; /* none */
     case 2: /*gzip */
@@ -5997,14 +5990,14 @@ do_memCompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op
 }
 
 SEXP attribute_hidden
-do_memDecompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_memDecompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* type_)
 {
     SEXP ans, from;
     int type, subtype = 0;
 
-    ans = from = args[0];
+    ans = from = from_;
     if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
-    type = asInteger(args[1]);
+    type = asInteger(type_);
     if (type == 5) {/* type = 5 is "unknown" */
 	char *p = reinterpret_cast<char *>( RAW(from));
 	if (strncmp(p, "BZh", 3) == 0) type = 3; /* bzip2 always uses a header */

@@ -896,10 +896,10 @@ SEXP attribute_hidden R_Primitive(const char *primname)
     return BuiltInFunction::obtainPrimitive(primname);
 }
 
-SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* name_)
 {
     SEXP name, prim;
-    name = args[0];
+    name = name_;
     if (!isString(name) || Rf_length(name) != 1 ||
 	STRING_ELT(name, 0) == R_NilValue)
 	errorcall(call, _("string argument required"));

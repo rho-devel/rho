@@ -683,15 +683,15 @@ makelt(stm *tm, SEXP ans, R_xlen_t i, int valid, double frac_secs)
              /* --------- R interfaces --------- */
 
 // We assume time zone names/abbreviations are ASCII, as all known ones are.
-SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_)
 {
     SEXP stz, x, ans, ansnames, klass, tzone;
     int isgmt = 0, valid, settz = 0;
     char oldtz[1001] = "";
     const char *tz = nullptr;
 
-    PROTECT(x = coerceVector(args[0], REALSXP));
-    if(!isString((stz = args[1])) || LENGTH(stz) != 1)
+    PROTECT(x = coerceVector(x_, REALSXP));
+    if(!isString((stz = tz_)) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
     tz = CHAR(STRING_ELT(stz, 0));
     if(strlen(tz) == 0) {
@@ -779,7 +779,7 @@ SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_)
 {
     SEXP stz, x, ans;
     R_xlen_t n = 0, nlen[9];
@@ -789,10 +789,10 @@ SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR:
     stm tm;
     double tmp;
 
-    PROTECT(x = duplicate(args[0])); /* coerced below */
+    PROTECT(x = duplicate(x_)); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((stz = args[1])) || LENGTH(stz) != 1)
+    if(!isString((stz = tz_)) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
 
     tz = CHAR(STRING_ELT(stz, 0));
@@ -869,7 +869,7 @@ SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* usetz_)
 {
     SEXP x, sformat, ans, tz;
     R_xlen_t n = 0, m, N, nlen[9];
@@ -878,13 +878,13 @@ SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const C
     char oldtz[20] = "";
     stm tm;
 
-    PROTECT(x = duplicate(args[0])); /* coerced below */
+    PROTECT(x = duplicate(x_)); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((sformat = args[1])) || XLENGTH(sformat) == 0)
+    if(!isString((sformat = format_)) || XLENGTH(sformat) == 0)
 	error(_("invalid '%s' argument"), "format");
     m = XLENGTH(sformat);
-    UseTZ = asLogical(args[2]);
+    UseTZ = asLogical(usetz_);
     if(UseTZ == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "usetz");
     tz = getAttrib(x, install("tzone"));
@@ -1031,7 +1031,7 @@ SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const C
     return ans;
 }
 
-SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* tz_)
 {
     SEXP x, sformat, ans, ansnames, klass, stz, tzone = R_NilValue;
     int invalid, isgmt = 0, settz = 0, offset;
@@ -1041,11 +1041,11 @@ SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::
     double psecs = 0.0;
     R_xlen_t n, m, N;
 
-    if(!isString((x = args[0])))
+    if(!isString((x = x_)))
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((sformat = args[1])) || XLENGTH(sformat) == 0)
+    if(!isString((sformat = format_)) || XLENGTH(sformat) == 0)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((stz = args[2])) || LENGTH(stz) != 1)
+    if(!isString((stz = tz_)) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
     tz = CHAR(STRING_ELT(stz, 0));
     if(strlen(tz) == 0) {
@@ -1178,14 +1178,14 @@ SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP x, ans, ansnames, klass;
     R_xlen_t n;
     int valid, day, y, tmp, mon;
     stm tm;
 
-    PROTECT(x = coerceVector(args[0], REALSXP));
+    PROTECT(x = coerceVector(x_, REALSXP));
     n = XLENGTH(x);
     PROTECT(ans = allocVector(VECSXP, 9));
     for(int i = 0; i < 9; i++)
@@ -1239,13 +1239,13 @@ SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP x, ans, klass;
     R_xlen_t n = 0, nlen[9];
     stm tm;
 
-    PROTECT(x = duplicate(args[0]));
+    PROTECT(x = duplicate(x_));
     if(!isVectorList(x) || LENGTH(x) < 9)
 	error(_("invalid '%s' argument"), "x");
 

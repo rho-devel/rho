@@ -309,6 +309,10 @@ namespace CXXR {
             return m_quick_function;
         }
 
+	bool hasFixedArityCall() const {
+	    return m_fixed_arity_fn;
+	}
+
 	RObject* invoke(const Expression* call, Environment* env,
                         ArgList* args) const
 	{
@@ -326,6 +330,17 @@ namespace CXXR {
             return m_quick_function(const_cast<Expression*>(call),
                                     this, env, args, num_args, tags);
         }
+
+	template<typename... Args>
+        RObject* invokeFixedArity(const Expression* call,
+				  Args... args) const {
+	    assert(m_fixed_arity_fn);
+	    assert(sizeof...(Args) == arity());
+	    auto fn = reinterpret_cast<
+		RObject*(*)(Expression*, const BuiltInFunction*,
+			    Args...)>(m_fixed_arity_fn);
+	    return (*fn)(const_cast<Expression*>(call), this, args...);
+	}
 
 	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
 	// dispatch on the first argument (first two for 'Ops').
@@ -389,6 +404,13 @@ namespace CXXR {
 					       int num_args,
 					       const PairList* tags);
 
+	// Placeholder for fuctions that takes the arguments as normal C
+	// function arguments.
+	// This must be cast to the correct type before calling.
+	typedef RObject* (*FixedArityFnStorage)(Expression*,
+						const BuiltInFunction*,
+						class SequenceOfRObject*);
+
 	// 'Pretty-print' information:
 	struct PPinfo {
 	    Kind kind;
@@ -410,6 +432,28 @@ namespace CXXR {
 			int,
 			PPinfo,
 			unsigned int offset);
+
+	template<typename... Args>
+	BuiltInFunction(const char* name,
+			RObject* (*cfun)(Expression*, const BuiltInFunction*,
+					 Args...),
+			unsigned int variant,
+			unsigned int flags,
+			int arity,
+			PPinfo ppinfo,
+			unsigned int offset)
+	    : BuiltInFunction(name, reinterpret_cast<FixedArityFnStorage>(cfun),
+			      variant, flags, arity, ppinfo, offset) {
+	    assert(arity == sizeof...(Args));
+	};
+
+	BuiltInFunction(const char* name,
+			FixedArityFnStorage cfun,
+			unsigned int variant,
+			unsigned int flags,
+			int arity,
+			PPinfo ppinfo,
+			unsigned int offset);
 	BuiltInFunction(const char*,
 			unsigned int,
 			unsigned int,
@@ -426,7 +470,6 @@ namespace CXXR {
 					       flags, arity, ppinfo,
 					       s_next_offset++))
 	    {}
-
 	    BuiltInFunction* function;
 	    static unsigned int s_next_offset;
 	};
@@ -445,6 +488,8 @@ namespace CXXR {
 	unsigned int m_offset;
 	CCODE m_function;
         QuickInvokeFunction m_quick_function;
+
+	FixedArityFnStorage m_fixed_arity_fn;
 
 	std::string m_name;  // name of function
 	unsigned int m_variant;  // used to select alternative

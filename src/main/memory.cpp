@@ -90,20 +90,20 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* e_, CXXR::RObject* f_, CXXR::RObject* onexit_)
 {
     int onexit;
 
-    if (TYPEOF(args[0]) != ENVSXP && TYPEOF(args[0]) != EXTPTRSXP)
+    if (TYPEOF(e_) != ENVSXP && TYPEOF(e_) != EXTPTRSXP)
 	error(_("first argument must be environment or external pointer"));
-    if (TYPEOF(args[1]) != CLOSXP)
+    if (TYPEOF(f_) != CLOSXP)
 	error(_("second argument must be a function"));
 
-    onexit = asLogical(args[2]);
+    onexit = asLogical(onexit_);
     if(onexit == NA_LOGICAL)
 	error(_("third argument must be 'TRUE' or 'FALSE'"));
 
-    R_RegisterFinalizerEx(args[0], args[1], Rboolean(onexit));
+    R_RegisterFinalizerEx(e_, f_, Rboolean(onexit));
     return R_NilValue;
 }
 
@@ -123,42 +123,42 @@ void R_gc_torture(int gap, int wait, Rboolean inhibit)
     }
 }
 
-SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_)
 {
     int gap;
     SEXP old = ScalarLogical(gc_force_wait > 0);
 
-    if (isLogical(args[0])) {
-	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
+    if (isLogical(on_)) {
+	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(on_));
 	if (on == NA_LOGICAL) gap = NA_INTEGER;
 	else if (on) gap = 1;
 	else gap = 0;
     }
-    else gap = asInteger(args[0]);
+    else gap = asInteger(on_);
 
     R_gc_torture(gap, 0, FALSE);
 
     return old;
 }
 
-SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* step_, CXXR::RObject* wait_, CXXR::RObject* inhibit_release_)
 {
     int gap, wait;
     Rboolean inhibit;
     SEXP old = ScalarInteger(gc_force_gap);
 
-    gap = asInteger(args[0]);
-    wait = asInteger(args[1]);
-    inhibit = CXXRCONSTRUCT(Rboolean, asLogical(args[2]));
+    gap = asInteger(step_);
+    wait = asInteger(wait_);
+    inhibit = CXXRCONSTRUCT(Rboolean, asLogical(inhibit_release_));
     R_gc_torture(gap, wait, inhibit);
 
     return old;
 }
 
-SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_)
 {
     std::ostream* report_os = GCManager::setReporting(nullptr);
-    int want_reporting = asLogical(args[0]);
+    int want_reporting = asLogical(verbose_);
     if (want_reporting != NA_LOGICAL)
 	GCManager::setReporting(want_reporting ? &std::cerr : nullptr);
     else
@@ -179,11 +179,11 @@ void attribute_hidden get_current_mem(size_t *smallvsize,
     return;
 }
 
-SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_, CXXR::RObject* reset_)
 {
     std::ostream* report_os
-	= GCManager::setReporting(asLogical(args[0]) ? &std::cerr : nullptr);
-    bool reset_max = asLogical(args[1]);
+	= GCManager::setReporting(asLogical(verbose_) ? &std::cerr : nullptr);
+    bool reset_max = asLogical(reset_);
     GCManager::gc();
     R_RunPendingFinalizers();
     GCManager::setReporting(report_os);
@@ -415,7 +415,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));

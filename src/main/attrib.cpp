@@ -187,15 +187,15 @@ SEXP getAttrib(SEXP vec, SEXP name)
 }
 
 attribute_hidden
-SEXP do_shortRowNames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP do_shortRowNames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* type_)
 {
     /* return  n if the data frame 'vec' has c(NA, n) rownames;
      *	       nrow(.) otherwise;  note that data frames with nrow(.) == 0
      *		have no row.names.
      ==> is also used in dim.data.frame() */
 
-    SEXP s = getAttrib0(args[0], R_RowNamesSymbol), ans = s;
-    int type = asInteger(args[1]);
+    SEXP s = getAttrib0(x_, R_RowNamesSymbol), ans = s;
+    int type = asInteger(type_);
 
     if( type < 0 || type > 2)
 	error(_("invalid '%s' argument"), "type");
@@ -210,9 +210,9 @@ SEXP do_shortRowNames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunct
 
 /* This is allowed to change 'out' */
 attribute_hidden
-SEXP do_copyDFattr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP do_copyDFattr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xx_, CXXR::RObject* x_)
 {
-    SEXP in = args[0], out = args[1];
+    SEXP in = xx_, out = x_;
     SET_ATTRIB(out, shallow_duplicate(ATTRIB(in)));
     IS_S4_OBJECT(in) ?  SET_S4_OBJECT(out) : UNSET_S4_OBJECT(out);
     return out;
@@ -438,10 +438,10 @@ static SEXP commentgets(SEXP vec, SEXP comment)
     return R_NilValue;/*- just for -Wall */
 }
 
-SEXP attribute_hidden do_commentgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const * args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_commentgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_)
 {
-    RObject* object = args[0];
-    RObject* comment = args[1];
+    RObject* object = x_;
+    RObject* comment = value_;
     if (MAYBE_SHARED(object)) object = duplicate(object);
     if (length(comment) == 0) comment = R_NilValue;
     setAttrib(object, R_CommentSymbol, comment);
@@ -449,9 +449,9 @@ SEXP attribute_hidden do_commentgets(/*const*/ CXXR::Expression* call, const CXX
     return object;
 }
 
-SEXP attribute_hidden do_comment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_comment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
-    return getAttrib(args[0], R_CommentSymbol);
+    return getAttrib(x_, R_CommentSymbol);
 }
 
 SEXP classgets(SEXP vec, SEXP klass)

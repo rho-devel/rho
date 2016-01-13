@@ -503,7 +503,7 @@ static void Norm_kind(N01type kind)
 
 /*------ .Internal interface ------------------------*/
 
-SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* kind_, CXXR::RObject* normal_kind_)
 {
     SEXP ans, rng, norm;
 
@@ -511,8 +511,8 @@ SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::
     PROTECT(ans = allocVector(INTSXP, 2));
     INTEGER(ans)[0] = RNG_kind;
     INTEGER(ans)[1] = N01_kind;
-    rng = args[0];
-    norm = args[1];
+    rng = kind_;
+    norm = normal_kind_;
     GetRNGkind(R_NilValue); /* pull from .Random.seed if present */
     if(!isNull(rng)) { /* set a new RNG kind */
 	RNGkind(RNGtype( asInteger(rng)));
@@ -525,18 +525,18 @@ SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* seed_, CXXR::RObject* kind_, CXXR::RObject* normal_kind_)
 {
     SEXP skind, nkind;
     int seed;
 
-    if(!isNull(args[0])) {
-	seed = asInteger(args[0]);
+    if(!isNull(seed_)) {
+	seed = asInteger(seed_);
 	if (seed == NA_INTEGER)
 	    error(_("supplied seed is not a valid integer"));
     } else seed = CXXRCONSTRUCT(int, TimeToSeed());
-    skind = args[1];
-    nkind = args[2];
+    skind = kind_;
+    nkind = normal_kind_;
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
 			       .Random.seed if present */
     if (!isNull(skind)) RNGkind(RNGtype( asInteger(skind)));

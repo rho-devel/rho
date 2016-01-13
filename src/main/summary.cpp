@@ -801,13 +801,13 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* which.min(x) : The index (starting at 1), of the first min(x) in x */
-SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP sx, ans;
     double s, *r;
     int i, n, indx;
 
-    PROTECT(sx = coerceVector(args[0], REALSXP));
+    PROTECT(sx = coerceVector(x_, REALSXP));
     if (!isNumeric(sx))
 	error(_("non-numeric argument"));
     r = REAL(sx);
@@ -845,12 +845,12 @@ SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* which(x) : indices of non-NA TRUE values in x */
-SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP v, v_nms, ans, ans_nms = R_NilValue;
     int i, j = 0, len, *buf;
 
-    v = args[0];
+    v = x_;
     if (!isLogical(v))
         error(_("argument to 'which' is not logical"));
     len = length(v);

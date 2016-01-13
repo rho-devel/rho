@@ -200,17 +200,17 @@ static R_INLINE double ru()
 /* do_sample - probability sampling with/without replacement.
    .Internal(sample(n, size, replace, prob))
 */
-SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* size_, CXXR::RObject* replace_, CXXR::RObject* prob_)
 {
     SEXP x, y, sn, sk, prob, sreplace;
 
-    sn = args[0]; args = (args + 1);
-    sk = args[0]; args = (args + 1); /* size */
-    sreplace = args[0]; args = (args + 1);
+    sn = x_;
+    sk = size_;
+    sreplace = replace_;
     if(length(sreplace) != 1)
 	 error(_("invalid '%s' argument"), "replace");
     int replace = asLogical(sreplace);
-    prob = args[0];
+    prob = prob_;
     if (replace == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "replace");
     GetRNGstate();

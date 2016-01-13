@@ -47,7 +47,7 @@ static void R_qsort_int_R(int *v, double *I, size_t i, size_t j);
 #endif
 
 /* R function  qsort(x, index.return) */
-SEXP attribute_hidden do_qsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_qsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* index_return_)
 {
     SEXP x, sx;
     int indx_ret;
@@ -55,14 +55,14 @@ SEXP attribute_hidden do_qsort(/*const*/ CXXR::Expression* call, const CXXR::Bui
     int *ivx = nullptr;
     Rboolean x_real, x_int;
 
-    x = args[0];
+    x = x_;
     if (!isNumeric(x))
 	error(_("argument is not a numeric vector"));
     x_real= Rboolean(TYPEOF(x) == REALSXP);
     x_int = Rboolean(!x_real && (TYPEOF(x) == INTSXP || TYPEOF(x) == LGLSXP));
     PROTECT(sx = (x_real || x_int) ? duplicate(x) : coerceVector(x, REALSXP));
     sx->clearAttributes();
-    indx_ret = asLogical(args[1]);
+    indx_ret = asLogical(index_return_);
     R_xlen_t n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
     Rboolean isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);

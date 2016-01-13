@@ -615,23 +615,23 @@ static void isort_with_index(int *x, int *indx, int n)
    The return value is a list with 4 elements (xi, yi, x.alone, y.alone),
    which are index vectors for rows of x or y.
 */
-SEXP attribute_hidden do_merge(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_merge(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xinds_, CXXR::RObject* yinds_, CXXR::RObject* all_x_, CXXR::RObject* all_y_)
 {
     SEXP xi, yi, ansx, ansy, ans;
     int nx = 0, ny = 0, i, j, k, nx_lone = 0, ny_lone = 0;
     int all_x = 0, all_y = 0, ll = 0/* "= 0" : for -Wall */;
     int nnx, nny;
 
-    xi = args[0];
+    xi = xinds_;
     // NB: long vectors are not supported for input
     if ( !isInteger(xi) || !(nx = LENGTH(xi)) )
 	error(_("invalid '%s' argument"), "xinds");
-    yi = args[1];
+    yi = yinds_;
     if ( !isInteger(yi) || !(ny = LENGTH(yi)) )
 	error(_("invalid '%s' argument"), "yinds");
-    if(!LENGTH(ans = args[2]) || NA_LOGICAL == (all_x = asLogical(ans)))
+    if(!LENGTH(ans = all_x_) || NA_LOGICAL == (all_x = asLogical(ans)))
 	error(_("'all.x' must be TRUE or FALSE"));
-    if(!LENGTH(ans = args[3])|| NA_LOGICAL == (all_y = asLogical(ans)))
+    if(!LENGTH(ans = all_y_)|| NA_LOGICAL == (all_y = asLogical(ans)))
 	error(_("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
@@ -729,7 +729,7 @@ SEXP static intern_getwd(void)
     return(rval);
 }
 
-SEXP attribute_hidden do_getwd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getwd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     return(intern_getwd());
 }
@@ -805,14 +805,14 @@ SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_basename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_basename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char  buf[PATH_MAX], *p, fsp = FILESEP[0];
     const char *pp;
     int i, n;
 
-    if (TYPEOF(s = args[0]) != STRSXP)
+    if (TYPEOF(s = path_) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
     for(i = 0; i < n; i++) {
@@ -886,14 +886,14 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_dirname(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dirname(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char buf[PATH_MAX], *p, fsp = FILESEP[0];
     const char *pp;
     int i, n;
 
-    if (TYPEOF(s = args[0]) != STRSXP)
+    if (TYPEOF(s = path_) != STRSXP)
 	error(_("a character vector argument expected"));
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(s)));
     for(i = 0; i < n; i++) {
@@ -1013,7 +1013,7 @@ const char *getTZinfo(void)
 
 
 /* encodeString(x, w, quote, justify) */
-SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_, CXXR::RObject* quote_, CXXR::RObject* na_encode_, CXXR::RObject* justify_)
 {
     SEXP ans, x, s;
     R_xlen_t i, len;
@@ -1021,27 +1021,27 @@ SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CX
     const char *cs;
     Rboolean findWidth;
 
-    if (TYPEOF(x = args[0]) != STRSXP)
+    if (TYPEOF(x = x_) != STRSXP)
 	error(_("a character vector argument expected"));
-    if(isNull(args[1])) w = NA_INTEGER;
+    if(isNull(width_)) w = NA_INTEGER;
     else {
-	w = asInteger(args[1]);
+	w = asInteger(width_);
 	if(w != NA_INTEGER && w < 0)
 	    error(_("invalid '%s' value"), "width");
     }
     findWidth = CXXRCONSTRUCT(Rboolean, (w == NA_INTEGER));
-    s = args[2];
+    s = quote_;
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	error(_("invalid '%s' value"), "quote");
     cs = translateChar(STRING_ELT(s, 0));
     if(strlen(cs) > 0) quote = cs[0];
     if(strlen(cs) > 1)
 	warning(_("only the first character of 'quote' will be used"));
-    justify = asInteger(args[3]);
+    justify = asInteger(na_encode_);
     if(justify == NA_INTEGER || justify < 0 || justify > 3)
 	error(_("invalid '%s' value"), "justify");
     if(justify == 3) w = 0;
-    na = asLogical(args[4]);
+    na = asLogical(justify_);
     if(na == NA_LOGICAL) error(_("invalid '%s' value"), "na.encode");
 
     len = XLENGTH(x);
@@ -1073,13 +1073,13 @@ SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CX
     return ans;
 }
 
-SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP ans, x;
     R_xlen_t i, n;
     CXXRCONST char *tmp;
 
-    if (TYPEOF(x = args[0]) != STRSXP)
+    if (TYPEOF(x = x_) != STRSXP)
 	error(_("a character vector argument expected"));
     n = XLENGTH(x);
     PROTECT(ans = allocVector(STRSXP, n));
@@ -1094,16 +1094,16 @@ SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_setencoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setencoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_)
 {
     SEXP x, enc, tmp;
     int m;
     R_xlen_t i, n;
     const char *thiss;
 
-    if (TYPEOF(x = args[0]) != STRSXP)
+    if (TYPEOF(x = x_) != STRSXP)
 	error(_("a character vector argument expected"));
-    if (TYPEOF(enc = args[1]) != STRSXP)
+    if (TYPEOF(enc = value_) != STRSXP)
 	error(_("a character vector 'value' expected"));
     m = LENGTH(enc);
     if(m == 0)
@@ -2104,13 +2104,13 @@ bincode(double *x, R_xlen_t n, double *breaks, int nb,
 }
 
 /* 'breaks' cannot be a long vector as the return codes are integer. */
-SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* breaks_, CXXR::RObject* right_, CXXR::RObject* include_lowest_)
 {
     SEXP x, breaks, right, lowest;
-    x = args[0]; args = (args + 1);
-    breaks = args[0]; args = (args + 1);
-    right = args[0]; args = (args + 1);
-    lowest = args[0];
+    x = x_;
+    breaks = breaks_;
+    right = right_;
+    lowest = include_lowest_;
 #ifdef LONG_VECTOR_SUPPORT
     if (IS_LONG_VEC(breaks))
 	error(_("long vector '%s' is not supported"), "breaks");
@@ -2129,9 +2129,9 @@ SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::B
     return codes;
 }
 
-SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* bin_, CXXR::RObject* nbins_)
 {
-    SEXP in = args[0], nbin = args[1];
+    SEXP in = bin_, nbin = nbins_;
     if (TYPEOF(in) != INTSXP)  error("invalid input");
     R_xlen_t n = XLENGTH(in);
     /* FIXME: could in principle be a long vector */
@@ -2147,13 +2147,13 @@ SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 /* x can be a long vector but xt cannot since the result is integer */
-SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vec_, CXXR::RObject* x_, CXXR::RObject* rightmost_closed_, CXXR::RObject* all_inside_)
 {
     SEXP xt, x, right, inside;
-    xt = args[0]; args = (args + 1);
-    x = args[0]; args = (args + 1);
-    right = args[0]; args = (args + 1);
-    inside = args[0];
+    xt = vec_;
+    x = x_;
+    right = rightmost_closed_;
+    inside = all_inside_;
     if(TYPEOF(xt) != REALSXP || TYPEOF(x) != REALSXP) error("invalid input");
 #ifdef LONG_VECTOR_SUPPORT
     if (IS_LONG_VEC(xt))

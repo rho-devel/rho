@@ -230,6 +230,12 @@ namespace CXXR {
 	 */
 	std::pair<bool, RObject*> firstArg(Environment* env);
 
+        /** @brief Return the length of the arglist.
+         */
+	size_t size() const {
+	    return listLength(list());
+	}
+
         /** @brief Return the argument at the specified position.
          */
         RObject* get(int position) const;

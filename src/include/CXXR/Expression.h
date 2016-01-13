@@ -179,6 +179,16 @@ namespace CXXR {
                                             Environment* env,
                                             ArgList* arglist) const;
 
+	template<typename... Args>
+	RObject* evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction*,
+						  Args...) const;
+	template<typename... Args>
+	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
+					   Environment*, bool evaluated,
+					   Args...) const;
+	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
+					   Environment*, ArgList*) const;
+
         static void importMethodBindings(const Frame* method_bindings,
                                          Frame* newframe);
         static Environment* getMethodCallingEnv();

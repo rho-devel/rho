@@ -372,14 +372,14 @@ static Rboolean islistfactor(SEXP X)
 
 /* is this a tree with only factor leaves? */
 
-SEXP attribute_hidden do_islistfactor(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_islistfactor(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* recursive_)
 {
     SEXP X;
     Rboolean lans = TRUE, recursive;
     int i, n;
 
-    X = args[0];
-    recursive = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
+    X = x_;
+    recursive = CXXRCONSTRUCT(Rboolean, asLogical(recursive_));
     n = Rf_length(X);
     if(n == 0 || !isVectorList(X)) {
 	lans = FALSE;

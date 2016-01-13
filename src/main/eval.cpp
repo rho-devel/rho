@@ -1052,14 +1052,11 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-RObject* attribute_hidden do_paren(/*const*/ Expression* call,
-				   const BuiltInFunction* op,
-				   Environment* env,
-				   RObject* const* args,
-				   int num_args,
-				   const PairList* tags)
+RObject* attribute_hidden do_paren(CXXR::Expression* call,
+				   const CXXR::BuiltInFunction* op,
+				   CXXR::RObject* x_)
 {
-    return args[0];
+    return x_;
 }
 
 SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)

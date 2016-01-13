@@ -74,19 +74,17 @@ R_xlen_t asVecSize(SEXP x)
     return -999;  /* which gives error in the caller */
 }
 
-SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* eval_env_, CXXR::RObject* assign_env_)
 {
     SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
 
-    if (!isString(args[0]) || length(args[0]) == 0)
+    if (!isString(x_) || length(x_) == 0)
 	error(_("invalid first argument"));
     else
-	name = installTrChar(STRING_ELT(args[0], 0));
-    args = (args + 1);
-    expr = args[0];
+	name = installTrChar(STRING_ELT(x_, 0));
+    expr = value_;
 
-    args = (args + 1);
-    eenv = args[0];
+    eenv = eval_env_;
     if (isNull(eenv)) {
 	error(_("use of NULL environment is defunct"));
 	eenv = R_BaseEnv;
@@ -94,8 +92,7 @@ SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::B
     if (!isEnvironment(eenv))
 	errorcall(call, _("invalid '%s' argument"), "eval.env");
 
-    args = (args + 1);
-    aenv = args[0];
+    aenv = assign_env_;
     if (isNull(aenv)) {
 	error(_("use of NULL environment is defunct"));
 	aenv = R_BaseEnv;
@@ -108,19 +105,19 @@ SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* makeLazy(names, values, expr, eenv, aenv) */
-SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vars_, CXXR::RObject* vals_, CXXR::RObject* expr_, CXXR::RObject* db_, CXXR::RObject* envir_)
 {
     SEXP names, values, val, expr, eenv, aenv, expr0;
     R_xlen_t i;
 
-    names = args[0]; args = (args + 1);
+    names = vars_;
     if (!isString(names))
 	error(_("invalid first argument"));
-    values = args[0]; args = (args + 1);
-    expr = args[0]; args = (args + 1);
-    eenv = args[0]; args = (args + 1);
+    values = vals_;
+    expr = expr_;
+    eenv = db_;
     if (!isEnvironment(eenv)) error(_("invalid '%s' argument"), "eval.env");
-    aenv = args[0];
+    aenv = envir_;
     if (!isEnvironment(aenv)) error(_("invalid '%s' argument"), "assign.env");
 
     for(i = 0; i < XLENGTH(names); i++) {
@@ -235,18 +232,18 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
 {
-    if (TYPEOF(args[0]) == CLOSXP)
-	return duplicate(FORMALS(args[0]));
+    if (TYPEOF(fun_) == CLOSXP)
+	return duplicate(FORMALS(fun_));
     else
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
 {
-    if (TYPEOF(args[0]) == CLOSXP)
-	return duplicate(BODY(args[0]));
+    if (TYPEOF(fun_) == CLOSXP)
+	return duplicate(BODY(fun_));
     else return R_NilValue;
 }
 
@@ -254,13 +251,13 @@ SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::Buil
 #define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
 
 
-SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
 {
-    if (TYPEOF(args[0]) == CLOSXP)
-	return CLOENV(args[0]);
-    else if (args[0] == R_NilValue)
+    if (TYPEOF(fun_) == CLOSXP)
+	return CLOENV(fun_);
+    else if (fun_ == R_NilValue)
 	return ClosureContext::innermost()->callEnvironment();
-    else return getAttrib(args[0], R_DotEnvSymbol);
+    else return getAttrib(fun_, R_DotEnvSymbol);
 }
 
 SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
@@ -294,14 +291,13 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
  *
  * @return a newly created environment()
  */
-SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* hash_, CXXR::RObject* parent_, CXXR::RObject* size_)
 {
     SEXP enclos, size, ans;
     int hash;
 
-    hash = asInteger(args[0]);
-    args = (args + 1);
-    enclos = args[0];
+    hash = asInteger(hash_);
+    enclos = parent_;
     if (isNull(enclos)) {
 	error(_("use of NULL environment is defunct"));
 	enclos = R_BaseEnv;
@@ -311,8 +307,7 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	error(_("'enclos' must be an environment"));
 
     if( hash ) {
-	args = (args + 1);
-	PROTECT(size = coerceVector(args[0], INTSXP));
+	PROTECT(size = coerceVector(size_, INTSXP));
 	if (INTEGER(size)[0] == NA_INTEGER)
 	    INTEGER(size)[0] = 0; /* so it will use the internal default */
 	ans = R_NewHashedEnv(enclos, size);
@@ -322,9 +317,9 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
 {
-    SEXP arg = args[0];
+    SEXP arg = env_;
 
     if( !isEnvironment(arg)  &&
 	!isEnvironment((arg = simple_as_environment(arg))))
@@ -352,11 +347,11 @@ static Rboolean R_IsImportsEnv(SEXP env)
         return FALSE;
 }
 
-SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* value_)
 {
     SEXP env, parent;
 
-    env = args[0];
+    env = env_;
     if (isNull(env)) {
 	error(_("use of NULL environment is defunct"));
 	env = R_BaseEnv;
@@ -370,7 +365,7 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
 	error(_("can not set the parent environment of a namespace"));
     if (R_EnvironmentIsLocked(env) && R_IsImportsEnv(env))
 	error(_("can not set the parent environment of package imports"));
-    parent = args[1];
+    parent = value_;
     if (isNull(parent)) {
 	error(_("use of NULL environment is defunct"));
 	parent = R_BaseEnv;
@@ -385,9 +380,9 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
     return(env);
 }
 
-SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
 {
-    SEXP env = args[0], ans=mkString(""), res;
+    SEXP env = env_, ans=mkString(""), res;
 
     if (TYPEOF(env) == ENVSXP ||
 	TYPEOF((env = simple_as_environment(env))) == ENVSXP) {
@@ -493,7 +488,7 @@ static void cat_cleanup(cat_info* pci)
 #endif
 }
 
-SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* file_, CXXR::RObject* sep_, CXXR::RObject* fill_, CXXR::RObject* labels_, CXXR::RObject* append_)
 {
     cat_info ci;
     SEXP objs, file, fill, sepr, labs, s;
@@ -507,25 +502,22 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
     /* Use standard printing defaults */
     PrintDefaults();
 
-    objs = args[0];
-    args = (args + 1);
+    objs = dots_;
 
-    file = args[0];
+    file = file_;
     ifile = asInteger(file);
     con = getConnection(ifile);
     if(!con->canwrite) /* if it is not open, we may not know yet */
 	error(_("cannot write to this connection"));
-    args = (args + 1);
 
-    sepr = args[0];
+    sepr = sep_;
     if (!isString(sepr))
 	error(_("invalid '%s' specification"), "sep");
     nlsep = 0;
     for (i = 0; i < LENGTH(sepr); i++)
 	if (strstr(CHAR(STRING_ELT(sepr, i)), "\n")) nlsep = 1; /* ASCII */
-    args = (args + 1);
 
-    fill = args[0];
+    fill = fill_;
     if ((!isNumeric(fill) && !isLogical(fill)) || (length(fill) != 1))
 	error(_("invalid '%s' argument"), "fill");
     if (isLogical(fill)) {
@@ -539,15 +531,13 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 	warning(_("non-positive 'fill' argument will be ignored"));
 	pwidth = INT_MAX;
     }
-    args = (args + 1);
 
-    labs = args[0];
+    labs = labels_;
     if (!isString(labs) && labs != R_NilValue)
 	error(_("invalid '%s' argument"), "labels");
     lablen = length(labs);
-    args = (args + 1);
 
-    append = asLogical(args[0]);
+    append = asLogical(append_);
     if (append == NA_LOGICAL)
 	error(_("invalid '%s' specification"), "append");
 
@@ -723,15 +713,15 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* vector(mode="logical", length=0) */
-SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_, CXXR::RObject* length_)
 {
     R_xlen_t len;
     SEXP s;
     SEXPTYPE mode;
-    if (length(args[1]) != 1) error(_("invalid '%s' argument"), "length");
-    len = asVecSize(args[1]);
+    if (length(length_) != 1) error(_("invalid '%s' argument"), "length");
+    len = asVecSize(length_);
     if (len < 0) error(_("invalid '%s' argument"), "length");
-    s = coerceVector(args[0], STRSXP);
+    s = coerceVector(mode_, STRSXP);
     if (length(s) != 1) error(_("invalid '%s' argument"), "mode");
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
     if (CXXRCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))

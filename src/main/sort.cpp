@@ -332,22 +332,22 @@ void revsort(double *a, int *ib, int n)
 }
 
 
-SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* decreasing_)
 {
     SEXP ans;
     Rboolean decreasing;
 
-    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(decreasing_));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
-    if(args[0] == R_NilValue) return R_NilValue;
-    if(!isVectorAtomic(args[0]))
+    if(x_ == R_NilValue) return R_NilValue;
+    if(!isVectorAtomic(x_))
 	error(_("only atomic vectors can be sorted"));
-    if(TYPEOF(args[0]) == RAWSXP)
+    if(TYPEOF(x_) == RAWSXP)
 	error(_("raw vectors cannot be sorted"));
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
-    PROTECT(ans = duplicate(args[0]));
+    PROTECT(ans = duplicate(x_));
     ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
     UNPROTECT(1);
@@ -611,9 +611,9 @@ Psort0(SEXP x, R_xlen_t lo, R_xlen_t hi, R_xlen_t *ind, int nind)
 
 
 /* FUNCTION psort(x, indices) */
-SEXP attribute_hidden do_psort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_psort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* partial_)
 {
-    SEXP x = args[0], p = args[1];
+    SEXP x = x_, p = partial_;
 
     if (!isVectorAtomic(x))
 	error(_("only atomic vectors can be sorted"));
@@ -1399,18 +1399,18 @@ SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::Buil
 #include <R_ext/RS.h>
 
 /* also returns integers/doubles (a method for sort.list) */
-SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* na_last_, CXXR::RObject* decreasing_)
 {
     SEXP x, ans;
     Rboolean nalast, decreasing;
     R_xlen_t i, n;
     int tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
 
-    x = args[0];
-    nalast = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
+    x = x_;
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(na_last_));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
-    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(args[2]));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(decreasing_));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     off = nalast^decreasing ? 0 : 1;
