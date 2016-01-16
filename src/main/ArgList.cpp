@@ -55,22 +55,13 @@ void ArgList::evaluateToArray(Environment* env,
 {
     assert(allow_missing != MissingArgHandling::Drop);
 
-    if (m_first_arg_env && env != m_first_arg_env)
-	Rf_error("Internal error: first arg of ArgList"
-		 " previously evaluated in different environment");
-
-    const PairList* args = list();
-    if (!args)
-	return;
-
     unsigned int arg_number = 0;
-    for (const ConsCell& cell: *args) {
-	RObject* arg = cell.car();
+    for (const ConsCell& arg_cell : getExpandedArgs(env)) {
+	RObject* arg = arg_cell.car();
 	RObject* value;
 	if (m_status == EVALUATED) {
 	    value = arg;
 	} else {
-	    assert(arg != R_DotsSymbol);
 	    value = evaluateSingleArgument(arg, env, allow_missing,
 					   arg_number + 1);
 	}
@@ -80,7 +71,6 @@ void ArgList::evaluateToArray(Environment* env,
     assert(arg_number == num_args);
 }
 
-
 void ArgList::evaluate(Environment* env,
 		       MissingArgHandling allow_missing)
 {
@@ -88,43 +78,17 @@ void ArgList::evaluate(Environment* env,
 
     if (m_status == EVALUATED)
 	return;
-    if (m_first_arg_env && env != m_first_arg_env)
-	Rf_error("Internal error: first arg of ArgList"
-		 " previously evaluated in different environment");
-    GCStackRoot<const PairList> oldargs(list());
+
+    auto expanded_args = getExpandedArgs(env);
     setList(nullptr);
     PairList* lastout = nullptr;
+
     unsigned int arg_number = 1;
-    for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
-	RObject* incar = inp->car();
-	if (incar == DotsSymbol) {
-	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol);
-	    if (!bdg)
-		Rf_error(_("'...' used but not bound"));
-	    RObject* h = bdg->forcedValue();
-	    if (!h || h->sexptype() == DOTSXP) {
-		ConsCell* dotlist = static_cast<DottedArgs*>(h);
-		while (dotlist) {
-		    RObject* dotcar = dotlist->car();
-		    RObject* outcar = Symbol::missingArgument();
-		    if (m_first_arg_env) {
-			outcar = m_first_arg;
-			m_first_arg = nullptr;
-			m_first_arg_env = nullptr;
-		    } else if (dotcar != Symbol::missingArgument())
-			outcar = Evaluator::evaluate(dotcar, env);
-		    PairList* cell = PairList::cons(outcar, nullptr, dotlist->tag());
-		    lastout = append(cell, lastout);
-		    dotlist = dotlist->tail();
-		}
-	    } else if (h != Symbol::missingArgument())
-		Rf_error(_("'...' used in an incorrect context"));
-	} else {
-	    RObject* value = evaluateSingleArgument(incar, env,
-						    allow_missing, arg_number);
-	    PairList* cell = PairList::cons(value, nullptr, inp->tag());
-	    lastout = append(cell, lastout);
-	}
+    for (const ConsCell& arg : expanded_args) {
+	RObject* value = evaluateSingleArgument(arg.car(), env,
+						allow_missing, arg_number);
+	PairList* cell = PairList::cons(value, nullptr, arg.tag());
+	lastout = append(cell, lastout);
 	++arg_number;
     }
     m_status = EVALUATED;
@@ -190,40 +154,23 @@ void ArgList::merge(const ConsCell* extraargs)
 
 pair<bool, RObject*> ArgList::firstArg(Environment* env)
 {
-    const PairList* elt = list();
-    if (!elt)
+    auto expanded_args = getExpandedArgs(env);
+    if (expanded_args.empty()) {
 	return pair<bool, RObject*>(false, nullptr);
-    if (m_status == EVALUATED)
-	return make_pair(true, elt->car());
-    while (elt) {
-	RObject* arg1 = elt->car();
-	if (!arg1)
-	    return pair<bool, RObject*>(true, nullptr);
-	if (arg1 != DotsSymbol) {
-	    m_first_arg = Evaluator::evaluate(arg1, env);
-	    m_first_arg_env = env;
-	    return make_pair(true, m_first_arg.get());
-	}
-	// If we get here it must be DotSymbol.
-	Frame::Binding* bdg = env->findBinding(DotsSymbol);
-	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->forcedValue();
-	    if (val) {
-		if (val->sexptype() != DOTSXP)
-		    Rf_error(_("'...' used in an incorrect context"));
-		RObject* dots1 = static_cast<DottedArgs*>(val)->car();
-		if (dots1->sexptype() != PROMSXP)
-		    Rf_error(_("value in '...' is not a promise"));
-		m_first_arg = Evaluator::evaluate(dots1, env);
-		m_first_arg_env = env;
-		return make_pair(true, m_first_arg.get());
-	    }
-	}
-	elt = elt->tail();  // elt was unbound or missing DotsSymbol
     }
-    return pair<bool, RObject*>(false, nullptr);
+    RObject* first_arg = expanded_args.begin()->car();
+    if (m_status == EVALUATED) {
+	return make_pair(true, first_arg);
+    }
+    if (!first_arg)
+	return pair<bool, RObject*>(true, nullptr);
+
+    m_first_arg = Evaluator::evaluate(first_arg, env);
+    m_first_arg_env = env;
+    return make_pair(true, m_first_arg.get());
 }
 
+// TODO: these ought to handle '...'
 RObject* ArgList::get(int position) const {
     ConsCell* cell = m_list.get();
     for (int i = 0; i < position && cell != nullptr; i++) {
@@ -253,7 +200,7 @@ void ArgList::stripTags()
     for (PairList* p = mutable_list(); p; p = p->tail())
 	p->setTag(nullptr);
 }
-	    
+
 const Symbol* ArgList::tag2Symbol(const RObject* tag)
 {
     return ((!tag || tag->sexptype() == SYMSXP)
@@ -267,50 +214,49 @@ void ArgList::wrapInPromises(Environment* env)
 	return;
     if (m_status == EVALUATED)
 	env = nullptr;
-    else if (m_first_arg_env && env != m_first_arg_env)
-	Rf_error("Internal error: first arg of ArgList"
-		 " previously evaluated in different environment");
-    GCStackRoot<const PairList> oldargs(list());
+
+    auto expanded_args = getExpandedArgs(env);
     setList(nullptr);
     PairList* lastout = nullptr;
 
-    for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
-	RObject* rawvalue = inp->car();
-	if (rawvalue == DotsSymbol) {
-	    Frame::Binding* binding = env->findBinding(DotsSymbol);
-	    if (binding) {
-		RObject* dval = binding->forcedValue();
-		if (!dval || dval->sexptype() == DOTSXP) {
-		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
-		    while (dotlist) {
-			Promise* prom;
-			if (!m_first_arg_env)
-			    prom = new Promise(dotlist->car(), env);
-			else {
-			    prom = new Promise(m_first_arg, nullptr);
-			    m_first_arg = nullptr;
-			    m_first_arg_env = nullptr;
-			}
-			const Symbol* tag = tag2Symbol(dotlist->tag());
-			PairList* cell = PairList::cons(prom, nullptr, tag);
-			lastout = append(cell, lastout);
-			dotlist = dotlist->tail();
-		    }
-		} else if (dval != Symbol::missingArgument())
-		    Rf_error(_("'...' used in an incorrect context"));
-	    }
-	} else {
-	    const Symbol* tag = tag2Symbol(inp->tag());
-	    RObject* value = Symbol::missingArgument();
-	    if (m_first_arg_env) {
-		value = new Promise(m_first_arg, nullptr);
-		m_first_arg = nullptr;
-		m_first_arg_env = nullptr;
-	    } else if (rawvalue != Symbol::missingArgument())
-		value = new Promise(rawvalue, env);
-	    PairList* cell = PairList::cons(value, nullptr, tag);
-	    lastout = append(cell, lastout);
-	}
+    for (const ConsCell& arg : expanded_args) {
+	RObject* rawvalue = arg.car();
+	const Symbol* tag = tag2Symbol(arg.tag());
+	RObject* value = Symbol::missingArgument();
+	if (m_first_arg_env) {
+	    value = Promise::createEvaluatedPromise(rawvalue, m_first_arg);
+	    m_first_arg = nullptr;
+	    m_first_arg_env = nullptr;
+	} else if (rawvalue != Symbol::missingArgument())
+	    value = new Promise(rawvalue, env);
+	PairList* cell = PairList::cons(value, nullptr, tag);
+	lastout = append(cell, lastout);
     }
     m_status = PROMISED;
+}
+
+ArgList::const_iterator::const_iterator(ConsCell* args, Environment* env)
+    : m_arg(args), m_dots(nullptr), m_env(env)
+{
+    if (args && env && args->car() == DotsSymbol)
+	handleDots();
+}
+
+void ArgList::const_iterator::handleDots()
+{
+    Frame::Binding* binding = m_env->findBinding(DotsSymbol);
+    if (!binding) {
+	Rf_error(_("'...' used in an incorrect context"));
+    }
+    RObject* dots = binding->forcedValue();
+    if (!dots || dots == Symbol::missingArgument()) {
+	// There aren't any dots to expand, so go on directly to the next
+	// argument.
+	++(*this);
+	return;
+    }
+    if (dots->sexptype() != DOTSXP) {
+	Rf_error(_("'...' used in an incorrect context"));
+    }
+    m_dots = static_cast<DottedArgs*>(dots);
 }

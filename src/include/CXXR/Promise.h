@@ -77,18 +77,19 @@ namespace CXXR {
 	 *          value of the Promise is immediately set to be \a
 	 *          valgen itself.
 	 */
-	Promise(RObject* valgen, Environment* env)
+	Promise(const RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), 
 	      m_under_evaluation(false), m_interrupted(false)
 	{
-	    m_value = env ? Symbol::unboundValue() : valgen;
+	    // assert(env);
+	    m_value = Symbol::unboundValue();
 	    m_valgen = valgen;
 	    m_environment = env;
 	}
       
-	static Promise* createEvaluatedPromise(Expression* expression,
-                                               RObject* evaluated_value) {
-	    Promise* result = new Promise(expression, nullptr);
+	static Promise* createEvaluatedPromise(const RObject* expression,
+					       RObject* evaluated_value) {
+	    Promise* result = new Promise(expression, Environment::empty());
 	    result->m_value = evaluated_value;
 	    return result;
 	}
@@ -184,7 +185,7 @@ namespace CXXR {
 	void detachReferents() override;
     private:
 	GCEdge<> m_value;
-	GCEdge<RObject> m_valgen;
+	GCEdge<const RObject> m_valgen;
 	GCEdge<Environment> m_environment;
 	mutable bool m_under_evaluation;
 	mutable bool m_interrupted;

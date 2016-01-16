@@ -73,7 +73,9 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	try {
 	    IncrementStackDepthScope scope;
 	    PlainContext cntxt;
-	    RObject* val = Evaluator::evaluate(m_valgen, environment());
+	    RObject* val = Evaluator::evaluate(
+		const_cast<RObject*>(m_valgen.get()),
+		environment());
 	    setValue(val);
 	}
 	catch (...) {
