@@ -2459,8 +2459,8 @@ SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #ifndef NEW
 	SETCAR(c, VECTOR_ELT(args, i));
 #else
-	SETCAR(c, mkPROMISE(VECTOR_ELT(args, i), rho));
-	SET_PRVALUE(CAR(c), VECTOR_ELT(args, i));
+	SETCAR(c, Promise::createEvaluatedPromise(VECTOR_ELT(args, i),
+						  VECTOR_ELT(args, i)));
 #endif
 	if (Rf_ItemName(names, int(i)) != R_NilValue)
 	    SET_TAG(c, Rf_installTrChar(Rf_ItemName(names, i)));

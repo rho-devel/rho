@@ -821,8 +821,7 @@ int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
 	    UNPROTECT(1);
 	    return FALSE;
 	}
-	prom = mkPROMISE(CAR(args), R_GlobalEnv);
-	SET_PRVALUE(prom, x);
+	prom = Promise::createEvaluatedPromise(CAR(args), x);
 	args = CONS(prom, CDR(args));
 	UNPROTECT(1);
     }

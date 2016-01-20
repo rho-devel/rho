@@ -1656,8 +1656,9 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (!env) env = Environment::base();
 	    GCStackRoot<> val(ReadItem(ref_table, stream));
 	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
-	    GCStackRoot<Promise> prom(new Promise(valgen, env));
-	    prom->setValue(val);
+	    GCStackRoot<Promise> prom(
+		val == Symbol::unboundValue() ? new Promise(valgen, env)
+               : Promise::createEvaluatedPromise(valgen, val));
 	    SETLEVELS(prom, levs);
 	    SET_ATTRIB(prom, attr);
 	    return prom;

@@ -46,7 +46,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
     lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
     for (int i = 0; i < m; i++) {
 	SEXP tmp1 = VECTOR_ELT(varyingArgs, i);
-	lengths[i] = get_object_length(tmp1, call, rho);
+	lengths[i] = get_object_length(tmp1, rho);
 	if (lengths[i] == 0) zero++;
 	if (lengths[i] > longest) longest = lengths[i];
     }

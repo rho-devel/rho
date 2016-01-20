@@ -37,6 +37,7 @@
 
 namespace CXXR {
     class DottedArgs;
+    class Expression;
 
     enum class MissingArgHandling {
 	Drop,
@@ -407,7 +408,8 @@ namespace CXXR {
 	 * to be evaluated in \a env.  However, if the ArgList
 	 * currently has Status EVALUATED, the \a env parameter is
 	 * ignored, and the function simply wraps the argument values
-	 * in pre-forced Promise objects.
+	 * in pre-forced Promise objects with arguments taken from
+	 * \a call.
 	 *
 	 * If any argument has the value CXXR::DotsSymbol, the action
 	 * depends on what this Symbol is bound to within \a env (and
@@ -436,13 +438,18 @@ namespace CXXR {
 	 *          env must be identical to the \a env argument of
 	 *          that firstArg() call.
 	 *
+	 * @param call The call that the arguments came from.  Ignored unless
+	 *          the ArgList has status EVALUATED.
+	 *
 	 * @note It would be desirable to avoid producing a new
 	 * PairList, and to absorb this functionality directly into
 	 * the ArgMatcher::match() function.  But at present the
 	 * Promise-wrapped list is recorded in the context set up by
 	 * Closure::apply(), and used for other purposes.
 	 */
-	void wrapInPromises(Environment* env);
+	void wrapInPromises(Environment* env,
+			    const Expression* call = nullptr);
+
     private:
 	const PairList* const m_orig_list;  // Pointer to the argument
 	  // list supplied to the constructor. 
@@ -480,12 +487,17 @@ namespace CXXR {
 
 	/* @brief Appends item to the end of m_list.  Handles empty lists correctly.
 	 *
-	 * @param item The item to add.
+	 * @param value The value to add.
+	 * @param tag The tag to associate with the value.
 	 * @param last_element A pointer to the last element of m_list.
 	 *
 	 * @return A pointer to the current last element of m_list.
 	 */
-	PairList* append(PairList* item, PairList* last_element);
+	PairList* append(RObject* value, const RObject* tag,
+			 PairList* last_element);
+
+	void wrapInForcedPromises(Environment* env,
+				  const ArgList* evaluated_values);
 
 	// Not implemented.  Declared private to suppress
 	// compiler-generated versions:

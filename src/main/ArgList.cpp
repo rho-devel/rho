@@ -41,7 +41,9 @@ using namespace CXXR;
 
 // Implementation of ArgList::coerceTag() is in coerce.cpp
 
-PairList* ArgList::append(PairList* object, PairList* last_element) {
+PairList* ArgList::append(RObject* value, const RObject* tag,
+			  PairList* last_element) {
+    PairList* object = PairList::cons(value, nullptr, tag);
     if (last_element)
 	last_element->setTail(object);
     else
@@ -74,7 +76,7 @@ void ArgList::evaluateToArray(Environment* env,
 void ArgList::evaluate(Environment* env,
 		       MissingArgHandling allow_missing)
 {
-    assert(allow_missing != MissingArgHandling::Drop);
+    // assert(allow_missing != MissingArgHandling::Drop);
 
     if (m_status == EVALUATED)
 	return;
@@ -87,8 +89,7 @@ void ArgList::evaluate(Environment* env,
     for (const ConsCell& arg : expanded_args) {
 	RObject* value = evaluateSingleArgument(arg.car(), env,
 						allow_missing, arg_number);
-	PairList* cell = PairList::cons(value, nullptr, arg.tag());
-	lastout = append(cell, lastout);
+	lastout = append(value, arg.tag(), lastout);
 	++arg_number;
     }
     m_status = EVALUATED;
@@ -98,7 +99,7 @@ RObject* ArgList::evaluateSingleArgument(const RObject* arg,
 					 Environment* env,
 					 MissingArgHandling allow_missing,
 					 int arg_number) {
-    assert(allow_missing != MissingArgHandling::Drop);
+    // assert(allow_missing != MissingArgHandling::Drop);
 
     if (m_first_arg_env) {
 	RObject* value = m_first_arg;
@@ -147,8 +148,7 @@ void ArgList::merge(const ConsCell* extraargs)
     }
     // Append remaining extraargs:
     for (Xargs::const_iterator it = xargs.begin(); it != xargs.end(); ++it) {
-	PairList* cell = PairList::cons((*it).second, nullptr, (*it).first);
-	last = append(cell, last);
+	last = append(it->second, it->first, last);
     }
 }
 
@@ -208,12 +208,20 @@ const Symbol* ArgList::tag2Symbol(const RObject* tag)
 	    : coerceTag(tag));
 }
 
-void ArgList::wrapInPromises(Environment* env)
+void ArgList::wrapInPromises(Environment* env,
+			     const Expression* call)
 {
     if (m_status == PROMISED)
 	return;
-    if (m_status == EVALUATED)
-	env = nullptr;
+    if (m_status == EVALUATED) {
+	assert(call != nullptr);
+	ArgList raw_args(call->tail(), RAW);
+	raw_args.wrapInForcedPromises(env, this);
+	m_status = PROMISED;
+	m_list = raw_args.m_list;
+	return;
+    }
+    assert(env != nullptr);
 
     auto expanded_args = getExpandedArgs(env);
     setList(nullptr);
@@ -229,9 +237,44 @@ void ArgList::wrapInPromises(Environment* env)
 	    m_first_arg_env = nullptr;
 	} else if (rawvalue != Symbol::missingArgument())
 	    value = new Promise(rawvalue, env);
-	PairList* cell = PairList::cons(value, nullptr, tag);
-	lastout = append(cell, lastout);
+	lastout = append(value, tag, lastout);
     }
+
+    m_status = PROMISED;
+}
+
+void ArgList::wrapInForcedPromises(Environment* env,
+				   const ArgList* evaluated_values)
+{
+    assert(m_status == RAW);
+    assert(evaluated_values->status() == EVALUATED);
+
+    if (m_first_arg_env) {
+	assert(m_first_arg.get() == evaluated_values->get(0));
+    }
+
+    auto expanded_args = getExpandedArgs(env);
+    const auto& values = *evaluated_values->list();
+
+    setList(nullptr);
+    PairList* lastout = nullptr;
+
+    auto arg = expanded_args.begin();
+    auto value = values.begin();
+    for (; arg != expanded_args.end() && value != values.end();
+	 ++arg, ++value) {
+	const RObject* expr = arg->car();
+	const Symbol* tag = tag2Symbol(arg->tag());
+
+	Promise* promise = Promise::createEvaluatedPromise(expr, value->car());
+	lastout = append(promise, tag, lastout);
+    }
+
+    // Check to make sure that the lengths matched up OK.
+    if (arg != expanded_args.end() || value != values.end()) {
+	Rf_error(_("dispatch error"));
+    }
+
     m_status = PROMISED;
 }
 

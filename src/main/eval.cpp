@@ -1312,8 +1312,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	GCStackRoot<> lhs(evalseq(CADR(expr), rho,
 				  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc));
 
-	GCStackRoot<> rhsprom(Rf_mkPROMISE(CADR(args), rho));
-	SET_PRVALUE(rhsprom, rhs);
+	GCStackRoot<> rhsprom(Promise::createEvaluatedPromise(CADR(args), rhs));
 
 	SEXP firstarg = CADR(expr);
 	while (Rf_isLanguage(firstarg)) {
@@ -1735,8 +1734,8 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	// Try for formal method.
 	if (x->isS4Object() && R_has_methods(func)) {
 	    // create a promise to pass down to applyClosure
-	    if (arglist.status() == ArgList::RAW)
-		arglist.wrapInPromises(callenv);
+	    arglist.wrapInPromises(callenv, callx);
+
 	    /* This means S4 dispatch */
 	    std::pair<bool, SEXP> pr
 		= R_possible_dispatch(callx, func,
@@ -1756,8 +1755,8 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    }
 	}
 	if (!suffix || strcmp(suffix, ".default")) {
-	    if (arglist.status() == ArgList::RAW)
-		arglist.wrapInPromises(callenv);
+	    if (arglist.status() != ArgList::PROMISED)
+		arglist.wrapInPromises(callenv, callx);
 	    /* The context set up here is needed because of the way
 	       Rf_usemethod() is written.  Rf_DispatchGroup() repeats some
 	       internal Rf_usemethod() code and avoids the need for a
@@ -1936,7 +1935,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	GCStackRoot<Expression>
 	    newcall(new Expression(m->symbol(), callx->tail()));
 	ArgList arglist(callargs, ArgList::EVALUATED);
-	arglist.wrapInPromises(nullptr);
+	arglist.wrapInPromises(callenv, callx);
 	// Ensure positional matching for operators:
 	if (isOps)
 	    arglist.stripTags();

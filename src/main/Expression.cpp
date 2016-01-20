@@ -313,7 +313,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     // We can't modify *parglist, as it's on the other side of a
     // GCStackFrameboundary, so make a copy instead.
     ArgList arglist(parglist->list(), parglist->status());
-    arglist.wrapInPromises(calling_env);
+    arglist.wrapInPromises(calling_env, this);
 
     Environment* execution_env = func->createExecutionEnv();
     matchArgsIntoEnvironment(func, calling_env, &arglist, execution_env);

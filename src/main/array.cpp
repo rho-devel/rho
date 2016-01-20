@@ -354,16 +354,20 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 static R_xlen_t getElementLength(SEXP x, R_xlen_t i, Expression* call,
 				 Environment* rho) {
-    return get_object_length(VECTOR_ELT(x, i), call, rho);
+    return get_object_length(VECTOR_ELT(x, i), rho);
 }
 
-R_xlen_t get_object_length(RObject* object, Expression* call, Environment* rho)
+R_xlen_t get_object_length(RObject* object, Environment* rho)
 {
     static BuiltInFunction* length_op
 	= BuiltInFunction::obtainPrimitive("length");
 
     if (isObject(object))
     {
+	// Create a call to length(x)
+	static Symbol* length = Symbol::obtain("length");
+	static Symbol* x = Symbol::obtain("x");
+	static Expression* call = new Expression(length, new PairList(x));
 	auto dispatched = length_op->InternalDispatch(
 	    call, "length", 1, &object, call->getArgs(), rho);
 	if (dispatched.first) {

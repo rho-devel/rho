@@ -791,10 +791,11 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(op = findFun(install("range.default"), env));
 
     Closure* closure = SEXP_downcast<Closure*>(op);
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    arglist.wrapInPromises(Environment::global());
+    Expression* callx = SEXP_downcast<Expression*>(call2);
     Environment* callenv = SEXP_downcast<Environment*>(env);
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    arglist.wrapInPromises(callenv, callx);
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(3);
     return(ans);

@@ -1504,12 +1504,13 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* otherwise dispatch the default method */
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
 
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    arglist.wrapInPromises(Environment::global());
-
     Closure* closure = SEXP_downcast<Closure*>(fn);
     Expression* callx = SEXP_downcast<Expression*>(call);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    arglist.wrapInPromises(callenv, callx);
+
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(1);
     return ans;

@@ -1387,23 +1387,10 @@ static RObject *call_closure_from_prim(Closure *func, PairList *args,
 	/* Because we call this from a primitive op, args either contains
 	 * promises or actual values.  In the later case, we create promises
 	 * that have already been forced to the value in args.
-	 *
-	 * TODO(kmillar): why is this necessary?  We should be able to pass
-	 * either the args or the unforced promises directly to the closure.
 	 */
-	ArgList al(call_expression->tail(), ArgList::RAW);
-	al.wrapInPromises(call_env);
-
-	PairList* pargs = const_cast<PairList*>(al.list());
-	PairList *a, *b;
-	for (a = args, b = pargs;
-	     a != nullptr && b != nullptr;
-	     a = a->tail(), b = b->tail())
-	    SET_PRVALUE(b->car(), a->car());
-	// Check for unequal list lengths:
-	if (a != nullptr || b != nullptr)
-	    Rf_error(_("dispatch error"));
-	args = pargs;
+	ArgList al(args, ArgList::EVALUATED);
+	al.wrapInPromises(call_env, call_expression);
+	return call_expression->invokeClosure(func, call_env, &al);
     }
     ArgList al(args, ArgList::PROMISED);
     return call_expression->invokeClosure(func, call_env, &al);
