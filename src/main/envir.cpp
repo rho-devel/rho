@@ -1077,7 +1077,7 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> rval;
     GCStackRoot<> t;  // Binding defined in PairList form
 
-    check1arg(args, call, "x");
+    SEXP_downcast<Expression*>(call)->check1arg("x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
 	s = sym = installTrChar(STRING_ELT(CAR(args), 0));
@@ -1577,13 +1577,13 @@ static SEXP pos2env(int pos, SEXP call)
 }
 
 /* this is primitive */
-SEXP attribute_hidden do_pos2env(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pos2env(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pos)
 {
-    SEXP env, pos;
+    SEXP env;
     int i, npos;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
-    PROTECT(pos = coerceVector(args[0], INTSXP));
+    PROTECT(pos = coerceVector(pos, INTSXP));
     npos = length(pos);
     if (npos <= 0)
 	errorcall(call, _("invalid '%s' argument"), "pos");
@@ -1622,7 +1622,7 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    check1arg(tags, call, "object");
+    call->check1arg("object");
 
     SEXP arg = args[0], ans;
     if(isEnvironment(arg))
@@ -1638,7 +1638,7 @@ do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction*
 	return matchEnvir(call, translateChar(asChar(arg)));
     case REALSXP:
     case INTSXP:
-	return do_pos2env(call, op, rho, args, num_args, tags);
+	return do_pos2env(call, op, arg);
     case NILSXP:
 	errorcall(call,_("using 'as.environment(NULL)' is defunct"));
 	return R_BaseEnv;	/* -Wall */

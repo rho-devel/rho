@@ -789,11 +789,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* primitive */
-SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object)
 {
-    Rf_check1arg(tags, call, "x");
+    call->check1arg("x");
 
-    RObject* object = args[0];
     switch(TYPEOF(object)) {
     case ENVSXP:
 	Rf_errorcall(call, _("cannot unclass an environment"));
@@ -1114,7 +1113,7 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
 	Rf_errorcall(call,
 		  _("argument to 'standardGeneric' must be a non-empty character string"));
 
-    Rf_check1arg(tags, call, "f");
+    call->check1arg("f");
     arg = args[0];
 
     PROTECT(fdef = get_this_generic(args, num_args));

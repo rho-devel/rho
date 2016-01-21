@@ -949,7 +949,7 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans;
 
-    check1arg(tags, call, "along.with");
+    call->check1arg("along.with");
 
     static BuiltInFunction* length_op = BuiltInFunction::obtainPrimitive(
 	"length");
@@ -979,23 +979,23 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* length_)
 {
     SEXP ans;
     R_xlen_t len;
 
-    check1arg(tags, call, "length.out");
-    if(length(args[0]) != 1)
+    call->check1arg("length.out");
+    if(length(length_) != 1)
 	warningcall(call, _("first element used of '%s' argument"),
 		    "length.out");
 
  #ifdef LONG_VECTOR_SUPPORT
-    double dlen = asReal(args[0]);
+    double dlen = asReal(length_);
     if(!R_FINITE(dlen) || dlen < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
     len = R_xlen_t( dlen);
 #else
-    len = asInteger(CAR(args));
+    len = asInteger(length_);
     if(len == NA_INTEGER || len < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
 #endif

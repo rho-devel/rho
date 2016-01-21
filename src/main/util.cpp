@@ -505,18 +505,29 @@ void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
     func->checkNumArgs(listLength(arglist), callx);
 }
 
-void attribute_hidden Rf_check1arg(const RObject* arg, const RObject* call,
+void attribute_hidden Rf_check1arg(SEXP arg, SEXP call,
 				   const char *formal)
 {
     SEXP tag = TAG(const_cast<RObject*>(arg));
-    const char *supplied;
-    size_t ns;
     if (tag == R_NilValue) return;
-    supplied = CHAR(PRINTNAME(tag)); ns = strlen(supplied);
-    if (ns > CXXRCONSTRUCT(int, strlen(formal)) || strncmp(supplied, formal, ns))
+
+    const char *supplied = CHAR(PRINTNAME(tag));
+    if (strncmp(supplied, formal, strlen(supplied)) != 0)
 	errorcall(const_cast<RObject*>(call),
 		  _("supplied argument name '%s' does not match '%s'"),
 		  supplied, formal);
+}
+
+void attribute_hidden Expression::check1arg(const char *formal) const
+{
+    if (getArgs()->car() == DotsSymbol) {
+	// In this case it's difficult to verify that the correct argument
+	// name was used.  However, assuming that it was is mostly harmless,
+	// so let it go.
+	return;
+    }
+    return Rf_check1arg(const_cast<PairList*>(getArgs()),
+			const_cast<Expression*>(this), formal);
 }
 
 
@@ -1707,17 +1718,16 @@ double R_atof(const char *str)
 
 /* enc2native and enc2utf8, but they are the same in a UTF-8 locale */
 /* primitive */
-SEXP attribute_hidden do_enc2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_enc2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* ans)
 {
-    SEXP ans, el;
+    SEXP el;
     R_xlen_t i;
     Rboolean duped = FALSE;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
-    if (!isString(args[0]))
+    if (!isString(ans))
 	errorcall(call, "argumemt is not a character vector");
-    ans = args[0];
     for (i = 0; i < XLENGTH(ans); i++) {
 	el = STRING_ELT(ans, i);
 	if (el == NA_STRING) continue;

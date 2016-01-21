@@ -108,16 +108,16 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, RObject* x)
 {
-    SEXP x, ans;
+    SEXP ans;
     R_xlen_t i, len;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
-    if (isFactor(args[0]))
+    if (isFactor(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
-    PROTECT(x = coerceVector(args[0], STRSXP));
+    PROTECT(x = coerceVector(x, STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
     len = XLENGTH(x);

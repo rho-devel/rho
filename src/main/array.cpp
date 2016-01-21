@@ -326,7 +326,7 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     SEXP x = args[0];
 

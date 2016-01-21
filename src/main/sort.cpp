@@ -1497,7 +1497,7 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP fn, ans;
 
-    check1arg(args, call, "x");
+    SEXP_downcast<Expression*>(call)->check1arg("x");
 
     if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans,
 		      MissingArgHandling::Keep, 1)) return ans;

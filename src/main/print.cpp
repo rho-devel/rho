@@ -123,7 +123,7 @@ SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR:
     case 0:
 	return R_NilValue;
     case 1:
-	check1arg(tags, call, "x");
+	call->check1arg("x");
 	return args[0];
     default:
 	op->checkNumArgs(num_args, 1, call);

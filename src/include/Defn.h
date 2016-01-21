@@ -538,7 +538,6 @@ LibExtern Rboolean UseInternet2;
 # define asVecSize		Rf_asVecSize
 # define begincontext		Rf_begincontext
 # define BindDomain		Rf_BindDomain
-# define check1arg		Rf_check1arg
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
 # define ComplexFromInteger	Rf_ComplexFromInteger
@@ -778,14 +777,10 @@ int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*,
 		      CXXR::MissingArgHandling, int);
 
 R_xlen_t get_object_length(CXXR::RObject* object, CXXR::Environment* rho);
-
-extern "C"
-void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
 extern "C" {
-#else
-void Rf_check1arg(SEXP args, SEXP call, const char*);
 #endif
 
+void Rf_check1arg(SEXP args, SEXP call, const char*);
 void Rf_InitGraphics(void);
 void Rf_InitMemory(void);
 void Rf_InitNames(void);

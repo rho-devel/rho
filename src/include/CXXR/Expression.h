@@ -88,6 +88,8 @@ namespace CXXR {
             return tail();
         }
 
+	void check1arg(const char* formal) const;
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.

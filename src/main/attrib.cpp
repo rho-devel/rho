@@ -517,13 +517,10 @@ SEXP classgets(SEXP vec, SEXP klass)
 }
 
 /* oldClass<-(), primitive */
-SEXP attribute_hidden do_classgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_classgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* new_class)
 {
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     
-    RObject* object = args[0];
-    RObject* new_class = args[1];
-
     if (MAYBE_SHARED(object)) object = shallow_duplicate(object);
     if (length(new_class) == 0) new_class = R_NilValue;
     if(IS_S4_OBJECT(object))
@@ -534,10 +531,10 @@ SEXP attribute_hidden do_classgets(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* oldClass, primitive */
-SEXP attribute_hidden do_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_class(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    check1arg(tags, call, "x");
-    SEXP x = args[0], s3class;
+    call->check1arg("x");
+    SEXP s3class;
     if(IS_S4_OBJECT(x)) {
       if((s3class = S3Class(x)) != R_NilValue) {
 	return s3class;
@@ -794,7 +791,7 @@ SEXP attribute_hidden R_do_data_class(/*const*/ CXXR::Expression* call, const CX
 {
   if(op->variant() == 1) { // .cache_class() :
       const char *class_str; SEXP klass;
-      check1arg(tags, call, "class");
+      call->check1arg("class");
       klass = args[0];
       if(TYPEOF(klass) != STRSXP || LENGTH(klass) < 1)
 	  error("invalid class argument to internal .class_cache");
@@ -802,7 +799,7 @@ SEXP attribute_hidden R_do_data_class(/*const*/ CXXR::Expression* call, const CX
       return cache_class(class_str, args[1]);
   }
   // class():
-  check1arg(tags, call, "x");
+  call->check1arg("x");
   return R_data_class(args[0], FALSE);
 }
 
@@ -810,7 +807,7 @@ SEXP attribute_hidden R_do_data_class(/*const*/ CXXR::Expression* call, const CX
 SEXP attribute_hidden do_namesgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     auto dispatch = op->InternalDispatch(call, "names<-", num_args, args, tags,
 					 env);
@@ -930,7 +927,7 @@ SEXP namesgets(SEXP vec, SEXP val)
 SEXP attribute_hidden do_names(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     auto dispatch = op->InternalDispatch(call, "names", num_args, args, tags,
 					 env);
     if (dispatch.first)
@@ -949,7 +946,7 @@ SEXP attribute_hidden do_dimnamesgets(/*const*/ CXXR::Expression* call, const CX
 {
     SEXP ans;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     auto dispatch = op->InternalDispatch(call, "dimnames<-", num_args, args, tags,
 					 env);
@@ -1056,7 +1053,7 @@ SEXP dimnamesgets(SEXP vec, SEXP val)
 SEXP attribute_hidden do_dimnames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     auto dispatch = op->InternalDispatch(call, "dimnames", num_args, args, tags,
 					 env);
     if (dispatch.first)
@@ -1068,7 +1065,7 @@ SEXP attribute_hidden do_dimnames(/*const*/ CXXR::Expression* call, const CXXR::
 SEXP attribute_hidden do_dim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     auto dispatch = op->InternalDispatch(call, "dim", num_args, args, tags, env);
     if (dispatch.first)
 	return dispatch.second;
@@ -1145,17 +1142,17 @@ SEXP dimgets(SEXP vec, SEXP val)
     return vec;
 }
 
-SEXP attribute_hidden do_attributes(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_attributes(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
     SEXP names, namesattr, value;
     int nvalues;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     namesattr = R_NilValue;
-    GCStackRoot<> attrs(ATTRIB(args[0]));
+    GCStackRoot<> attrs(ATTRIB(x));
     nvalues = length(attrs);
-    if (isList(args[0])) {
-	namesattr = getAttrib(args[0], R_NamesSymbol);
+    if (isList(x)) {
+	namesattr = getAttrib(x, R_NamesSymbol);
 	if (namesattr != R_NilValue)
 	    nvalues++;
     }
@@ -1176,7 +1173,7 @@ SEXP attribute_hidden do_attributes(/*const*/ CXXR::Expression* call, const CXXR
 	/* treat R_RowNamesSymbol specially */
 	if (TAG(attrs) == R_RowNamesSymbol)
 	    SET_VECTOR_ELT(value, nvalues,
-			   getAttrib(args[0], R_RowNamesSymbol));
+			   getAttrib(x, R_RowNamesSymbol));
 	else
 	    SET_VECTOR_ELT(value, nvalues, CAR(attrs));
 	if (TAG(attrs) == R_NilValue)
@@ -1187,7 +1184,7 @@ SEXP attribute_hidden do_attributes(/*const*/ CXXR::Expression* call, const CXXR
 	nvalues++;
     }
     setAttrib(value, R_NamesSymbol, names);
-    SET_NAMED(value, NAMED(args[0]));
+    SET_NAMED(value, NAMED(x));
     UNPROTECT(3);
     return value;
 }
@@ -1196,7 +1193,7 @@ SEXP attribute_hidden do_levelsgets(/*const*/ CXXR::Expression* call, const CXXR
 {
     SEXP ans;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     /* calls, e.g., levels<-.factor() */
     auto dispatch = op->InternalDispatch(call, "levels<-", num_args, args, tags,
@@ -1215,22 +1212,19 @@ SEXP attribute_hidden do_levelsgets(/*const*/ CXXR::Expression* call, const CXXR
 }
 
 /* attributes(object) <- attrs */
-SEXP attribute_hidden do_attributesgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_attributesgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* attrs)
 {
 /* NOTE: The following code ensures that when an attribute list */
 /* is attached to an object, that the "dim" attibute is always */
 /* brought to the front of the list.  This ensures that when both */
 /* "dim" and "dimnames" are set that the "dim" is attached first. */
 
-    SEXP object, attrs, names = R_NilValue /* -Wall */;
+    SEXP names = R_NilValue /* -Wall */;
     int i, i0 = -1, nattrs;
 
     /* Extract the arguments from the argument list */
 
-    check1arg(tags, call, "x");
-
-    object = args[0];
-    attrs = args[1];
+    call->check1arg("x");
 
     /* Do checks before duplication */
     if (!isNewList(attrs))

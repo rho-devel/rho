@@ -260,14 +260,11 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
     else return getAttrib(fun_, R_DotEnvSymbol);
 }
 
-SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* s, CXXR::RObject* env)
 {
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
-    GCStackRoot<> s(args[0]);
-    SEXP env = args[1];
-
-    if (TYPEOF(args[0]) == CLOSXP
+    if (TYPEOF(s) == CLOSXP
 	&& (isEnvironment(env) ||
 	    isEnvironment(env = simple_as_environment(env)) ||
 	    isNull(env))) {
@@ -866,7 +863,7 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
 {
     SEXP x, ans;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     x = args[0];
 
@@ -980,7 +977,7 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x, y, z, w, ans, dflt = nullptr;
 
     if (nargs < 1) errorcall(call, _("'EXPR' is missing"));
-    check1arg(args, call, "EXPR");
+    SEXP_downcast<Expression*>(call)->check1arg("EXPR");
     PROTECT(x = eval(CAR(args), rho));
     if (!isVector(x) || length(x) != 1)
 	errorcall(call, _("EXPR must be a length 1 vector"));

@@ -738,7 +738,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
 
-    check1arg(args, call, "x");
+    SEXP_downcast<Expression*>(call)->check1arg("x");
 
     if (DispatchGroup("Math", call, op, args, env, &s))
 	return s;
@@ -804,7 +804,7 @@ SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::Bui
 					    tags);
     if (result.first)
 	return result.second;
-    check1arg(tags, call, "x");
+    call->check1arg("x");
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
     if (isComplex(arg))
 	errorcall(call, _("unimplemented complex function"));
@@ -820,7 +820,7 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, s = R_NilValue /* -Wall */;
 
-    check1arg(args, call, "x");
+    SEXP_downcast<Expression*>(call)->check1arg("x");
     x = CAR(args);
 
     if (DispatchGroup("Math", call, op, args, env, &s))
@@ -1138,7 +1138,7 @@ SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP res, call2, args2, tmp = R_NilValue /* -Wall */;
 
-    check1arg(tags, call, "x");
+    call->check1arg("x");
 
     auto dispatch = op->InternalGroupDispatch("Math", call, env, num_args, args,
 					      tags);
