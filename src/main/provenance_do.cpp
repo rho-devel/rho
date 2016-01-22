@@ -33,17 +33,16 @@
 #include <config.h>
 #endif
 
-#include "CXXR/RObject.h"
-#include "CXXR/BuiltInFunction.h"
-#include <Internal.h>
-
 #include <fstream>
 #include <locale>
 #include <set>
 #include <boost/math/special_functions/nonfinite_num_facets.hpp>
 
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/Provenance.hpp"
+#include "CXXR/RObject.h"
 #include "CXXR/StdFrame.hpp"
+#include <Internal.h>
 
 // Try to get rid of this:
 #include "Defn.h"
