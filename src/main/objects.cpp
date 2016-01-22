@@ -1378,23 +1378,6 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
     quick_method_check_ptr = value;
 }
 
-static RObject *call_closure_from_prim(Closure *func, PairList *args,
-				       Expression *call_expression,
-				       Environment *call_env,
-				       Rboolean promisedArgs) {
-    if(!promisedArgs) {
-	/* Because we call this from a primitive op, args either contains
-	 * promises or actual values.  In the later case, we create promises
-	 * that have already been forced to the value in args.
-	 */
-	ArgList al(args, ArgList::EVALUATED);
-	al.wrapInPromises(call_env, call_expression);
-	return call_expression->invokeClosure(func, call_env, &al);
-    }
-    ArgList al(args, ArgList::PROMISED);
-    return call_expression->invokeClosure(func, call_env, &al);
-}
-
 /* try to dispatch the formal method for this primitive op, by calling
    the stored generic function corresponding to the op.	 Requires that
    the methods be set up to return a special object rather than trying
@@ -1410,7 +1393,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
-    GCStackRoot<PairList> argspl(SEXP_downcast<PairList*>(args));
+    ArgList arglist(SEXP_downcast<PairList*>(args),
+		    promisedArgs ? ArgList::PROMISED : ArgList::EVALUATED);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
     SEXP value;
     GCStackRoot<> mlist;
@@ -1440,8 +1424,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = call_closure_from_prim(func, argspl, callx, callenv,
-					   promisedArgs);
+	    value = callx->invokeClosure(func, callenv, &arglist);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1454,7 +1437,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = call_closure_from_prim(func, argspl, callx, callenv, promisedArgs);
+    value = callx->invokeClosure(func, callenv, &arglist);
+    // Only occurs if func() didn't throw an exception.
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return std::pair<bool, SEXP>(false, nullptr);

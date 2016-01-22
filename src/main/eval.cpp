@@ -1696,6 +1696,19 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
+static bool isDefaultMethod(const Expression* call) {
+    RObject* callcar = call->car();
+    if (callcar->sexptype() != SYMSXP) {
+	return false;
+    }
+    const String* symbol_name = static_cast<Symbol*>(callcar)->name();
+
+    static const size_t suffix_length = strlen(".default");
+    if (symbol_name->size() < suffix_length)
+	return false;
+    return strcmp(symbol_name->c_str() + symbol_name->size() - suffix_length,
+		  ".default") == 0;
+}
 
 /* Rf_DispatchOrEval is used in internal functions which dispatch to
  * object methods (e.g. "[" or "[[").  The code either builds promises
@@ -1707,12 +1720,12 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
  * at large in the world.
  */
 attribute_hidden
-int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
+int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 		      SEXP rho, SEXP *ans, MissingArgHandling dropmissing,
 		      int argsevald)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
-    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+    BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
     ArgList arglist(SEXP_downcast<PairList*>(args),
 		    (argsevald ? ArgList::EVALUATED : ArgList::RAW));
     Environment* callenv = SEXP_downcast<Environment*>(rho);
@@ -1746,15 +1759,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		return 1;
 	    }
 	}
-	char* suffix = nullptr;
-	{
-	    RObject* callcar = callx->car();
-	    if (callcar->sexptype() == SYMSXP) {
-		Symbol* sym = static_cast<Symbol*>(callcar);
-		suffix = Rf_strrchr(sym->name()->c_str(), '.');
-	    }
-	}
-	if (!suffix || strcmp(suffix, ".default")) {
+	if (!isDefaultMethod(callx)) {
 	    if (arglist.status() != ArgList::PROMISED)
 		arglist.wrapInPromises(callenv, callx);
 	    /* The context set up here is needed because of the way
@@ -1776,6 +1781,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
+	    const char* generic = func->name();
 	    int um = Rf_usemethod(generic, x, call,
 				  const_cast<PairList*>(arglist.list()),
 				  working_env, callenv, R_BaseEnv, ans);
@@ -1839,16 +1845,8 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     /* check whether we are processing the default method */
-    {
-	RObject* callcar = callx->car();
-	if (callcar->sexptype() == SYMSXP) {
-	    string callname
-		= static_cast<Symbol*>(callcar)->name()->stdstring();
-	    string::size_type index = callname.find_last_of(".");
-	    if (index != string::npos
-		&& callname.substr(index) == ".default")
-		return 0;
-	}
+    if (isDefaultMethod(callx)) {
+	return 0;
     }
 
     std::size_t nargs = (isOps ? numargs : 1);

@@ -330,8 +330,7 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
     SEXP x = args[0];
 
-    auto dispatched = op->InternalDispatch(call, "length",
-					   num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
     if (dispatched.first) {
 	RObject* ans = dispatched.second;
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
@@ -369,7 +368,7 @@ R_xlen_t get_object_length(RObject* object, Environment* rho)
 	static Symbol* x = Symbol::obtain("x");
 	static Expression* call = new Expression(length, new PairList(x));
 	auto dispatched = length_op->InternalDispatch(
-	    call, "length", 1, &object, call->getArgs(), rho);
+	    call, 1, &object, call->getArgs(), rho);
 	if (dispatched.first) {
 	    RObject* len = dispatched.second;
 	    return (R_xlen_t)

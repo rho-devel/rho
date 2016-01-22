@@ -1628,8 +1628,7 @@ do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction*
     if(isEnvironment(arg))
 	return arg;
 
-    auto dispatch = op->InternalDispatch(call, "as.environment", num_args, args,
-					 tags, rho);
+    auto dispatch = op->InternalDispatch(call, num_args, args, tags, rho);
     if (dispatch.first)
 	return dispatch.second;
 

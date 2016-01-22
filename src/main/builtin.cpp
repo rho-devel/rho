@@ -869,8 +869,7 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
 
     if (op->variant()) { /* xlength<- */
 	/* Attempt method dispatch. */
-	auto dispatched = op->InternalDispatch(call, "length<-",
-					       num_args, args, tags, rho);
+	auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
 	if (dispatched.first)
 	    return dispatched.second;
 	if (!isVector(x) && !isVectorizable(x))
@@ -881,8 +880,7 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
 	return xlengthgets(x, len);
     }
     /* Attempt method dispatch. */
-    auto dispatched = op->InternalDispatch(call, "length<-",
-					   num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
     if (dispatched.first)
 	return dispatched.second;
 

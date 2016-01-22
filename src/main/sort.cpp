@@ -181,8 +181,7 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
 
 SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    auto dispatched = op->InternalDispatch(call, "is.unsorted",
-					   num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
     if (dispatched.first)
 	return dispatched.second;
 
@@ -1499,8 +1498,8 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SEXP_downcast<Expression*>(call)->check1arg("x");
 
-    if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans,
-		      MissingArgHandling::Keep, 1)) return ans;
+    if(DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 1))
+	return ans;
     /* otherwise dispatch the default method */
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
 

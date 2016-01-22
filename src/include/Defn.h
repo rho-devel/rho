@@ -773,7 +773,7 @@ void R_InitialData(void);
 #ifdef __cplusplus
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
-int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*,
+int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
 		      CXXR::MissingArgHandling, int);
 
 R_xlen_t get_object_length(CXXR::RObject* object, CXXR::Environment* rho);

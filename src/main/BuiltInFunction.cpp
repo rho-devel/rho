@@ -252,7 +252,7 @@ BuiltInFunction::RealInternalGroupDispatch(
 }
 
 std::pair<bool, RObject*>
-BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generic,
+BuiltInFunction::RealInternalDispatch(const Expression* call,
 				      int num_args,
 				      RObject* const* evaluated_args,
 				      const PairList* tags,
@@ -264,7 +264,6 @@ BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generi
     RObject* result = nullptr;
     bool dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
 					const_cast<BuiltInFunction*>(this),
-					generic,
 					const_cast<PairList*>(arglist.list()),
 					env, &result, MissingArgHandling::Drop,
 					1);

@@ -379,7 +379,7 @@ namespace CXXR {
         // have already been evaluated.
 	// Note that only the first argument is used for dispatching.
         std::pair<bool, RObject*>
-        InternalDispatch(const Expression* call, const char* generic, 
+        InternalDispatch(const Expression* call,
                          int num_args, RObject* const* evaluated_args,
                          const PairList* tags,
                          Environment* env) const
@@ -389,7 +389,7 @@ namespace CXXR {
 	      if (!needsDispatch(num_args, evaluated_args, 1)) {
 		      return std::make_pair(false, nullptr);
 	      }
-	      return RealInternalDispatch(call, generic, num_args,
+	      return RealInternalDispatch(call, num_args,
 					  evaluated_args, tags, env);
           }
 
@@ -536,7 +536,7 @@ namespace CXXR {
 
 	// This dispatches on just the first argument.
         std::pair<bool, RObject*>
-        RealInternalDispatch(const Expression* call, const char* generic,
+        RealInternalDispatch(const Expression* call,
                              int num_args, RObject* const* evaluated_args,
                              const PairList* tags,
                              Environment* env) const;

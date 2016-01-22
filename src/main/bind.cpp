@@ -799,8 +799,7 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Attempt method dispatch. */
 
-    if (DispatchOrEval(call, op, "c", args, env, &ans, MissingArgHandling::Drop,
-		       1))
+    if (DispatchOrEval(call, op, args, env, &ans, MissingArgHandling::Drop, 1))
 	return(ans);
     return do_c_dflt(call, op, ans, env);
 }
@@ -920,8 +919,7 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
     /* Attempt method dispatch. */
 
-    auto dispatched = op->InternalDispatch(call, "unlist", num_args, args_, tags,
-					   env);
+    auto dispatched = op->InternalDispatch(call, num_args, args_, tags, env);
     if (dispatched.first)
 	return dispatched.second;
 
