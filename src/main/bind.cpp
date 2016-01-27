@@ -919,7 +919,7 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
     /* Attempt method dispatch. */
 
-    auto dispatched = op->InternalDispatch(call, num_args, args_, tags, env);
+    auto dispatched = op->InternalDispatch(call, env, num_args, args_, tags);
     if (dispatched.first)
 	return dispatched.second;
 

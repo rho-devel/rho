@@ -469,9 +469,13 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	SEXP_downcast<Expression*>(call2), SEXP_downcast<Environment*>(env),
+	&arglist);
+    if (dispatched.first) {
 	UNPROTECT(2);
-	return(ans);
+	return(dispatched.second);
     }
     UNPROTECT(1);
 
@@ -782,19 +786,21 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
-	UNPROTECT(2);
-	return(ans);
-    }
-    UNPROTECT(1);
-
-    PROTECT(op = findFun(install("range.default"), env));
-
-    Closure* closure = SEXP_downcast<Closure*>(op);
     Expression* callx = SEXP_downcast<Expression*>(call2);
     Environment* callenv = SEXP_downcast<Environment*>(env);
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	callx, callenv, &arglist);
+    if (dispatched.first) {
+	UNPROTECT(2);
+	return(dispatched.second);
+    }
+    UNPROTECT(1);
+
+    PROTECT(op = findFun(install("range.default"), env));
+    Closure* closure = SEXP_downcast<Closure*>(op);
+
     arglist.wrapInPromises(callenv, callx);
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(3);

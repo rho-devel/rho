@@ -84,8 +84,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+				 unsigned int offset,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
 {
     m_function = cfun;
     m_quick_function = nullptr;
@@ -115,8 +116,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+				 unsigned int offset,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
 {
     m_function = nullptr;
     m_quick_function = fun;
@@ -129,8 +131,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+				 unsigned int offset,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
 {
     m_function = nullptr;
     m_quick_function = nullptr;
@@ -145,10 +148,12 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
+				 unsigned int offset,
+				 DispatchType dispatch)
     : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
       m_offset(offset), m_name(name), m_variant(variant),
-      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity), m_gram(ppinfo)
+      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity),
+      m_dispatch_type(dispatch), m_gram(ppinfo)
 {
     unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
@@ -235,15 +240,49 @@ const char* BuiltInFunction::typeName() const
 }
 
 std::pair<bool, RObject*>
+BuiltInFunction::InternalDispatch(const Expression* call,
+				  Environment* env,
+				  ArgList* args) const
+{
+    assert(m_dispatch_type != DispatchType::NONE);
+    assert(args->status() == ArgList::EVALUATED);
+
+    size_t num_args = args->size();
+    RObject** args_array = static_cast<RObject**>(
+	alloca(num_args * sizeof(RObject*)));
+    for (int i = 0; i < num_args; i++) {
+	args_array[i] = args->get(i);
+    }
+    return InternalDispatch(call, env, num_args, args_array, args->list());
+}
+
+const char* BuiltInFunction::GetInternalGroupDispatchName() const
+{
+    switch(m_dispatch_type) {
+    case DispatchType::GROUP_MATH:
+	return "Math";
+    case DispatchType::GROUP_OPS:
+	return "Ops";
+    case DispatchType::GROUP_COMPLEX:
+	return "Complex";
+    case DispatchType::GROUP_SUMMARY:
+	return "Summary";
+    default:
+	// Ought to be unreachable.
+	Rf_error("Attempting to do group dispatch without a group");
+    }
+};
+
+std::pair<bool, RObject*>
 BuiltInFunction::RealInternalGroupDispatch(
-    const char* group, const Expression* call, Environment* env,
+    const Expression* call, Environment* env,
     int num_args, RObject* const* evaluated_args, const PairList* tags) const
 {
     PairList* pargs = PairList::make(num_args, evaluated_args);
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);
     RObject* result = nullptr;
-    bool dispatched = Rf_DispatchGroup(group,
+    bool dispatched = Rf_DispatchGroup(GetInternalGroupDispatchName(),
 				       const_cast<Expression*>(call),
 				       const_cast<BuiltInFunction*>(this),
 				       const_cast<PairList*>(arglist.list()),

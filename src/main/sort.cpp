@@ -181,7 +181,7 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
 
 SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 

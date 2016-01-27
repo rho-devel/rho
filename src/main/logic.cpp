@@ -142,8 +142,7 @@ SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     // It would be logical to test the arity before calling
     // DispatchGroup, but tests/primitives.R assumes otherwise.
-    auto dispatched = op->InternalOpsGroupDispatch("Ops", call, env, num_args,
-						   args, tags);
+    auto dispatched = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
     switch (op->variant()) {
@@ -255,9 +254,13 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	SEXP_downcast<Expression*>(call2),
+	SEXP_downcast<Environment*>(env), &arglist);
+    if (dispatched.first) {
 	UNPROTECT(2);
-	return(ans);
+	return(dispatched.second);
     }
 
     ans = matchArgExact(R_NaRmSymbol, &args);

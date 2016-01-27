@@ -1363,7 +1363,7 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
     case 5:
 	type = RAWSXP; break;
     }
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 
@@ -1392,7 +1392,7 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP x, ans;
     SEXPTYPE type;
 
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 
@@ -1734,7 +1734,7 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
        evaluating arguments in Rf_DispatchOrEval */
     if(op->variant() >= 100 && op->variant() < 200 &&
        Rf_isObject(args[0])) {
-	auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+	auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
 	if (dispatched.first)
 	    return dispatched.second;
     }
@@ -1965,7 +1965,7 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
     call->check1arg("x");
 
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 #ifdef stringent_is
@@ -2187,7 +2187,7 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     call->check1arg("x");
 
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 #ifdef stringent_is
@@ -2248,7 +2248,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
 
     call->check1arg("x");
 
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 #ifdef stringent_is
@@ -2308,7 +2308,7 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
 
     call->check1arg("x");
 
-    auto dispatched = op->InternalDispatch(call, num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
 #ifdef stringent_is

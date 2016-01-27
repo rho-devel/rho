@@ -303,8 +303,7 @@ RObject* attribute_hidden do_arith(/*const*/ Expression* call_,
     BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
 
     // If any of the args has a class, then we might need to dispatch.
-    auto result = op_->InternalOpsGroupDispatch("Ops", call, env, num_args,
-						args, tags);
+    auto result = op_->InternalDispatch(call, env, num_args, args, tags);
     if (result.first)
 	return result.second;
 
@@ -738,16 +737,22 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
 
-    SEXP_downcast<Expression*>(call)->check1arg("x");
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
-    if (DispatchGroup("Math", call, op, args, env, &s))
-	return s;
+    callx->check1arg("x");
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = builtin->InternalDispatch(
+	callx, SEXP_downcast<Environment*>(env), &arglist);
+    if (dispatched.first)
+	return dispatched.second;
 
     if (isComplex(CAR(args)))
 	return complex_math1(call, op, args, env);
 
 #define MATH1(x) math1(CAR(args), x, call);
-    switch (PRIMVAL(op)) {
+    switch (builtin->variant()) {
     case 1: return MATH1(floor);
     case 2: return MATH1(ceil);
     case 3: return MATH1(sqrt);
@@ -800,8 +805,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalGroupDispatch("Math", call, env, num_args, args,
-					    tags);
+    auto result = op->InternalDispatch(call, env, num_args, args, tags);
     if (result.first)
 	return result.second;
     call->check1arg("x");
@@ -820,11 +824,17 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, s = R_NilValue /* -Wall */;
 
-    SEXP_downcast<Expression*>(call)->check1arg("x");
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
+
+    callx->check1arg("x");
     x = CAR(args);
 
-    if (DispatchGroup("Math", call, op, args, env, &s))
-	return s;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = builtin->InternalDispatch(
+	callx, SEXP_downcast<Environment*>(env), &arglist);
+    if (dispatched.first)
+	return dispatched.second;
 
     if (isInteger(x) || isLogical(x)) {
 	/* integer or logical ==> return integer,
@@ -1110,7 +1120,14 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
                        "%d arguments passed to '%s'which requires 1 or 2 arguments", n),
               n, PRIMNAME(op));
 
-    if (! DispatchGroup("Math", call2, op, args, env, &res)) {
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)
+	->InternalDispatch(SEXP_downcast<Expression*>(call2),
+			   SEXP_downcast<Environment*>(env),
+			   &arglist);
+    if (dispatched.first) {
+	res = dispatched.second;
+    } else {
 	if(n == 1) {
 	    double digits = 0.0;
 	    if(PRIMVAL(op) == 10004) digits = 6.0;
@@ -1136,30 +1153,31 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 /* log{2,10} are builtins */
 SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP res, call2, args2, tmp = R_NilValue /* -Wall */;
+    SEXP res, tmp = R_NilValue /* -Wall */;
 
     call->check1arg("x");
 
-    auto dispatch = op->InternalGroupDispatch("Math", call, env, num_args, args,
-					      tags);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
 
     if(op->variant() == 10) tmp = ScalarReal(10.0);
     if(op->variant() == 2)  tmp = ScalarReal(2.0);
 
-    PROTECT(call2 = lang3(install("log"), args[0], tmp));
-    PROTECT(args2 = list2(args[0], tmp));
-    if (! DispatchGroup("Math", call2, const_cast<BuiltInFunction*>(op),
-			args2, env, &res)) {
-	if (isComplex(args[0]))
-	    res = complex_math2(call2, const_cast<BuiltInFunction*>(op),
-				args2, env);
-	else
-	    res = math2(args[0], tmp, logbase, call);
+    static RObject* log_symbol = Symbol::obtain("log");
+    ArgList arglist2({ args[0], tmp }, ArgList::EVALUATED);
+    Expression* call2 = new Expression(log_symbol,
+				       const_cast<PairList*>(arglist2.list()));
+    dispatch = op->InternalDispatch(call2, env, &arglist2);
+    if (dispatch.first) {
+	return dispatch.second;
     }
-    UNPROTECT(2);
-    return res;
+
+    if (isComplex(args[0]))
+	return complex_math2(call2, const_cast<BuiltInFunction*>(op),
+			     const_cast<PairList*>(arglist2.list()), env);
+    else
+	return math2(args[0], tmp, logbase, call);
 }
 
 #ifdef M_E
@@ -1178,8 +1196,12 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
     return  do_log_builtin(call, op, args, env);
 }
 
-SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+
     PROTECT(args);
     int n = Rf_length(args);
     SEXP res;
@@ -1225,7 +1247,11 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    (TAG(args) != R_NilValue && TAG(args) != R_x_Symbol))
 	    error(_("argument \"%s\" is missing, with no default"), "x");
 
-	if (! DispatchGroup("Math", call, op, args, env, &res)) {
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	auto dispatched = builtin->InternalDispatch(callx, env, &arglist);
+	if (dispatched.first)
+	    res = dispatched.second;
+	else {
 	    if (isComplex(CAR(args)))
 		res = complex_math1(call, op, args, env);
 	    else
@@ -1245,7 +1271,11 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (CADR(args) == R_MissingArg)
 	    SETCADR(args, ScalarReal(DFLT_LOG_BASE));
 
-	if (! DispatchGroup("Math", call, op, args, env, &res)) {
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	auto dispatched = builtin->InternalDispatch(callx, env, &arglist);
+	if (dispatched.first) {
+	    res = dispatched.second;
+	} else {
 	    if (Rf_length(CADR(args)) == 0)
 		errorcall(call, _("invalid argument 'base' of length 0"));
 	    if (isComplex(CAR(args)) || isComplex(CADR(args)))

@@ -342,36 +342,80 @@ namespace CXXR {
 	    return (*fn)(const_cast<Expression*>(call), this, args...);
 	}
 
+    private:
+	// The type of internal dispatch (if any) that the function does..
+	enum class DispatchType {
+	    NONE, INTERNAL,
+	    GROUP_MATH, GROUP_OPS, GROUP_COMPLEX, GROUP_SUMMARY };
+
+    public:
+        std::pair<bool, RObject*>
+        InternalDispatch(const Expression* call,
+			 Environment* env,
+			 ArgList* evaluated_args) const;
+
+        std::pair<bool, RObject*>
+        InternalDispatch(const Expression* call,
+			 Environment*env,
+			 int num_args,
+			 RObject* const* evaluated_args,
+			 const PairList* tags) const {
+	    // assert(sexptype() == BUILTINSXP
+	    // 	   || m_function == do_Math2
+	    // 	   || m_function == do_log);
+	    assert(m_dispatch_type != DispatchType::NONE);
+
+	    switch (m_dispatch_type) {
+	    case DispatchType::GROUP_MATH:
+	    case DispatchType::GROUP_COMPLEX:
+	    case DispatchType::GROUP_SUMMARY:
+		return InternalGroupDispatch(call, env,
+					     num_args, evaluated_args, tags);
+	    case DispatchType::GROUP_OPS:
+		return InternalOpsGroupDispatch(call, env,
+						num_args, evaluated_args, tags);
+	    case DispatchType::INTERNAL:
+		return InternalDispatch(call, num_args, evaluated_args, tags,
+					env);
+	    case DispatchType::NONE:
+		return std::make_pair(false, nullptr);
+	    default:
+		// Should be unreachable.
+		Rf_error("Bad internal dispatch type.");
+	    };
+	}
+
+    private:
+	const char* GetInternalGroupDispatchName() const;
+
 	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
 	// dispatch on the first argument (first two for 'Ops').
 	// The number of arguments is not checked.
         std::pair<bool, RObject*>
-        InternalGroupDispatch(const char* group, const Expression* call,
+        InternalGroupDispatch(const Expression* call,
 			      Environment* env, int num_args,
 			      RObject* const* evaluated_args,
                               const PairList* tags) const
         {
-	    assert(strcmp(group, "Ops") != 0);
 	    if (!needsDispatch(num_args, evaluated_args, 1)) {
 		return std::make_pair(false, nullptr);
 	    }
-	    return RealInternalGroupDispatch(group, call, env, num_args,
+	    return RealInternalGroupDispatch(call, env, num_args,
 					     evaluated_args, tags);
 	}
 
 	// The 'Ops' group is special becaues it dispatches on the first two
 	// arguments.
         std::pair<bool, RObject*>
-        InternalOpsGroupDispatch(const char* group, const Expression* call,
+        InternalOpsGroupDispatch(const Expression* call,
 				 Environment* env, int num_args,
 				 RObject* const* evaluated_args,
                                  const PairList* tags) const
         {
-	    assert(strcmp(group, "Ops") == 0);
 	    if (!needsDispatch(num_args, evaluated_args, 2)) {
 		return std::make_pair(false, nullptr);
 	    }
-	    return RealInternalGroupDispatch(group, call, env, num_args,
+	    return RealInternalGroupDispatch(call, env, num_args,
 					     evaluated_args, tags);
 	}
 
@@ -384,8 +428,6 @@ namespace CXXR {
                          const PairList* tags,
                          Environment* env) const
           {
-	      assert(sexptype() == BUILTINSXP);
-
 	      if (!needsDispatch(num_args, evaluated_args, 1)) {
 		      return std::make_pair(false, nullptr);
 	      }
@@ -393,7 +435,6 @@ namespace CXXR {
 					  evaluated_args, tags, env);
           }
 
-    private:
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
 	// list.
@@ -424,14 +465,16 @@ namespace CXXR {
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset);
+			unsigned int offset,
+			DispatchType dispatch);
 	BuiltInFunction(const char*,
 			QuickInvokeFunction,
 			unsigned int,
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset);
+			unsigned int offset,
+			DispatchType dispatch);
 
 	template<typename... Args>
 	BuiltInFunction(const char* name,
@@ -441,9 +484,10 @@ namespace CXXR {
 			unsigned int flags,
 			int arity,
 			PPinfo ppinfo,
-			unsigned int offset)
+			unsigned int offset,
+			DispatchType dispatch)
 	    : BuiltInFunction(name, reinterpret_cast<FixedArityFnStorage>(cfun),
-			      variant, flags, arity, ppinfo, offset) {
+			      variant, flags, arity, ppinfo, offset, dispatch) {
 	    assert(arity == sizeof...(Args));
 	};
 
@@ -453,22 +497,25 @@ namespace CXXR {
 			unsigned int flags,
 			int arity,
 			PPinfo ppinfo,
-			unsigned int offset);
+			unsigned int offset,
+			DispatchType dispatch);
 	BuiltInFunction(const char*,
 			unsigned int,
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset);
+			unsigned int offset,
+			DispatchType dispatch);
 
 	struct TableEntry {
 	    template<typename FUNCTION>
 	    TableEntry(const char* name, FUNCTION function,
 		       unsigned int variant, unsigned int flags, int arity,
-		       PPinfo ppinfo)
+		       PPinfo ppinfo,
+		       DispatchType dispatch = DispatchType::NONE)
 		: function(new BuiltInFunction(name, function, variant,
 					       flags, arity, ppinfo,
-					       s_next_offset++))
+					       s_next_offset++, dispatch))
 	    {}
 	    BuiltInFunction* function;
 	    static unsigned int s_next_offset;
@@ -501,6 +548,7 @@ namespace CXXR {
 			     // applied.
 	bool m_via_dot_internal; // Must this function be called via .Internal?
 	int m_arity;         // function arity; -1 means 'any'
+	DispatchType m_dispatch_type;  // Type of internal dispatch to use.
 	PPinfo m_gram;       // 'pretty-print' information
 
 	// Declared private to ensure that BuiltInFunction objects are
@@ -513,7 +561,7 @@ namespace CXXR {
 	bool needsDispatch(int num_args, RObject* const* evaluated_args,
 			   int args_to_check) const {
 	    // args_to_check is always 1 or 2.
-	    assert(sexptype() == BUILTINSXP);
+	    // assert(sexptype() == BUILTINSXP);
 	    assert(args_to_check == 1 || args_to_check == 2);
 
 	    if (num_args > 0) {
@@ -529,7 +577,7 @@ namespace CXXR {
 	// Most cases dispatch on the first argument, except "Ops" which uses
 	// the first two.
         std::pair<bool, RObject*>
-        RealInternalGroupDispatch(const char* group, const Expression* call,
+        RealInternalGroupDispatch(const Expression* call,
 				  Environment* env, int num_args,
                                   RObject* const* args, const PairList* tags)
           const;

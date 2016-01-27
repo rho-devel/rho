@@ -102,6 +102,8 @@ using namespace CXXR;
  */
 const std::vector<BuiltInFunction::TableEntry>&
 BuiltInFunction::getFunctionTable() {
+    using Dispatch = BuiltInFunction::DispatchType;
+
     static std::vector<BuiltInFunction::TableEntry> s_function_table = {
 
 /* printname	c-entry		quick-entry    offset	eval	arity	pp-kind	     precedence	rightassoc
@@ -175,24 +177,24 @@ BuiltInFunction::getFunctionTable() {
 
 /* Binary Operators, all primitives */
 /* these are group generic and so need to eval args */
-{"+",		do_arith, PLUSOP,	1,	-1,	{PP_BINARY,  PREC_SUM,	  0}},
-{"-",		do_arith, MINUSOP,1,	-1,	{PP_BINARY,  PREC_SUM,	  0}},
-{"*",		do_arith, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}},
-{"/",		do_arith, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}},
-{"^",		do_arith, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}},
-{"%%",		do_arith, MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
-{"%/%",		do_arith, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
+{"+",		do_arith, PLUSOP,	1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, Dispatch::GROUP_OPS},
+{"-",		do_arith, MINUSOP,1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, Dispatch::GROUP_OPS},
+{"*",		do_arith, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}, Dispatch::GROUP_OPS},
+{"/",		do_arith, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}, Dispatch::GROUP_OPS},
+{"^",		do_arith, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}, Dispatch::GROUP_OPS},
+{"%%",		do_arith, MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, Dispatch::GROUP_OPS},
+{"%/%",		do_arith, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, Dispatch::GROUP_OPS},
 {"%*%",		do_matprod,	0,	1,	2,	{PP_BINARY,  PREC_PERCENT,0}},
 
-{"==",		do_relop, EQOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{"!=",		do_relop, NEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{"<",		do_relop, LTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{"<=",		do_relop, LEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{">=",		do_relop, GEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{">",		do_relop, GTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}},
-{"&",		do_logic,	1,	1,	-1,	{PP_BINARY,  PREC_AND,	  0}},
-{"|",		do_logic,	2,	1,	-1,	{PP_BINARY,  PREC_OR,	  0}},
-{"!",		do_logic,	3,	1,	-1,	{PP_UNARY,   PREC_NOT,	  0}},
+{"==",		do_relop, EQOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{"!=",		do_relop, NEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{"<",		do_relop, LTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{"<=",		do_relop, LEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{">=",		do_relop, GEOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{">",		do_relop, GTOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, Dispatch::GROUP_OPS},
+{"&",		do_logic,	1,	1,	-1,	{PP_BINARY,  PREC_AND,	  0}, Dispatch::GROUP_OPS},
+{"|",		do_logic,	2,	1,	-1,	{PP_BINARY,  PREC_OR,	  0}, Dispatch::GROUP_OPS},
+{"!",		do_logic,	3,	1,	-1,	{PP_UNARY,   PREC_NOT,	  0}, Dispatch::GROUP_OPS},
 
 /* specials as conditionally evaluate second arg */
 {"&&",		do_logic2,	1,	0,	2,	{PP_BINARY,  PREC_AND,	  0}},
@@ -204,16 +206,16 @@ BuiltInFunction::getFunctionTable() {
 
 /* Logic Related Functions */
 /* these are group generic and so need to eval args */
-{"all",		do_logic3,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"any",		do_logic3,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"all",		do_logic3,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}, Dispatch::GROUP_SUMMARY},
+{"any",		do_logic3,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}, Dispatch::GROUP_SUMMARY},
 
 
 /* Vectors, Matrices and Arrays */
 
 /* Primitives */
 
-{"length",	do_length,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"length<-",	do_lengthgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
+{"length",	do_length,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, DispatchType::INTERNAL},
+{"length<-",	do_lengthgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}, Dispatch::INTERNAL},
 {"c",/* bind.c:*/do_c,		0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"oldClass",	do_class,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"oldClass<-",	do_classgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT, 1}},
@@ -221,18 +223,18 @@ BuiltInFunction::getFunctionTable() {
 {".cache_class",R_do_data_class,1,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"class<-",	R_do_set_class,	0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"unclass",	do_unclass,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"names",	do_names,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"names<-",	do_namesgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
-{"dimnames",	do_dimnames,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"dimnames<-",	do_dimnamesgets,0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
-{"dim",		do_dim,		0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"dim<-",	do_dimgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
+{"names",	do_names,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"names<-",	do_namesgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}, Dispatch::INTERNAL},
+{"dimnames",	do_dimnames,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"dimnames<-",	do_dimnamesgets,0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}, Dispatch::INTERNAL},
+{"dim",		do_dim,		0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"dim<-",	do_dimgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}, Dispatch::INTERNAL},
 {"attributes",	do_attributes,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"attributes<-",do_attributesgets,0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
 {"attr",	do_attr,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"attr<-",	do_attrgets,	0,	1,	3,	{PP_FUNCALL, PREC_LEFT,	1}},
 {"@<-",		do_slotgets,	0,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
-{"levels<-",	do_levelsgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
+{"levels<-",	do_levelsgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}, Dispatch::INTERNAL},
 
 /* .Internals */
 
@@ -245,7 +247,7 @@ BuiltInFunction::getFunctionTable() {
 {"max.col",	do_maxcol,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"row",		do_rowscols,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"col",		do_rowscols,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"unlist",	do_unlist,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"unlist",	do_unlist,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 {"cbind",	do_bind,	1,	10,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rbind",	do_bind,	2,	10,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"drop",	do_drop,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -274,7 +276,7 @@ BuiltInFunction::getFunctionTable() {
 {"match.call",	do_matchcall,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"crossprod",	do_matprod,	1,	11,	2,	{PP_FUNCALL, PREC_FN,   0}},
 {"tcrossprod",	do_matprod,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"lengths",	do_lengths,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"lengths",	do_lengths,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}, },
 
 {"attach",	do_attach,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"detach",	do_detach,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -284,46 +286,46 @@ BuiltInFunction::getFunctionTable() {
 
 /* Mathematical Functions */
 /* primitives: these are group generic and so need to eval args (possibly internally) */
-{"round",	do_Math2,	10001,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"signif",	do_Math2,	10004,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"log",		do_log,		10003,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"log10",	do_log1arg,	10,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"log2",	do_log1arg,	2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"abs",		do_abs,		6,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"floor",	do_math1,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"ceiling",	do_math1,	2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"sqrt",	do_math1,	3,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"sign",	do_math1,	4,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"trunc",	do_trunc,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"round",	do_Math2,	10001,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"signif",	do_Math2,	10004,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"log",		do_log,		10003,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"log10",	do_log1arg,	10,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"log2",	do_log1arg,	2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"abs",		do_abs,		6,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"floor",	do_math1,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"ceiling",	do_math1,	2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"sqrt",	do_math1,	3,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"sign",	do_math1,	4,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"trunc",	do_trunc,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
-{"exp",		do_math1,	10,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"expm1",	do_math1,	11,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"log1p",	do_math1,	12,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"exp",		do_math1,	10,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"expm1",	do_math1,	11,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"log1p",	do_math1,	12,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
-{"cos",		do_math1,	20,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"sin",		do_math1,	21,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"tan",		do_math1,	22,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"acos",	do_math1,	23,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"asin",	do_math1,	24,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"atan",	do_math1,	25,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"cos",		do_math1,	20,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"sin",		do_math1,	21,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"tan",		do_math1,	22,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"acos",	do_math1,	23,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"asin",	do_math1,	24,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"atan",	do_math1,	25,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
-{"cosh",	do_math1,	30,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"sinh",	do_math1,	31,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"tanh",	do_math1,	32,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"acosh",	do_math1,	33,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"asinh",	do_math1,	34,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"atanh",	do_math1,	35,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"cosh",	do_math1,	30,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"sinh",	do_math1,	31,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"tanh",	do_math1,	32,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"acosh",	do_math1,	33,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"asinh",	do_math1,	34,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"atanh",	do_math1,	35,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
-{"lgamma",	do_math1,	40,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"gamma",	do_math1,	41,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"lgamma",	do_math1,	40,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"gamma",	do_math1,	41,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
-{"digamma",	do_math1,	42,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"trigamma",	do_math1,	43,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"digamma",	do_math1,	42,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"trigamma",	do_math1,	43,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 /* see "psigamma" below !*/
 
-{"cospi",	do_math1,	47,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"sinpi",	do_math1,	48,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"tanpi",	do_math1,	49,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"cospi",	do_math1,	47,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"sinpi",	do_math1,	48,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"tanpi",	do_math1,	49,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
 /* Mathematical Functions of Two Numeric (+ 1-2 int) Variables */
 
@@ -369,34 +371,34 @@ BuiltInFunction::getFunctionTable() {
 
 /* Data Summaries */
 /* these four are group generic and so need to eval args */
-{"sum",		do_summary,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"min",		do_summary,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"max",		do_summary,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"prod",	do_summary,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"sum",		do_summary,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
+{"min",		do_summary,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
+{"max",		do_summary,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
+{"prod",	do_summary,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
 
-{"mean",	do_summary,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"range",	do_range,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"mean",	do_summary,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
+{"range",	do_range,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_SUMMARY},
 
 /* Note that the number of arguments in this group only applies
    to the default method */
-{"cumsum",	do_cum,		1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"cumprod",	do_cum,		2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"cummax",	do_cum,		3,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"cummin",	do_cum,		4,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"cumsum",	do_cum,		1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"cumprod",	do_cum,		2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"cummax",	do_cum,		3,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
+{"cummin",	do_cum,		4,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::GROUP_MATH},
 
 /* Type coercion */
 
-{"as.character",do_asatomic,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.integer",	do_asatomic,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.double",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.complex",	do_asatomic,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.logical",	do_asatomic,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.raw",	do_asatomic,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.character",do_asatomic,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"as.integer",	do_asatomic,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"as.double",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"as.complex",	do_asatomic,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"as.logical",	do_asatomic,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"as.raw",	do_asatomic,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 {"as.call",	do_ascall,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.environment",do_as_environment,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.environment",do_as_environment,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 {"storage.mode<-",do_storage_mode,0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"as.vector",	do_asvector,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.vector",	do_asvector,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 {"paste",	do_paste,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"paste0",	do_paste,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.path",	do_filepath,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -463,9 +465,9 @@ BuiltInFunction::getFunctionTable() {
 {"is.object",	do_is,		50,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"isS4",	do_is,		51,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"is.numeric",	do_is,		100,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.matrix",	do_is,		101,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.array",	do_is,		102,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"is.numeric",	do_is,		100,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"is.matrix",	do_is,		101,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"is.array",	do_is,		102,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 
 {"is.atomic",	do_is,		200,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"is.recursive",do_is,		201,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -476,10 +478,10 @@ BuiltInFunction::getFunctionTable() {
 
 {"is.single",	do_is,		999,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"is.na",	do_isna,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.nan",	do_isnan,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.finite",	do_isfinite,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.infinite",	do_isinfinite,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"is.na",	do_isna,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"is.nan",	do_isnan,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"is.finite",	do_isfinite,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
+{"is.infinite",	do_isinfinite,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 
 {"is.vector",	do_isvector,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
@@ -585,7 +587,7 @@ BuiltInFunction::getFunctionTable() {
 {"browserSetDebug", do_sysbrowser,	3,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"parent.frame",do_parentframe,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sort",	do_sort,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"is.unsorted",	do_isunsorted,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"is.unsorted",	do_isunsorted,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}, Dispatch::INTERNAL},
 {"psort",	do_psort,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"qsort",	do_qsort,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"radixsort",	do_radixsort,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},

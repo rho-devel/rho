@@ -809,7 +809,7 @@ SEXP attribute_hidden do_namesgets(/*const*/ CXXR::Expression* call, const CXXR:
     SEXP ans;
     call->check1arg("x");
 
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
 
@@ -927,7 +927,7 @@ SEXP attribute_hidden do_names(/*const*/ CXXR::Expression* call, const CXXR::Bui
 {
     SEXP ans;
     call->check1arg("x");
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
     ans = args[0];
@@ -946,7 +946,7 @@ SEXP attribute_hidden do_dimnamesgets(/*const*/ CXXR::Expression* call, const CX
 
     call->check1arg("x");
 
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
     RObject* object = args[0];
@@ -1051,7 +1051,7 @@ SEXP attribute_hidden do_dimnames(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP ans;
     call->check1arg("x");
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
     ans = getAttrib(args[0], R_DimNamesSymbol);
@@ -1062,7 +1062,7 @@ SEXP attribute_hidden do_dim(/*const*/ CXXR::Expression* call, const CXXR::Built
 {
     SEXP ans;
     call->check1arg("x");
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
     ans = getAttrib(args[0], R_DimSymbol);
@@ -1072,7 +1072,7 @@ SEXP attribute_hidden do_dim(/*const*/ CXXR::Expression* call, const CXXR::Built
 SEXP attribute_hidden do_dimgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
 
@@ -1191,7 +1191,7 @@ SEXP attribute_hidden do_levelsgets(/*const*/ CXXR::Expression* call, const CXXR
     call->check1arg("x");
 
     /* calls, e.g., levels<-.factor() */
-    auto dispatch = op->InternalDispatch(call, num_args, args, tags, env);
+    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
 	return dispatch.second;
     

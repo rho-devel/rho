@@ -226,8 +226,7 @@ RObject* attribute_hidden do_relop(/*const*/ Expression* call,
 				   const PairList* tags)
 {
     // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalOpsGroupDispatch("Ops", call, env, num_args, args,
-					       tags);
+    auto result = op->InternalDispatch(call, env, num_args, args, tags);
     if (result.first)
 	return result.second;
 
