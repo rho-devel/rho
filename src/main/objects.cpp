@@ -791,8 +791,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 /* primitive */
 SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object)
 {
-    call->check1arg("x");
-
     switch(TYPEOF(object)) {
     case ENVSXP:
 	Rf_errorcall(call, _("cannot unclass an environment"));

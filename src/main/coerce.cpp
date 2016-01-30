@@ -1346,10 +1346,7 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x;
 
     SEXPTYPE type = STRSXP;
-    int op0 = op->variant();
-
-    call->check1arg("x");
-    switch(op0) {
+    switch(op->variant()) {
     case 0:
 	type = STRSXP; break;
     case 1:
@@ -1523,8 +1520,6 @@ SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     SEXP ap, ans, names;
     int i, n;
-
-    call->check1arg("x");
 
     switch (TYPEOF(args)) {
     case LANGSXP:
@@ -1728,7 +1723,6 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    call->check1arg("x");
 
     /* These are all builtins, so we do not need to worry about
        evaluating arguments in Rf_DispatchOrEval */
@@ -1963,8 +1957,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    call->check1arg("x");
-
     auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
@@ -2185,8 +2177,6 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    call->check1arg("x");
-
     auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
@@ -2246,8 +2236,6 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
 
-    call->check1arg("x");
-
     auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
 	return dispatched.second;
@@ -2305,8 +2293,6 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
     SEXP ans, x, names, dims;
     double xr, xi;
     R_xlen_t i, n;
-
-    call->check1arg("x");
 
     auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first)
@@ -2373,8 +2359,6 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP rest, evargs, rfun, tmp;
 
-    if (length(args) < 1) Rf_errorcall(call, _("'name' is missing"));
-    SEXP_downcast<Expression*>(call)->check1arg("name");
     PROTECT(rfun = Rf_eval(CAR(args), rho));
     /* zero-length string check used to be here but Rf_install gives
        better error message.
@@ -2588,7 +2572,6 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP_downcast<Expression*>(call)->check1arg("expr");
     SEXP val = CAR(args);
     /* Make sure expression has NAMED == 2 before being returning
        in order to avoid modification of source code */
@@ -2744,8 +2727,6 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 
 SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* klass)
 {
-    call->check1arg("x");
-
     return R_set_class(object, klass, call);
 }
 
@@ -2755,8 +2736,6 @@ SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CX
 /* storage.mode(obj) <- value */
     SEXP ans;
     SEXPTYPE type;
-
-    call->check1arg("x");
 
     if (!Rf_isValidString(value) || STRING_ELT(value, 0) == NA_STRING)
 	Rf_error(_("'value' must be non-null character string"));

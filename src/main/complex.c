@@ -284,7 +284,6 @@ SEXP attribute_hidden do_cmathfuns(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP x, y = R_NilValue;	/* -Wall*/
     R_xlen_t i, n;
 
-    Rf_check1arg(args, call, "z");
     if (DispatchGroup("Complex", call, op, args, env, &x))
 	return x;
     x = CAR(args);

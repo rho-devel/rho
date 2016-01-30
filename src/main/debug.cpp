@@ -74,8 +74,6 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* primitives .primTrace and .primUntrace */
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP_downcast<Expression*>(call)->check1arg("x");
-
     find_char_fun
 
     if (TYPEOF(CAR(args)) != CLOSXP &&
@@ -135,8 +133,6 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP object;
     char buffer[21];
 
-    call->check1arg("x");
-
     object = args[0];
     if(object == R_NilValue)
 	errorcall(call, _("cannot trace NULL"));
@@ -157,8 +153,6 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
 SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP object;
-
-    call->check1arg("x");
 
     object=args[0];
     object->setMemoryTracing(false);

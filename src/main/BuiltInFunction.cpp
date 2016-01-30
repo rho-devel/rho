@@ -85,8 +85,10 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 int arity,
 				 PPinfo ppinfo,
 				 unsigned int offset,
+				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
 {
     m_function = cfun;
     m_quick_function = nullptr;
@@ -117,8 +119,10 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 int arity,
 				 PPinfo ppinfo,
 				 unsigned int offset,
+				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
 {
     m_function = nullptr;
     m_quick_function = fun;
@@ -132,8 +136,10 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 int arity,
 				 PPinfo ppinfo,
 				 unsigned int offset,
+				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset, dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
 {
     m_function = nullptr;
     m_quick_function = nullptr;
@@ -149,11 +155,13 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 int arity,
 				 PPinfo ppinfo,
 				 unsigned int offset,
+				 const char* first_arg_name,
 				 DispatchType dispatch)
     : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
       m_offset(offset), m_name(name), m_variant(variant),
       m_via_dot_internal((flags%100)/10 == 1), m_arity(arity),
-      m_dispatch_type(dispatch), m_gram(ppinfo)
+      m_first_arg_name(first_arg_name), m_dispatch_type(dispatch),
+      m_gram(ppinfo)
 {
     unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);

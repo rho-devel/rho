@@ -342,6 +342,10 @@ namespace CXXR {
 	    return (*fn)(const_cast<Expression*>(call), this, args...);
 	}
 
+	const char* getFirstArgName() const {
+	    return m_first_arg_name;
+	}
+
     private:
 	// The type of internal dispatch (if any) that the function does..
 	enum class DispatchType {
@@ -466,6 +470,7 @@ namespace CXXR {
 			int,
 			PPinfo,
 			unsigned int offset,
+			const char* first_arg_name,
 			DispatchType dispatch);
 	BuiltInFunction(const char*,
 			QuickInvokeFunction,
@@ -474,6 +479,7 @@ namespace CXXR {
 			int,
 			PPinfo,
 			unsigned int offset,
+			const char* first_arg_name,
 			DispatchType dispatch);
 
 	template<typename... Args>
@@ -485,9 +491,11 @@ namespace CXXR {
 			int arity,
 			PPinfo ppinfo,
 			unsigned int offset,
+			const char* first_arg_name,
 			DispatchType dispatch)
 	    : BuiltInFunction(name, reinterpret_cast<FixedArityFnStorage>(cfun),
-			      variant, flags, arity, ppinfo, offset, dispatch) {
+			      variant, flags, arity, ppinfo, offset,
+			      first_arg_name, dispatch) {
 	    assert(arity == sizeof...(Args));
 	};
 
@@ -498,6 +506,7 @@ namespace CXXR {
 			int arity,
 			PPinfo ppinfo,
 			unsigned int offset,
+			const char* first_arg_name,
 			DispatchType dispatch);
 	BuiltInFunction(const char*,
 			unsigned int,
@@ -505,6 +514,7 @@ namespace CXXR {
 			int,
 			PPinfo,
 			unsigned int offset,
+			const char* first_arg_name,
 			DispatchType dispatch);
 
 	struct TableEntry {
@@ -512,10 +522,12 @@ namespace CXXR {
 	    TableEntry(const char* name, FUNCTION function,
 		       unsigned int variant, unsigned int flags, int arity,
 		       PPinfo ppinfo,
+		       const char* first_arg_name = nullptr,
 		       DispatchType dispatch = DispatchType::NONE)
 		: function(new BuiltInFunction(name, function, variant,
 					       flags, arity, ppinfo,
-					       s_next_offset++, dispatch))
+					       s_next_offset++,
+					       first_arg_name, dispatch))
 	    {}
 	    BuiltInFunction* function;
 	    static unsigned int s_next_offset;
@@ -548,6 +560,7 @@ namespace CXXR {
 			     // applied.
 	bool m_via_dot_internal; // Must this function be called via .Internal?
 	int m_arity;         // function arity; -1 means 'any'
+	const char* m_first_arg_name;
 	DispatchType m_dispatch_type;  // Type of internal dispatch to use.
 	PPinfo m_gram;       // 'pretty-print' information
 

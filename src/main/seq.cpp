@@ -947,8 +947,6 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans;
 
-    call->check1arg("along.with");
-
     static BuiltInFunction* length_op = BuiltInFunction::obtainPrimitive(
 	"length");
     // The arguments have already been evaluated, so call do_length directly.
@@ -982,7 +980,6 @@ SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP ans;
     R_xlen_t len;
 
-    call->check1arg("length.out");
     if(length(length_) != 1)
 	warningcall(call, _("first element used of '%s' argument"),
 		    "length.out");

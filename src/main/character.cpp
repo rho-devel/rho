@@ -113,8 +113,6 @@ SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP ans;
     R_xlen_t i, len;
 
-    call->check1arg("x");
-
     if (isFactor(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
     PROTECT(x = coerceVector(x, STRSXP));

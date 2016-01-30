@@ -1077,7 +1077,6 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> rval;
     GCStackRoot<> t;  // Binding defined in PairList form
 
-    SEXP_downcast<Expression*>(call)->check1arg("x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
 	s = sym = installTrChar(STRING_ELT(CAR(args), 0));
@@ -1581,7 +1580,6 @@ SEXP attribute_hidden do_pos2env(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP env;
     int i, npos;
-    call->check1arg("x");
 
     PROTECT(pos = coerceVector(pos, INTSXP));
     npos = length(pos);
@@ -1622,8 +1620,6 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    call->check1arg("object");
-
     SEXP arg = args[0], ans;
     if(isEnvironment(arg))
 	return arg;

@@ -218,6 +218,11 @@ RObject* Expression::evaluateDirectBuiltInCall(
     int num_evaluated_args = arglist->size();
     func->checkNumArgs(num_evaluated_args, this);
 
+    // Check that any naming requirements on the first arg are satisfied.
+    const char* first_arg_name = func->getFirstArgName();
+    if (first_arg_name)
+	check1arg(first_arg_name);
+
     if (func->hasFixedArityCall()) {
 	return evaluateFixedArityBuiltIn(func, env, arglist);
     }
@@ -247,6 +252,12 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     // Check the number of arguments.
     int num_evaluated_args = listLength(arglist->list());
     func->checkNumArgs(num_evaluated_args, this);
+
+    // Check that any naming requirements on the first arg are satisfied.
+    const char* first_arg_name = func->getFirstArgName();
+    if (first_arg_name) {
+	check1arg(first_arg_name);
+    }
 
     prepareToInvokeBuiltIn(func);
 

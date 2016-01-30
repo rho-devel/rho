@@ -520,7 +520,12 @@ void attribute_hidden Rf_check1arg(SEXP arg, SEXP call,
 
 void attribute_hidden Expression::check1arg(const char *formal) const
 {
-    if (getArgs()->car() == DotsSymbol) {
+    auto args = getArgs();
+    if (!args) {
+	Rf_errorcall(const_cast<Expression*>(this),
+		     _((std::string("'") + formal + "' is missing").c_str()));
+    }
+    if (args->car() == DotsSymbol) {
 	// In this case it's difficult to verify that the correct argument
 	// name was used.  However, assuming that it was is mostly harmless,
 	// so let it go.
@@ -1723,8 +1728,6 @@ SEXP attribute_hidden do_enc2(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP el;
     R_xlen_t i;
     Rboolean duped = FALSE;
-
-    call->check1arg("x");
 
     if (!isString(ans))
 	errorcall(call, "argumemt is not a character vector");

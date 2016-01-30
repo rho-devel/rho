@@ -740,8 +740,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
     Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
-    callx->check1arg("x");
-
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = builtin->InternalDispatch(
 	callx, SEXP_downcast<Environment*>(env), &arglist);
@@ -808,7 +806,7 @@ SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::Bui
     auto result = op->InternalDispatch(call, env, num_args, args, tags);
     if (result.first)
 	return result.second;
-    call->check1arg("x");
+    call->check1arg("x"); // Checked _after_ internal dispatch.
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
     if (isComplex(arg))
 	errorcall(call, _("unimplemented complex function"));
@@ -827,8 +825,6 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
     Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
-    callx->check1arg("x");
-    x = CAR(args);
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = builtin->InternalDispatch(
@@ -836,6 +832,7 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
     if (dispatched.first)
 	return dispatched.second;
 
+    x = CAR(args);
     if (isInteger(x) || isLogical(x)) {
 	/* integer or logical ==> return integer,
 	   factor was covered by Math.factor. */
@@ -1154,8 +1151,6 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP res, tmp = R_NilValue /* -Wall */;
-
-    call->check1arg("x");
 
     auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
     if (dispatch.first)
