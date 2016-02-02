@@ -313,6 +313,14 @@ namespace CXXR {
 	    return m_fixed_arity_fn;
 	}
 
+	bool isInternalGeneric() const {
+	    return m_dispatch_type != DispatchType::NONE;
+	}
+
+	bool isSummaryGroupGeneric() const {
+	    return m_dispatch_type == DispatchType::GROUP_SUMMARY;
+	}
+
 	RObject* invoke(const Expression* call, Environment* env,
                         ArgList* args) const
 	{

@@ -917,13 +917,6 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 /*    data.deparse_level = 1; */
 
-    /* Attempt method dispatch. */
-
-    auto dispatched = op->InternalDispatch(call, env, num_args, args_, tags);
-    if (dispatched.first)
-	return dispatched.second;
-
-    /* Method dispatch has failed; run the default code. */
     /* By default we recurse, but this can be over-ridden */
     /* by an optional "recursive" argument. */
 

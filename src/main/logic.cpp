@@ -140,11 +140,6 @@ SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::Bui
 {
     SEXP ans;
 
-    // It would be logical to test the arity before calling
-    // DispatchGroup, but tests/primitives.R assumes otherwise.
-    auto dispatched = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
     switch (op->variant()) {
     case 1:
     case 2:

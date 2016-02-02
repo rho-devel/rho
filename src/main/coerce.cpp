@@ -1360,12 +1360,7 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
     case 5:
 	type = RAWSXP; break;
     }
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
 
-    /* Method dispatch has failed, we now just */
-    /* run the generic internal code */
     if (type == RAWSXP) {
 	op->checkNumArgs(num_args, 1, call);
     }
@@ -1388,13 +1383,6 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 {
     SEXP x, ans;
     SEXPTYPE type;
-
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
-
-    /* Method dispatch has failed, we now just */
-    /* run the generic internal code */
 
     op->checkNumArgs(num_args, 2, call);
     x = args[0];
@@ -1724,15 +1712,6 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
 {
     SEXP ans;
 
-    /* These are all builtins, so we do not need to worry about
-       evaluating arguments in Rf_DispatchOrEval */
-    if(op->variant() >= 100 && op->variant() < 200 &&
-       Rf_isObject(args[0])) {
-	auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-	if (dispatched.first)
-	    return dispatched.second;
-    }
-
     PROTECT(ans = Rf_allocVector(LGLSXP, 1));
 
     switch (op->variant()) {
@@ -1957,9 +1936,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(args[0]) && !Rf_isVector(args[0])))
 	errorcall_return(call, "is.na " R_MSG_list_vec);
@@ -2177,9 +2153,6 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(args[0]) && !Rf_isVector(args[0]))
 	errorcall_return(call, "is.nan " R_MSG_list_vec);
@@ -2236,9 +2209,6 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
 
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.finite " R_MSG_list_vec);
@@ -2294,9 +2264,6 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
     double xr, xi;
     R_xlen_t i, n;
 
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.infinite " R_MSG_list_vec);

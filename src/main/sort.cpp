@@ -181,10 +181,6 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
 
 SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
-
     RObject* x = PROTECT(args[0]);
     int strictly = asLogical(args[1]);
     if(strictly == NA_LOGICAL)

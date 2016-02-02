@@ -225,11 +225,6 @@ RObject* attribute_hidden do_relop(/*const*/ Expression* call,
 				   int num_args,
 				   const PairList* tags)
 {
-    // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalDispatch(call, env, num_args, args, tags);
-    if (result.first)
-	return result.second;
-
     op->checkNumArgs(num_args, 2, call);
     return do_relop_dflt(const_cast<Expression*>(call),
 			 const_cast<BuiltInFunction*>(op),

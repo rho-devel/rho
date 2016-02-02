@@ -302,11 +302,6 @@ RObject* attribute_hidden do_arith(/*const*/ Expression* call_,
     Expression* call = const_cast<Expression*>(call_);
     BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
 
-    // If any of the args has a class, then we might need to dispatch.
-    auto result = op_->InternalDispatch(call, env, num_args, args, tags);
-    if (result.first)
-	return result.second;
-
     switch(num_args) {
     case 1:
 	return R_unary(call, op, args[0]);
@@ -740,12 +735,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
     Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    auto dispatched = builtin->InternalDispatch(
-	callx, SEXP_downcast<Environment*>(env), &arglist);
-    if (dispatched.first)
-	return dispatched.second;
-
     if (isComplex(CAR(args)))
 	return complex_math1(call, op, args, env);
 
@@ -802,10 +791,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 /* methods are allowed to have more than one arg */
 SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalDispatch(call, env, num_args, args, tags);
-    if (result.first)
-	return result.second;
     call->check1arg("x"); // Checked _after_ internal dispatch.
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
     if (isComplex(arg))
@@ -824,13 +809,6 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 
     Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
-
-
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    auto dispatched = builtin->InternalDispatch(
-	callx, SEXP_downcast<Environment*>(env), &arglist);
-    if (dispatched.first)
-	return dispatched.second;
 
     x = CAR(args);
     if (isInteger(x) || isLogical(x)) {
@@ -1152,10 +1130,6 @@ SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::B
 {
     SEXP res, tmp = R_NilValue /* -Wall */;
 
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-
     if(op->variant() == 10) tmp = ScalarReal(10.0);
     if(op->variant() == 2)  tmp = ScalarReal(2.0);
 
@@ -1163,7 +1137,7 @@ SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::B
     ArgList arglist2({ args[0], tmp }, ArgList::EVALUATED);
     Expression* call2 = new Expression(log_symbol,
 				       const_cast<PairList*>(arglist2.list()));
-    dispatch = op->InternalDispatch(call2, env, &arglist2);
+    auto dispatch = op->InternalDispatch(call2, env, &arglist2);
     if (dispatch.first) {
 	return dispatch.second;
     }

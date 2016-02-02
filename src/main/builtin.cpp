@@ -863,11 +863,6 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
 
     x = args[0];
 
-    /* Attempt method dispatch. */
-    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
-    if (dispatched.first)
-	return dispatched.second;
-
     if (!isVector(x) && !isVectorizable(x))
 	error(_("invalid argument"));
     if (length(args[1]) != 1)

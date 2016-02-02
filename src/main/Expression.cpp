@@ -171,6 +171,7 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       Environment* env,
 					       ArgList* arglist) const
 {
+    assert(!func->isInternalGeneric());
     size_t arity = func->arity();
     bool evaluated = arglist->status() == ArgList::EVALUATED;
     switch(func->arity()) {
@@ -234,6 +235,15 @@ RObject* Expression::evaluateDirectBuiltInCall(
     // Copy the arguments to the stack, evaluating if necessary.
     arglist->evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
 
+    // Handle internal generic functions.
+    if (func->isInternalGeneric()) {
+	auto dispatched = func->InternalDispatch(this, env, num_evaluated_args,
+						 evaluated_arg_array,
+						 arglist->list());
+	if (dispatched.first)
+	    return dispatched.second;
+    }
+
     prepareToInvokeBuiltIn(func);
 
     return func->invoke(this, env, evaluated_arg_array, num_evaluated_args,
@@ -259,8 +269,21 @@ RObject* Expression::evaluateIndirectBuiltInCall(
 	check1arg(first_arg_name);
     }
 
-    prepareToInvokeBuiltIn(func);
+    // Handle internal generic functions.
+    static BuiltInFunction* length_fn
+	= BuiltInFunction::obtainPrimitive("length");
+    if (func->isInternalGeneric()
+	&& func->sexptype() == BUILTINSXP
+	&& !func->isSummaryGroupGeneric()
+	&& func != length_fn)
+    {
+	auto dispatched = func->InternalDispatch(this, env, arglist);
+	if (dispatched.first)
+	    return dispatched.second;
+    }
 
+
+    prepareToInvokeBuiltIn(func);
     return func->invoke(this, env, arglist);
 }
 

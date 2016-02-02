@@ -804,10 +804,6 @@ SEXP attribute_hidden R_do_data_class(/*const*/ CXXR::Expression* call, const CX
 SEXP attribute_hidden do_namesgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-
     RObject* object = args[0];
     RObject* names = args[1];
     /* Special case: removing non-existent names, to avoid a copy */
@@ -921,9 +917,6 @@ SEXP namesgets(SEXP vec, SEXP val)
 SEXP attribute_hidden do_names(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
     ans = args[0];
     if (isVector(ans) || isList(ans) || isLanguage(ans) ||
 	IS_S4_OBJECT(ans))
@@ -938,9 +931,6 @@ SEXP attribute_hidden do_dimnamesgets(/*const*/ CXXR::Expression* call, const CX
 {
     SEXP ans;
 
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
     RObject* object = args[0];
     if (MAYBE_SHARED(object)) object = shallow_duplicate(object);
     setAttrib(object, R_DimNamesSymbol, args[1]);
@@ -1041,31 +1031,17 @@ SEXP dimnamesgets(SEXP vec, SEXP val)
 
 SEXP attribute_hidden do_dimnames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans;
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-    ans = getAttrib(args[0], R_DimNamesSymbol);
-    return ans;
+    return getAttrib(args[0], R_DimNamesSymbol);
 }
 
 SEXP attribute_hidden do_dim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans;
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-    ans = getAttrib(args[0], R_DimSymbol);
-    return ans;
+    return getAttrib(args[0], R_DimSymbol);
 }
 
 SEXP attribute_hidden do_dimgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-
     x = args[0];
     /* Duplication might be expensive */
     if (args[1] == R_NilValue) {
@@ -1177,11 +1153,6 @@ SEXP attribute_hidden do_levelsgets(/*const*/ CXXR::Expression* call, const CXXR
 {
     SEXP ans;
 
-    /* calls, e.g., levels<-.factor() */
-    auto dispatch = op->InternalDispatch(call, env, num_args, args, tags);
-    if (dispatch.first)
-	return dispatch.second;
-    
     RObject* object = args[0];
     RObject* levels = args[1];
     if(!isNull(levels) && any_duplicated(levels, FALSE))
