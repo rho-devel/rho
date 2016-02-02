@@ -1926,14 +1926,10 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	supp_frame->bind(DotMethodSymbol, dotmethod);
     }
 
-    /* the arguments have been evaluated; since we are passing them */
-    /* out to a closure we need to wrap them in promises so that */
-    /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
 	    newcall(new Expression(m->symbol(), callx->tail()));
 	ArgList arglist(callargs, ArgList::EVALUATED);
-	arglist.wrapInPromises(callenv, callx);
 	// Ensure positional matching for operators:
 	if (isOps)
 	    arglist.stripTags();

@@ -1502,8 +1502,6 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* callenv = SEXP_downcast<Environment*>(rho);
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    arglist.wrapInPromises(callenv, callx);
-
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(1);
     return ans;

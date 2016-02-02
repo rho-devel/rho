@@ -800,8 +800,6 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PROTECT(op = findFun(install("range.default"), env));
     Closure* closure = SEXP_downcast<Closure*>(op);
-
-    arglist.wrapInPromises(callenv, callx);
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(3);
     return(ans);
