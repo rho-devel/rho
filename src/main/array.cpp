@@ -622,28 +622,16 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
     }
 }
 
-
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
-SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_crossprod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* y)
 {
     int ldx, ldy, nrx, ncx, nry, ncy;
     SEXPTYPE mode;
-    SEXP x = CAR(args), y = CADR(args), xdims, ydims, ans;
+    SEXP xdims, ydims, ans;
     Rboolean sym;
 
-    if (PRIMVAL(op) == 0 && /* %*% is primitive, the others are .Internal() */
-       (IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
-       && R_has_methods(op)) {
-	SEXP s;
-	/* Remove argument names to ensure positional matching */
-	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	std::pair<bool, SEXP> pr
-	    = R_possible_dispatch(call, op, args, rho, FALSE);
-	if (pr.first) return pr.second;
-    }
-
     sym = isNull(y);
-    if (sym && (PRIMVAL(op) > 0)) y = x;
+    if (sym && (op->variant() > 0)) y = x;
     if ( !(isNumeric(x) || isComplex(x)) || !(isNumeric(y) || isComplex(y)) )
 	errorcall(call, _("requires numeric/complex matrix/vector arguments"));
 
@@ -654,14 +642,14 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (ldx != 2 && ldy != 2) {		/* x and y non-matrices */
 	// for crossprod, allow two cases: n x n ==> (1,n) x (n,1);  1 x n = (n, 1) x (1, n)
-	if (PRIMVAL(op) == 1 && LENGTH(x) == 1) {
+	if (op->variant() == 1 && LENGTH(x) == 1) {
 	    nrx = ncx = nry = 1;
 	    ncy = LENGTH(y);
 	}
 	else {
 	    nry = LENGTH(y);
 	    ncy = 1;
-	    if (PRIMVAL(op) == 0) {
+	    if (op->variant() == 0) {
 		nrx = 1;
 		ncx = LENGTH(x);
 		if(ncx == 1) {	        // y as row vector
@@ -680,7 +668,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ncy = INTEGER(ydims)[1];
 	nrx = 0;
 	ncx = 0;
-	if (PRIMVAL(op) == 0) {
+	if (op->variant() == 0) {
 	    if (LENGTH(x) == nry) {	/* x as row vector */
 		nrx = 1;
 		ncx = nry; /* == LENGTH(x) */
@@ -690,7 +678,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ncx = 1;
 	    }
 	}
-	else if (PRIMVAL(op) == 1) { /* crossprod() */
+	else if (op->variant() == 1) { /* crossprod() */
 	    if (LENGTH(x) == nry) {	/* x is a col vector */
 		nrx = nry; /* == LENGTH(x) */
 		ncx = 1;
@@ -714,7 +702,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ncx = INTEGER(xdims)[1];
 	nry = 0;
 	ncy = 0;
-	if (PRIMVAL(op) == 0) {
+	if (op->variant() == 0) {
 	    if (LENGTH(y) == ncx) {	/* y as col vector */
 		nry = ncx;
 		ncy = 1;
@@ -724,7 +712,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ncy = LENGTH(y);
 	    }
 	}
-	else if (PRIMVAL(op) == 1) { /* crossprod() */
+	else if (op->variant() == 1) { /* crossprod() */
 	    if (LENGTH(y) == nrx) {	/* y is a col vector */
 		nry = nrx;
 		ncy = 1;
@@ -752,12 +740,12 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     /* nr[ow](.) and nc[ol](.) are now defined for x and y */
 
-    if (PRIMVAL(op) == 0) {
+    if (op->variant() == 0) {
 	/* primitive, so use call */
 	if (ncx != nry)
 	    errorcall(call, _("non-conformable arguments"));
     }
-    else if (PRIMVAL(op) == 1) {
+    else if (op->variant() == 1) {
 	if (nrx != nry)
 	    error(_("non-conformable arguments"));
     }
@@ -766,25 +754,25 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("non-conformable arguments"));
     }
 
-    if (isComplex(CAR(args)) || isComplex(CADR(args)))
+    if (isComplex(x) || isComplex(y))
 	mode = CPLXSXP;
     else
 	mode = REALSXP;
-    SETCAR(args, coerceVector(CAR(args), mode));
-    SETCADR(args, coerceVector(CADR(args), mode));
+    x = coerceVector(x, mode);
+    y = coerceVector(y, mode);
 
-    if (PRIMVAL(op) == 0) {			/* op == 0 : matprod() */
+    if (op->variant() == 0) {			/* op == 0 : matprod() */
 
 	PROTECT(ans = allocMatrix(mode, nrx, ncy));
 	if (mode == CPLXSXP)
-	    cmatprod(COMPLEX(CAR(args)), nrx, ncx,
-		     COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+	    cmatprod(COMPLEX(x), nrx, ncx,
+		     COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else
-	    matprod(REAL(CAR(args)), nrx, ncx,
-		    REAL(CADR(args)), nry, ncy, REAL(ans));
+	    matprod(REAL(x), nrx, ncx,
+		    REAL(y), nry, ncy, REAL(ans));
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
-	PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
+	PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -833,29 +821,29 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    else if (PRIMVAL(op) == 1) {	/* op == 1: crossprod() */
+    else if (op->variant() == 1) {	/* op == 1: crossprod() */
 
 	PROTECT(ans = allocMatrix(mode, ncx, ncy));
 	if (mode == CPLXSXP)
 	    if(sym)
-		ccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			   COMPLEX(CAR(args)), nry, ncy, COMPLEX(ans));
+		ccrossprod(COMPLEX(x), nrx, ncx,
+			   COMPLEX(x), nry, ncy, COMPLEX(ans));
 	    else
-		ccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			   COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+		ccrossprod(COMPLEX(x), nrx, ncx,
+			   COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else {
 	    if(sym)
-		symcrossprod(REAL(CAR(args)), nrx, ncx, REAL(ans));
+		symcrossprod(REAL(x), nrx, ncx, REAL(ans));
 	    else
-		crossprod(REAL(CAR(args)), nrx, ncx,
-			  REAL(CADR(args)), nry, ncy, REAL(ans));
+		crossprod(REAL(x), nrx, ncx,
+			  REAL(y), nry, ncy, REAL(ans));
 	}
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
 	if (sym)
 	    PROTECT(ydims = xdims);
 	else
-	    PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	    PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -883,24 +871,24 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(ans = allocMatrix(mode, nrx, nry));
 	if (mode == CPLXSXP)
 	    if(sym)
-		tccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			    COMPLEX(CAR(args)), nry, ncy, COMPLEX(ans));
+		tccrossprod(COMPLEX(x), nrx, ncx,
+			    COMPLEX(x), nry, ncy, COMPLEX(ans));
 	    else
-		tccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			    COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+		tccrossprod(COMPLEX(x), nrx, ncx,
+			    COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else {
 	    if(sym)
-		symtcrossprod(REAL(CAR(args)), nrx, ncx, REAL(ans));
+		symtcrossprod(REAL(x), nrx, ncx, REAL(ans));
 	    else
-		tcrossprod(REAL(CAR(args)), nrx, ncx,
-			   REAL(CADR(args)), nry, ncy, REAL(ans));
+		tcrossprod(REAL(x), nrx, ncx,
+			   REAL(y), nry, ncy, REAL(ans));
 	}
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
 	if (sym)
 	    PROTECT(ydims = xdims);
 	else
-	    PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	    PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -940,6 +928,23 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 #undef YDIMS_ET_CETERA
+
+SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x = CAR(args), y = CADR(args);
+
+    if ((IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
+	&& R_has_methods(op)) {
+	SEXP s;
+	/* Remove argument names to ensure positional matching */
+	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
+	std::pair<bool, SEXP> pr
+	    = R_possible_dispatch(call, op, args, rho, FALSE);
+	if (pr.first) return pr.second;
+    }
+    return do_crossprod(SEXP_downcast<Expression*>(call),
+			SEXP_downcast<BuiltInFunction*>(op), x, y);
+}
 
 SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {

@@ -114,6 +114,7 @@ SEXP do_commandArgs(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_comment(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_commentgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_);
 SEXP do_copyDFattr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xx_, CXXR::RObject* x_);
+SEXP do_crossprod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* y);
 SEXP do_Cstack_info(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 CXXR::quick_builtin do_cum;
 SEXP do_curlDownload(SEXP, SEXP, SEXP, SEXP);
