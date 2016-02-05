@@ -797,12 +797,9 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
 
-    checkArity(op, args);
-
     /* Attempt method dispatch. */
 
-    if (DispatchOrEval(call, op, "c", args, env, &ans, MissingArgHandling::Drop,
-		       1))
+    if (DispatchOrEval(call, op, args, env, &ans, MissingArgHandling::Drop, 1))
 	return(ans);
     return do_c_dflt(call, op, ans, env);
 }
@@ -919,16 +916,7 @@ SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::Bu
     struct NameData nameData;
 
 /*    data.deparse_level = 1; */
-    op->checkNumArgs(num_args, call);
 
-    /* Attempt method dispatch. */
-
-    auto dispatched = op->InternalDispatch(call, "unlist", num_args, args_, tags,
-					   env);
-    if (dispatched.first)
-	return dispatched.second;
-
-    /* Method dispatch has failed; run the default code. */
     /* By default we recurse, but this can be over-ridden */
     /* by an optional "recursive" argument. */
 
@@ -1099,7 +1087,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
      *	  drop through to the default code.
      */
 
-    PROTECT(args = promiseArgs(args, env));
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    arglist.wrapInPromises(SEXP_downcast<Environment*>(env));
+    args = const_cast<PairList*>(arglist.list());
 
     const char *generic = ((PRIMVAL(op) == 1) ? "cbind" : "rbind");
     const char *klass = "";
@@ -1172,7 +1162,6 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* zero-extent matrices shouldn't give NULL, but cbind(NULL) should: */
     if (!data.ans_flags && !data.ans_length) {
-	UNPROTECT(1);
 	return R_NilValue;
     }
 
@@ -1208,7 +1197,6 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 	a = cbind(call, args, mode, rho, deparse_level);
     else
 	a = rbind(call, args, mode, rho, deparse_level);
-    UNPROTECT(1);
     return a;
 }
 

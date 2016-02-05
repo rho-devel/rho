@@ -63,13 +63,11 @@ SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::B
 
 SEXP attribute_hidden do_address(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     return R_MakeExternalPtr((void *) CAR(args), R_NilValue, R_NilValue);
 }
 
 SEXP attribute_hidden do_refcnt(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     // return ScalarInteger(REFCNT(CAR(args)));
     return ScalarInteger(NA_INTEGER); // Not currently implemented in CXXR
 }

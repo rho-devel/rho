@@ -116,7 +116,6 @@ SEXP do_shellexec(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP file;
 
-    checkArity(op, args);
     file = CAR(args);
     if (!isString(file) || length(file) != 1)
 	errorcall(call, _("invalid '%s' argument"), "file");
@@ -181,7 +180,6 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     wchar_t name[MAX_COMPUTERNAME_LENGTH + 1], user[UNLEN+1];
     DWORD namelen = MAX_COMPUTERNAME_LENGTH + 1, userlen = UNLEN+1;
 
-    checkArity(op, args);
     PROTECT(ans = allocVector(STRSXP, 8));
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
     if(!GetVersionEx((OSVERSIONINFO *)&osvi))
@@ -334,7 +332,6 @@ SEXP do_dllversion(SEXP call, SEXP op, SEXP args, SEXP rho)
     DWORD dwVerInfoSize;
     DWORD dwVerHnd;
 
-    checkArity(op, args);
     path = CAR(args);
     if(!isString(path) || LENGTH(path) != 1)
 	errorcall(call, _("invalid '%s' argument"), "path");
@@ -414,7 +411,6 @@ SEXP do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
     wchar_t wtmp[32768], wlongpath[32768], *wtmp2;
     int mustWork, fslash = 0;
 
-    checkArity(op, args);
     if(!isString(paths))
 	errorcall(call, _("'path' must be a character vector"));
 
@@ -812,7 +808,6 @@ SEXP attribute_hidden do_filechoose(SEXP call, SEXP op, SEXP args, SEXP rho)
     wchar_t *fn;
     char str[4*MAX_PATH+1];
 
-    checkArity(op, args);
     setuserfilterW(L"All files (*.*)\0*.*\0\0");
     fn = askfilenameW(G_("Select file"), "");
     if (!fn)
@@ -830,4 +825,3 @@ SEXP attribute_hidden do_tzone_name(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     return mkString(getTZinfo());
 }
-

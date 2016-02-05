@@ -140,43 +140,14 @@ SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::Bui
 {
     SEXP ans;
 
-    // It would be logical to test the arity before calling
-    // DispatchGroup, but tests/primitives.R assumes otherwise.
-    auto dispatched = op->InternalOpsGroupDispatch("Ops", call, env, num_args,
-						   args, tags);
-    if (dispatched.first)
-	return dispatched.second;
-    op->checkNumArgs(num_args, call);
     switch (op->variant()) {
     case 1:
     case 2:
+	op->checkNumArgs(num_args, 2, call);
 	return lbinary(op, args[0], args[1]);
     case 3:
+	op->checkNumArgs(num_args, 1, call);
 	return lnot(args[0]);
-    default:
-	error(_("internal error in do_logic"));
-    }
-    return nullptr;  // -Wall
-}
-
-SEXP attribute_hidden do_logic_slow(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP ans;
-
-    // It would be logical to test the arity before calling
-    // DispatchGroup, but tests/primitives.R assumes otherwise.
-    if (DispatchGroup("Ops",call, op, args, env, &ans))
-	return ans;
-    checkArity(op, args);
-    switch (PRIMVAL(op)) {
-
-
-    case 1:
-    case 2:
-	return lbinary(SEXP_downcast<BuiltInFunction*>(op),
-		       CAR(args), CADR(args));
-    case 3:
-	return lnot(CAR(args));
     default:
 	error(_("internal error in do_logic"));
     }
@@ -278,9 +249,13 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	SEXP_downcast<Expression*>(call2),
+	SEXP_downcast<Environment*>(env), &arglist);
+    if (dispatched.first) {
 	UNPROTECT(2);
-	return(ans);
+	return(dispatched.second);
     }
 
     ans = matchArgExact(R_NaRmSymbol, &args);

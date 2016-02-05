@@ -157,7 +157,6 @@ SEXP attribute_hidden do_colon(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP s1, s2;
     double n1, n2;
 
-    op->checkNumArgs(num_args, call);
     if (inherits(args[0], "factor") && inherits(args[1], "factor"))
 	return(cross_colon(call, args[0], args[1]));
 
@@ -343,10 +342,9 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
     return a;
 }
 
-SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* times_)
 {
-    op->checkNumArgs(num_args, call);
-    SEXP s = args[0], ncopy = args[1];
+    SEXP s = x_, ncopy = times_;
     R_xlen_t nc;
     SEXP a;
 
@@ -398,18 +396,17 @@ SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::B
     return a;
 }
 
-SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* length_out_)
 {
     R_xlen_t ns, na;
     SEXP a, s, len;
 
-    op->checkNumArgs(num_args, call);
-    s = args[0];
+    s = x_;
 
     if (!isVector(s) && s != R_NilValue)
 	error(_("attempt to replicate non-vector"));
 
-    len = args[1];
+    len = length_out_;
     if(length(len) != 1)
 	error(_("invalid '%s' value"), "length.out");
 #ifdef LONG_VECTOR_SUPPORT
@@ -626,8 +623,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     static SEXP do_rep_formals = NULL;
 
     /* includes factors, POSIX[cl]t, Date */
-    if (DispatchOrEval(call, op, "rep", args, rho, &ans,
-		       MissingArgHandling::Keep, 0))
+    if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 0))
 	return(ans);
 
     /* This has evaluated all the non-missing arguments into ans */
@@ -751,8 +747,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t i, lout = NA_INTEGER;
     static SEXP do_seq_formals = NULL;
 
-    if (DispatchOrEval(call, op, "seq", args, rho, &ans,
-		       MissingArgHandling::Keep, 1))
+    if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 1))
 	return(ans);
 
     /* This is a primitive and we manage argument matching ourselves.
@@ -952,9 +947,6 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans;
 
-    op->checkNumArgs(num_args, call);
-    check1arg(tags, call, "along.with");
-
     static BuiltInFunction* length_op = BuiltInFunction::obtainPrimitive(
 	"length");
     // The arguments have already been evaluated, so call do_length directly.
@@ -983,24 +975,22 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* length_)
 {
     SEXP ans;
     R_xlen_t len;
 
-    op->checkNumArgs(num_args, call);
-    check1arg(tags, call, "length.out");
-    if(length(args[0]) != 1)
+    if(length(length_) != 1)
 	warningcall(call, _("first element used of '%s' argument"),
 		    "length.out");
 
  #ifdef LONG_VECTOR_SUPPORT
-    double dlen = asReal(args[0]);
+    double dlen = asReal(length_);
     if(!R_FINITE(dlen) || dlen < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
     len = R_xlen_t( dlen);
 #else
-    len = asInteger(CAR(args));
+    len = asInteger(length_);
     if(len == NA_INTEGER || len < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
 #endif

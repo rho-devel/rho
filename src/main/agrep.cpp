@@ -115,7 +115,6 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
     regamatch_t match;
     int rc, cflags = REG_NOSUB;
 
-    op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
     vec = args[0]; args = (args + 1);
     opt_icase = asLogical(args[0]); args = (args + 1);
@@ -491,7 +490,7 @@ adist_full(SEXP x, SEXP y, double *costs, Rboolean opt_counts)
 
 #define OFFSETS(I, J, K)	INTEGER(offsets)[I + J * nx + K * nxy]
 
-SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* y_, CXXR::RObject* costs_, CXXR::RObject* counts_, CXXR::RObject* fixed_, CXXR::RObject* partial_, CXXR::RObject* ignore_case_, CXXR::RObject* useBytes_)
 {
     SEXP x, y;
     SEXP ans, counts, offsets, dimnames, names, elt;
@@ -511,15 +510,14 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     int rc, cflags = REG_EXTENDED;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0]; args = (args + 1);
-    y = args[0]; args = (args + 1);
-    opt_costs = args[0]; args = (args + 1);
-    opt_counts = asLogical(args[0]); args = (args + 1);
-    opt_fixed = asInteger(args[0]); args = (args + 1);    
-    opt_partial = asInteger(args[0]); args = (args + 1);
-    opt_icase = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]);
+    x = x_;
+    y = y_;
+    opt_costs = costs_;
+    opt_counts = asLogical(counts_);
+    opt_fixed = asInteger(fixed_);
+    opt_partial = asInteger(partial_);
+    opt_icase = asLogical(ignore_case_);
+    useBytes = asLogical(useBytes_);
 
     if(opt_counts == NA_INTEGER) opt_counts = 0;
     if(opt_fixed == NA_INTEGER) opt_fixed = 1;
@@ -756,8 +754,6 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
     int j, so, patlen;
     R_xlen_t i, n;
     int rc, cflags = REG_EXTENDED;
-
-    op->checkNumArgs(num_args, call);
 
     pat = args[0]; args = (args + 1);
     vec = args[0]; args = (args + 1);

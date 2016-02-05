@@ -41,6 +41,9 @@
 #include "CXXR/Expression.h"
 #include "CXXR/Symbol.h"
 
+extern "C"
+void SET_PRVALUE(SEXP x, SEXP v);
+
 namespace CXXR {
     /** @brief Mechanism for deferred evaluation.
      *
@@ -77,18 +80,19 @@ namespace CXXR {
 	 *          value of the Promise is immediately set to be \a
 	 *          valgen itself.
 	 */
-	Promise(RObject* valgen, Environment* env)
+	Promise(const RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), 
 	      m_under_evaluation(false), m_interrupted(false)
 	{
-	    m_value = env ? Symbol::unboundValue() : valgen;
+	    // assert(env);
+	    m_value = Symbol::unboundValue();
 	    m_valgen = valgen;
 	    m_environment = env;
 	}
       
-	static Promise* createEvaluatedPromise(Expression* expression,
-                                               RObject* evaluated_value) {
-	    Promise* result = new Promise(expression, nullptr);
+	static Promise* createEvaluatedPromise(const RObject* expression,
+					       RObject* evaluated_value) {
+	    Promise* result = new Promise(expression, Environment::empty());
 	    result->m_value = evaluated_value;
 	    return result;
 	}
@@ -132,19 +136,6 @@ namespace CXXR {
 	 */
 	bool isMissingSymbol() const;
 
-	/** @brief Set value of the Promise.
-	 *
-	 * Once the value is set to something other than
-	 * Symbol::unboundValue(), the environment pointer is set
-	 * null.
-	 *
-	 * @param val Value to be associated with the Promise.
-	 *
-	 * @todo Should be private (or removed entirely), but currently
-	 * still used in saveload.cpp.
-	 */
-	void setValue(RObject* val);
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -184,7 +175,7 @@ namespace CXXR {
 	void detachReferents() override;
     private:
 	GCEdge<> m_value;
-	GCEdge<RObject> m_valgen;
+	GCEdge<const RObject> m_valgen;
 	GCEdge<Environment> m_environment;
 	mutable bool m_under_evaluation;
 	mutable bool m_interrupted;
@@ -192,6 +183,18 @@ namespace CXXR {
 	// Declared private to ensure that Promise objects are
 	// created only using 'new':
 	~Promise() {}
+
+	/** @brief Set value of the Promise.
+	 *
+	 * Once the value is set to something other than
+	 * Symbol::unboundValue(), the environment pointer is set
+	 * null.
+	 *
+	 * @param val Value to be associated with the Promise.
+	 */
+	void setValue(RObject* val);
+
+	friend void ::SET_PRVALUE(SEXP x, SEXP v);  // Needs setValue().
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

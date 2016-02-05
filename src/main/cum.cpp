@@ -159,12 +159,6 @@ SEXP attribute_hidden do_cum(/*const*/ CXXR::Expression* call, const CXXR::Built
 {
     SEXP s, t, ans;
     R_xlen_t i, n;
-    op->checkNumArgs(num_args, call);
-    // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalGroupDispatch("Math", call, env, num_args, args,
-					    tags);
-    if (result.first)
-	return result.second;
     if (isComplex(args[0])) {
 	t = args[0];
 	n = XLENGTH(t);

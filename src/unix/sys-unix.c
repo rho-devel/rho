@@ -163,11 +163,6 @@ const char *R_ExpandFileName(const char *s)
  *  7) PLATFORM DEPENDENT FUNCTIONS
  */
 
-SEXP attribute_hidden do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    return mkString("Unix");
-}
-
 # ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h> /* times */
 # endif
@@ -248,7 +243,6 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP tlist = R_NilValue;
     int intern = 0;
 
-    checkArity(op, args);
     if (!isValidStringF(CAR(args)))
 	error(_("non-empty character argument expected"));
     intern = asLogical(CADR(args));
@@ -356,7 +350,6 @@ SEXP attribute_hidden do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     struct utsname name;
     char *login;
 
-    checkArity(op, args);
     PROTECT(ans = allocVector(STRSXP, 8));
     if(uname(&name) == -1) {
 	UNPROTECT(1);

@@ -72,8 +72,6 @@ SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	use_sep = (op->variant() == 0);
     const void *vmax;
 
-    op->checkNumArgs(num_args, call);
-
     /* We use formatting and so we must initialize printing. */
 
     PrintDefaults();
@@ -295,8 +293,6 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
     const char *s, *csep, *cbuf;
     char *buf;
 
-    op->checkNumArgs(num_args, call);
-
     /* Check the arguments */
 
     x = args[0];
@@ -387,7 +383,6 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
     const char *strp;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
     PrintDefaults();
     scikeep = R_print.scipen;
 
@@ -592,25 +587,24 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
  * for complex : 2 x 3 integers for (Re, Im)
  */
 
-SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* digits_, CXXR::RObject* nsmall_)
 {
     SEXP x;
     int digits, nsmall, no = 1, w, d, e, wi, di, ei;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0];
+    x = x_;
     R_xlen_t n = XLENGTH(x);
     PrintDefaults();
 
-    digits = asInteger(args[1]);
-    if (!isNull(args[1])) {
-	digits = asInteger(args[1]);
+    digits = asInteger(digits_);
+    if (!isNull(digits_)) {
+	digits = asInteger(digits_);
 	if (digits == NA_INTEGER || digits < R_MIN_DIGITS_OPT
 	    || digits > R_MAX_DIGITS_OPT)
 	    error(_("invalid '%s' argument"), "digits");
 	R_print.digits = digits;
     }
-    nsmall = asInteger(args[2]);
+    nsmall = asInteger(nsmall_);
     if (nsmall == NA_INTEGER || nsmall < 0 || nsmall > 20)
 	error(_("invalid '%s' argument"), "nsmall");
 

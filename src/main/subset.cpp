@@ -369,8 +369,7 @@ static int ExtractExactArg(SEXP args)
 /* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
    Also defined in subassign.c */
 static R_INLINE
-int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
-		    SEXP rho, SEXP *ans)
+int R_DispatchOrEvalSP(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP *ans)
 {
     SEXP prom = NULL;
     if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
@@ -381,13 +380,13 @@ int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
 	    UNPROTECT(1);
 	    return FALSE;
 	}
-	prom = mkPROMISE(CAR(args), R_GlobalEnv);
-	SET_PRVALUE(prom, x);
+	prom = Promise::createEvaluatedPromise(CAR(args), x);
 	args = CONS(prom, CDR(args));
 	UNPROTECT(1);
     }
     PROTECT(args);
-    int disp = DispatchOrEval(call, op, generic, args, rho, ans, MissingArgHandling::Keep, 0);
+    int disp = DispatchOrEval(call, op, args, rho, ans,
+			      MissingArgHandling::Keep, 0);
     if (prom) DECREMENT_REFCNT(PRVALUE(prom));
     UNPROTECT(1);
     return disp;
@@ -406,7 +405,7 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* to the generic code below.  Note that evaluation */
     /* retains any missing argument indicators. */
 
-    if(R_DispatchOrEvalSP(call, op, "[", args, rho, &ans)) {
+    if(R_DispatchOrEvalSP(call, op, args, rho, &ans)) {
 /*     if(DispatchAnyOrEval(call, op, "[", args, rho, &ans, 0, 0)) */
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
@@ -619,7 +618,7 @@ SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(R_DispatchOrEvalSP(call, op, "[[", args, rho, &ans)) {
+    if(R_DispatchOrEvalSP(call, op, args, rho, &ans)) {
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
@@ -853,8 +852,6 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP input, nlist, ans;
 
-    checkArity(op, args);
-
     /* first translate CADR of args into a string so that we can
        pass it down to DispatchorEval and have it behave correctly */
     input = PROTECT(allocVector(STRSXP, 1));
@@ -882,7 +879,7 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(R_DispatchOrEvalSP(call, op, "$", args, env, &ans)) {
+    if(R_DispatchOrEvalSP(call, op, args, env, &ans)) {
 	UNPROTECT(2);
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);

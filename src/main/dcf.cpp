@@ -68,7 +68,7 @@ static char *Rconn_getline2(Rconnection con)
     return (nbuf == -1) ? nullptr: buf;
 }
 
-SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* fields_, CXXR::RObject* keep_white_)
 {
     int nwhat, nret, nc, nr, m, k, lastm, need;
     Rboolean blank_skip, field_skip = FALSE;
@@ -85,9 +85,7 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
     const char *field_name;
     int offset = 0; /* -Wall */
 
-    op->checkNumArgs(num_args, call);
-
-    file = args[0];
+    file = file_;
     con = getConnection(asInteger(file));
     wasopen = con->isopen;
     if(!wasopen && !con->open(con))
@@ -96,13 +94,11 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
     try {
 	if(!con->canread) error(_("cannot read from this connection"));
 
-	args = (args + 1);
-	PROTECT(what = coerceVector(args[0], STRSXP)); /* argument fields */
+	PROTECT(what = coerceVector(fields_, STRSXP)); /* argument fields */
 	nwhat = LENGTH(what);
 	dynwhat = (nwhat == 0);
 
-	args = (args + 1);
-	PROTECT(fold_excludes = coerceVector(args[0], STRSXP));
+	PROTECT(fold_excludes = coerceVector(keep_white_, STRSXP));
 	has_fold_excludes = CXXRCONSTRUCT(Rboolean, (LENGTH(fold_excludes) > 0));
 
 	buf = static_cast<char *>( malloc(buflen));

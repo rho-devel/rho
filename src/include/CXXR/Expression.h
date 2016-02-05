@@ -88,6 +88,8 @@ namespace CXXR {
             return tail();
         }
 
+	void check1arg(const char* formal) const;
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -118,7 +120,7 @@ namespace CXXR {
 	 * @param env Non-null pointer to the Environment in which the
 	 *          function is to be evaluated.
 	 *
-	 * @param arglist Non-null pointer to the promise-wrapped
+	 * @param arglist Non-null pointer to the
 	 *          ArgList containing the arguments with which the
 	 *          function is to be invoked.
 	 *
@@ -178,6 +180,16 @@ namespace CXXR {
 	RObject* evaluateIndirectBuiltInCall(const BuiltInFunction* func,
                                             Environment* env,
                                             ArgList* arglist) const;
+
+	template<typename... Args>
+	RObject* evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction*,
+						  Args...) const;
+	template<typename... Args>
+	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
+					   Environment*, bool evaluated,
+					   Args...) const;
+	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
+					   Environment*, ArgList*) const;
 
         static void importMethodBindings(const Frame* method_bindings,
                                          Frame* newframe);

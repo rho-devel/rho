@@ -809,8 +809,7 @@ static int SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 /* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
    Also defined in subset.c */
 static R_INLINE
-int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
-		    SEXP rho, SEXP *ans)
+int R_DispatchOrEvalSP(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP *ans)
 {
     SEXP prom = NULL;
     if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
@@ -821,13 +820,12 @@ int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
 	    UNPROTECT(1);
 	    return FALSE;
 	}
-	prom = mkPROMISE(CAR(args), R_GlobalEnv);
-	SET_PRVALUE(prom, x);
+	prom = Promise::createEvaluatedPromise(CAR(args), x);
 	args = CONS(prom, CDR(args));
 	UNPROTECT(1);
     }
     PROTECT(args);
-    int disp = DispatchOrEval(call, op, generic, args, rho, ans,
+    int disp = DispatchOrEval(call, op, args, rho, ans,
 			      MissingArgHandling::Keep, 0);
     if (prom) DECREMENT_REFCNT(PRVALUE(prom));
     UNPROTECT(1);
@@ -849,7 +847,7 @@ SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* We evaluate the first argument and attempt to dispatch on it. */
     /* If the dispatch fails, we "drop through" to the default code below. */
 
-    if(R_DispatchOrEvalSP(call, op, "[<-", args, rho, &ans))
+    if(R_DispatchOrEvalSP(call, op, args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -985,7 +983,7 @@ SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
 
-    if(R_DispatchOrEvalSP(call, op, "[[<-", args, rho, &ans))
+    if(R_DispatchOrEvalSP(call, op, args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -1331,8 +1329,6 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP nlist, ans, input;
     int iS;
 
-    checkArity(op, args);
-
     /* Note the RHS has already been evaluated at this point */
 
     input = allocVector(STRSXP, 1);
@@ -1351,7 +1347,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* replace the second argument with a string */
     SETCADR(args, input);
 
-    if(R_DispatchOrEvalSP(call, op, "$<-", args, env, &ans))
+    if(R_DispatchOrEvalSP(call, op, args, env, &ans))
       return(ans);
 
     GCStackRoot<> ansrt(ans);

@@ -38,357 +38,340 @@
 #ifdef __cplusplus
 
 namespace CXXR {
+  class BuiltInFunction;
   class RObject;
   class Expression;
   class Environment;
   class PairList;
 
-  typedef RObject*(quick_builtin)(/*const*/ Expression*,
+  typedef RObject*(quick_builtin)(Expression*,
                                   const BuiltInFunction*,
                                   Environment* env,
                                   RObject* const* args,
                                   int num_args,
                                   const PairList* tags);
-#if Win32
-SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
-SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
-SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
-SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
-SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
-#else
-SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
-#endif
-
 }  // namespace CXXR
 
 /* Function Names */
 
-CXXR::quick_builtin do_abbrev;
+SEXP do_abbrev(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* these_, CXXR::RObject* minlength_, CXXR::RObject* use_classes_);
 SEXP do_abs(SEXP, SEXP, SEXP, SEXP); // calls do_cmathfuns
 CXXR::quick_builtin do_addCondHands;
 SEXP do_address(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_addRestart;
-CXXR::quick_builtin do_adist;
+SEXP do_addRestart(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* restart_);
+SEXP do_adist(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* y_, CXXR::RObject* costs_, CXXR::RObject* counts_, CXXR::RObject* fixed_, CXXR::RObject* partial_, CXXR::RObject* ignore_case_, CXXR::RObject* useBytes_);
 CXXR::quick_builtin do_agrep;
-CXXR::quick_builtin do_allnames;
+SEXP do_allnames(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* expr_, CXXR::RObject* functions_, CXXR::RObject* max_names_, CXXR::RObject* unique_);
 SEXP do_anyNA(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_aperm;
+SEXP do_aperm(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* a_, CXXR::RObject* perm_, CXXR::RObject* resize_);
 CXXR::quick_builtin do_arith;
 CXXR::quick_builtin do_aregexec;
 SEXP do_args(SEXP, SEXP, SEXP, SEXP); // non-trivial
-CXXR::quick_builtin do_array;
-CXXR::quick_builtin do_asPOSIXct;
-CXXR::quick_builtin do_asPOSIXlt;
-CXXR::quick_builtin do_ascall;
+SEXP do_array(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* data_, CXXR::RObject* dim_, CXXR::RObject* dimnames_);
+SEXP do_asPOSIXct(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_);
+SEXP do_asPOSIXlt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_);
+SEXP do_ascall(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* args);
 CXXR::quick_builtin do_as_environment;
 CXXR::quick_builtin do_asatomic;
-CXXR::quick_builtin do_asfunction;
-CXXR::quick_builtin do_assign;
+SEXP do_asfunction(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_);
+SEXP do_assign(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* envir_, CXXR::RObject* inherits_);
 CXXR::quick_builtin do_asvector;
 SEXP do_AT(SEXP call, SEXP op, SEXP args, SEXP env);  // Special
-CXXR::quick_builtin do_attach;
+SEXP do_attach(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* pos_, CXXR::RObject* name_);
 SEXP do_attr(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 SEXP do_attrgets(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
-CXXR::quick_builtin do_attributes;
-CXXR::quick_builtin do_attributesgets;
-CXXR::quick_builtin do_backsolve;
-CXXR::quick_builtin do_baseenv;
-CXXR::quick_builtin do_basename;
+SEXP do_attributes(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
+SEXP do_attributesgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* attrs);
+SEXP do_backsolve(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* r_, CXXR::RObject* x_, CXXR::RObject* k_, CXXR::RObject* upper_tri_, CXXR::RObject* transpose_);
+SEXP do_baseenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_basename(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_);
 SEXP do_bcprofcounts(SEXP, SEXP, SEXP, SEXP);
 SEXP do_bcprofstart(SEXP, SEXP, SEXP, SEXP);
 SEXP do_bcprofstop(SEXP, SEXP, SEXP, SEXP);
 SEXP do_begin(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_bincode;
+SEXP do_bincode(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* breaks_, CXXR::RObject* right_, CXXR::RObject* include_lowest_);
 SEXP do_bind(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_bindtextdomain;
+SEXP do_bindtextdomain(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* domain_, CXXR::RObject* dirname_);
 CXXR::quick_builtin do_bitwise;
-CXXR::quick_builtin do_body;
-CXXR::quick_builtin do_bodyCode;
+SEXP do_body(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_);
 SEXP do_break(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_browser(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
-CXXR::quick_builtin do_builtins;
+SEXP do_builtins(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* internal_);
 SEXP do_c(SEXP, SEXP, SEXP, SEXP);  // Calls do_c_dflt
 SEXP do_c_dflt(SEXP, SEXP, SEXP, SEXP); // Tricky
 SEXP do_call(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_capabilities;
-CXXR::quick_builtin do_capabilitiesX11;
-CXXR::quick_builtin do_cat;
-CXXR::quick_builtin do_charmatch;
-CXXR::quick_builtin do_charToRaw;
-CXXR::quick_builtin do_chartr;
-CXXR::quick_builtin do_class;
-CXXR::quick_builtin do_classgets;
+SEXP do_capabilities(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_capabilitiesX11(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_cat(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* file_, CXXR::RObject* sep_, CXXR::RObject* fill_, CXXR::RObject* labels_, CXXR::RObject* append_);
+SEXP do_charmatch(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_);
+SEXP do_charToRaw(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_chartr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* old_, CXXR::RObject* new_, CXXR::RObject* x_);
+SEXP do_class(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
+SEXP do_classgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* new_class);
 CXXR::quick_builtin do_colon;
-CXXR::quick_builtin do_colsum;
-CXXR::quick_builtin do_commandArgs;
-CXXR::quick_builtin do_comment;
-CXXR::quick_builtin do_commentgets;
-CXXR::quick_builtin do_copyDFattr;
-CXXR::quick_builtin do_crc64;
-CXXR::quick_builtin do_Cstack_info;
+SEXP do_colsum(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* X_, CXXR::RObject* m_, CXXR::RObject* n_, CXXR::RObject* na_rm_);
+SEXP do_commandArgs(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_comment(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_commentgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_);
+SEXP do_copyDFattr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xx_, CXXR::RObject* x_);
+SEXP do_crossprod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* y);
+SEXP do_Cstack_info(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 CXXR::quick_builtin do_cum;
 SEXP do_curlDownload(SEXP, SEXP, SEXP, SEXP);
 SEXP do_curlGetHeaders(SEXP, SEXP, SEXP, SEXP);
 SEXP do_curlVersion(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_D2POSIXlt;
-CXXR::quick_builtin do_date;
+SEXP do_D2POSIXlt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_date(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_debug(SEXP, SEXP, SEXP, SEXP);  // Tricky.
-CXXR::quick_builtin do_delayed;
-CXXR::quick_builtin do_deparse;
-CXXR::quick_builtin do_detach;
-CXXR::quick_builtin do_dfltStop;
-CXXR::quick_builtin do_dfltWarn;
-CXXR::quick_builtin do_diag;
+SEXP do_delayed(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* eval_env_, CXXR::RObject* assign_env_);
+SEXP do_deparse(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* expr_, CXXR::RObject* width_cutoff_, CXXR::RObject* backtick_, CXXR::RObject* control_, CXXR::RObject* nlines_);
+SEXP do_detach(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pos_);
+SEXP NORET do_dfltStop(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* message_, CXXR::RObject* call_);
+SEXP do_dfltWarn(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* message_, CXXR::RObject* call_);
+SEXP do_diag(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* nrow_, CXXR::RObject* ncol_);
 CXXR::quick_builtin do_dim;
 CXXR::quick_builtin do_dimgets;
 CXXR::quick_builtin do_dimnames;
 CXXR::quick_builtin do_dimnamesgets;
-CXXR::quick_builtin do_dircreate;
+SEXP do_dircreate(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* showWarnings_, CXXR::RObject* recursive_, CXXR::RObject* mode_);
 SEXP do_direxists(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_dirname;
-CXXR::quick_builtin do_docall;
+SEXP do_dirname(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_);
+SEXP do_docall(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* args_, CXXR::RObject* envir_);
 SEXP do_dotcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dotcallgr(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dotCode(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_dput;
-CXXR::quick_builtin do_drop;
-CXXR::quick_builtin do_dump;
+SEXP do_dput(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* file_, CXXR::RObject* control_);
+SEXP do_drop(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_dump(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* envir_, CXXR::RObject* opts_, CXXR::RObject* evaluate_);
 CXXR::quick_builtin do_duplicated;
-CXXR::quick_builtin do_dynload;
-CXXR::quick_builtin do_dynunload;
+SEXP do_dynload(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* local_, CXXR::RObject* now_, CXXR::RObject* dots_);
+SEXP do_dynunload(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_eapply(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_emptyenv;
-CXXR::quick_builtin do_encoding;
-CXXR::quick_builtin do_encodeString;
-CXXR::quick_builtin do_enc2;
-CXXR::quick_builtin do_envir;
-CXXR::quick_builtin do_envirgets;
-CXXR::quick_builtin do_envirName;
-CXXR::quick_builtin do_env2list;
+SEXP do_emptyenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_encoding(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_encodeString(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_, CXXR::RObject* quote_, CXXR::RObject* na_encode_, CXXR::RObject* justify_);
+SEXP do_enc2(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject*);
+SEXP do_envir(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_);
+SEXP do_envirgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* s, CXXR::RObject* env);
+SEXP do_envirName(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_);
+SEXP do_env2list(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* all_names_, CXXR::RObject* sorted_);
 SEXP do_eSoftVersion(SEXP, SEXP, SEXP, SEXP);
 SEXP do_External(SEXP, SEXP, SEXP, SEXP);
 SEXP do_Externalgr(SEXP, SEXP, SEXP, SEXP);
 SEXP do_eval(SEXP, SEXP, SEXP, SEXP);
 SEXP do_expression(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_fileaccess;
-CXXR::quick_builtin do_fileappend;
-CXXR::quick_builtin do_filecopy;
-CXXR::quick_builtin do_filecreate;
-CXXR::quick_builtin do_fileexists;
-CXXR::quick_builtin do_fileinfo;
-CXXR::quick_builtin do_filelink;
+SEXP do_fileaccess(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* mode_);
+SEXP do_fileappend(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file1_, CXXR::RObject* file2_);
+SEXP do_filecopy(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* overwrite_, CXXR::RObject* recursive_, CXXR::RObject* copy_mode_, CXXR::RObject* copy_date_);
+SEXP do_filecreate(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* showWarnings_);
+SEXP do_fileexists(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_);
+SEXP do_fileinfo(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* extra_cols_);
+SEXP do_filelink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_);
 CXXR::quick_builtin do_filepath;
-CXXR::quick_builtin do_fileremove;
-CXXR::quick_builtin do_filerename;
-CXXR::quick_builtin do_fileshow;
-CXXR::quick_builtin do_filesymlink;
-CXXR::quick_builtin do_findinterval;
-CXXR::quick_builtin do_first_min;
-CXXR::quick_builtin do_flush;
+SEXP do_fileremove(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_);
+SEXP do_filerename(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_);
+SEXP do_fileshow(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* files_, CXXR::RObject* header_, CXXR::RObject* title_, CXXR::RObject* delete_file_, CXXR::RObject* pager_);
+SEXP do_filesymlink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_);
+SEXP do_findinterval(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vec_, CXXR::RObject* x_, CXXR::RObject* rightmost_closed_, CXXR::RObject* all_inside_);
+SEXP do_first_min(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_flush(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
 SEXP do_for(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_format;
 CXXR::quick_builtin do_formatC;
-CXXR::quick_builtin do_formatinfo;
-CXXR::quick_builtin do_formatPOSIXlt;
-CXXR::quick_builtin do_formals;
+SEXP do_formatinfo(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* digits_, CXXR::RObject* nsmall_);
+SEXP do_formatPOSIXlt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* usetz_);
+SEXP do_formals(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_);
 SEXP do_function(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_gc;
-CXXR::quick_builtin do_gcinfo;
+SEXP do_gc(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_, CXXR::RObject* reset_);
+SEXP do_gcinfo(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_);
 CXXR::quick_builtin do_gctime;
-CXXR::quick_builtin do_gctorture;
-CXXR::quick_builtin do_gctorture2;
+SEXP do_gctorture(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_);
+SEXP do_gctorture2(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* step_, CXXR::RObject* wait_, CXXR::RObject* inhibit_release_);
 CXXR::quick_builtin do_get;
-CXXR::quick_builtin do_getDllTable;
+SEXP do_getDllTable(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 CXXR::quick_builtin do_getVarsFromFrame;
 CXXR::quick_builtin do_getenv;
-CXXR::quick_builtin do_geterrmessage;
-CXXR::quick_builtin do_getlocale;
+SEXP do_geterrmessage(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_getlocale(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_);
 SEXP do_getOption(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_getRegisteredRoutines;
+SEXP do_getRegisteredRoutines(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* info_);
 CXXR::quick_builtin do_getSymbolInfo;
-CXXR::quick_builtin do_getRestart;
-CXXR::quick_builtin do_gettext;
-CXXR::quick_builtin do_getwd;
-CXXR::quick_builtin do_glob;
-CXXR::quick_builtin do_globalenv;
-CXXR::quick_builtin do_grep;
-CXXR::quick_builtin do_grepraw;
-CXXR::quick_builtin do_gsub;
-CXXR::quick_builtin do_iconv;
+SEXP do_getRestart(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* i_);
+SEXP do_gettext(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* domain_);
+SEXP do_getwd(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_glob(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* dirmark_);
+SEXP do_globalenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_grep(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* value_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_, CXXR::RObject* invert_);
+SEXP do_grepraw(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* offset_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* value_, CXXR::RObject* all_, CXXR::RObject* invert_);
+SEXP do_gsub(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* replacement_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_);
+SEXP do_iconv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* sub_, CXXR::RObject* mark_, CXXR::RObject* toRaw_);
 SEXP do_ICUget(SEXP, SEXP, SEXP, SEXP);
 SEXP do_ICUset(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_identical;
 SEXP do_if(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_inherits;
+SEXP do_inherits(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* what_, CXXR::RObject* which_);
 CXXR::quick_builtin do_inspect;
-CXXR::quick_builtin do_intToUtf8;
-CXXR::quick_builtin do_interactive;
+SEXP do_intToUtf8(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* multiple_);
+SEXP do_interactive(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_internal(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_interruptsSuspended;
-CXXR::quick_builtin do_intToBits;
+SEXP do_intToBits(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 CXXR::quick_builtin do_invisible;
-CXXR::quick_builtin do_invokeRestart NORET;
+SEXP NORET do_invokeRestart(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* r_, CXXR::RObject* args_);
 CXXR::quick_builtin do_is;
-CXXR::quick_builtin do_isatty;
+SEXP do_isatty(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
 CXXR::quick_builtin do_isfinite;
 CXXR::quick_builtin do_isinfinite;
-CXXR::quick_builtin do_islistfactor;
+SEXP do_islistfactor(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* recursive_);
 SEXP do_isloaded(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_isna;
 CXXR::quick_builtin do_isnan;
 CXXR::quick_builtin do_isunsorted;
-CXXR::quick_builtin do_isvector;
+SEXP do_isvector(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* mode_);
 SEXP do_lapack(SEXP, SEXP, SEXP, SEXP);
 SEXP do_lapply(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_lazyLoadDBfetch;
+SEXP do_lazyLoadDBfetch(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* key_, CXXR::RObject* file_, CXXR::RObject* compressed_, CXXR::RObject* hook_);
 CXXR::quick_builtin do_lazyLoadDBflush;
 CXXR::quick_builtin do_lazyLoadDBinsertValue;
 CXXR::quick_builtin do_length;
 CXXR::quick_builtin do_lengthgets;
-SEXP do_lengths(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_lengths;
 CXXR::quick_builtin do_levelsgets;
-CXXR::quick_builtin do_listdirs;
-CXXR::quick_builtin do_listfiles;
-CXXR::quick_builtin do_list2env;
-CXXR::quick_builtin do_load;
-CXXR::quick_builtin do_loadFromConn2;
-CXXR::quick_builtin do_localeconv;
+SEXP do_listdirs(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* full_names_, CXXR::RObject* recursive_);
+SEXP do_listfiles(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* pattern_, CXXR::RObject* all_files_, CXXR::RObject* full_names_, CXXR::RObject* recursive_, CXXR::RObject* ignore_case_, CXXR::RObject* include_dirs_, CXXR::RObject* no_dots_);
+SEXP do_list2env(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_);
+SEXP do_load(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* envir_);
+SEXP do_loadFromConn2(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* envir_, CXXR::RObject* verbose_);
+SEXP do_localeconv(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_log(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_log1arg;
 CXXR::quick_builtin do_logic;
-SEXP do_logic_slow(SEXP, SEXP, SEXP, SEXP); // slow version of the above, used by the bytecode interpreter.
 SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_ls;
-CXXR::quick_builtin do_l10n_info;
-CXXR::quick_builtin do_makelazy;
+SEXP do_ls(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* envir_, CXXR::RObject* all_names_, CXXR::RObject* sorted_);
+SEXP do_l10n_info(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_makelazy(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vars_, CXXR::RObject* vals_, CXXR::RObject* expr_, CXXR::RObject* db_, CXXR::RObject* envir_);
 SEXP do_makelist(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_makenames;
-CXXR::quick_builtin do_makeunique;
-CXXR::quick_builtin do_makevector;
+SEXP do_makenames(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* allow__);
+SEXP do_makeunique(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* sep_);
+SEXP do_makevector(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_, CXXR::RObject* length_);
 CXXR::quick_builtin do_mapply;
 CXXR::quick_builtin do_match;
 SEXP do_matchcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_matprod(SEXP, SEXP, SEXP, SEXP);
 SEXP do_Math2(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_matrix;
-CXXR::quick_builtin do_maxcol;
-CXXR::quick_builtin do_memlimits;
-CXXR::quick_builtin do_memoryprofile;
-CXXR::quick_builtin do_merge;
+SEXP do_maxcol(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* m_, CXXR::RObject* ties_method_);
+SEXP do_memoryprofile(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_merge(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xinds_, CXXR::RObject* yinds_, CXXR::RObject* all_x_, CXXR::RObject* all_y_);
 CXXR::quick_builtin do_mget;
 SEXP do_missing(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_names;
 CXXR::quick_builtin do_namesgets;
 CXXR::quick_builtin do_nargs;
-CXXR::quick_builtin do_nchar;
-CXXR::quick_builtin do_newenv;
+SEXP do_nchar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* type_, CXXR::RObject* allowNA_);
+SEXP do_newenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* hash_, CXXR::RObject* parent_, CXXR::RObject* size_);
 SEXP do_nextmethod(SEXP,SEXP,SEXP,SEXP);  // Special
-CXXR::quick_builtin do_ngettext;
-CXXR::quick_builtin do_nzchar;
+SEXP do_ngettext(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* msg1_, CXXR::RObject* msg2_, CXXR::RObject* domain_);
+SEXP do_nzchar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
 SEXP do_onexit(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_options(SEXP, SEXP, SEXP, SEXP);
 SEXP do_order(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_packBits;
-CXXR::quick_builtin do_parentenv;
-CXXR::quick_builtin do_parentenvgets;
-CXXR::quick_builtin do_paren;
+SEXP do_packBits(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* type_);
+SEXP do_parentenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_);
+SEXP do_parentenvgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* value_);
+SEXP do_paren(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 CXXR::quick_builtin do_parentframe;
-CXXR::quick_builtin do_parse;
+SEXP do_parse(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* n_, CXXR::RObject* text_, CXXR::RObject* prompt_, CXXR::RObject* srcfile_, CXXR::RObject* encoding_);
 CXXR::quick_builtin do_paste;
-CXXR::quick_builtin do_pathexpand;
+SEXP do_pathexpand(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_);
 SEXP do_pcre_config(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_pmatch;
+SEXP do_pmatch(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_, CXXR::RObject* duplicates_ok_);
 CXXR::quick_builtin do_pmin;
-CXXR::quick_builtin do_pos2env;
-CXXR::quick_builtin do_POSIXlt2D;
+SEXP do_pos2env(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pos);
+SEXP do_POSIXlt2D(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 CXXR::quick_builtin do_pretty;
-CXXR::quick_builtin do_primitive;
+SEXP do_primitive(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* name_);
 CXXR::quick_builtin do_printdefault;
-CXXR::quick_builtin do_printDeferredWarnings;
+SEXP do_printDeferredWarnings(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 CXXR::quick_builtin do_printfunction;
-CXXR::quick_builtin do_prmatrix;
-CXXR::quick_builtin do_proctime;
-CXXR::quick_builtin do_psort;
-CXXR::quick_builtin do_qsort;
-CXXR::quick_builtin do_quit;
+SEXP do_prmatrix(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* rowlab_, CXXR::RObject* collab_, CXXR::RObject* quote_, CXXR::RObject* right_, CXXR::RObject* na_print_);
+SEXP do_proctime(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_psort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* partial_);
+SEXP do_qsort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* index_return_);
+SEXP do_quit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* save_, CXXR::RObject* status_, CXXR::RObject* runLast_);
 SEXP do_quote(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_radixsort;
-CXXR::quick_builtin do_random1;
-CXXR::quick_builtin do_random2;
-CXXR::quick_builtin do_random3;
+SEXP do_radixsort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* na_last_, CXXR::RObject* decreasing_);
 SEXP do_range(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_rank;
 CXXR::quick_builtin do_rapply;
-CXXR::quick_builtin do_rawShift;
-CXXR::quick_builtin do_rawToBits;
-CXXR::quick_builtin do_rawToChar;
-CXXR::quick_builtin do_readDCF;
-CXXR::quick_builtin do_readEnviron;
-CXXR::quick_builtin do_readlink;
-CXXR::quick_builtin do_readLines;
-CXXR::quick_builtin do_readln;
+SEXP do_rawShift(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* n_);
+SEXP do_rawToBits(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_rawToChar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* multiple_);
+SEXP do_readDCF(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* fields_, CXXR::RObject* keep_white_);
+SEXP do_readEnviron(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_);
+SEXP do_readlink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_);
+SEXP do_readLines(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* n_, CXXR::RObject* ok_, CXXR::RObject* warn_, CXXR::RObject* encoding_, CXXR::RObject* skipNul_);
+SEXP do_readln(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* prompt_);
 SEXP do_recall(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_recordGraphics(SEXP, SEXP, SEXP, SEXP);
 SEXP do_refcnt(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_regexec;
-CXXR::quick_builtin do_regexpr;
-CXXR::quick_builtin do_regFinaliz;
+SEXP do_regexec(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_);
+SEXP do_regexpr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_);
+SEXP do_regFinaliz(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* e_, CXXR::RObject* f_, CXXR::RObject* onexit_);
 CXXR::quick_builtin do_relop;
-CXXR::quick_builtin do_remove;
+SEXP do_remove(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* envir_, CXXR::RObject* inherits_);
 SEXP do_rep(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_rep_int;
-CXXR::quick_builtin do_rep_len;
+SEXP do_rep_int(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* times_);
+SEXP do_rep_len(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* length_out_);
 SEXP do_repeat(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_resetCondHands;
 SEXP do_return(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_returnValue(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_Rhome;
-CXXR::quick_builtin do_RNGkind;
+SEXP do_Rhome(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_RNGkind(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* kind_, CXXR::RObject* normal_kind_);
 CXXR::quick_builtin do_rowsum;
 CXXR::quick_builtin do_rowscols;
 CXXR::quick_builtin do_S4on;
-CXXR::quick_builtin do_sample;
-CXXR::quick_builtin do_sample2;
-CXXR::quick_builtin do_save;
-CXXR::quick_builtin do_saveToConn;
-CXXR::quick_builtin do_scan;
-CXXR::quick_builtin do_search;
+SEXP do_sample(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* size_, CXXR::RObject* replace_, CXXR::RObject* prob_);
+SEXP do_sample2(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* size_);
+SEXP do_save(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_);
+SEXP do_saveToConn(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_);
+SEXP do_scan(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* what_, CXXR::RObject* nmax_, CXXR::RObject* sep_, CXXR::RObject* dec_, CXXR::RObject* quote_, CXXR::RObject* skip_, CXXR::RObject* nlines_, CXXR::RObject* na_strings_, CXXR::RObject* flush_, CXXR::RObject* fill_, CXXR::RObject* strip_white_, CXXR::RObject* quiet_, CXXR::RObject* blank_lines_skip_, CXXR::RObject* multi_line_, CXXR::RObject* comment_char_, CXXR::RObject* allowEscapes_, CXXR::RObject* encoding_, CXXR::RObject* skipNul_);
+SEXP do_search(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_seq(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_seq_along;
-CXXR::quick_builtin do_seq_len;
+SEXP do_seq_len(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* length);
 CXXR::quick_builtin do_serialize;
-CXXR::quick_builtin do_serializeToConn;
+SEXP do_serializeToConn(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* refhook_);
 SEXP do_set(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_setS4Object;
-CXXR::quick_builtin do_setFileTime;
-CXXR::quick_builtin do_setencoding;
+SEXP do_setS4Object(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* flag_, CXXR::RObject* complete_);
+SEXP do_setFileTime(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* time_);
+SEXP do_setencoding(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_);
 CXXR::quick_builtin do_setenv;
 CXXR::quick_builtin do_seterrmessage;
 CXXR::quick_builtin do_setmaxnumthreads;
 CXXR::quick_builtin do_setnumthreads;
-CXXR::quick_builtin do_setlocale;
-CXXR::quick_builtin do_setseed;
-CXXR::quick_builtin do_setSessionTimeLimit;
-CXXR::quick_builtin do_setTimeLimit;
+SEXP do_setlocale(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_, CXXR::RObject* locale_);
+SEXP do_setseed (CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* seed_, CXXR::RObject* kind_, CXXR::RObject* normal_kind_);
+SEXP do_setSessionTimeLimit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_);
+SEXP do_setTimeLimit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_, CXXR::RObject* transient_);
 CXXR::quick_builtin do_setwd;
-CXXR::quick_builtin do_shortRowNames;
-CXXR::quick_builtin do_signalCondition;
-CXXR::quick_builtin do_sink;
-CXXR::quick_builtin do_sinknumber;
+SEXP do_shortRowNames(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* type_);
+SEXP do_signalCondition(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cond_, CXXR::RObject* message_, CXXR::RObject* call_);
+SEXP do_sink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* append_, CXXR::RObject* type_, CXXR::RObject* split_);
+SEXP do_sinknumber(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* type_);
 SEXP do_slotgets(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_sort;
-CXXR::quick_builtin do_split;
+SEXP do_sort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* decreasing_);
+SEXP do_split(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* f_);
 CXXR::quick_builtin do_sprintf;
 CXXR::quick_builtin do_standardGeneric;
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP) NORET;
-CXXR::quick_builtin do_storage_mode;
-CXXR::quick_builtin do_strsplit;
-CXXR::quick_builtin do_strptime;
-CXXR::quick_builtin do_strtrim;
-CXXR::quick_builtin do_strtoi;
-CXXR::quick_builtin do_syschmod;
-CXXR::quick_builtin do_sysumask;
+SEXP do_storage_mode(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* obj, CXXR::RObject* value);
+SEXP do_strsplit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* split_, CXXR::RObject* fixed_, CXXR::RObject* perl_, CXXR::RObject* useBytes_);
+SEXP do_strptime(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* tz_);
+SEXP do_strtrim(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_);
+SEXP do_strtoi(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* base_);
+SEXP do_syschmod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* mode_, CXXR::RObject* use_umask_);
+SEXP do_sysumask(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_);
 SEXP do_subassign(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_subassign_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_subassign2(SEXP, SEXP, SEXP, SEXP);  // Special
@@ -400,95 +383,81 @@ SEXP do_subset2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_subset2_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_subset3(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_substitute(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_substr;
-CXXR::quick_builtin do_substrgets;
+SEXP do_substr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* start_, CXXR::RObject* stop_);
+SEXP do_substrgets(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* start_, CXXR::RObject* stop_, CXXR::RObject* value_);
 SEXP do_summary(SEXP, SEXP, SEXP, SEXP);
 SEXP do_switch(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_sys;
-CXXR::quick_builtin do_sysbrowser;
-CXXR::quick_builtin do_sysgetpid;
-CXXR::quick_builtin do_systime;
-CXXR::quick_builtin do_tabulate;
-CXXR::quick_builtin do_tempdir;
-CXXR::quick_builtin do_tempfile;
+SEXP do_sysbrowser(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_);
+SEXP do_sysgetpid(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_systime(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_tabulate(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* bin_, CXXR::RObject* nbins_);
+SEXP do_tempdir(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_tempfile(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* tmpdir_, CXXR::RObject* fileext_);
 SEXP do_tilde(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_tolower;
+SEXP do_tolower(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_topenv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_trace(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_traceOnOff;
-CXXR::quick_builtin do_traceback;
-CXXR::quick_builtin do_transpose;
+SEXP do_traceOnOff(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_);
+SEXP do_traceback(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_transpose(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 CXXR::quick_builtin do_trunc;
-CXXR::quick_builtin do_typeof;
-CXXR::quick_builtin do_unclass;
-CXXR::quick_builtin do_unlink;
+SEXP do_typeof(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_unclass(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object);
+SEXP do_unlink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* recursive_, CXXR::RObject* force_);
 CXXR::quick_builtin do_unlist;
-CXXR::quick_builtin do_unserializeFromConn;
-CXXR::quick_builtin do_unsetenv;
+SEXP do_unserializeFromConn(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* refhook_);
+SEXP do_unsetenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_usemethod(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_utf8ToInt;
+SEXP do_utf8ToInt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_vapply(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_version;
+SEXP do_version(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_warning(SEXP, SEXP, SEXP, SEXP);
 SEXP do_while(SEXP, SEXP, SEXP, SEXP);  // Special
-CXXR::quick_builtin do_which;
+SEXP do_which(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_withVisible(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_xtfrm(SEXP, SEXP, SEXP, SEXP);
 
 CXXR::quick_builtin R_do_data_class;
-CXXR::quick_builtin R_do_set_class;
+SEXP R_do_set_class(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* klass);
 SEXP R_getS4DataSlot(SEXP obj, SEXPTYPE type);
 
-/* bytecode */
-CXXR::quick_builtin do_mkcode;
-CXXR::quick_builtin do_bcclose;
-CXXR::quick_builtin do_is_builtin_internal;
-CXXR::quick_builtin do_disassemble;
-CXXR::quick_builtin do_bcversion;
-CXXR::quick_builtin do_loadfile;
-CXXR::quick_builtin do_savefile;
-CXXR::quick_builtin do_growconst;
-CXXR::quick_builtin do_putconst;
-CXXR::quick_builtin do_getconst;
-CXXR::quick_builtin do_enablejit;
-CXXR::quick_builtin do_compilepkgs;
-
 /* Connections */
-CXXR::quick_builtin do_stdin;
-CXXR::quick_builtin do_stdout;
-CXXR::quick_builtin do_stderr;
-CXXR::quick_builtin do_writelines;
-CXXR::quick_builtin do_readbin;
-CXXR::quick_builtin do_writebin;
-CXXR::quick_builtin do_readchar;
-CXXR::quick_builtin do_writechar;
-CXXR::quick_builtin do_open;
-CXXR::quick_builtin do_isopen;
-CXXR::quick_builtin do_isincomplete;
-CXXR::quick_builtin do_isseekable;
-CXXR::quick_builtin do_close;
-CXXR::quick_builtin do_fifo;
-CXXR::quick_builtin do_pipe;
+SEXP do_stdin(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_stdout(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_stderr(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_writelines(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* text_, CXXR::RObject* con_, CXXR::RObject* sep_, CXXR::RObject* useBytes_);
+SEXP do_readbin(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* what_, CXXR::RObject* n_, CXXR::RObject* size_, CXXR::RObject* signed_, CXXR::RObject* endian_);
+SEXP do_writebin(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* size_, CXXR::RObject* endian_, CXXR::RObject* useBytes_);
+SEXP do_readchar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* nchars_, CXXR::RObject* useBytes_);
+SEXP do_writechar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* nchars_, CXXR::RObject* eos_, CXXR::RObject* useBytes_);
+SEXP do_open(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* open_, CXXR::RObject* blocking_);
+SEXP do_isopen(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* rw_);
+SEXP do_isincomplete(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
+SEXP do_isseekable(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
+SEXP do_close(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* dots_);
+SEXP do_fifo(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* blocking_, CXXR::RObject* encoding_);
+SEXP do_pipe(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* encoding_);
 CXXR::quick_builtin do_url;
-CXXR::quick_builtin do_gzfile;
+SEXP do_gzfile(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* description_, CXXR::RObject* open_, CXXR::RObject* encoding_, CXXR::RObject* compression_);
 CXXR::quick_builtin do_unz;
 CXXR::quick_builtin do_seek;
-CXXR::quick_builtin do_truncate;
-CXXR::quick_builtin do_pushback;
-CXXR::quick_builtin do_pushbacklength;
-CXXR::quick_builtin do_clearpushback;
+SEXP do_truncate(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
+SEXP do_pushback(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* data_, CXXR::RObject* connection_, CXXR::RObject* newLine_, CXXR::RObject* encoding_);
+SEXP do_pushbacklength(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* connection_);
+SEXP do_clearpushback(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* connection_);
 CXXR::quick_builtin do_rawconnection;
-CXXR::quick_builtin do_rawconvalue;
-CXXR::quick_builtin do_textconnection;
-CXXR::quick_builtin do_textconvalue;
-CXXR::quick_builtin do_getconnection;
-CXXR::quick_builtin do_getallconnections;
-CXXR::quick_builtin do_sumconnection;
-CXXR::quick_builtin do_sockconn;
-CXXR::quick_builtin do_sockselect;
-CXXR::quick_builtin do_gzcon;
-CXXR::quick_builtin do_memCompress;
-CXXR::quick_builtin do_memDecompress;
+SEXP do_rawconvalue(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
+SEXP do_textconnection(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* nm_, CXXR::RObject* object_, CXXR::RObject* open_, CXXR::RObject* env_, CXXR::RObject* type_);
+SEXP do_textconvalue(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
+SEXP do_getconnection(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_);
+SEXP do_getallconnections(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_sumconnection(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_);
+SEXP do_sockconn(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* host_, CXXR::RObject* port_, CXXR::RObject* server_, CXXR::RObject* blocking_, CXXR::RObject* open_, CXXR::RObject* encoding_, CXXR::RObject* timeout_);
+SEXP do_sockselect(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* socklist_, CXXR::RObject* write_, CXXR::RObject* timeout_);
+SEXP do_gzcon(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* level_, CXXR::RObject* allowNonCompressed_);
+SEXP do_memCompress(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* type_);
+SEXP do_memDecompress(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* type_);
 
 SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
 SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);
@@ -498,46 +467,45 @@ CXXR::quick_builtin do_provenance_graph;
 SEXP do_bserialize(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_bdeserialize(SEXP, SEXP, SEXP, SEXP);  // Special
 
-CXXR::quick_builtin do_lockEnv;
-CXXR::quick_builtin do_envIsLocked;
-CXXR::quick_builtin do_lockBnd;
-CXXR::quick_builtin do_bndIsLocked;
-CXXR::quick_builtin do_mkActiveBnd;
-CXXR::quick_builtin do_bndIsActive;
-CXXR::quick_builtin do_mkUnbound;
-CXXR::quick_builtin do_isNSEnv;
-CXXR::quick_builtin do_regNS;
-CXXR::quick_builtin do_unregNS;
-CXXR::quick_builtin do_getRegNS;
-CXXR::quick_builtin do_getNSRegistry;
-CXXR::quick_builtin do_importIntoEnv;
-CXXR::quick_builtin do_envprofile;
+SEXP do_lockEnv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* bindings_);
+SEXP do_envIsLocked(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_);
+SEXP do_lockBnd(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* sym_, CXXR::RObject* env_);
+SEXP do_bndIsLocked(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* sym_, CXXR::RObject* env_);
+SEXP do_mkActiveBnd(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* sym_, CXXR::RObject* fun_, CXXR::RObject* env_);
+SEXP do_bndIsActive(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* sym_, CXXR::RObject* env_);
+SEXP do_isNSEnv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* ns_);
+SEXP do_regNS(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* name_, CXXR::RObject* env_);
+SEXP do_unregNS(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* nsname_);
+SEXP do_getRegNS(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* name_);
+SEXP do_getNSRegistry(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
+SEXP do_importIntoEnv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* impenv_, CXXR::RObject* impnames_, CXXR::RObject* expenv_, CXXR::RObject* expnames_);
+SEXP do_envprofile(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_);
 
-CXXR::quick_builtin do_tracemem;
+SEXP do_tracemem(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_retracemem(SEXP, SEXP, SEXP, SEXP);
-CXXR::quick_builtin do_untracemem;
+SEXP do_untracemem(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 
 extern "C" {
 #endif  // __cplusplus
 
-// Functions that are defined in or called from C.
 
 #if Win32
-SEXP do_mkjun3ction(SEXP, SEXP, SEXP, SEXP);
+SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
 SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
 SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
+SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
 #else
 SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
 #endif
 
+// Functions that are defined in or called from C.
 SEXP do_complex(SEXP, SEXP, SEXP, SEXP);
 SEXP do_contourLines(SEXP, SEXP, SEXP, SEXP);
 SEXP do_edit(SEXP, SEXP, SEXP, SEXP);
 SEXP do_filechoose(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getGraphicsEvent(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
-SEXP do_machine(SEXP, SEXP, SEXP, SEXP);
 SEXP do_normalizepath(SEXP, SEXP, SEXP, SEXP);
 SEXP do_polyroot(SEXP, SEXP, SEXP, SEXP);
 SEXP do_saveplot(SEXP, SEXP, SEXP, SEXP);

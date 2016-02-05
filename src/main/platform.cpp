@@ -288,9 +288,8 @@ static char *R_Date(void)
     return s;
 }
 
-SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
-    op->checkNumArgs(num_args, call);
     return mkString(R_Date());
 }
 
@@ -302,19 +301,18 @@ SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::Buil
  */
 
 // .Internal so manages R_alloc stack used by acopy_string
-SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* files_, CXXR::RObject* header_, CXXR::RObject* title_, CXXR::RObject* delete_file_, CXXR::RObject* pager_)
 {
     SEXP fn, tl, hd, pg;
     const char **f, **h, *t, *pager = nullptr /* -Wall */;
     Rboolean dl;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0]; args = (args + 1);
-    hd = args[0]; args = (args + 1);
-    tl = args[0]; args = (args + 1);
-    dl = Rboolean( asLogical(args[0])); args = (args + 1);
-    pg = args[0];
+    fn = files_;
+    hd = header_;
+    tl = title_;
+    dl = Rboolean( asLogical(delete_file_));
+    pg = pager_;
     n = 0;			/* -Wall */
     if (!isString(fn) || (n = length(fn)) < 1)
 	error(_("invalid filename specification"));
@@ -394,14 +392,13 @@ static int R_AppendFile(SEXP file1, SEXP file2)
     return status;
 }
 
-SEXP attribute_hidden do_fileappend(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileappend(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file1_, CXXR::RObject* file2_)
 {
     SEXP f1, f2, ans;
     int n, n1, n2;
 
-    op->checkNumArgs(num_args, call);
-    f1 = args[0]; n1 = length(f1);
-    f2 = args[1]; n2 = length(f2);
+    f1 = file1_; n1 = length(f1);
+    f2 = file2_; n2 = length(f2);
     if (!isString(f1))
 	error(_("invalid '%s' argument"), "file1");
     if (!isString(f2))
@@ -452,17 +449,16 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* showWarnings_)
 {
     SEXP fn, ans;
     FILE *fp;
     int i, n, show;
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = dots_;
     if (!isString(fn))
 	error(_("invalid filename argument"));
-    show = asLogical(args[1]);
+    show = asLogical(showWarnings_);
     if (show == NA_LOGICAL) show = 0;
     n = length(fn);
     PROTECT(ans = allocVector(LGLSXP, n));
@@ -481,12 +477,11 @@ SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR
     return ans;
 }
 
-SEXP attribute_hidden do_fileremove(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileremove(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_)
 {
     SEXP f, ans;
     int i, n;
-    op->checkNumArgs(num_args, call);
-    f = args[0];
+    f = dots_;
     if (!isString(f))
 	error(_("invalid first filename"));
     n = length(f);
@@ -546,7 +541,7 @@ const char *formatError(DWORD res);  /* extra.c */
    have, and which many people report granting in the Policy Editor
    fails to work.
 */
-SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -554,9 +549,8 @@ SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXX
     SEXP ans;
     int i;
 #endif
-    op->checkNumArgs(num_args, call);
-    f1 = args[0]; n1 = length(f1);
-    f2 = args[1]; n2 = length(f2);
+    f1 = from_; n1 = length(f1);
+    f2 = to_; n2 = length(f2);
     if (!isString(f1))
 	error(_("invalid first filename"));
     if (!isString(f2))
@@ -628,7 +622,7 @@ SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXX
 }
 
 
-SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -636,9 +630,8 @@ SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans;
     int i;
 #endif
-    op->checkNumArgs(num_args, call);
-    f1 = args[0]; n1 = length(f1);
-    f2 = args[1]; n2 = length(f2);
+    f1 = from_; n1 = length(f1);
+    f2 = to_; n2 = length(f2);
     if (!isString(f1))
 	error(_("invalid first filename"));
     if (!isString(f2))
@@ -701,7 +694,7 @@ int Rwin_rename(char *from, char *to);  /* in src/gnuwin32/extra.c */
 int Rwin_wrename(const wchar_t *from, const wchar_t *to);
 #endif
 
-SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
 {
     SEXP f1, f2, ans;
     int i, n1, n2;
@@ -714,9 +707,8 @@ SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR
     int res;
 #endif
 
-    op->checkNumArgs(num_args, call);
-    f1 = args[0]; n1 = length(f1);
-    f2 = args[1]; n2 = length(f2);
+    f1 = from_; n1 = length(f1);
+    f2 = to_; n2 = length(f2);
     if (!isString(f1))
 	error(_("invalid '%s' argument"), "from");
     if (!isString(f2))
@@ -788,7 +780,7 @@ SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR
 # define STAT_TIMESPEC_NS(st, st_xtim) ((st).st_xtim.st__tim.tv_nsec)
 #endif
 
-SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* extra_cols_)
 {
     SEXP fn, ans, ansnames, fsize, mtime, ctime, atime, isdir,
 	mode, xxclass;
@@ -803,11 +795,10 @@ SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::
     struct stat sb;
 #endif
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = dots_;
     if (!isString(fn))
 	error(_("invalid filename argument"));
-    int extras = asInteger(args[1]);
+    int extras = asInteger(extra_cols_);
     if(extras == NA_INTEGER)
 	error(_("invalid '%s' argument"), "extra_cols");
     int n = length(fn), ncols = 6;
@@ -985,7 +976,6 @@ SEXP attribute_hidden do_direxists(SEXP call, SEXP op, SEXP args, SEXP rho)
     struct stat sb;
 #endif
 
-    checkArity(op, args);
     fn = CAR(args);
     if (!isString(fn))
 	error(_("invalid filename argument"));
@@ -1141,35 +1131,34 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
 }
 #undef IF_MATCH_ADD_TO_ANS
 
-SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* pattern_, CXXR::RObject* all_files_, CXXR::RObject* full_names_, CXXR::RObject* recursive_, CXXR::RObject* ignore_case_, CXXR::RObject* include_dirs_, CXXR::RObject* no_dots_)
 {
     int countmax = 128;
 
-    op->checkNumArgs(num_args, call);
-    SEXP d = args[0];  args = (args + 1); // d := directory = path
+    SEXP d = path_; // d := directory = path
     if (!isString(d)) error(_("invalid '%s' argument"), "path");
-    SEXP p = args[0]; args = (args + 1);
+    SEXP p = pattern_;
     Rboolean pattern = FALSE;
     if (isString(p) && length(p) >= 1 && STRING_ELT(p, 0) != NA_STRING)
 	pattern = TRUE;
     else if (!isNull(p) && !(isString(p) && length(p) < 1))
 	error(_("invalid '%s' argument"), "pattern");
-    int allfiles = asLogical(args[0]); args = (args + 1);
+    int allfiles = asLogical(all_files_);
     if (allfiles == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "all.files");
-    int fullnames = asLogical(args[0]); args = (args + 1);
+    int fullnames = asLogical(full_names_);
     if (fullnames == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "full.names");
-    int recursive = asLogical(args[0]); args = (args + 1);
+    int recursive = asLogical(recursive_);
     if (recursive == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "recursive");
-    int igcase = asLogical(args[0]); args = (args + 1);
+    int igcase = asLogical(ignore_case_);
     if (igcase == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "ignore.case");
-    int idirs = asLogical(args[0]); args = (args + 1);
+    int idirs = asLogical(include_dirs_);
     if (idirs == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "include.dirs");
-    int nodots = asLogical(args[0]);
+    int nodots = asLogical(no_dots_);
     if (nodots == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "no..");
 
@@ -1259,7 +1248,7 @@ static void list_dirs(const char *dnp, const char *nm,
     }
 }
 
-SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* full_names_, CXXR::RObject* recursive_)
 {
     PROTECT_INDEX idx;
     SEXP d, ans;
@@ -1267,13 +1256,12 @@ SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::
     const char *dnp;
     int countmax = 128;
 
-    op->checkNumArgs(num_args, call);
-    d = args[0]; args = (args + 1);
+    d = path_;
     if (!isString(d)) error(_("invalid '%s' argument"), "directory");
-    fullnames = asLogical(args[0]); args = (args + 1);
+    fullnames = asLogical(full_names_);
     if (fullnames == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "full.names");
-    recursive = asLogical(args[0]); args = (args + 1);
+    recursive = asLogical(recursive_);
     if (recursive == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "recursive");
 
@@ -1291,10 +1279,9 @@ SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_Rhome(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_Rhome(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     char *path;
-    op->checkNumArgs(num_args, call);
     if (!(path = R_HomeDir()))
 	error(_("unable to determine R home location"));
     return mkString(path);
@@ -1308,12 +1295,11 @@ static Rboolean attribute_hidden R_WFileExists(const wchar_t *path)
 }
 #endif
 
-SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_)
 {
     SEXP file, ans;
     int i, nfile;
-    op->checkNumArgs(num_args, call);
-    if (!isString(file = args[0]))
+    if (!isString(file = dots_))
 	error(_("invalid '%s' argument"), "file");
     nfile = length(file);
     ans = allocVector(LGLSXP, nfile);
@@ -1343,7 +1329,6 @@ SEXP attribute_hidden do_filechoose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int _new, len;
     char buf[CHOOSEBUFSIZE];
-    checkArity(op, args);
     _new = asLogical(CAR(args));
     if ((len = R_ChooseFile(_new, buf, CHOOSEBUFSIZE)) == 0)
 	error(_("file choice cancelled"));
@@ -1363,17 +1348,16 @@ extern int winAccessW(const wchar_t *path, int mode);
 #endif
 
 /* we require 'access' as from 2.12.0 */
-SEXP attribute_hidden do_fileaccess(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileaccess(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* mode_)
 {
     SEXP fn, ans;
     int i, n, mode, modemask;
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = names_;
     if (!isString(fn))
 	error(_("invalid '%s' argument"), "names");
     n = length(fn);
-    mode = asInteger(args[1]);
+    mode = asInteger(mode_);
     if (mode < 0 || mode > 7) error(_("invalid '%s' argument"), "mode");
     modemask = 0;
     if (mode & 1) modemask |= X_OK;
@@ -1579,7 +1563,6 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
     const wchar_t *names;
     wglob_t globbuf;
 
-    checkArity(op, args);
     fn = CAR(args);
     nfiles = length(fn);
     if (nfiles > 0) {
@@ -1611,7 +1594,7 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
 #  include <glob.h>
 # endif
 
-SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* recursive_, CXXR::RObject* force_)
 {
     SEXP  fn;
     int i, nfiles, failures = 0, recursive, force;
@@ -1622,16 +1605,15 @@ SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::Bu
     glob_t globbuf;
 #endif
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = x_;
     nfiles = length(fn);
     if (nfiles > 0) {
 	if (!isString(fn))
 	    error(_("invalid '%s' argument"), "x");
-	recursive = asLogical(args[1]);
+	recursive = asLogical(recursive_);
 	if (recursive == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "recursive");
-	force = asLogical(args[2]);
+	force = asLogical(force_);
 	if (force == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "force");
 	for (i = 0; i < nfiles; i++) {
@@ -1713,7 +1695,6 @@ static void chmod_one(const char *name)
 SEXP attribute_hidden do_dirchmod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP dr;
-    checkArity(op, args);
     dr = CAR(args);
     if(!isString(dr) || length(dr) != 1)
 	error(_("invalid '%s' argument"), "dir");
@@ -1724,13 +1705,12 @@ SEXP attribute_hidden do_dirchmod(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
 
-SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_)
 {
     int cat;
     char *p = nullptr;
 
-    op->checkNumArgs(num_args, call);
-    cat = asInteger(args[0]);
+    cat = asInteger(category_);
     if (cat == NA_INTEGER || cat < 0)
 	error(_("invalid '%s' argument"), "category");
     switch(cat) {
@@ -1756,14 +1736,13 @@ SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* Locale specs are always ASCII */
-SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_, CXXR::RObject* locale_)
 {
-    SEXP locale = args[1], ans;
+    SEXP locale = locale_, ans;
     int cat;
     const char *p;
 
-    op->checkNumArgs(num_args, call);
-    cat = asInteger(args[0]);
+    cat = asInteger(category_);
     if (cat == NA_INTEGER || cat < 0)
 	error(_("invalid '%s' argument"), "category");
     if (!isString(locale) || LENGTH(locale) != 1)
@@ -1855,7 +1834,7 @@ SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR:
 
 
 
-SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, ansnames;
     struct lconv *lc = localeconv();
@@ -1914,13 +1893,12 @@ SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR
 }
 
 /* .Internal function for path.expand */
-SEXP attribute_hidden do_pathexpand(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pathexpand(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
 {
     SEXP fn, ans;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = path_;
     if (!isString(fn))
 	error(_("invalid '%s' argument"), "path");
     n = length(fn);
@@ -1963,7 +1941,7 @@ static Rboolean R_can_use_X11(void)
 #endif
 
 /* only actually used on Unix */
-SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
 #ifdef Unix
     return ScalarLogical(R_can_use_X11());
@@ -1972,7 +1950,7 @@ SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const
 #endif
 }
 
-SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, ansnames;
     int i = 0;
@@ -1983,8 +1961,6 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
     int X11 = FALSE;
 # endif
 #endif
-
-    op->checkNumArgs(num_args, call);
 
     PROTECT(ans = allocVector(LGLSXP, 18));
     PROTECT(ansnames = allocVector(STRSXP, 18));
@@ -2164,7 +2140,6 @@ SEXP attribute_hidden do_nsl(/*const*/ CXXR::Expression* call, const CXXR::Built
     const char *name; char ip[] = "xxx.xxx.xxx.xxx";
     struct hostent *hp;
 
-    op->checkNumArgs(num_args, call);
     if (!isString(args[0]) || length(args[0]) != 1)
 	error(_("'hostname' must be a character vector of length 1"));
     name = translateChar(STRING_ELT(args[0], 0));
@@ -2193,9 +2168,8 @@ SEXP attribute_hidden do_nsl(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #endif
 
-SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
-    op->checkNumArgs(num_args, call);
     return ScalarInteger(getpid());
 }
 
@@ -2208,22 +2182,21 @@ SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR:
 */
 #ifndef Win32
 /* mkdir is defined in <sys/stat.h> */
-SEXP attribute_hidden do_dircreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dircreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* showWarnings_, CXXR::RObject* recursive_, CXXR::RObject* mode_)
 {
     SEXP path;
     int res, show, recursive, mode, serrno = 0;
     char *p, dir[PATH_MAX];
 
-    op->checkNumArgs(num_args, call);
-    path = args[0];
+    path = path_;
     if (!isString(path) || length(path) != 1)
 	error(_("invalid '%s' argument"), "path");
     if (STRING_ELT(path, 0) == NA_STRING) return ScalarLogical(FALSE);
-    show = asLogical(args[1]);
+    show = asLogical(showWarnings_);
     if (show == NA_LOGICAL) show = 0;
-    recursive = asLogical(args[2]);
+    recursive = asLogical(recursive_);
     if (recursive == NA_LOGICAL) recursive = 0;
-    mode = asInteger(args[3]);
+    mode = asInteger(mode_);
     if (mode == NA_LOGICAL) mode = 0777;
     strcpy(dir, R_ExpandFileName(translateChar(STRING_ELT(path, 0))));
     /* remove trailing slashes */
@@ -2274,7 +2247,6 @@ SEXP attribute_hidden do_dircreate(SEXP call, SEXP op, SEXP args, SEXP env)
     wchar_t *p, dir[MAX_PATH];
     int res, show, recursive, serrno = 0;
 
-    checkArity(op, args);
     path = CAR(args);
     if (!isString(path) || length(path) != 1)
 	error(_("invalid '%s' argument"), "path");
@@ -2447,7 +2419,6 @@ SEXP attribute_hidden do_filecopy(SEXP call, SEXP op, SEXP args, SEXP rho)
     wchar_t *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
     int i, nfiles, over, recursive, perms, dates, nfail;
 
-    checkArity(op, args);
     fn = CAR(args);
     nfiles = length(fn);
     PROTECT(ans = allocVector(LGLSXP, nfiles));
@@ -2661,32 +2632,31 @@ copy_error:
 }
 
 /* file.copy(files, dir, recursive), only */
-SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* overwrite_, CXXR::RObject* recursive_, CXXR::RObject* copy_mode_, CXXR::RObject* copy_date_)
 {
     SEXP fn, to, ans;
     char *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
     int i, nfiles, over, recursive, perms, dates, nfail;
 
-    op->checkNumArgs(num_args, call);
-    fn = args[0];
+    fn = from_;
     nfiles = length(fn);
     PROTECT(ans = allocVector(LGLSXP, nfiles));
     if (nfiles > 0) {
 	if (!isString(fn))
 	    error(_("invalid '%s' argument"), "from");
-	to = args[1];
+	to = to_;
 	if (!isString(to) || LENGTH(to) != 1)
 	    error(_("invalid '%s' argument"), "to");
-	over = asLogical(args[2]);
+	over = asLogical(overwrite_);
 	if (over == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "over");
-	recursive = asLogical(args[3]);
+	recursive = asLogical(recursive_);
 	if (recursive == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "recursive");
-	perms = asLogical(args[4]);
+	perms = asLogical(copy_mode_);
 	if (perms == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "copy.mode");
-	dates = asLogical(args[5]);
+	dates = asLogical(copy_date_);
 	if (dates == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "copy.dates");
 	strncpy(dir,
@@ -2728,7 +2698,7 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 }
 #endif
 
-SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
 #ifdef Win32
     int len = 4;
@@ -2736,7 +2706,6 @@ SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR:
     int len = 3;
 #endif
     SEXP ans, names;
-    op->checkNumArgs(num_args, call);
     PROTECT(ans = allocVector(VECSXP, len));
     PROTECT(names = allocVector(STRSXP, len));
     SET_STRING_ELT(names, 0, mkChar("MBCS"));
@@ -2756,23 +2725,22 @@ SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR:
 
 /* do_normalizepath moved to util.c in R 2.13.0 */
 
-SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* mode_, CXXR::RObject* use_umask_)
 {
 #ifdef HAVE_CHMOD
     SEXP paths, smode, ans;
     int i, m, n, *modes, res;
     mode_t um = 0;
 
-    op->checkNumArgs(num_args, call);
-    paths = args[0];
+    paths = paths_;
     if (!isString(paths))
 	error(_("invalid '%s' argument"), "paths");
     n = LENGTH(paths);
-    PROTECT(smode = coerceVector(args[1], INTSXP));
+    PROTECT(smode = coerceVector(mode_, INTSXP));
     modes = INTEGER(smode);
     m = LENGTH(smode);
     if(!m && n) error(_("'mode' must be of length at least one"));
-    int useUmask = asLogical(args[2]);
+    int useUmask = asLogical(use_umask_);
     if (useUmask == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "use_umask");
 #ifdef HAVE_UMASK
@@ -2807,7 +2775,6 @@ SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP paths, ans;
     int i, n;
 
-    checkArity(op, args);
     paths = CAR(args);
     if (!isString(paths))
 	error(_("invalid '%s' argument"), "paths");
@@ -2820,14 +2787,13 @@ SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::
 #endif
 }
 
-SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_)
 {
     SEXP ans;
     int mode;
     mode_t res = 0;
 
-    op->checkNumArgs(num_args, call);
-    mode = asInteger(args[0]);
+    mode = asInteger(mode_);
 #ifdef HAVE_UMASK
     if (mode == NA_INTEGER) {
 	res = umask(0);
@@ -2847,7 +2813,7 @@ SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_)
 {
     SEXP paths, ans;
     int n;
@@ -2857,8 +2823,7 @@ SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::
     int i;
 #endif
 
-    op->checkNumArgs(num_args, call);
-    paths = args[0];
+    paths = paths_;
     if(!isString(paths))
 	error(_("invalid '%s' argument"), "paths");
     n = LENGTH(paths);
@@ -2878,11 +2843,10 @@ SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_Cstack_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_Cstack_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
 {
     SEXP ans, nms;
 
-    op->checkNumArgs(num_args, call);
     PROTECT(ans = allocVector(INTSXP, 4));
     PROTECT(nms = allocVector(STRSXP, 4));
     /* FIXME: could be out of range */
@@ -2932,11 +2896,10 @@ static int winSetFileTime(const char *fn, time_t ftime)
 #endif
 
 SEXP attribute_hidden
-do_setFileTime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_setFileTime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* time_)
 {
-    op->checkNumArgs(num_args, call);
-    const char *fn = translateChar(STRING_ELT(args[0], 0));
-    int ftime = asInteger(args[1]), res;
+    const char *fn = translateChar(STRING_ELT(path_, 0));
+    int ftime = asInteger(time_), res;
 
 #ifdef Win32
     res  = winSetFileTime(fn, (time_t)ftime);
@@ -2976,7 +2939,6 @@ SEXP attribute_hidden do_mkjunction(SEXP call, SEXP op, SEXP args, SEXP rho)
     wchar_t from[10000];
     const wchar_t *to;
 
-    checkArity(op, args);
     /* from and to are both directories: and to exists */
     wcscpy(from, filenameToWchar(STRING_ELT(CAR(args), 0), FALSE));
     to = filenameToWchar(STRING_ELT(CADR(args), 0), TRUE);
@@ -3043,7 +3005,6 @@ void u_getVersion(UVersionInfo versionArray);
 SEXP attribute_hidden
 do_eSoftVersion(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     SEXP ans = PROTECT(allocVector(STRSXP, 7));
     SEXP nms = PROTECT(allocVector(STRSXP, 7));
     setAttrib(ans, R_NamesSymbol, nms);
@@ -3098,7 +3059,6 @@ extern "C" void Rsleep(double timeint);
 
 SEXP attribute_hidden do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
     double time = asReal(CAR(args));
     if (ISNAN(time) || time < 0.)
 	errorcall(call, _("invalid '%s' value"), "time");

@@ -930,8 +930,6 @@ static SEXP do_while_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> t;
     volatile SEXP body;
 
-    checkArity(op, args);
-
     /* CXXR FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
@@ -991,8 +989,6 @@ static SEXP do_repeat_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile int bgn;
     GCStackRoot<> t;
     volatile SEXP body;
-
-    checkArity(op, args);
 
     /* CXXR FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
@@ -1056,15 +1052,11 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-RObject* attribute_hidden do_paren(/*const*/ Expression* call,
-				   const BuiltInFunction* op,
-				   Environment* env,
-				   RObject* const* args,
-				   int num_args,
-				   const PairList* tags)
+RObject* attribute_hidden do_paren(CXXR::Expression* call,
+				   const CXXR::BuiltInFunction* op,
+				   CXXR::RObject* x_)
 {
-    op->checkNumArgs(num_args, call);
-    return args[0];
+    return x_;
 }
 
 SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1320,8 +1312,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	GCStackRoot<> lhs(evalseq(CADR(expr), rho,
 				  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc));
 
-	GCStackRoot<> rhsprom(Rf_mkPROMISE(CADR(args), rho));
-	SET_PRVALUE(rhsprom, rhs);
+	GCStackRoot<> rhsprom(Promise::createEvaluatedPromise(CADR(args), rhs));
 
 	SEXP firstarg = CADR(expr);
 	while (Rf_isLanguage(firstarg)) {
@@ -1402,16 +1393,6 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     return saverhs;
 #endif
 }
-
-/* Defunct in 1.5.0
-SEXP attribute_hidden do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    checkArity(op,args);
-    Rprintf(".Alias is deprecated; there is no replacement \n");
-    SET_NAMED(CAR(args), 0);
-    return CAR(args);
-}
-*/
 
 /*  Assignment in its various forms  */
 
@@ -1546,7 +1527,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     int frame;
 
-    checkArity(op, args);
     expr = CAR(args);
     env = CADR(args);
     encl = CADDR(args);
@@ -1662,7 +1642,6 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, nm, ret;
 
-    checkArity(op, args);
     x = CAR(args);
     x = Rf_eval(x, rho);
     PROTECT(x);
@@ -1717,6 +1696,19 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
+static bool isDefaultMethod(const Expression* call) {
+    RObject* callcar = call->car();
+    if (callcar->sexptype() != SYMSXP) {
+	return false;
+    }
+    const String* symbol_name = static_cast<Symbol*>(callcar)->name();
+
+    static const size_t suffix_length = strlen(".default");
+    if (symbol_name->size() < suffix_length)
+	return false;
+    return strcmp(symbol_name->c_str() + symbol_name->size() - suffix_length,
+		  ".default") == 0;
+}
 
 /* Rf_DispatchOrEval is used in internal functions which dispatch to
  * object methods (e.g. "[" or "[[").  The code either builds promises
@@ -1728,12 +1720,12 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
  * at large in the world.
  */
 attribute_hidden
-int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
+int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 		      SEXP rho, SEXP *ans, MissingArgHandling dropmissing,
 		      int argsevald)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
-    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+    BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
     ArgList arglist(SEXP_downcast<PairList*>(args),
 		    (argsevald ? ArgList::EVALUATED : ArgList::RAW));
     Environment* callenv = SEXP_downcast<Environment*>(rho);
@@ -1755,8 +1747,8 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	// Try for formal method.
 	if (x->isS4Object() && R_has_methods(func)) {
 	    // create a promise to pass down to applyClosure
-	    if (arglist.status() == ArgList::RAW)
-		arglist.wrapInPromises(callenv);
+	    arglist.wrapInPromises(callenv, callx);
+
 	    /* This means S4 dispatch */
 	    std::pair<bool, SEXP> pr
 		= R_possible_dispatch(callx, func,
@@ -1767,17 +1759,9 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		return 1;
 	    }
 	}
-	char* suffix = nullptr;
-	{
-	    RObject* callcar = callx->car();
-	    if (callcar->sexptype() == SYMSXP) {
-		Symbol* sym = static_cast<Symbol*>(callcar);
-		suffix = Rf_strrchr(sym->name()->c_str(), '.');
-	    }
-	}
-	if (!suffix || strcmp(suffix, ".default")) {
-	    if (arglist.status() == ArgList::RAW)
-		arglist.wrapInPromises(callenv);
+	if (!isDefaultMethod(callx)) {
+	    if (arglist.status() != ArgList::PROMISED)
+		arglist.wrapInPromises(callenv, callx);
 	    /* The context set up here is needed because of the way
 	       Rf_usemethod() is written.  Rf_DispatchGroup() repeats some
 	       internal Rf_usemethod() code and avoids the need for a
@@ -1797,6 +1781,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
+	    const char* generic = func->name();
 	    int um = Rf_usemethod(generic, x, call,
 				  const_cast<PairList*>(arglist.list()),
 				  working_env, callenv, R_BaseEnv, ans);
@@ -1860,16 +1845,8 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     /* check whether we are processing the default method */
-    {
-	RObject* callcar = callx->car();
-	if (callcar->sexptype() == SYMSXP) {
-	    string callname
-		= static_cast<Symbol*>(callcar)->name()->stdstring();
-	    string::size_type index = callname.find_last_of(".");
-	    if (index != string::npos
-		&& callname.substr(index) == ".default")
-		return 0;
-	}
+    if (isDefaultMethod(callx)) {
+	return 0;
     }
 
     std::size_t nargs = (isOps ? numargs : 1);
@@ -1949,14 +1926,10 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	supp_frame->bind(DotMethodSymbol, dotmethod);
     }
 
-    /* the arguments have been evaluated; since we are passing them */
-    /* out to a closure we need to wrap them in promises so that */
-    /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
 	    newcall(new Expression(m->symbol(), callx->tail()));
 	ArgList arglist(callargs, ArgList::EVALUATED);
-	arglist.wrapInPromises(nullptr);
 	// Ensure positional matching for operators:
 	if (isOps)
 	    arglist.stripTags();
@@ -1981,8 +1954,6 @@ SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP file, s;
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
     PROTECT(file = Rf_coerceVector(args[0], STRSXP));
 
     if (! Rf_isValidStringF(file))
@@ -2002,8 +1973,6 @@ SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::
 {
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
     if (!Rf_isValidStringF(args[1]))
 	Rf_errorcall(call, _("'file' must be non-empty string"));
     if (TYPEOF(args[2]) != LGLSXP)
@@ -2022,7 +1991,6 @@ SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::
 SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_num_math_threads, newi;
-    op->checkNumArgs(num_args, call);
     newi = Rf_asInteger(args[0]);
     if (newi >= 0 && newi <= R_max_num_math_threads)
 	R_num_math_threads = newi;
@@ -2032,7 +2000,6 @@ SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const C
 SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_max_num_math_threads, newi;
-    op->checkNumArgs(num_args, call);
     newi = Rf_asInteger(args[0]);
     if (newi >= 0) {
 	R_max_num_math_threads = newi;
@@ -2040,18 +2007,4 @@ SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, cons
 	    R_num_math_threads = R_max_num_math_threads;
     }
     return Rf_ScalarInteger(old);
-}
-
-#include "CXXR/ArgMatcher.hpp"
-
-/* Create a promise to evaluate each argument.	Although this is most */
-/* naturally attacked with a recursive algorithm, we use the iterative */
-/* form below because it is does not cause growth of the pointer */
-/* protection stack, and because it is a little more efficient. */
-
-SEXP attribute_hidden Rf_promiseArgs(SEXP el, SEXP rho)
-{
-    ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
-    arglist.wrapInPromises(SEXP_downcast<Environment*>(rho));
-    return const_cast<PairList*>(arglist.list());
 }

@@ -284,8 +284,6 @@ SEXP attribute_hidden do_cmathfuns(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP x, y = R_NilValue;	/* -Wall*/
     R_xlen_t i, n;
 
-    checkArity(op, args);
-    check1arg(args, call, "z");
     if (DispatchGroup("Complex", call, op, args, env, &x))
 	return x;
     x = CAR(args);
@@ -796,7 +794,6 @@ SEXP attribute_hidden do_polyroot(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean fail;
     int degree, i, n;
 
-    checkArity(op, args);
     z = CAR(args);
     switch(TYPEOF(z)) {
     case CPLXSXP:

@@ -1346,32 +1346,25 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x;
 
     SEXPTYPE type = STRSXP;
-    int op0 = op->variant();
-    CXXRCONST char *name = nullptr /* -Wall */;
-
-    Rf_check1arg(tags, call, "x");
-    switch(op0) {
+    switch(op->variant()) {
     case 0:
-	name = "as.character"; break;
+	type = STRSXP; break;
     case 1:
-	name = "as.integer"; type = INTSXP; break;
+	type = INTSXP; break;
     case 2:
-	name = "as.double"; type = REALSXP; break;
+	type = REALSXP; break;
     case 3:
-	name = "as.complex"; type = CPLXSXP; break;
+	type = CPLXSXP; break;
     case 4:
-	name = "as.logical"; type = LGLSXP; break;
+	type = LGLSXP; break;
     case 5:
-	name = "as.raw"; type = RAWSXP; break;
+	type = RAWSXP; break;
     }
-    auto dispatched = op->InternalDispatch(call, name, num_args, args, tags, rho);
-    if (dispatched.first)
-	return dispatched.second;
 
-    /* Method dispatch has failed, we now just */
-    /* run the generic internal code */
+    if (type == RAWSXP) {
+	op->checkNumArgs(num_args, 1, call);
+    }
 
-    op->checkNumArgs(num_args, call);
     x = num_args ? args[0] : nullptr;
     if(TYPEOF(x) == type) {
 	if(ATTRIB(x) == R_NilValue) return x;
@@ -1391,15 +1384,7 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP x, ans;
     SEXPTYPE type;
 
-    auto dispatched = op->InternalDispatch(call, "as.vector",
-					   num_args, args, tags, rho);
-    if (dispatched.first)
-	return dispatched.second;
-
-    /* Method dispatch has failed, we now just */
-    /* run the generic internal code */
-
-    op->checkNumArgs(num_args, call);
+    op->checkNumArgs(num_args, 2, call);
     x = args[0];
 
     if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
@@ -1470,20 +1455,18 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_)
 {
     SEXP arglist, envir, names, args, pargs, body;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-
     /* Check the arguments; we need a list and environment. */
 
-    arglist = args_[0];
+    arglist = x_;
     if (!Rf_isNewList(arglist))
 	Rf_errorcall(call, _("list argument expected"));
 
-    envir = args_[1];
+    envir = envir_;
     if (Rf_isNull(envir)) {
 	Rf_error(_("use of NULL environment is defunct"));
 	envir = R_BaseEnv;
@@ -1521,15 +1504,11 @@ SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR
 
 
 /* primitive */
-SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* args)
 {
     SEXP ap, ans, names;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    RObject* args = args_[0];
     switch (TYPEOF(args)) {
     case LANGSXP:
 	ans = args;
@@ -1721,10 +1700,9 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
-    op->checkNumArgs(num_args, call);
-    return Rf_type2rstr(TYPEOF(args[0]));
+    return Rf_type2rstr(TYPEOF(x_));
 }
 
 /* Define many of the <primitive> "is.xxx" functions :
@@ -1733,27 +1711,6 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    /* These are all builtins, so we do not need to worry about
-       evaluating arguments in Rf_DispatchOrEval */
-    if(op->variant() >= 100 && op->variant() < 200 &&
-       Rf_isObject(args[0])) {
-	/* This used CHAR(PRINTNAME(CAR(call))), but that is not
-	   necessarily correct, e.g. when called from lapply() */
-	const char *nm;
-	switch(op->variant()) {
-	case 100: nm = "is.numeric"; break;
-	case 101: nm = "is.matrix"; break;
-	case 102: nm = "is.array"; break;
-	default: nm = ""; /* -Wall */
-	}
-	auto dispatched = op->InternalDispatch(call, nm,
-					       num_args, args, tags, rho);
-	if (dispatched.first)
-	    return dispatched.second;
-    }
 
     PROTECT(ans = Rf_allocVector(LGLSXP, 1));
 
@@ -1900,17 +1857,16 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
  * It seems to make more sense to check for a dim attribute.
  */
 
-SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* mode_)
 {
     SEXP ans, a, x;
     const char *stype;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0];
-    if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
+    x = x_;
+    if (!Rf_isString(mode_) || LENGTH(mode_) != 1)
 	errorcall_return(call, R_MSG_mode);
 
-    stype = CHAR(STRING_ELT(args[1], 0)); /* ASCII */
+    stype = CHAR(STRING_ELT(mode_, 0)); /* ASCII */
 
     /* "name" and "symbol" are synonymous */
     if (streql(stype, "name"))
@@ -1933,8 +1889,8 @@ SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::
 	LOGICAL(ans)[0] = 0;
 
     /* We allow a "names" attribute on any vector. */
-    if (LOGICAL(ans)[0] && ATTRIB(args[0]) != R_NilValue) {
-	a = ATTRIB(args[0]);
+    if (LOGICAL(ans)[0] && ATTRIB(x_) != R_NilValue) {
+	a = ATTRIB(x_);
 	while(a != R_NilValue) {
 	    if (TAG(a) != R_NamesSymbol) {
 		LOGICAL(ans)[0] = 0;
@@ -1980,13 +1936,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    auto dispatched = op->InternalDispatch(call, "is.na", num_args, args, tags,
-					   rho);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(args[0]) && !Rf_isVector(args[0])))
 	errorcall_return(call, "is.na " R_MSG_list_vec);
@@ -2063,32 +2012,6 @@ SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::Buil
     return ans;
 }
 
-namespace {
-    inline int LIST_VEC_NAN(SEXP s)
-    {
-	if (!Rf_isVector(s) || length(s) != 1)
-	    return 0;
-	else {
-	    switch (TYPEOF(s)) {
-	    case LGLSXP:
-	    case INTSXP:
-	    case STRSXP:
-		return 0;
-		break;
-	    case REALSXP:
-		return R_IsNaN(REAL(s)[0]);
-		break;
-	    case CPLXSXP:
-		return (R_IsNaN(COMPLEX(s)[0].r)
-			|| R_IsNaN(COMPLEX(s)[0].i));
-		break;
-	    default:
-		return 0;  // 2007/08/08 arr: Formerly no default
-	    }
-	}
-    }
-}
-
 // Check if x has missing values; the anyNA.default() method
 static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 /* Original code:
@@ -2159,7 +2082,7 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 	call2 = PROTECT(Rf_duplicate(call));
 	for (i = 0; i < n; i++, x = CDR(x)) {
 	    SETCAR(args2, CAR(x)); SETCADR(call2, CAR(x));
-	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans,
+	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
 				   MissingArgHandling::Keep, 1)
 		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
 		UNPROTECT(2);
@@ -2176,7 +2099,7 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 	call2 = PROTECT(Rf_duplicate(call));
 	for (i = 0; i < n; i++) {
 	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
-	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans,
+	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
 				   MissingArgHandling::Keep, 1)
 		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
 		UNPROTECT(2);
@@ -2202,12 +2125,12 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(args) < 1 || length(args) > 2)
 	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
 
-    if (Rf_DispatchOrEval(call, op, "anyNA", args, rho, &ans,
+    if (Rf_DispatchOrEval(call, op, args, rho, &ans,
 			  MissingArgHandling::Keep, 1))
 	return ans;
 
     if(length(args) == 1) {
-	Rf_check1arg(args, call, "x");
+	SEXP_downcast<Expression*>(call)->check1arg("x");
  	ans = Rf_ScalarLogical(anyNA(call, op, args, rho));
    } else {
 	/* This is a primitive, so we manage argument matching ourselves.
@@ -2230,13 +2153,6 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    auto dispatched = op->InternalDispatch(call, "is.nan", num_args, args, tags,
-					   rho);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(args[0]) && !Rf_isVector(args[0]))
 	errorcall_return(call, "is.nan " R_MSG_list_vec);
@@ -2293,13 +2209,6 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    auto dispatched = op->InternalDispatch(call, "is.finite",
-					   num_args, args, tags, rho);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.finite " R_MSG_list_vec);
@@ -2355,13 +2264,6 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
     double xr, xi;
     R_xlen_t i, n;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    auto dispatched = op->InternalDispatch(call, "is.infinite",
-					   num_args, args, tags, rho);
-    if (dispatched.first)
-	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.infinite " R_MSG_list_vec);
@@ -2424,8 +2326,6 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP rest, evargs, rfun, tmp;
 
-    if (length(args) < 1) Rf_errorcall(call, _("'name' is missing"));
-    Rf_check1arg(args, call, "name");
     PROTECT(rfun = Rf_eval(CAR(args), rho));
     /* zero-length string check used to be here but Rf_install gives
        better error message.
@@ -2447,16 +2347,14 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (rfun);
 }
 
-SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* args_, CXXR::RObject* envir_)
 {
     SEXP c, fun, names, envir;
     int i, n;
 
-    op->checkNumArgs(num_args, call);
-
-    fun = args_[0];
-    envir = args_[2];
-    SEXP args = args_[1];
+    fun = what_;
+    envir = envir_;
+    SEXP args = args_;
 
     /* must be a string or a function:
        zero-length string check used to be here but Rf_install gives
@@ -2495,8 +2393,8 @@ SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #ifndef NEW
 	SETCAR(c, VECTOR_ELT(args, i));
 #else
-	SETCAR(c, mkPROMISE(VECTOR_ELT(args, i), rho));
-	SET_PRVALUE(CAR(c), VECTOR_ELT(args, i));
+	SETCAR(c, Promise::createEvaluatedPromise(VECTOR_ELT(args, i),
+						  VECTOR_ELT(args, i)));
 #endif
 	if (Rf_ItemName(names, int(i)) != R_NilValue)
 	    SET_TAG(c, Rf_installTrChar(Rf_ItemName(names, i)));
@@ -2641,8 +2539,6 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    checkArity(op, args);
-    Rf_check1arg(args, call, "expr");
     SEXP val = CAR(args);
     /* Make sure expression has NAMED == 2 before being returning
        in order to avoid modification of source code */
@@ -2796,27 +2692,18 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     return obj;
 }
 
-SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* klass)
 {
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    return R_set_class(args[0], args[1], call);
+    return R_set_class(object, klass, call);
 }
 
 /* primitive */
-SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* obj, CXXR::RObject* value)
 {
 /* storage.mode(obj) <- value */
-    SEXP obj, value, ans;
+    SEXP ans;
     SEXPTYPE type;
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    obj = args[0];
-
-    value = args[1];
     if (!Rf_isValidString(value) || STRING_ELT(value, 0) == NA_STRING)
 	Rf_error(_("'value' must be non-null character string"));
     type = Rf_str2type(CHAR(STRING_ELT(value, 0)));

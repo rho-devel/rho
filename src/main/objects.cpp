@@ -789,12 +789,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* primitive */
-SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object)
 {
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "x");
-
-    RObject* object = args[0];
     switch(TYPEOF(object)) {
     case ENVSXP:
 	Rf_errorcall(call, _("cannot unclass an environment"));
@@ -876,13 +872,11 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
     return rval;
 }
 
-SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* what_, CXXR::RObject* which_)
 {
-    op->checkNumArgs(num_args, call);
-
-    return inherits3(/* x = */ args[0],
-		     /* what = */ args[1],
-		     /* which = */ args[2]);
+    return inherits3(/* x = */ x_,
+		     /* what = */ what_,
+		     /* which = */ which_);
 }
 
 
@@ -1106,9 +1100,6 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
-    op->checkNumArgs(num_args, call);
-    Rf_check1arg(tags, call, "f");
-
     if(!ptr) {
 	Rf_warningcall(call,
 		    _("'standardGeneric' called without methods dispatch enabled (will be ignored)"));
@@ -1116,10 +1107,11 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
 	ptr = R_get_standardGeneric_ptr();
     }
 
-    op->checkNumArgs(num_args, call); /* set to -1 */
     if (num_args == 0 || !Rf_isValidStringF(args[0]))
 	Rf_errorcall(call,
 		  _("argument to 'standardGeneric' must be a non-empty character string"));
+
+    call->check1arg("f");
     arg = args[0];
 
     PROTECT(fdef = get_this_generic(args, num_args));
@@ -1384,36 +1376,6 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
     quick_method_check_ptr = value;
 }
 
-static RObject *call_closure_from_prim(Closure *func, PairList *args,
-				       Expression *call_expression,
-				       Environment *call_env,
-				       Rboolean promisedArgs) {
-    if(!promisedArgs) {
-	/* Because we call this from a primitive op, args either contains
-	 * promises or actual values.  In the later case, we create promises
-	 * that have already been forced to the value in args.
-	 *
-	 * TODO(kmillar): why is this necessary?  We should be able to pass
-	 * either the args or the unforced promises directly to the closure.
-	 */
-	ArgList al(call_expression->tail(), ArgList::RAW);
-	al.wrapInPromises(call_env);
-
-	PairList* pargs = const_cast<PairList*>(al.list());
-	PairList *a, *b;
-	for (a = args, b = pargs;
-	     a != nullptr && b != nullptr;
-	     a = a->tail(), b = b->tail())
-	    SET_PRVALUE(b->car(), a->car());
-	// Check for unequal list lengths:
-	if (a != nullptr || b != nullptr)
-	    Rf_error(_("dispatch error"));
-	args = pargs;
-    }
-    ArgList al(args, ArgList::PROMISED);
-    return call_expression->invokeClosure(func, call_env, &al);
-}
-
 /* try to dispatch the formal method for this primitive op, by calling
    the stored generic function corresponding to the op.	 Requires that
    the methods be set up to return a special object rather than trying
@@ -1429,7 +1391,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
-    GCStackRoot<PairList> argspl(SEXP_downcast<PairList*>(args));
+    ArgList arglist(SEXP_downcast<PairList*>(args),
+		    promisedArgs ? ArgList::PROMISED : ArgList::EVALUATED);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
     SEXP value;
     GCStackRoot<> mlist;
@@ -1459,8 +1422,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = call_closure_from_prim(func, argspl, callx, callenv,
-					   promisedArgs);
+	    value = callx->invokeClosure(func, callenv, &arglist);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1473,7 +1435,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = call_closure_from_prim(func, argspl, callx, callenv, promisedArgs);
+    value = callx->invokeClosure(func, callenv, &arglist);
+    // Only occurs if func() didn't throw an exception.
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return std::pair<bool, SEXP>(false, nullptr);
@@ -1554,12 +1517,11 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 	    Rf_getAttrib(klass, R_PackageSymbol) != R_NilValue) ? TRUE: FALSE;
 }
 
-SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* flag_, CXXR::RObject* complete_)
 {
-    op->checkNumArgs(num_args, call);
-    SEXP object = args[0];
-    int flag = Rf_asLogical(args[1]), complete = Rf_asInteger(args[2]);
-    if(length(args[1]) != 1 || flag == NA_INTEGER)
+    SEXP object = object_;
+    int flag = Rf_asLogical(flag_), complete = Rf_asInteger(complete_);
+    if(length(flag_) != 1 || flag == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "flag");
     if(complete == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "complete");

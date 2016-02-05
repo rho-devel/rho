@@ -111,11 +111,6 @@ const char *R_ExpandFileName(const char *s)
  *  7) PLATFORM DEPENDENT FUNCTIONS
  */
 
-SEXP do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    return mkString("Win32");
-}
-
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
@@ -179,7 +174,6 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     int   vis = 0, flag = 2, i = 0, j, ll = 0;
     SEXP  cmd, fin, Stdout, Stderr, tlist = R_NilValue, tchar, rval;
 
-    checkArity(op, args);
     cmd = CAR(args);
     if (!isString(cmd) || LENGTH(cmd) != 1)
 	errorcall(call, _("character string expected as first argument"));

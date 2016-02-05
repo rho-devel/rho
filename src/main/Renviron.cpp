@@ -319,11 +319,9 @@ void process_user_Renviron()
     process_Renviron(s);
 }
 
-SEXP attribute_hidden do_readEnviron(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readEnviron(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
 {
-
-    op->checkNumArgs(num_args, call);
-    SEXP x = args[0];
+    SEXP x = path_;
     if (Rf_length(x) != 1 || !isString(x))
 	errorcall(call, _("argument '%s' must be a character string"), "x");
     const char *fn = R_ExpandFileName(translateChar(STRING_ELT(x, 0)));

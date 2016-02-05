@@ -75,7 +75,6 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
     R_xlen_t lendat;
 
-    op->checkNumArgs(num_args, call);
     vals = args[0]; args = (args + 1);
     switch(TYPEOF(vals)) {
 	case LGLSXP:
@@ -303,14 +302,13 @@ SEXP DropDims(SEXP x)
     return vb;
 }
 
-SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     GCStackRoot<> x;
     SEXP xdims;
     int i, n, shorten;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0];
+    x = x_;
     if ((xdims = getAttrib(x, R_DimSymbol)) != R_NilValue) {
 	n = LENGTH(xdims);
 	shorten = 0;
@@ -328,13 +326,9 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    op->checkNumArgs(num_args, call);
-    check1arg(tags, call, "x");
-
     SEXP x = args[0];
 
-    auto dispatched = op->InternalDispatch(call, "length",
-					   num_args, args, tags, rho);
+    auto dispatched = op->InternalDispatch(call, rho, num_args, args, tags);
     if (dispatched.first) {
 	RObject* ans = dispatched.second;
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
@@ -355,26 +349,34 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ScalarInteger(length(x));
 }
 
-static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
-    static SEXP length_op = NULL;
-    SEXP x_elt = VECTOR_ELT(x, i);
-    if (isObject(x_elt)) {
-        SEXP args, len;
-        PROTECT(args = list1(x_elt));
-        if (length_op == NULL) {
-            length_op = R_Primitive("length");
-        }
-        if (DispatchOrEval(call, length_op, "length", args, rho, &len,
-			   MissingArgHandling::Keep, 1)) {
-          return (R_xlen_t)
-	      (TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
-        }
-        UNPROTECT(1);
-    }
-    return(xlength(x_elt));
+static R_xlen_t getElementLength(SEXP x, R_xlen_t i, Expression* call,
+				 Environment* rho) {
+    return get_object_length(VECTOR_ELT(x, i), rho);
 }
 
-static SEXP do_lengths_long(SEXP x, SEXP call, SEXP rho)
+R_xlen_t get_object_length(RObject* object, Environment* rho)
+{
+    static BuiltInFunction* length_op
+	= BuiltInFunction::obtainPrimitive("length");
+
+    if (isObject(object))
+    {
+	// Create a call to length(x)
+	static Symbol* length = Symbol::obtain("length");
+	static Symbol* x = Symbol::obtain("x");
+	static Expression* call = new Expression(length, new PairList(x));
+	auto dispatched = length_op->InternalDispatch(
+	    call, rho, 1, &object, call->getArgs());
+	if (dispatched.first) {
+	    RObject* len = dispatched.second;
+	    return (R_xlen_t)
+		(TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
+	}
+    }
+    return(xlength(object));
+}
+
+static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
 {
     SEXP ans;
     R_xlen_t x_len, i;
@@ -389,9 +391,9 @@ static SEXP do_lengths_long(SEXP x, SEXP call, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_lengths(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_lengths(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP x = CAR(args), ans;
+    SEXP x = args[0], ans;
     R_xlen_t x_len, i;
     int *ans_elt;
 
@@ -424,7 +426,6 @@ SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP x, ans;
     int i, j, nr, nc;
 
-    op->checkNumArgs(num_args, call);
     /* This is the dimensions vector */
     x = args[0];
     if (!isInteger(x) || LENGTH(x) != 2)
@@ -621,28 +622,16 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
     }
 }
 
-
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
-SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_crossprod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* y)
 {
     int ldx, ldy, nrx, ncx, nry, ncy;
     SEXPTYPE mode;
-    SEXP x = CAR(args), y = CADR(args), xdims, ydims, ans;
+    SEXP xdims, ydims, ans;
     Rboolean sym;
 
-    if (PRIMVAL(op) == 0 && /* %*% is primitive, the others are .Internal() */
-       (IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
-       && R_has_methods(op)) {
-	SEXP s;
-	/* Remove argument names to ensure positional matching */
-	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	std::pair<bool, SEXP> pr
-	    = R_possible_dispatch(call, op, args, rho, FALSE);
-	if (pr.first) return pr.second;
-    }
-
     sym = isNull(y);
-    if (sym && (PRIMVAL(op) > 0)) y = x;
+    if (sym && (op->variant() > 0)) y = x;
     if ( !(isNumeric(x) || isComplex(x)) || !(isNumeric(y) || isComplex(y)) )
 	errorcall(call, _("requires numeric/complex matrix/vector arguments"));
 
@@ -653,14 +642,14 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (ldx != 2 && ldy != 2) {		/* x and y non-matrices */
 	// for crossprod, allow two cases: n x n ==> (1,n) x (n,1);  1 x n = (n, 1) x (1, n)
-	if (PRIMVAL(op) == 1 && LENGTH(x) == 1) {
+	if (op->variant() == 1 && LENGTH(x) == 1) {
 	    nrx = ncx = nry = 1;
 	    ncy = LENGTH(y);
 	}
 	else {
 	    nry = LENGTH(y);
 	    ncy = 1;
-	    if (PRIMVAL(op) == 0) {
+	    if (op->variant() == 0) {
 		nrx = 1;
 		ncx = LENGTH(x);
 		if(ncx == 1) {	        // y as row vector
@@ -679,7 +668,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ncy = INTEGER(ydims)[1];
 	nrx = 0;
 	ncx = 0;
-	if (PRIMVAL(op) == 0) {
+	if (op->variant() == 0) {
 	    if (LENGTH(x) == nry) {	/* x as row vector */
 		nrx = 1;
 		ncx = nry; /* == LENGTH(x) */
@@ -689,7 +678,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ncx = 1;
 	    }
 	}
-	else if (PRIMVAL(op) == 1) { /* crossprod() */
+	else if (op->variant() == 1) { /* crossprod() */
 	    if (LENGTH(x) == nry) {	/* x is a col vector */
 		nrx = nry; /* == LENGTH(x) */
 		ncx = 1;
@@ -713,7 +702,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ncx = INTEGER(xdims)[1];
 	nry = 0;
 	ncy = 0;
-	if (PRIMVAL(op) == 0) {
+	if (op->variant() == 0) {
 	    if (LENGTH(y) == ncx) {	/* y as col vector */
 		nry = ncx;
 		ncy = 1;
@@ -723,7 +712,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ncy = LENGTH(y);
 	    }
 	}
-	else if (PRIMVAL(op) == 1) { /* crossprod() */
+	else if (op->variant() == 1) { /* crossprod() */
 	    if (LENGTH(y) == nrx) {	/* y is a col vector */
 		nry = nrx;
 		ncy = 1;
@@ -751,12 +740,12 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     /* nr[ow](.) and nc[ol](.) are now defined for x and y */
 
-    if (PRIMVAL(op) == 0) {
+    if (op->variant() == 0) {
 	/* primitive, so use call */
 	if (ncx != nry)
 	    errorcall(call, _("non-conformable arguments"));
     }
-    else if (PRIMVAL(op) == 1) {
+    else if (op->variant() == 1) {
 	if (nrx != nry)
 	    error(_("non-conformable arguments"));
     }
@@ -765,25 +754,25 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("non-conformable arguments"));
     }
 
-    if (isComplex(CAR(args)) || isComplex(CADR(args)))
+    if (isComplex(x) || isComplex(y))
 	mode = CPLXSXP;
     else
 	mode = REALSXP;
-    SETCAR(args, coerceVector(CAR(args), mode));
-    SETCADR(args, coerceVector(CADR(args), mode));
+    x = coerceVector(x, mode);
+    y = coerceVector(y, mode);
 
-    if (PRIMVAL(op) == 0) {			/* op == 0 : matprod() */
+    if (op->variant() == 0) {			/* op == 0 : matprod() */
 
 	PROTECT(ans = allocMatrix(mode, nrx, ncy));
 	if (mode == CPLXSXP)
-	    cmatprod(COMPLEX(CAR(args)), nrx, ncx,
-		     COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+	    cmatprod(COMPLEX(x), nrx, ncx,
+		     COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else
-	    matprod(REAL(CAR(args)), nrx, ncx,
-		    REAL(CADR(args)), nry, ncy, REAL(ans));
+	    matprod(REAL(x), nrx, ncx,
+		    REAL(y), nry, ncy, REAL(ans));
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
-	PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
+	PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -832,29 +821,29 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    else if (PRIMVAL(op) == 1) {	/* op == 1: crossprod() */
+    else if (op->variant() == 1) {	/* op == 1: crossprod() */
 
 	PROTECT(ans = allocMatrix(mode, ncx, ncy));
 	if (mode == CPLXSXP)
 	    if(sym)
-		ccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			   COMPLEX(CAR(args)), nry, ncy, COMPLEX(ans));
+		ccrossprod(COMPLEX(x), nrx, ncx,
+			   COMPLEX(x), nry, ncy, COMPLEX(ans));
 	    else
-		ccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			   COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+		ccrossprod(COMPLEX(x), nrx, ncx,
+			   COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else {
 	    if(sym)
-		symcrossprod(REAL(CAR(args)), nrx, ncx, REAL(ans));
+		symcrossprod(REAL(x), nrx, ncx, REAL(ans));
 	    else
-		crossprod(REAL(CAR(args)), nrx, ncx,
-			  REAL(CADR(args)), nry, ncy, REAL(ans));
+		crossprod(REAL(x), nrx, ncx,
+			  REAL(y), nry, ncy, REAL(ans));
 	}
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
 	if (sym)
 	    PROTECT(ydims = xdims);
 	else
-	    PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	    PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -882,24 +871,24 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(ans = allocMatrix(mode, nrx, nry));
 	if (mode == CPLXSXP)
 	    if(sym)
-		tccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			    COMPLEX(CAR(args)), nry, ncy, COMPLEX(ans));
+		tccrossprod(COMPLEX(x), nrx, ncx,
+			    COMPLEX(x), nry, ncy, COMPLEX(ans));
 	    else
-		tccrossprod(COMPLEX(CAR(args)), nrx, ncx,
-			    COMPLEX(CADR(args)), nry, ncy, COMPLEX(ans));
+		tccrossprod(COMPLEX(x), nrx, ncx,
+			    COMPLEX(y), nry, ncy, COMPLEX(ans));
 	else {
 	    if(sym)
-		symtcrossprod(REAL(CAR(args)), nrx, ncx, REAL(ans));
+		symtcrossprod(REAL(x), nrx, ncx, REAL(ans));
 	    else
-		tcrossprod(REAL(CAR(args)), nrx, ncx,
-			   REAL(CADR(args)), nry, ncy, REAL(ans));
+		tcrossprod(REAL(x), nrx, ncx,
+			   REAL(y), nry, ncy, REAL(ans));
 	}
 
-	PROTECT(xdims = getAttrib(CAR(args), R_DimNamesSymbol));
+	PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
 	if (sym)
 	    PROTECT(ydims = xdims);
 	else
-	    PROTECT(ydims = getAttrib(CADR(args), R_DimNamesSymbol));
+	    PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
 
 	if (xdims != R_NilValue || ydims != R_NilValue) {
 	    SEXP dimnames, dimnamesnames, dnx=R_NilValue, dny=R_NilValue;
@@ -940,15 +929,31 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #undef YDIMS_ET_CETERA
 
-SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x = CAR(args), y = CADR(args);
+
+    if ((IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
+	&& R_has_methods(op)) {
+	SEXP s;
+	/* Remove argument names to ensure positional matching */
+	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
+	std::pair<bool, SEXP> pr
+	    = R_possible_dispatch(call, op, args, rho, FALSE);
+	if (pr.first) return pr.second;
+    }
+    return do_crossprod(SEXP_downcast<Expression*>(call),
+			SEXP_downcast<BuiltInFunction*>(op), x, y);
+}
+
+SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP a, r, dims, dimnames, dimnamesnames = R_NilValue,
 	ndimnamesnames, rnames, cnames;
     int ldim, ncol = 0, nrow = 0;
     R_xlen_t len = 0;
 
-    op->checkNumArgs(num_args, call);
-    a = args[0];
+    a = x_;
 
     if (isVector(a)) {
 	dims = getAttrib(a, R_DimSymbol);
@@ -1083,14 +1088,12 @@ SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR:
 	lj += iip[itmp] * stride[itmp];
 
 /* aperm (a, perm, resize = TRUE) */
-SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* a_, CXXR::RObject* perm_, CXXR::RObject* resize_)
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
 
-    op->checkNumArgs(num_args, call);
-
-    a = args[0];
+    a = a_;
     if (!isArray(a))
 	error(_("invalid first argument, must be an array"));
 
@@ -1101,7 +1104,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
     /* check the permutation */
 
     int *pp = static_cast<int *>( CXXR_alloc(size_t( n), sizeof(int)));
-    perm = args[1];
+    perm = perm_;
     if (length(perm) == 0) {
 	for (i = 0; i < n; i++) pp[i] = n-1-i;
     } else {
@@ -1215,7 +1218,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
     }
 
     /* handle the resize */
-    int resize = asLogical(args[2]);
+    int resize = asLogical(resize_);
     if (resize == NA_LOGICAL) error(_("'resize' must be TRUE or FALSE"));
     setAttrib(r, R_DimSymbol, resize ? dimsr : dimsa);
 
@@ -1250,17 +1253,16 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 }
 
 /* colSums(x, n, p, na.rm) and friends */
-SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* X_, CXXR::RObject* n_, CXXR::RObject* p_, CXXR::RObject* na_rm_)
 {
     SEXP x, ans = R_NilValue;
     int type;
     Rboolean NaRm, keepNA;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0]; args = (args + 1);
-    R_xlen_t n = asVecSize(args[0]); args = (args + 1);
-    R_xlen_t p = asVecSize(args[0]); args = (args + 1);
-    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
+    x = X_;
+    R_xlen_t n = asVecSize(n_);
+    R_xlen_t p = asVecSize(p_);
+    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(na_rm_));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
@@ -1421,13 +1423,12 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 */
 
 /* array(data, dim, dimnames) */
-SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* data_, CXXR::RObject* dim_, CXXR::RObject* dimnames_)
 {
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
 
-    op->checkNumArgs(num_args, call);
-    vals = args[0];
+    vals = data_;
     /* at least NULL can get here */
     switch(TYPEOF(vals)) {
 	case LGLSXP:
@@ -1444,8 +1445,8 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
 		type2char(TYPEOF(vals)));
     }
     lendat = XLENGTH(vals);
-    dims = args[1];
-    dimnames = args[2];
+    dims = dim_;
+    dimnames = dimnames_;
     PROTECT(dims = coerceVector(dims, INTSXP));
     int nd = LENGTH(dims);
     if (nd == 0) error(_("'dims' cannot be of length 0"));
@@ -1539,15 +1540,14 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* nrow_, CXXR::RObject* ncol_)
 {
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
 
-    op->checkNumArgs(num_args, call);
-    x = args[0];
-    snr = args[1];
-    snc = args[2];
+    x = x_;
+    snr = nrow_;
+    snc = ncol_;
     nr = asInteger(snr);
     if (nr == NA_INTEGER)
 	error(_("invalid 'nrow' value (too large or NA)"));
@@ -1593,24 +1593,23 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 
 /* backsolve(r, b, k, upper.tri, transpose) */
-SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* r_, CXXR::RObject* x_, CXXR::RObject* k_, CXXR::RObject* upper_tri_, CXXR::RObject* transpose_)
 {
     int nprot = 1;
-    op->checkNumArgs(num_args, call);
 
-    SEXP r = args[0]; args = (args + 1);
-    SEXP b = args[0]; args = (args + 1);
+    SEXP r = r_;
+    SEXP b = x_;
     int nrr = nrows(r), nrb = nrows(b), ncb = ncols(b);
-    int k = asInteger(args[0]); args = (args + 1);
+    int k = asInteger(k_);
     /* k is the number of rows to be used: there must be at least that
        many rows and cols in the rhs and at least that many rows on
        the rhs.
     */
     if (k == NA_INTEGER || k <= 0 || k > nrr || k > ncols(r) || k > nrb)
 	error(_("invalid '%s' argument"), "k");
-    int upper = asLogical(args[0]); args = (args + 1);
+    int upper = asLogical(upper_tri_);
     if (upper == NA_INTEGER) error(_("invalid '%s' argument"), "upper.tri");
-    int trans = asLogical(args[0]);
+    int trans = asLogical(transpose_);
     if (trans == NA_INTEGER) error(_("invalid '%s' argument"), "transpose");
     if (TYPEOF(r) != REALSXP) {PROTECT(r = coerceVector(r, REALSXP)); nprot++;}
     if (TYPEOF(b) != REALSXP) {PROTECT(b = coerceVector(b, REALSXP)); nprot++;}
@@ -1638,11 +1637,10 @@ SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* max.col(m, ties.method) */
-SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* m_, CXXR::RObject* ties_method_)
 {
-    op->checkNumArgs(num_args, call);
-    SEXP m = args[0];
-    int method = asInteger(args[1]);
+    SEXP m = m_;
+    int method = asInteger(ties_method_);
     int nr = nrows(m), nc = ncols(m), nprot = 1;
     if (TYPEOF(m) != REALSXP) {PROTECT(m = coerceVector(m, REALSXP)); nprot++;}
     SEXP ans = PROTECT(allocVector(INTSXP, nr));

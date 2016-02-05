@@ -538,7 +538,6 @@ LibExtern Rboolean UseInternet2;
 # define asVecSize		Rf_asVecSize
 # define begincontext		Rf_begincontext
 # define BindDomain		Rf_BindDomain
-# define check1arg		Rf_check1arg
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
 # define ComplexFromInteger	Rf_ComplexFromInteger
@@ -635,7 +634,6 @@ LibExtern Rboolean UseInternet2;
 # define PrintVersion_part_1	Rf_PrintVersion_part_1
 # define PrintVersionString    	Rf_PrintVersionString
 # define PrintWarnings		Rf_PrintWarnings
-# define promiseArgs		Rf_promiseArgs
 # define RealFromComplex	Rf_RealFromComplex
 # define RealFromInteger	Rf_RealFromInteger
 # define RealFromLogical	Rf_RealFromLogical
@@ -775,16 +773,14 @@ void R_InitialData(void);
 #ifdef __cplusplus
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
-int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*,
+int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
 		      CXXR::MissingArgHandling, int);
 
-extern "C"
-void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
+R_xlen_t get_object_length(CXXR::RObject* object, CXXR::Environment* rho);
 extern "C" {
-#else
-void Rf_check1arg(SEXP args, SEXP call, const char*);
 #endif
 
+void Rf_check1arg(SEXP args, SEXP call, const char*);
 void Rf_InitGraphics(void);
 void Rf_InitMemory(void);
 void Rf_InitNames(void);
@@ -831,7 +827,6 @@ void Rf_PrintWarnings(void);
 void process_site_Renviron(void);
 void process_system_Renviron(void);
 void process_user_Renviron(void);
-SEXP Rf_promiseArgs(SEXP, SEXP);
 void Rcons_vprintf(const char *, va_list);
 SEXP R_data_class(SEXP , Rboolean);
 SEXP R_data_class2(SEXP);

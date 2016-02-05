@@ -84,11 +84,15 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+				 unsigned int offset,
+				 const char* first_arg_name,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
 {
     m_function = cfun;
     m_quick_function = nullptr;
+    m_fixed_arity_fn = nullptr;
 
     if (m_function == do_External
 	|| m_function == do_Externalgr
@@ -114,13 +118,34 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset)
+				 unsigned int offset,
+				 const char* first_arg_name,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
 {
     m_function = nullptr;
     m_quick_function = fun;
+    m_fixed_arity_fn = nullptr;
+}
 
-    if (m_quick_function == do_paren)
+BuiltInFunction::BuiltInFunction(const char* name,
+				 FixedArityFnStorage cfun,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 unsigned int offset,
+				 const char* first_arg_name,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+		      first_arg_name, dispatch)
+{
+    m_function = nullptr;
+    m_quick_function = nullptr;
+    m_fixed_arity_fn = cfun;
+
+    if (m_fixed_arity_fn == reinterpret_cast<FixedArityFnStorage>(do_paren))
 	m_transparent = true;
 }
 
@@ -129,10 +154,14 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset)
+				 unsigned int offset,
+				 const char* first_arg_name,
+				 DispatchType dispatch)
     : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
       m_offset(offset), m_name(name), m_variant(variant),
-      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity), m_gram(ppinfo)
+      m_via_dot_internal((flags%100)/10 == 1), m_arity(arity),
+      m_first_arg_name(first_arg_name), m_dispatch_type(dispatch),
+      m_gram(ppinfo)
 {
     unsigned int pmdigit = (flags / 100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
@@ -146,21 +175,21 @@ BuiltInFunction::~BuiltInFunction()
     assert(0 && "BuiltInFunction's destructor should never be called");
 }
 
-void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
-    const
+void BuiltInFunction::badArgumentCountError(int nargs, int arity,
+					    const Expression* call) const
 {
     if (viaDotInternal())
 	Rf_error(
 	    ngettext("%d argument passed to .Internal(%s) which requires %d",
 		     "%d arguments passed to .Internal(%s) which requires %d",
 		     nargs),
-	    nargs, name(), arity());
+	    nargs, name(), arity);
     else
 	Rf_errorcall(const_cast<Expression*>(call),
 		      ngettext("%d argument passed to '%s' which requires %d",
 			       "%d arguments passed to '%s' which requires %d",
 			       nargs),
-		     nargs, name(), arity());
+		     nargs, name(), arity);
 }
 
 // BuiltInFunction::createLookupTables() is in names.cpp
@@ -219,15 +248,49 @@ const char* BuiltInFunction::typeName() const
 }
 
 std::pair<bool, RObject*>
+BuiltInFunction::InternalDispatch(const Expression* call,
+				  Environment* env,
+				  ArgList* args) const
+{
+    assert(m_dispatch_type != DispatchType::NONE);
+    assert(args->status() == ArgList::EVALUATED);
+
+    size_t num_args = args->size();
+    RObject** args_array = static_cast<RObject**>(
+	alloca(num_args * sizeof(RObject*)));
+    for (int i = 0; i < num_args; i++) {
+	args_array[i] = args->get(i);
+    }
+    return InternalDispatch(call, env, num_args, args_array, args->list());
+}
+
+const char* BuiltInFunction::GetInternalGroupDispatchName() const
+{
+    switch(m_dispatch_type) {
+    case DispatchType::GROUP_MATH:
+	return "Math";
+    case DispatchType::GROUP_OPS:
+	return "Ops";
+    case DispatchType::GROUP_COMPLEX:
+	return "Complex";
+    case DispatchType::GROUP_SUMMARY:
+	return "Summary";
+    default:
+	// Ought to be unreachable.
+	Rf_error("Attempting to do group dispatch without a group");
+    }
+};
+
+std::pair<bool, RObject*>
 BuiltInFunction::RealInternalGroupDispatch(
-    const char* group, const Expression* call, Environment* env,
+    const Expression* call, Environment* env,
     int num_args, RObject* const* evaluated_args, const PairList* tags) const
 {
     PairList* pargs = PairList::make(num_args, evaluated_args);
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);
     RObject* result = nullptr;
-    bool dispatched = Rf_DispatchGroup(group,
+    bool dispatched = Rf_DispatchGroup(GetInternalGroupDispatchName(),
 				       const_cast<Expression*>(call),
 				       const_cast<BuiltInFunction*>(this),
 				       const_cast<PairList*>(arglist.list()),
@@ -236,7 +299,7 @@ BuiltInFunction::RealInternalGroupDispatch(
 }
 
 std::pair<bool, RObject*>
-BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generic,
+BuiltInFunction::RealInternalDispatch(const Expression* call,
 				      int num_args,
 				      RObject* const* evaluated_args,
 				      const PairList* tags,
@@ -248,7 +311,6 @@ BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generi
     RObject* result = nullptr;
     bool dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
 					const_cast<BuiltInFunction*>(this),
-					generic,
 					const_cast<PairList*>(arglist.list()),
 					env, &result, MissingArgHandling::Drop,
 					1);

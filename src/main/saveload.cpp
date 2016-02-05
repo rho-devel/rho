@@ -1268,8 +1268,10 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCStackRoot<Promise> prom(new Promise(valgen, env));
-	    prom->setValue(val);
+
+	    GCStackRoot<Promise> prom(
+		val == Symbol::unboundValue() ? new Promise(valgen, env)
+		: Promise::createEvaluatedPromise(valgen, val));
 	    PROTECT(s = prom);
 	}
 	break;
@@ -1939,7 +1941,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 }
 
 /* Only used for version 1 saves */
-SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_)
 {
     /* save(list, file, ascii, version, environment) */
 
@@ -1947,42 +1949,39 @@ SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::Buil
     int len, j, version, ep;
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
-
-    if (TYPEOF(args[0]) != STRSXP)
+    if (TYPEOF(list_) != STRSXP)
 	error(_("first argument must be a character vector"));
-    if (!isValidStringF(args[1]))
+    if (!isValidStringF(file_))
 	error(_("'file' must be non-empty string"));
-    if (TYPEOF(args[2]) != LGLSXP)
+    if (TYPEOF(ascii_) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    if (args[3] == R_NilValue)
+    if (version_ == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
     else
-	version = asInteger(args[3]);
+	version = asInteger(version_);
     if (version == NA_INTEGER || version <= 0)
 	error(_("invalid '%s' argument"), "version");
-    source = args[4];
+    source = envir_;
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "environment");
-    ep = asLogical(args[5]);
+    ep = asLogical(eval_promises_);
     if (ep == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "eval.promises");
 
-    fp = RC_fopen(STRING_ELT(args[1], 0), "wb", TRUE);
+    fp = RC_fopen(STRING_ELT(file_, 0), "wb", TRUE);
     if (!fp) {
-	const char *cfile = CHAR(STRING_ELT(args[1], 0));
+	const char *cfile = CHAR(STRING_ELT(file_, 0));
 	error(_("cannot open file '%s': %s"), cfile, strerror(errno));
     }
 
     /* Use try-catch to close the file if there is an error */
     try {
-	len = length(args[0]);
+	len = length(list_);
 	GCStackRoot<> s(allocList(len));
 
 	t = s;
 	for (j = 0; j < len; j++, t = CDR(t)) {
-	    SET_TAG(t, installChar(STRING_ELT(args[0], j)));
+	    SET_TAG(t, installChar(STRING_ELT(list_, j)));
 	    GCStackRoot<> tmp(findVar(TAG(t), source));
 	    if (tmp == R_UnboundValue)
 		error(_("object '%s' not found"), EncodeChar(PRINTNAME(TAG(t))));
@@ -1991,7 +1990,7 @@ SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    SETCAR(t, tmp);
 	}
 
-	R_SaveToFileV(s, fp, INTEGER(args[2])[0], version);
+	R_SaveToFileV(s, fp, INTEGER(ascii_)[0], version);
     }
     catch (...) {
 	fclose(fp);
@@ -2061,21 +2060,19 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 }
 
 /* This is only used for version 1 or earlier formats */
-SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* envir_)
 {
     SEXP fname, aenv;
     GCStackRoot<> val;
     FILE *fp;
 
-    op->checkNumArgs(num_args, call);
-
-    if (!isValidString(fname = args[0]))
+    if (!isValidString(fname = file_))
 	error(_("first argument must be a file name"));
 
     /* GRW 1/26/99 GRW : added environment parameter so that */
     /* the loaded objects can be placed where desired  */
 
-    aenv = args[1];
+    aenv = envir_;
     if (TYPEOF(aenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
     else if (TYPEOF(aenv) != ENVSXP)
@@ -2219,7 +2216,7 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
    with either a pairlist or list.
 */
 
-SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_)
 {
     /* saveToConn(list, conn, ascii, version, environment) */
 
@@ -2231,30 +2228,28 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
     R_pstream_format_t type;
     CXXRCONST char *magic;
 
-    op->checkNumArgs(num_args, call);
-
-    if (TYPEOF(args[0]) != STRSXP)
+    if (TYPEOF(list_) != STRSXP)
 	error(_("first argument must be a character vector"));
-    list = args[0];
+    list = list_;
 
-    con = getConnection(asInteger(args[1]));
+    con = getConnection(asInteger(con_));
 
-    if (TYPEOF(args[2]) != LGLSXP)
+    if (TYPEOF(ascii_) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(args[2])[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
 
-    if (args[3] == R_NilValue)
+    if (version_ == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
     else
-	version = asInteger(args[3]);
+	version = asInteger(version_);
     if (version == NA_INTEGER || version <= 0)
 	error(_("invalid '%s' argument"), "version");
     if (version < 2)
 	error(_("cannot save to connections in version %d format"), version);
-    source = args[4];
+    source = envir_;
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "environment");
-    ep = asLogical(args[5]);
+    ep = asLogical(eval_promises_);
     if (ep == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "eval.promises");
 
@@ -2326,7 +2321,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 extern int R_ReadItemDepth;
 extern int R_InitReadItemDepth;
 
-SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* envir_, CXXR::RObject* verbose_)
 {
     /* loadFromConn2(conn, environment, verbose) */
 
@@ -2338,9 +2333,7 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
     size_t count;
     Rboolean wasopen;
 
-    op->checkNumArgs(num_args, call);
-
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(con_));
     wasopen = con->isopen;
     if(!wasopen) {
 	char mode[5];	
@@ -2353,7 +2346,7 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
 	if(!con->canread) error(_("connection not open for reading"));
 	if(con->text) error(_("can only load() from a binary connection"));
 
-	aenv = args[1];
+	aenv = envir_;
 	if (TYPEOF(aenv) == NILSXP)
 	    error(_("use of NULL environment is defunct"));
 	else if (TYPEOF(aenv) != ENVSXP)
@@ -2368,7 +2361,7 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
 	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	    R_InitConnInPStream(&in, con, R_pstream_any_format, nullptr, nullptr);
 	    GCStackRoot<> unser(R_Unserialize(&in));
-	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(args[2]);
+	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(verbose_);
 	    res = RestoreToEnv(unser, aenv);
 	    R_ReadItemDepth = 0;
 	    if(!wasopen)

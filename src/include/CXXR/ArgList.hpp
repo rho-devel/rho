@@ -29,11 +29,15 @@
 #ifndef ARGLIST_HPP
 #define ARGLIST_HPP 1
 
+#include <boost/range.hpp>
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
+#include "CXXR/Symbol.h"
+#include "R_ext/Error.h"
 
 namespace CXXR {
     class DottedArgs;
+    class Expression;
 
     enum class MissingArgHandling {
 	Drop,
@@ -64,6 +68,61 @@ namespace CXXR {
 	    EVALUATED  /**< Argument values have been evaluated, and
 			* ... arguments expanded.
 			*/
+	};
+
+	class const_iterator : public std::iterator<std::forward_iterator_tag,
+						    ConsCell>
+	{
+	public:
+	    const_iterator operator++(int) {
+		const_iterator return_value = *this;
+		++(*this);
+		return return_value;
+	    }
+
+	    const_iterator operator++() {
+		if (m_dots) {
+		    m_dots = m_dots->tail();
+		    if (m_dots)
+			return *this;
+		}
+		m_arg = m_arg->tail();
+		if (m_arg && m_arg->car() == DotsSymbol) {
+		    handleDots();
+		}
+		return *this;
+	    }
+
+	    bool operator==(const_iterator other) const {
+		return m_arg == other.m_arg && m_dots == other.m_dots;
+	    }
+
+	    bool operator!=(const_iterator other) const {
+		return !(*this == other);
+	    }
+
+	    const ConsCell& operator*() const {
+		return *(operator->)();
+	    }
+	    const ConsCell* operator->() const {
+		if (m_dots)
+		    return m_dots;
+		return m_arg;
+	    }
+
+	    static const_iterator end(Environment* env) {
+		return const_iterator(nullptr, env);
+	    }
+	private:
+	    friend class ArgList;
+
+	    const_iterator(ConsCell* arg, Environment* env);
+
+	    ConsCell* m_arg;
+	    ConsCell* m_dots;
+	    Environment* m_env;
+
+	    void handleDots();
 	};
 
 	/** @brief Constructor.
@@ -230,6 +289,12 @@ namespace CXXR {
 	 */
 	std::pair<bool, RObject*> firstArg(Environment* env);
 
+        /** @brief Return the length of the arglist.
+         */
+	size_t size() const {
+	    return listLength(list());
+	}
+
         /** @brief Return the argument at the specified position.
          */
         RObject* get(int position) const;
@@ -237,6 +302,21 @@ namespace CXXR {
         /** @brief Return the tag at the specified position.
          */
         const RObject* getTag(int position) const;
+
+	/** @brief Iterator through the argument list, expanding '...'.
+	 *
+	 * @return iterator_range that iterates through the list of arguments.
+	 *        If this arglist contains '...', then the iteration will
+	 *        replace it with the elements that the '...' expands into.
+	 */
+	boost::iterator_range<const_iterator>
+	getExpandedArgs(Environment* env) const {
+	    if (m_first_arg_env && env != m_first_arg_env)
+		Rf_error("Internal error: first arg of ArgList"
+			 " previously evaluated in different environment");
+	    return boost::make_iterator_range(const_iterator(m_list, env),
+					      const_iterator::end(env));
+	}
 
 	/** @brief Access the argument list as a PairList.
 	 *
@@ -328,7 +408,8 @@ namespace CXXR {
 	 * to be evaluated in \a env.  However, if the ArgList
 	 * currently has Status EVALUATED, the \a env parameter is
 	 * ignored, and the function simply wraps the argument values
-	 * in pre-forced Promise objects.
+	 * in pre-forced Promise objects with arguments taken from
+	 * \a call.
 	 *
 	 * If any argument has the value CXXR::DotsSymbol, the action
 	 * depends on what this Symbol is bound to within \a env (and
@@ -357,13 +438,18 @@ namespace CXXR {
 	 *          env must be identical to the \a env argument of
 	 *          that firstArg() call.
 	 *
+	 * @param call The call that the arguments came from.  Ignored unless
+	 *          the ArgList has status EVALUATED.
+	 *
 	 * @note It would be desirable to avoid producing a new
 	 * PairList, and to absorb this functionality directly into
 	 * the ArgMatcher::match() function.  But at present the
 	 * Promise-wrapped list is recorded in the context set up by
 	 * Closure::apply(), and used for other purposes.
 	 */
-	void wrapInPromises(Environment* env);
+	void wrapInPromises(Environment* env,
+			    const Expression* call = nullptr);
+
     private:
 	const PairList* const m_orig_list;  // Pointer to the argument
 	  // list supplied to the constructor. 
@@ -401,12 +487,17 @@ namespace CXXR {
 
 	/* @brief Appends item to the end of m_list.  Handles empty lists correctly.
 	 *
-	 * @param item The item to add.
+	 * @param value The value to add.
+	 * @param tag The tag to associate with the value.
 	 * @param last_element A pointer to the last element of m_list.
 	 *
 	 * @return A pointer to the current last element of m_list.
 	 */
-	PairList* append(PairList* item, PairList* last_element);
+	PairList* append(RObject* value, const RObject* tag,
+			 PairList* last_element);
+
+	void wrapInForcedPromises(Environment* env,
+				  const ArgList* evaluated_values);
 
 	// Not implemented.  Declared private to suppress
 	// compiler-generated versions:

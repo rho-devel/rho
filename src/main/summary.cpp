@@ -469,9 +469,13 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	SEXP_downcast<Expression*>(call2), SEXP_downcast<Environment*>(env),
+	&arglist);
+    if (dispatched.first) {
 	UNPROTECT(2);
-	return(ans);
+	return(dispatched.second);
     }
     UNPROTECT(1);
 
@@ -782,34 +786,33 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = shallow_duplicate(call));
     SETCDR(call2, args);
 
-    if (DispatchGroup("Summary", call2, op, args, env, &ans)) {
+    Expression* callx = SEXP_downcast<Expression*>(call2);
+    Environment* callenv = SEXP_downcast<Environment*>(env);
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
+	callx, callenv, &arglist);
+    if (dispatched.first) {
 	UNPROTECT(2);
-	return(ans);
+	return(dispatched.second);
     }
     UNPROTECT(1);
 
     PROTECT(op = findFun(install("range.default"), env));
-    PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
-    for (a = args, b = prargs; a != R_NilValue; a = CDR(a), b = CDR(b))
-	SET_PRVALUE(CAR(b), CAR(a));
     Closure* closure = SEXP_downcast<Closure*>(op);
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
-    Environment* callenv = SEXP_downcast<Environment*>(env);
     ans = callx->invokeClosure(closure, callenv, &arglist);
     UNPROTECT(3);
     return(ans);
 }
 
 /* which.min(x) : The index (starting at 1), of the first min(x) in x */
-SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP sx, ans;
     double s, *r;
     int i, n, indx;
 
-    op->checkNumArgs(num_args, call);
-    PROTECT(sx = coerceVector(args[0], REALSXP));
+    PROTECT(sx = coerceVector(x_, REALSXP));
     if (!isNumeric(sx))
 	error(_("non-numeric argument"));
     r = REAL(sx);
@@ -847,13 +850,12 @@ SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* which(x) : indices of non-NA TRUE values in x */
-SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     SEXP v, v_nms, ans, ans_nms = R_NilValue;
     int i, j = 0, len, *buf;
 
-    op->checkNumArgs(num_args, call);
-    v = args[0];
+    v = x_;
     if (!isLogical(v))
         error(_("argument to 'which' is not logical"));
     len = length(v);
