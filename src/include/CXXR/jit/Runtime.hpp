@@ -74,6 +74,8 @@ enum FunctionId {
 std::string getName(FunctionId function);
 
 llvm::Function* getDeclaration(FunctionId id, llvm::Module* module);
+llvm::Function* getDeclaration(const std::string& name, Compiler* compiler);
+
 
 // returns NOT_A_RUNTIME_FUNCTION if function isn't a runtime function.
 FunctionId getFunctionId(llvm::Function* function);

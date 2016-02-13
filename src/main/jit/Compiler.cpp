@@ -448,19 +448,39 @@ Value* Compiler::emitInlinedAssign(const Expression* expression)
     }
 
     // Get the symbol to assign to.
-    const RObject* symbol_expr = expression->tail()->car();
-    const Symbol* symbol = dynamic_cast<const Symbol*>(symbol_expr);
+    const RObject* lhs_expr = expression->tail()->car();
+    const Symbol* symbol = dynamic_cast<const Symbol*>(lhs_expr);
     if (!symbol) {
 	// If passed a string vector, convert that to a name.
 	const StringVector* symbol_name
-	    = dynamic_cast<const StringVector*>(symbol_expr);
+	    = dynamic_cast<const StringVector*>(lhs_expr);
 	if (symbol_name && symbol_name->size() == 1) {
 	    symbol = Symbol::obtain((*symbol_name)[0]);
 	}
     }
     if (!symbol) {
-	// Probably a complex assignment.  Send it to the interpreter.
-	return nullptr;
+        if (dynamic_cast<const Expression*>(lhs_expr)) {
+          // Complex assignment.
+          emitSetVisibility(false);
+          auto applydefine =
+              Runtime::getDeclaration("cxxr_runtime_applydefine", this);
+          assert(applydefine != nullptr);
+          auto call_ptr = emitConstantPointer(expression);
+          assert(call_ptr != nullptr);
+          auto applydefine_ptr =
+              emitConstantPointer(BuiltInFunction::obtainPrimitive(
+                  SEXP_downcast<const Symbol*>(expression->getFunction())));
+          assert(applydefine_ptr != nullptr);
+          auto args_ptr = emitConstantPointer(expression->getArgs());
+          assert(args_ptr != nullptr);
+          assert(m_context->getEnvironment() != nullptr);
+          return emitCallOrInvoke(applydefine,
+                                  {call_ptr, applydefine_ptr, args_ptr,
+                                   m_context->getEnvironment()});
+        } else {
+          // Probably a syntax error.  Send it to the interpreter.
+          return nullptr;
+        }
     }
     int location = m_context->m_frame_descriptor->getLocation(symbol);
     if (location == -1) {
@@ -483,7 +503,7 @@ Value* Compiler::emitInlinedAssign(const Expression* expression)
     emitSetVisibility(false);
     return evaluated_value;
 }
-    
+
 Value* Compiler::emitInlinedParen(const Expression* expression)
 {
     // '(' has a single argument -- the expression to evaluate.

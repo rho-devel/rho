@@ -182,17 +182,19 @@ BuiltInFunction::map* BuiltInFunction::getInternalFunctionLookupTable()
     return getLookupTables().second;
 }
 
-
-BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
+BuiltInFunction* BuiltInFunction::obtainPrimitive(const Symbol* symbol)
 {
-    const Symbol* symbol = Symbol::obtain(name);
     auto location = getPrimitiveFunctionLookupTable()->find(symbol);
     if (location == getPrimitiveFunctionLookupTable()->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
-		   name.c_str());
+		   symbol->name()->c_str());
 	return nullptr;
     }
     return location->second;
+}
+
+BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name) {
+  return obtainPrimitive(Symbol::obtain(name));
 }
 
 void BuiltInFunction::addPrimitivesToEnvironment(Environment* environment)
