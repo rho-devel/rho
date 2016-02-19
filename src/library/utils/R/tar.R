@@ -1,5 +1,5 @@
 #  File src/library/utils/R/tar.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2014 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 untar <- function(tarfile, files = NULL, list = FALSE, exdir = ".",
                   compressed = NA, extras = NULL, verbose = FALSE,
@@ -140,7 +140,7 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".",
 
     ## A tar file is a set of 512 byte records,
     ## a header record followed by file contents (zero-padded).
-    ## See http://en.wikipedia.org/wiki/Tar_%28file_format%29
+    ## See https://en.wikipedia.org/wiki/Tar_%28file_format%29
     if(is.character(tarfile) && length(tarfile) == 1L) {
         con <- gzfile(path.expand(tarfile), "rb") # reads compressed formats
         on.exit(close(con))

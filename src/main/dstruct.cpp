@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -53,7 +53,7 @@ R_len_t Rf_length(SEXP s)
 	    return i;
 	}
     case ENVSXP:
-	return Rf_envlength(s);
+	return Rf_envxlength(s);
     default:
 	return 1;
     }
@@ -61,7 +61,6 @@ R_len_t Rf_length(SEXP s)
 
 R_xlen_t Rf_xlength(SEXP s)
 {
-    int i;
     switch (TYPEOF(s)) {
     case NILSXP:
 	return 0;
@@ -78,14 +77,17 @@ R_xlen_t Rf_xlength(SEXP s)
     case LISTSXP:
     case LANGSXP:
     case DOTSXP:
-	i = 0;
+    {
+	// it is implausible this would be >= 2^31 elements, but allow it
+	R_xlen_t i = 0;
 	while (s != nullptr && s != R_NilValue) {
 	    i++;
 	    s = CDR(s);
 	}
 	return i;
+    }
     case ENVSXP:
-	return Rf_envlength(s);
+	return Rf_envxlength(s);
     default:
 	return 1;
     }

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2004-2007  The R Foundation
- *  Copyright (C) 2013-2014  The R Core Team
+ *  Copyright (C) 2013-2015  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
 
 
  *  This is an implementation of modal event handling in R graphics
@@ -56,7 +56,7 @@ static const char * keybdHandler = "onKeybd";
 static void checkHandler(const char * name, SEXP eventEnv)
 {
     SEXP handler = findVar(install(name), eventEnv);
-    if (TYPEOF(handler) == CLOSXP) 
+    if (TYPEOF(handler) == CLOSXP)
 	warning(_("'%s' events not supported in this device"), name);
 }
 
@@ -76,24 +76,24 @@ do_setGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
     if(!gdd) errorcall(call, _("invalid device"));
     dd = gdd->dev;
     args=CDR(args);
-    
+
     eventEnv = CAR(args);
-    if (TYPEOF(eventEnv) != ENVSXP) 
-        error(_("internal error"));
-        
+    if (TYPEOF(eventEnv) != ENVSXP)
+	error(_("internal error"));
+
     if (!dd->canGenMouseDown &&
-    	!dd->canGenMouseUp &&
-    	!dd->canGenMouseMove &&
-    	!dd->canGenKeybd)
-    	error(_("this graphics device does not support event handling"));
-    
+	!dd->canGenMouseUp &&
+	!dd->canGenMouseMove &&
+	!dd->canGenKeybd)
+	error(_("this graphics device does not support event handling"));
+
     if (!dd->canGenMouseDown) checkHandler(mouseHandlers[0], eventEnv);
     if (!dd->canGenMouseUp)   checkHandler(mouseHandlers[1], eventEnv);
     if (!dd->canGenMouseMove) checkHandler(mouseHandlers[2], eventEnv);
     if (!dd->canGenKeybd)     checkHandler(keybdHandler, eventEnv);
 
     dd->eventEnv = eventEnv;
-	
+
     return(R_NilValue);
 }
 
@@ -102,11 +102,11 @@ do_getGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int devnum;
     pGEDevDesc gdd;
-    
+
     devnum = INTEGER(CAR(args))[0] - 1;
     if(devnum < 1 || devnum > R_MaxDevices)
 	error(_("invalid graphical device number"));
-    
+
     gdd = GEgetDevice(devnum);
     if(!gdd) errorcall(call, _("invalid device"));
     return gdd->dev->eventEnv;
@@ -123,9 +123,8 @@ Rboolean haveListeningDev()
     {
 	for(int i = 1; i < NumDevices(); i++)
 	{
-	    gd = GEgetDevice(i);
-	    dd = gd->dev;
-	    if(dd->gettingEvent){
+	    if ((gd = GEgetDevice(i)) && (dd = gd->dev)
+		 && dd->gettingEvent){
 		ret = TRUE;
 		break;
 	    }
@@ -133,7 +132,7 @@ Rboolean haveListeningDev()
     }
     return ret;
 }
-	  
+
 
 SEXP
 do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -142,39 +141,39 @@ do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     pDevDesc dd;
     pGEDevDesc gd;
     int i, count=0, devNum;
-    
+
     prompt = CAR(args);
     if (!isString(prompt) || !length(prompt)) error(_("invalid prompt"));
-    
+
     /* NB:  cleanup of event handlers must be done by driver in onExit handler */
-    
+
     if (!NoDevices()) {
-        /* Initialize all devices */
-        i = 1;
+	/* Initialize all devices */
+	i = 1;
 	devNum = curDevice();
 	while (i++ < NumDevices()) {
-	    gd = GEgetDevice(devNum);
-	    dd = gd->dev;
-	    if (dd->gettingEvent)
-	    	error(_("recursive use of 'getGraphicsEvent' not supported"));
-	    if (dd->eventEnv != R_NilValue) {
-	        if (dd->eventHelper) dd->eventHelper(dd, 1);
-	        dd->gettingEvent = TRUE;
-	        defineVar(install("result"), R_NilValue, dd->eventEnv);
-	        count++;
+	    if ((gd = GEgetDevice(devNum)) && (dd = gd->dev)) {
+		if (dd->gettingEvent)
+		    error(_("recursive use of 'getGraphicsEvent' not supported"));
+		if (dd->eventEnv != R_NilValue) {
+		    if (dd->eventHelper) dd->eventHelper(dd, 1);
+		    dd->gettingEvent = TRUE;
+		    defineVar(install("result"), R_NilValue, dd->eventEnv);
+		    count++;
+		}
 	    }
 	    devNum = nextDevice(devNum);
 	}
 	if (!count)
 	    error(_("no graphics event handlers set"));
-	
+
 	Rprintf("%s\n", CHAR(asChar(prompt)));
 	R_FlushConsole();
-	
+
 	/* Poll them */
 	while (result == R_NilValue) {
 	    /* make sure we still have at least one device listening for events, and throw an error if not*/
-	    if(!haveListeningDev()) 
+	    if(!haveListeningDev())
 		return R_NilValue;
 #ifdef Win32
 	    R_WaitEvent();
@@ -184,31 +183,31 @@ do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
 	    i = 1;
 	    devNum = curDevice();
 	    while (i++ < NumDevices()) {
-		gd = GEgetDevice(devNum);
-		dd = gd->dev;
-		if (dd->eventEnv != R_NilValue) {
-		    if (dd->eventHelper) dd->eventHelper(dd, 2);
-		    result = findVar(install("result"), dd->eventEnv);
-		    if (result != R_NilValue && result != R_UnboundValue) {
-			break;
+		if ((gd = GEgetDevice(devNum)) && (dd = gd->dev)) {
+		    if (dd->eventEnv != R_NilValue) {
+			if (dd->eventHelper) dd->eventHelper(dd, 2);
+			result = findVar(install("result"), dd->eventEnv);
+			if (result != R_NilValue && result != R_UnboundValue) {
+			    break;
+			}
 		    }
 		}
 		devNum = nextDevice(devNum);
 	    }
 	}
 	/* clean up */
-        i = 1;
+	i = 1;
 	devNum = curDevice();
 	while (i++ < NumDevices()) {
-	    gd = GEgetDevice(devNum);
-	    dd = gd->dev;
-	    if (dd->eventEnv != R_NilValue) {
-	        if (dd->eventHelper) dd->eventHelper(dd, 0);
-	        dd->gettingEvent = FALSE;
+	    if ((gd = GEgetDevice(devNum)) && (dd = gd->dev)) {
+		if (dd->eventEnv != R_NilValue) {
+		    if (dd->eventHelper) dd->eventHelper(dd, 0);
+		    dd->gettingEvent = FALSE;
+		}
 	    }
 	    devNum = nextDevice(devNum);
 	}
-	
+
     }
     return(result);
 }
@@ -222,13 +221,15 @@ void doMouseEvent(pDevDesc dd, R_MouseEvent event,
 
     dd->gettingEvent = FALSE; /* avoid recursive calls */
 
-    handler = findVar(install(mouseHandlers[event]), dd->eventEnv);
-    if (TYPEOF(handler) == PROMSXP)
+    PROTECT(handler = findVar(install(mouseHandlers[event]), dd->eventEnv));
+    if (TYPEOF(handler) == PROMSXP) {
 	handler = eval(handler, dd->eventEnv);
-
+	UNPROTECT(1); /* handler */
+	PROTECT(handler);
+    }
     if (TYPEOF(handler) == CLOSXP) {
-        SEXP s_which = install("which");
-        defineVar(s_which, ScalarInteger(ndevNumber(dd)+1), dd->eventEnv);
+	SEXP s_which = install("which");
+	defineVar(s_which, ScalarInteger(ndevNumber(dd)+1), dd->eventEnv);
 	// Be portable: see PR#15793
 	int len = ((buttons & leftButton) != 0)
 	  + ((buttons & middleButton) != 0)
@@ -245,9 +246,10 @@ void doMouseEvent(pDevDesc dd, R_MouseEvent event,
 	PROTECT(temp = lang4(handler, bvec, sx, sy));
 	PROTECT(result = eval(temp, dd->eventEnv));
 	defineVar(install("result"), result, dd->eventEnv);
-	UNPROTECT(5);	
+	UNPROTECT(5);
 	R_FlushConsole();
     }
+    UNPROTECT(1); /* handler */
     dd->gettingEvent = TRUE;
     return;
 }
@@ -265,20 +267,24 @@ void doKeybd(pDevDesc dd, R_KeyName rkey,
 
     dd->gettingEvent = FALSE; /* avoid recursive calls */
 
-    handler = findVar(install(keybdHandler), dd->eventEnv);
-    if (TYPEOF(handler) == PROMSXP)
+    PROTECT(handler = findVar(install(keybdHandler), dd->eventEnv));
+    if (TYPEOF(handler) == PROMSXP) {
 	handler = eval(handler, dd->eventEnv);
+	UNPROTECT(1); /* handler */
+	PROTECT(handler);
+    }
 
     if (TYPEOF(handler) == CLOSXP) {
-        SEXP s_which = install("which");
-        defineVar(s_which, ScalarInteger(ndevNumber(dd)+1), dd->eventEnv);
+	SEXP s_which = install("which");
+	defineVar(s_which, ScalarInteger(ndevNumber(dd)+1), dd->eventEnv);
 	PROTECT(skey = mkString(keyname ? keyname : keynames[rkey]));
 	PROTECT(temp = lang2(handler, skey));
 	PROTECT(result = eval(temp, dd->eventEnv));
-        defineVar(install("result"), result, dd->eventEnv);
-	UNPROTECT(3);	
+	defineVar(install("result"), result, dd->eventEnv);
+	UNPROTECT(3);
 	R_FlushConsole();
     }
+    UNPROTECT(1); /* handler */
     dd->gettingEvent = TRUE;
     return;
 }

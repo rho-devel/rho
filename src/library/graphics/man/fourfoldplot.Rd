@@ -1,5 +1,5 @@
 % File src/library/graphics/man/fourfoldplot.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -28,8 +28,8 @@ fourfoldplot(x, color = c("#99CCFF", "#6699CC"),
     the odds ratios.  Must be a single nonnegative number less than 1;
     if set to 0, confidence rings are suppressed.}
   \item{std}{a character string specifying how to standardize the table.
-    Must be one of \code{"margins"}, \code{"ind.max"}, or
-    \code{"all.max"}, and can be abbreviated by the initial letter.
+    Must match one of \code{"margins"}, \code{"ind.max"}, or
+    \code{"all.max"}, and can be abbreviated to the initial letter.
     If set to \code{"margins"}, each 2 by 2 table is standardized to
     equate the margins specified by \code{margin} while preserving the
     odds ratio.  If \code{"ind.max"} or \code{"all.max"}, the tables are

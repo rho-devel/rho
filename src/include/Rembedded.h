@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2006-8  The R Core Team.
+ *  Copyright (C) 2006-2016  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* A header for use with alternative front-ends. Not formally part of
@@ -29,11 +29,11 @@
 #ifndef REMBEDDED_H_
 #define REMBEDDED_H_
 
+#include <R_ext/Boolean.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <R_ext/Boolean.h>
 
 extern int Rf_initEmbeddedR(int argc, char *argv[]);
 extern void Rf_endEmbeddedR(int fatal);
@@ -59,12 +59,7 @@ extern void R_CleanTempDir(void);
 LibExtern char *R_TempDir;    
 extern void R_SaveGlobalEnv(void);
 
-
-#ifdef unix
-void fpu_setup(Rboolean start);
-#endif
-
-#ifdef Win32
+#ifdef _WIN32
 extern char *getDLLVersion(void), *getRUser(void), *get_R_HOME(void);
 extern void setup_term_ui(void);
 LibExtern int UserBreak;
@@ -73,6 +68,8 @@ extern void editorcleanall(void);
 extern int GA_initapp(int, char **);
 extern void GA_appcleanup(void);
 extern void readconsolecfg(void);
+#else
+void fpu_setup(Rboolean start);
 #endif
 
 #ifdef __cplusplus

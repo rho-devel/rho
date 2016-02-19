@@ -1,5 +1,5 @@
 % File src/library/stats/man/spectrum.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2008 R Core Team
 % Distributed under GPL 2 or later
 
@@ -18,7 +18,7 @@ spectrum(x, \dots, method = c("pgram", "ar"))
   \item{x}{A univariate or multivariate time series.}
   \item{method}{String specifying the method used to estimate the
     spectral density.  Allowed methods are \code{"pgram"} (the default)
-    and \code{"ar"}.}
+    and \code{"ar"}.  Can be abbreviated.}
   \item{\dots}{Further arguments to specific spec methods or
     \code{plot.spec}.}
 }

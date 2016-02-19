@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copuright (C) 2006 The R Core Team
+ *  Copyright (C) 2006-2015 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -40,6 +40,7 @@
 
 #include "Defn.h"
 #include <Internal.h>
+#include <R_ext/Itermacros.h>
 
 SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* f_)
 {
@@ -63,14 +64,15 @@ SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::Bui
     have_names = CXXRCONSTRUCT(Rboolean, nm != nullptr);
     PROTECT(counts = allocVector(INTSXP, nlevs));
     for (int i = 0; i < nlevs; i++) INTEGER(counts)[i] = 0;
-    for (R_xlen_t i = 0; i < nobs; i++) {
-	int j = INTEGER(f)[i % nfac];
+    R_xlen_t i, i1;
+    MOD_ITERATE1(nobs, nfac, i, i1, {
+	int j = INTEGER(f)[i1];
 	if (j != NA_INTEGER) {
 	    /* protect against malformed factors */
 	    if (j > nlevs || j < 1) error(_("factor has bad level"));
 	    INTEGER(counts)[j - 1]++;
 	}
-    }
+    });
     /* Allocate a generic vector to hold the results. */
     /* The i-th element will hold the split-out data */
     /* for the ith group. */
@@ -84,8 +86,8 @@ SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::Bui
 		      allocVector(STRSXP, INTEGER(counts)[i]));
     }
     for (int i = 0; i < nlevs; i++) INTEGER(counts)[i] = 0;
-    for (R_xlen_t i = 0;  i < nobs; i++) {
-	int j = INTEGER(f)[i % nfac];
+    MOD_ITERATE1(nobs, nfac, i, i1, {
+	int j = INTEGER(f)[i1];
 	if (j != NA_INTEGER) {
 	    int k = INTEGER(counts)[j - 1];
 	    switch (TYPEOF(x)) {
@@ -117,7 +119,7 @@ SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	    }
 	    INTEGER(counts)[j - 1] += 1;
 	}
-    }
+    });
     setAttrib(vec, R_NamesSymbol, getAttrib(f, R_LevelsSymbol));
     UNPROTECT(2);
     return vec;

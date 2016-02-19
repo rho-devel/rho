@@ -1,5 +1,5 @@
 #  File src/library/methods/R/NextMethod.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 callNextMethod <- function(...) {
     method <- nextMethod <-  NULL
@@ -58,7 +58,7 @@ callNextMethod <- function(...) {
         } else {
             f <- as.character(mcall[[1L]])
         }
-        fdef <- genericForPrimitive(f)
+        fdef <- genericForBasic(f)
         ## check that this could be a basic function with methods
         if(is.null(fdef))
             stop(gettextf("a call to callNextMethod() appears in a call to %s, but the call does not seem to come from either a generic function or another 'callNextMethod'",
@@ -123,6 +123,8 @@ callNextMethod <- function(...) {
                    length(fnames) <- i
                    fnames <- c(fnames, rep("", length(call) - i))
                }
+               if (substring(f, nchar(f)-1L) == "<-")
+                   fnames[length(fnames)] <- "value"
                names(call) <- fnames
                call <- as.call(call)
            }
@@ -134,8 +136,8 @@ callNextMethod <- function(...) {
     }
 }
 
-loadMethod <- function(method, fname, envir)
-    method
+## Skeleton for the generic in ./MethodsListClass.R :
+loadMethod <- function(method, fname, envir) method
 
 .doSubNextCall <- function(call, method) {
     idrop <- match("drop", names(call))

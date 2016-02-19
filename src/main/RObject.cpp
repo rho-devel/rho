@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file RObject.cpp
@@ -35,9 +35,12 @@
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "Rinternals.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
+
+#undef cons
 
 using namespace std;
 using namespace CXXR;
@@ -47,6 +50,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	void (*DUPLICATE_ATTRIBptr)(SEXP, SEXP) = DUPLICATE_ATTRIB;
+	void (*SHALLOW_DUPLICATE_ATTRIBptr)(SEXP, SEXP) = SHALLOW_DUPLICATE_ATTRIB;
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
 	Rboolean (*IS_S4_OBJECTptr)(SEXP x) = IS_S4_OBJECT;
@@ -92,13 +96,21 @@ void RObject::clearAttributes()
     }
 }
 
-void RObject::copyAttributes(const RObject* source, bool copyS4)
+void RObject::copyAttributes(const RObject* source, Duplicate deep)
 {
-    const PairList* srcatts = source->attributes();
-    GCStackRoot<const PairList> attribs(srcatts ? srcatts->clone() : nullptr);
-    setAttributes(attribs);
-    if (copyS4)
-	setS4Object(source->isS4Object());
+    if (!source) {
+	clearAttributes();
+	setS4Object(false);
+	return;
+    }
+    const PairList* attributes = source->attributes();
+    if (attributes) {
+	attributes = deep == Duplicate::DEEP
+	    ? attributes->clone()
+	    : (PairList*)Rf_shallow_duplicate(const_cast<PairList*>(attributes));
+    }
+    setAttributes(attributes);
+    setS4Object(source->isS4Object());
 }
 
 RObject* RObject::evaluate(Environment* env)
@@ -213,12 +225,11 @@ SEXP ATTRIB(SEXP x)
 
 void DUPLICATE_ATTRIB(SEXP to, SEXP from)
 {
-    if (from) 
-	to->copyAttributes(from, true);
-    else {
-	to->clearAttributes();
-	to->setS4Object(false);
-    }
+    to->copyAttributes(from, RObject::Duplicate::DEEP);
+}
+
+void SHALLOW_DUPLICATE_ATTRIB(SEXP to, SEXP from) {
+    to->copyAttributes(from, RObject::Duplicate::SHALLOW);
 }
 
 void SET_ATTRIB(SEXP x, SEXP v)

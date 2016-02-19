@@ -1006,7 +1006,7 @@ try(x[1, c("a", "c")])
 
 ## methods(class = ) with namespaces, .Primitives etc (many missing in 1.7.x):
 meth2gen <- function(cl)
-    noquote(sub(paste("\\.",cl,"$",sep=""),"", c(methods(class = cl))))
+    noquote(sub(paste("\\.",cl,"$",sep=""),"", c(.S3methods(class = cl))))
 meth2gen("data.frame")
 meth2gen("dendrogram")
 ## --> the output may need somewhat frequent updating..
@@ -2938,3 +2938,65 @@ setNames(TRUE, make_long_name(1000))  # value printed as TRU
 setNames(TRUE, make_long_name(1002))  # value printed as T
 setNames(TRUE, make_long_name(1003))  # value not printed
 ##
+
+
+## PR#16437
+dd <- data.frame(F = factor(rep(c("A","B","C"), each = 3)), num = 1:9)
+cs <- list(F = contr.sum(3, contrasts = FALSE))
+a1 <- aov(num ~ F, data = dd, contrasts = cs)
+model.tables(a1, "means")
+t1 <- TukeyHSD(a1) ## don't print to avoid precision issues.
+a2 <- aov(num ~ 0+F, data = dd, contrasts = cs)
+model.tables(a2, "means")
+t2 <- TukeyHSD(a2)
+attr(t1, "orig.call") <- attr(t2, "orig.call")
+stopifnot(all.equal(t1, t2))
+## functions both failed on a2 in R <= 3.2.2.
+
+
+## deparse() did not add parens before [
+substitute(a[1], list(a = quote(x * y)))
+## should be (x * y)[1], was x * y[1]
+# Check all levels of precedence
+# (Comment out illegal ones)
+quote(`$`(a :: b, c)) 
+# quote(`::`(a $ b, c $ d))
+quote(`[`(a $ b, c $ d))
+quote(`$`(a[b], c))
+quote(`^`(a[b], c[d]))
+quote(`[`(a ^ b, c ^ d))
+quote(`-`(a ^ b))
+quote(`^`(-b, -d))
+quote(`:`(-b, -d))
+quote(`-`(a : b))
+quote(`%in%`(a : b, c : d))
+quote(`:`(a %in% b, c %in% d))
+quote(`*`(a %in% b, c %in% d))
+quote(`%in%`(a * b, c * d))
+quote(`+`(a * b, c * d))
+quote(`*`(a + b, c + d))
+quote(`<`(a + b, c + d))
+quote(`+`(a < b, c < d))
+quote(`!`(a < b))
+quote(`<`(!b, !d))
+quote(`&`(!b, !d))
+quote(`!`(a & b))
+quote(`|`(a & b, c & d))
+quote(`&`(a | b, c | d))
+quote(`~`(a | b, c | d))
+quote(`|`(a ~ b, c ~ d))
+quote(`->`(a ~ b, d))
+quote(`~`(a -> b, c -> d))
+quote(`<-`(a, c -> d))
+quote(`->`(a <- b, c))
+quote(`=`(a, c <- d))
+quote(`<-`(a, `=`(c, d)))
+quote(`?`(`=`(a, b), `=`(c, d)))
+quote(`=`(a, c ? d))
+quote(`?`(a = b))
+quote(`=`(b, ?d))
+
+## dput() quoted the empty symbol (PR#16686)
+a <- alist(one = 1, two = )
+dput(a)
+## deparsed two to quote()

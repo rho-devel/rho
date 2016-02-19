@@ -1,7 +1,7 @@
 #  File src/library/tools/R/rtags.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2013, 2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 
 
@@ -23,7 +23,7 @@
 ### parser.  Support for vi-style tags could be useful, but it needs
 ### the tags file needs to be sorted, making file-by-file processing
 ### difficult. It may be easier to write a script to convert an etags
-### format file (see http://http://en.wikipedia.org/wiki/Ctags).
+### format file (see http://https://en.wikipedia.org/wiki/Ctags).
 
 
 
@@ -151,7 +151,7 @@ rtags.file <-
     startlines <- sapply(attr(elist, "srcref"), "[", 1L)
     if (length(tokens) != length(startlines))
         stop("length mismatch: bug in code!", domain = NA)
-    keep <- sapply(tokens, length) == 1L
+    keep <- lengths(tokens) == 1L
     if (!any(keep)) return(invisible())
     tokens <- unlist(tokens[keep])
     startlines <- startlines[keep]

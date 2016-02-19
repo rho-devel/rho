@@ -1,5 +1,5 @@
 % File src/library/stats/man/glm.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -112,7 +112,7 @@ glm.fit(x, y, weights = rep(1, nobs),
 
   \item{object}{an object inheriting from class \code{"glm"}.}
   \item{type}{character, partial matching allowed.  Type of weights to
-    extract from the fitted model object.}
+    extract from the fitted model object.  Can be abbreviated.}
 
   \item{\dots}{
     For \code{glm}: arguments to be used to form the default
@@ -133,7 +133,7 @@ glm.fit(x, y, weights = rep(1, nobs),
   indicates all the terms in \code{first} together with all the terms in
   \code{second} with any duplicates removed.
 
-  A specification of the form \code{first:second} indicates the the set
+  A specification of the form \code{first:second} indicates the set
   of terms obtained by taking the interactions of all terms in
   \code{first} with all terms in \code{second}.  The specification
   \code{first*second} indicates the \emph{cross} of \code{first} and

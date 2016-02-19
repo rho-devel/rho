@@ -71,7 +71,7 @@ function(x, ...)
 			   ' <td style="text-align: left; vertical-align: top; width: 10%;">\n',
 			   htmlify(out[[pkg]][, "Item"]),
 			   '\n </td>\n',
-                           ' <td style="text-align: left" vertical-align: top; width: 90%;">\n',
+                           ' <td style="text-align: left; vertical-align: top; width: 90%;">\n',
 			   htmlify(out[[pkg]][, "Title"]),
 			   '\n </td>\n</tr>\n'),
 		    '</table>')
@@ -226,8 +226,7 @@ makeHelpTable <- function(help, depth=2) {
              '<col style="width:  2%;" />',
              '<col style="width: 74%;" />')
     pkg <- help[, "Package"]
-    root <- paste0(paste(rep.int("../", depth), collapse = ""),
-                   "library/", pkg, "/html/")
+    root <- paste0(strrep("../", depth), "library/", pkg, "/html/")
     topic <- help[, "Topic"]
     Title <- help[, "Title"]
     links <- paste0('<a href="', root, topic, '.html">',

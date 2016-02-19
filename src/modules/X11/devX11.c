@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* The version for R 2.1.0 is partly based on patches by
@@ -1021,6 +1021,8 @@ static void *RLoadFont(pX11Desc xd, char* family, int face, int size)
 	   If we can't find a "fixed" font then something is seriously
 	   wrong */
 	if ( ADOBE_SIZE(pixelsize) ) {
+	    if(tmp)
+		R_XFreeFont(display, tmp);
 	    if(mbcslocale)
 		tmp = (void*) R_XLoadQueryFontSet(display,
 		   "-*-fixed-medium-r-*--13-*-*-*-*-*-*-*");
@@ -1704,10 +1706,10 @@ X11_Open(pDevDesc dd, pX11Desc xd, const char *dsp,
 	    XMapWindow(display, xd->window);
 	    XSync(display, 0);
 
-	    /* Gobble expose events */
+	    /* Gobble MapNotify events */
 
 	    while ( XPeekEvent(display, &event),
-		    !XCheckTypedEvent(display, Expose, &event))
+		    !XCheckTypedEvent(display, MapNotify, &event))
 		;
 	    /* XNextEvent(display, &event);
 	       if (event.xany.type == Expose) {
@@ -2604,9 +2606,12 @@ static void X11_eventHelper(pDevDesc dd, int code)
     	R_ProcessX11Events((void*)NULL);	/* discard pending events */
     	if (isEnvironment(dd->eventEnv)) {
     	    SEXP prompt = findVar(install("prompt"), dd->eventEnv);
-    	    if (length(prompt) == 1) {
+    	    if (isString(prompt) && length(prompt) == 1) {
+    		 PROTECT(prompt);
     		 XStoreName(display, xd->window, CHAR(asChar(prompt)));
-    	    }
+    		 UNPROTECT(1);
+    	    } else 
+    	    	XStoreName(display, xd->window, "");
     	}
     	XSync(display, 1);
     } else if (code == 2) {

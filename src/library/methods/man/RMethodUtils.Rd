@@ -1,9 +1,10 @@
 % File src/library/methods/man/RMethodUtils.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{RMethodUtils}
+\title{Method Utilities}
 %% FIXME:  undocumented utilities (Sep. 23/02)
 \alias{asMethodDefinition}
 \alias{standardGeneric-class}
@@ -15,6 +16,7 @@
 \alias{PossibleMethod-class}
 \alias{optionalMethod-class}
 \alias{derivedDefaultMethod-class}
+\alias{internalDispatchMethod-class}
 %%
 \alias{substituteFunctionArgs}
 \alias{makeGeneric}
@@ -48,7 +50,6 @@
 %% Not for the user to know about!
 \alias{.ShortPrimitiveSkeletons} %% used from C code
 \alias{.EmptyPrimitiveSkeletons}
-\title{Method Utilities}
 \description{
   Utility functions to support the definition and use of formal
   methods.  Most of these functions will not normally be called directly
@@ -61,7 +62,7 @@ getGroup(fdef, recursive, where)
 getGroupMembers(group, recursive = FALSE, character = TRUE)
 
 getMethodsMetaData(f, where)
-assignMethodsMetaData (f, value, fdef, where, deflt)
+assignMethodsMetaData (f, value, fdef, where)
 
 makeGeneric(f, fdef, fdefault =, group=list(), valueClass=character(),
             package =, signature = NULL, genericFunction = NULL,
@@ -93,8 +94,6 @@ setPrimitiveMethods(f, fdef, code, generic, mlist)
 
 missingArg(symbol, envir = parent.frame(), eval)
 
-balanceMethodsList(mlist, args, check = TRUE)
-
 sigToEnv(signature, generic)
 
 rematchDefinition(definition, generic, mnames, fnames, signature)
@@ -105,6 +104,8 @@ asMethodDefinition(def, signature, sealed = FALSE, fdef)
 addNextMethod(method, f, mlist, optional, envir)
 
 insertClassMethods(methods, Class, value, fieldNames, returnAll)
+
+balanceMethodsList(mlist, args, check = TRUE) # <- deprecated since R 3.2.0
 }
 \section{Summary of Functions}{
 
@@ -228,17 +229,19 @@ insertClassMethods(methods, Class, value, fieldNames, returnAll)
     }
 
     \item{\code{balanceMethodsList}:}{
-      Called from \code{\link{setMethod}} to ensure that all nodes in
-      the list have the same depth (i.e., the same number of levels of
-      arguments).  Balance is needed to ensure that all necessary
-      arguments are examined when inherited methods are being found and
-      added to the \code{allMethods} slot.  No actual recomputation is
-      needed usually except when a new method uses a longer signature
-      than has appeared before.
+      Used to be called from \code{setMethod()} and is \emph{deprecated}
+      since \R version 3.2.0.
+    %%   Called from \code{\link{setMethod}} to ensure that all nodes in
+    %%   the list have the same depth (i.e., the same number of levels of
+    %%   arguments).  Balance is needed to ensure that all necessary
+    %%   arguments are examined when inherited methods are being found and
+    %%   added to the \code{allMethods} slot.  No actual recomputation is
+    %%   needed usually except when a new method uses a longer signature
+    %%   than has appeared before.
 
-      Balance requires that \emph{all} methods be added to the generic
-      via \code{setMethod} (how else could you do it?) or by the initial
-      \code{setGeneric} call converting the ordinary function.
+    %%   Balance requires that \emph{all} methods be added to the generic
+    %%   via \code{setMethod} (how else could you do it?) or by the initial
+    %%   \code{setGeneric} call converting the ordinary function.
     }
 
     \item{\code{sigToEnv}:}{

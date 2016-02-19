@@ -2,6 +2,7 @@
 #
 # ${R_HOME}/tests/Makefile.common
 
+## If you add test scripts here, review  ../src/library/tools/R/testing.R
 
 test-src-gct = \
 	eval-etc.R \
@@ -11,7 +12,6 @@ test-src-gct = \
 	lm-tests.R \
 	ok-errors.R \
 	method-dispatch.R \
-	array-subset.R \
 	any-all.R
 test-src-strict-1 = \
 	$(test-src-gct) \
@@ -43,12 +43,15 @@ test-src-random = p-r-random-tests.R
 test-src-regexp = utf8-regex.R
 test-src-segfault = no-segfault.R
 
-test-src-reg-1 = reg-tests-1a.R reg-tests-1b.R reg-tests-1c.R reg-tests-2.R \
+test-src-reg-1 = array-subset.R \
+  reg-tests-1a.R reg-tests-1b.R reg-tests-1c.R reg-tests-2.R \
   reg-examples1.R reg-examples2.R reg-packages.R p-qbeta-strict-tst.R \
+  r-strict-tst.R \
   reg-IO.R reg-IO2.R reg-plot.R reg-S4.R reg-BLAS.R
-## overridden by Makefile.win
+## added to in Makefile.win
 test-src-reg-1e =
 test-src-reg = $(test-src-reg-1) $(test-src-reg-1e)
+## overridden in Makefile if recommended packages are not installed.
 test-src-reg3 = reg-tests-3.R reg-examples3.R reg-plot-latin1.R
 
 test-out-strict = $(test-src-strict:.R=.Rout)
@@ -152,9 +155,12 @@ R-valgrind = $(R) --debugger="valgrind --tool=memcheck"
 	grep "==[0-9]*==" $@
 
 # TODO(kmillar): add testr to all-basic-tests once it passes.
+## The definitions for Internet are in Makefile.{in,win}.
 all-basic-tests = CXXR CXXR2 Examples Specific Reg Internet
 test-all-basics: $(addprefix test-, $(all-basic-tests))
 
+## if you change this, also edit Makefile.install
+## The definitions for Standalone are in Makefile.{in,win}.
 all-devel-tests = DateTime Docs IsAs Random Demo Primitive Regexp \
     Internet2 Segfault Standalone Packages
 test-all-devel: $(addprefix test-, $(all-devel-tests))
@@ -181,7 +187,8 @@ test-Packages:
 	@$(ECHO) "begin checking package '`basename $@ .log`'"
 	@rm -f $@
 	@_R_CHECK_FF_CALLS_=registration \
-	$(top_builddir)/bin/R CMD check --install=skip --no-build-vignettes \
+	  _R_CHECK_CODE_USAGE_WITH_ONLY_BASE_ATTACHED_=true \
+	  $(top_builddir)/bin/R CMD check --install=skip --no-build-vignettes \
 	  $(top_srcdir)/src/library/`basename $@ .log` > $@ 2>&1
 	@cat $@
 

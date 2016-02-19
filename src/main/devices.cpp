@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
 
 
  *  This is an extensive reworking by Paul Murrell of an original
@@ -229,8 +229,9 @@ int prevDevice(int from)
     else {
 	int i = from;
 	int prevDev = 0;
-	while ((i > 1) && (prevDev == 0))
-	    if (active[--i]) prevDev = i;
+	if (i < R_MaxDevices)
+	    while ((i > 1) && (prevDev == 0))
+		if (active[--i]) prevDev = i;
 	if (prevDev == 0) {
 	    /* start again from R_MaxDevices */
 	    i = R_MaxDevices;
@@ -379,7 +380,7 @@ void KillAllDevices(void)
     // unregisterBase();
     if (baseRegisterIndex != -1) {
 	GEunregisterSystem(baseRegisterIndex);
-	baseRegisterIndex = -1; 
+	baseRegisterIndex = -1;
     }
 }
 

@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -537,7 +537,7 @@ SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::
     } else seed = CXXRCONSTRUCT(int, TimeToSeed());
     skind = kind_;
     nkind = normal_kind_;
-    GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
+    GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from
 			       .Random.seed if present */
     if (!isNull(skind)) RNGkind(RNGtype( asInteger(skind)));
     if (!isNull(nkind)) Norm_kind(N01type( asInteger(nkind)));
@@ -771,13 +771,13 @@ static Int32 KT_next(void)
 static void RNG_Init_R_KT(Int32 seed)
 {
     SEXP fun, sseed, call, ans;
-    fun = findVar1(install(".TAOCP1997init"), R_BaseEnv, CLOSXP, FALSE);
+    PROTECT(fun = findVar1(install(".TAOCP1997init"), R_BaseEnv, CLOSXP, FALSE));
     if(fun == R_UnboundValue)
 	error("function '.TAOCP1997init' is missing");
     PROTECT(sseed = ScalarInteger(int(seed % 1073741821)));
     PROTECT(call = lang2(fun, sseed));
     ans = eval(call, R_GlobalEnv);
     memcpy(dummy, INTEGER(ans), 100*sizeof(int));
-    UNPROTECT(2);
+    UNPROTECT(3);
     KT_pos = 100;
 }

@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *  EXPORTS	printMatrix()
@@ -47,8 +47,10 @@
 using namespace std;
 using namespace CXXR;
 
-/* FIXME: sort out encodings */
-/* We need display width of a string */
+/* We need display width of a string.
+   Used only for row/column names found by GetMatrixDimnames,
+   so in native encoding.  (NULL ones from do_prmatrix are skipped.)
+*/
 int Rstrwid(const char *str, int slen, cetype_t enc, int quote);  /* from printutils.c */
 #define strwidth(x) Rstrwid(x, (int) strlen(x), CE_NATIVE, 0)
 
@@ -347,6 +349,7 @@ static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 		   Rprintf("%*s%s", w[j]-2, "", EncodeRaw(x[i + j * r], "")) );
 }
 
+/* rm and cn are found by GetMatrixDimnames so in native encoding */
 attribute_hidden
 void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 		 SEXP rl, SEXP cl, const char *rn, const char *cn)
@@ -531,4 +534,3 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
     }
     vmaxset(vmax);
 }
-

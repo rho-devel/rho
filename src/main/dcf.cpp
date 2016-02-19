@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-2014   The R Core Team.
+ *  Copyright (C) 2001-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,31 +41,30 @@ static void transferVector(SEXP s, SEXP t);
 static Rboolean field_is_foldable_p(const char *, SEXP);
 
 /* Use R_alloc as this might get interrupted */
-static char *Rconn_getline2(Rconnection con)
+static char *Rconn_getline2(Rconnection con, char *buf, int bufsize)
 {
-    int c, bufsize = MAXELTSIZE, nbuf = -1;
-    char *buf;
-
-    buf = R_alloc(bufsize, sizeof(char));
+    int c, nbuf = 0;
     while((c = Rconn_fgetc(con)) != R_EOF) {
-	if(nbuf+2 >= bufsize) { // allow for terminator below
+	if(nbuf+1 >= bufsize) { // allow for terminator below
 	    bufsize *= 2;
 	    char *buf2 = R_alloc(bufsize, sizeof(char));
 	    memcpy(buf2, buf, nbuf);
 	    buf = buf2;
 	}
 	if(c != '\n'){
-	    buf[++nbuf] = char( c);
+	    buf[nbuf++] = (char) c;
 	} else {
-	    buf[++nbuf] = '\0';
+	    buf[nbuf++] = '\0';
 	    break;
 	}
     }
+    if (!nbuf)
+    	return NULL;
     /* Make sure it is null-terminated even if file did not end with
      *  newline.
      */
-    if(nbuf >= 0 && buf[nbuf]) buf[++nbuf] = '\0';
-    return (nbuf == -1) ? nullptr: buf;
+    if(buf[nbuf-1]) buf[nbuf] = '\0';
+    return buf;
 }
 
 SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* fields_, CXXR::RObject* keep_white_)
@@ -119,7 +118,8 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
 	lastm = -1; /* index of the field currently being recorded */
 	blank_skip = TRUE;
 	CXXR::RAllocStack::Scope rscope;
-	while((line = Rconn_getline2(con))) {
+	char buf0[MAXELTSIZE];
+	while((line = Rconn_getline2(con, buf0, MAXELTSIZE))) {
 	    if(strlen(line) == 0 ||
 	       tre_regexecb(&blankline, line, 0, nullptr, 0) == 0) {
 		/* A blank line.  The first one after a record ends a new

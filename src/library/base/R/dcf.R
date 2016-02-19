@@ -1,7 +1,7 @@
 #  File src/library/base/R/dcf.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 read.dcf <-
 function(file, fields = NULL, all = FALSE, keep.white = NULL)
@@ -34,7 +34,7 @@ function(file, fields = NULL, all = FALSE, keep.white = NULL)
     ##           lapply(out,
     ##                  function(s)
     ##                  if(is.atomic(s)) s
-    ##                  else mapply("[[", s, sapply(s, length))))
+    ##                  else mapply("[[", s, lengths(s))))
     if(!all) return(.Internal(readDCF(file, fields, keep.white)))
 
     .assemble_things_into_a_data_frame <- function(tags, vals, nums) {

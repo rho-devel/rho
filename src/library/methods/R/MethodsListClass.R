@@ -1,5 +1,5 @@
 #  File src/library/methods/R/MethodsListClass.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,13 +14,15 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 .InitMethodsListClass <- function(envir)
 {
-    if(exists(classMetaName("MethodsList"), envir))
+    if(exists(classMetaName("EmptyMethodsList"), envir))
         return(FALSE)
     clList <- character()
+    ## Even though it is defunct from R 3.2.0, other functions using it are
+    ## only deprecated: So we define it and give .MlistDeprecated() messages there:
     setClass("MethodsList",
              representation(methods = "list", argument = "name", allMethods = "list"),
              where = envir); clList <- c(clList, "MethodsList")
@@ -37,7 +39,8 @@
     setIs("PossibleMethod", "optionalMethod", where = envir)
     setIs("NULL", "optionalMethod", where = envir)
     ## prior to 2.11.0, the default slot in generic function objects was a MethodsList or NULL
-    setIs("MethodsList", "optionalMethod", where = envir) #only until MethodsList class is defunct
+    ## from 3.2.0, no longer:
+    ## setIs("MethodsList", "optionalMethod", where = envir) #only until MethodsList class is defunct
 
     ## signatures -- multiple class names w. package slot in ||
     setClass("signature", representation("character", names = "character", package = "character"), where = envir); clList <- c(clList, "signature")
@@ -52,6 +55,9 @@
              where = envir); clList <- c(clList, "MethodDefinition")
     ## class for default methods made from ordinary functions
     setClass("derivedDefaultMethod", "MethodDefinition")
+    ## class for methods that call and dispatch inside .Internal()
+    setClass("internalDispatchMethod", contains = "derivedDefaultMethod",
+             representation(internal = "character"))
     ## class for methods with precomputed information for callNextMethod
     setClass("MethodWithNext",
              representation("MethodDefinition", nextMethod = "PossibleMethod", excluded = "list"), where = envir); clList <- c(clList, "MethodWithNext")
@@ -193,11 +199,10 @@
                       assign(what, elNamed(args, what), envir = value)
                   value
               }, where = envir)
-    ## from 2.11.0, the MethodsList classs is deprecated
-    setMethod("initialize", "MethodsList", function(.Object, ...) {
-        .MlistDeprecated()
-        callNextMethod()
-    }, where = envir)
+    ## from 2.11.0, the MethodsList class is deprecated
+    ## from 3.2.0, it is defunct
+    setMethod("initialize", "MethodsList", function(.Object, ...) .MlistDefunct(),
+              where = envir)
 
     ## make sure body(m) <- .... leaves a method as a method
     setGeneric("body<-", where = envir)

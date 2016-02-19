@@ -1,5 +1,5 @@
 % File src/library/utils/man/page.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -17,7 +17,7 @@ page(x, method = c("dput", "print"), \dots)
   \item{x}{An \R object, or a character string naming an object.}
   \item{method}{The default method is to dump the object \emph{via}
     \code{\link{dput}}.  An alternative is to use \code{print} and
-    capture the output to be shown in the pager.}
+    capture the output to be shown in the pager.  Can be abbreviated.}
   \item{\dots}{additional arguments for \code{\link{dput}},
     \code{\link{print}} or \code{\link{file.show}} (such as \code{title}).}
 }

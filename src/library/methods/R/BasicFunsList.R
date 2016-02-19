@@ -1,5 +1,5 @@
 #  File src/library/methods/R/BasicFunsList.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2014 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## Lists of functions and expressions used in dispatch of functions
 ## defined internally (as .Primitive's) for which formal argument lists
@@ -22,9 +22,8 @@
 ## needs to have a special form (e.g., belonging to one of the
 ## predefined groups of functions).
 
-## The list is expanded in .makeBasicFuns by adding the S4 group generics
-## and the remaining primitives.
-
+##' The list is expanded in .makeBasicFuns() -> ./makeBasicFunsList.R by 
+##' adding the S4 group generics and the remaining primitives.
 .BasicFunsList <-
 list(
 ### subset/subassignment ops are regarded as language elements
@@ -77,24 +76,35 @@ list(
 ## functions.
 
 .addBasicGeneric <-
-    function(funslist, f, fdef, group = list())
+    function(funslist, f, fdef, group = list(), internal = FALSE,
+             internalArgs = names(formals(deflt)))
 {
-    signature <- attr(fdef, "signature") #typically NULL, but see the case for "$"
     deflt <- get(f, "package:base")
     ## use the arguments of the base package function
     ##FIXME:  should also deal with the functions having ... as the first
     ## argument, but needs to create a generic with different args from the deflt
     ## => constructing a call to the base function from the default
     if(is.primitive(deflt)) {
-        body(fdef, envir = globalenv()) <-
+        signature <- attr(fdef, "signature") #typically NULL, but see the case for "$"
+        body(fdef, envir = topenv()) <-
             substitute(standardGeneric(FNAME, DEFLT), list(FNAME=f, DEFLT=deflt))
     }
     else {
+        if (internal) {
+            formals(deflt) <- setNames(rep(alist(x=), length(internalArgs)),
+                                       internalArgs)
+            call <- as.call(c(as.name(f), lapply(internalArgs, as.name)))
+            body(deflt, envir = baseenv()) <-
+                substitute(.Internal(CALL), list(CALL=call))
+        }
         fdef <- deflt
-        body(fdef, envir = globalenv()) <-
+        body(fdef, envir = topenv()) <-
             substitute(standardGeneric(FNAME), list(FNAME=f))
     }
-    deflt <- .derivedDefaultMethod(deflt)
+    deflt <- .derivedDefaultMethod(deflt, internal = if (internal) f)
+    if (internal) {
+        signature <- names(formals(deflt))[1L]
+    }
     elNamed(funslist, f) <- makeGeneric(f, fdef, deflt, group = group, package = "base",
                                         signature = signature)
     funslist
@@ -122,8 +132,20 @@ list(
 
 ## temporary versions while primitives are still handled by a global table
 
-genericForPrimitive <- function(f, where = topenv(parent.frame()),
-                                mustFind = TRUE)
+isBaseFun <- function(fun) {
+    is.primitive(fun) || identical(environment(fun), .BaseNamespaceEnv)
+}
+
+inBasicFuns <- function(f) {
+    !is.null(.BasicFunsList[[f]])
+}
+
+dispatchIsInternal <- function(fdef) {
+    is.primitive(fdef@default) || is(fdef@default, "internalDispatchMethod")
+}
+
+genericForBasic <- function(f, where = topenv(parent.frame()),
+                            mustFind = TRUE)
 {
     ans <- .BasicFunsList[[f]]
     ## this element may not exist (yet, during loading), don't test null

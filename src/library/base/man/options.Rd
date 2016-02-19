@@ -1,5 +1,5 @@
 % File src/library/base/man/options.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -32,12 +32,12 @@ getOption(x, default = NULL)
 \arguments{
   \item{\dots}{any options can be defined, using \code{name = value}.
     However, only the ones below are used in base \R.
-    
+
     Options can also be passed by giving a single unnamed argument which
     is a named list.
   }
   \item{x}{a character string holding an option name.}
-  
+
   \item{default}{if the specified option is not set in the options list,
     this value is returned.  This facilitates retrieving an option and
     checking whether it is set and setting it separately if not.}
@@ -74,7 +74,7 @@ getOption(x, default = NULL)
       used by \code{\link{plot.lm}}.}
 
     \item{\code{browserNLdisabled}:}{logical: whether newline is
-      disabled as a synonym for \code{"n"} is the browser.}
+      disabled as a synonym for \code{"n"} in the browser.}
 
     \item{\code{checkPackageLicense}:}{logical, not set by default.  If
       true, \code{\link{library}} asks a user to accept any non-standard
@@ -102,10 +102,9 @@ getOption(x, default = NULL)
       environment variable \env{R_DEFAULT_PACKAGES}, or if that is unset
       to \code{c("datasets", "utils", "grDevices", "graphics", "stats",
         "methods")}.  (Set \env{R_DEFAULT_PACKAGES} to \code{NULL} or
-      a comma-separated list of package names.)   A call to
-      \code{options} should be in your \file{.Rprofile} file to ensure
-      that the change takes effect before the base package is
-      initialized (see \code{\link{Startup}}).}
+      a comma-separated list of package names.)  It will not work to set
+      this in a \file{.Rprofile} file, as its value is consulted before
+      that file is read.}
 
     \item{\code{deparse.cutoff}:}{integer value controlling the
       printing of language constructs which are \code{\link{deparse}}d.
@@ -131,8 +130,9 @@ getOption(x, default = NULL)
 
     \item{\code{download.file.method}:}{Method to be used for
       \code{download.file}.  Currently download methods
-      \code{"internal"}, \code{"wget"} and \code{"lynx"} are available.
-      There is no default for this option, when \code{method = "auto"}
+      \code{"internal"}, \code{"wininet"} (Windows only),
+      \code{"libcurl"}, \code{"wget"} and \code{"curl"} are available.
+      If not set, \code{method = "auto"}
       is chosen: see \code{\link{download.file}}.}
 
     \item{\code{echo}:}{logical.  Only used in non-interactive mode,
@@ -151,9 +151,9 @@ getOption(x, default = NULL)
       value is \code{NULL}: see \code{\link{stop}} for the behaviour in
       that case.  The functions \code{\link{dump.frames}} and
       \code{\link{recover}} provide alternatives that allow post-mortem
-      debugging.  Note that these need to specified as e.g.
-      \code{options(error = utils::recover)} in startup files such as
-      \file{\link{.Rprofile}}.}
+      debugging.  Note that these need to specified as
+      e.g.\sspace{}\code{options(error = utils::recover)} in startup
+      files such as \file{\link{.Rprofile}}.}
 
     \item{\code{expressions}:}{sets a limit on the number of nested
       expressions that will be evaluated.  Valid values are
@@ -190,9 +190,11 @@ getOption(x, default = NULL)
       point in output conversions, that is in printing, plotting,
       \code{\link{format}} and \code{\link{as.character}} but not when
       deparsing nor by \code{\link{sprintf}} nor \code{\link{formatC}}
-      (which are sometimes used prior to printing.
+      (which are sometimes used prior to printing.)
 
       Only single-byte characters were supported prior to \R 3.2.0.
+      In \R 3.2.1 and earlier, multi- (or zero-) character \code{OutDec}
+      were accepted, but always worked only partially.
     }
 
     \item{\code{pager}:}{the command used for displaying text files by
@@ -250,7 +252,7 @@ getOption(x, default = NULL)
 #ifdef unix
     \item{\code{rl_word_breaks}:}{Used for the readline-based terminal
       interface.  Default value \code{" \\t\\n\\"\\\\'`><=\%;,|&{()}"}.%"
-	
+
       This is the set of characters use to break the input line into
       tokens for object- and file-name completion.  Those who do not use
       spaces around operators may prefer\cr
@@ -361,7 +363,8 @@ getOption(x, default = NULL)
       line used in printing vectors, matrices and arrays, and when
       filling by \code{\link{cat}}.
 
-      Columns are normally the same as characters except in CJK languages.
+      Columns are normally the same as characters except in East Asian
+      languages.
 
       You may want to change this if you re-size the window that \R is
       running in.  Valid values are 10\dots10000 with default normally
@@ -425,6 +428,12 @@ getOption(x, default = NULL)
       configurable via environment variables
       \env{R_INTERACTIVE_DEVICE} and \env{R_DEFAULT_DEVICE}
       respectively.
+
+      The search logic for \sQuote{the normal screen device} is that
+      this is \code{windows} on Windows, and \code{quartz} if available
+      on OS X (running at the console, and compiled into the build).
+      Otherwise \code{X11} is used if environment variable \env{DISPLAY}
+      is set.
     }
 
     \item{\code{device.ask.default}:}{logical.  The default for
@@ -491,9 +500,9 @@ getOption(x, default = NULL)
   \describe{
     \item{\code{BioC_mirror}:}{The URL of a Bioconductor mirror
       for use by \code{\link{setRepositories}},
-      e.g.\sspace{}the default \samp{"http://www.bioconductor.org"}
+      e.g.\sspace{}the default \samp{"https://bioconductor.org"}
       or the European mirror
-      \samp{"http://bioconductor.statistik.tu-dortmund.de"}.  Can be set
+      \samp{"https://bioconductor.statistik.tu-dortmund.de"}.  Can be set
       by \code{\link{chooseBioCmirror}}.}
 
     \item{\code{browser}:}{The HTML browser to be used by
@@ -538,11 +547,11 @@ getOption(x, default = NULL)
     \item{\code{help_type}:}{default for an argument of
     \code{\link{help}}, used also as the help type by \code{\link{?}}.}
 
-    \item{\code{HTTPUserAgent}:}{string used as the user agent in HTTP
-      requests.  If \code{NULL}, HTTP requests will be made without a
-      user agent header.  The default is \code{R (<version> <platform>
-	<arch> <os>)}}
-
+    \item{\code{HTTPUserAgent}:}{string used as the user agent in HTTP(S)
+      requests.  If \code{NULL}, requests will be made without a
+      user agent header.
+      The default is \code{R (<version> <platform> <arch> <os>)} .}
+    
     \item{\code{install.lock}:}{logical: should per-directory package
       locking be used by \code{\link{install.packages}}?  Most useful
       for binary installs on OS X and Windows, but can be used in a
@@ -551,12 +560,11 @@ getOption(x, default = NULL)
       the character string \code{"pkgloack"}.}
 
     \item{\code{internet.info}:}{The minimum level of information to be
-      printed on URL downloads etc, using the \code{"internal"} method.
+      printed on URL downloads etc, using the \code{"internal"} and
+      \code{"libcurl"} methods.
       Default is 2, for failure causes.  Set to 1 or 0 to get more
-      detailed information.
-  
-      For methods based on \code{libcurl} a value less than 2 (the
-      default) selects verbose output.
+      detailed information (for the \code{"internal"} method 0 provides
+      more information than 1).
     }
 
     \item{\code{install.packages.check.source}:}{Used by
@@ -576,7 +584,7 @@ getOption(x, default = NULL)
       \code{"interactive"} if unset.  However, \code{install.packages}
       uses \code{"never"} unless a \command{make} program is found,
       consulting the environment variable \env{MAKE}.}
-    
+
     \item{\code{mailer}:}{default emailing method used by
       \code{\link{create.post}} and hence \code{\link{bug.report}} and
       \code{\link{help.request}}.}
@@ -636,6 +644,9 @@ getOption(x, default = NULL)
       used.
 #endif
     }
+      
+    \item{\code{useHTTPS}:}{logical.  Used by \code{\link{chooseCRANmirror}}:
+      are secure mirrors preferred?  If not set, \code{TRUE} is assumed.}
   }
 }
 \section{Options set in package parallel}{

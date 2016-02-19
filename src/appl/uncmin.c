@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1997-1999   Saikat DebRoy
- *  Copyright (C) 1999-2014   The R Core Team
+ *  Copyright (C) 1999-2015   The R Core Team
  *  Copyright (C) 2003-2010   The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *  USA
  */
 
@@ -882,7 +882,7 @@ dogdrv(int nr, int n, double *x, double f, double *g, double *a, double *p,
 
     Rboolean fstdog, nwtake;
     int i;
-    double fplsp, rnwtln, eta = 0.0, cln = 0.0, tmp; /* -Wall */
+    double fplsp = 0.0, rnwtln, eta = 0.0, cln = 0.0, tmp; /* -Wall */
 
     tmp = 0.;
     for (i = 0; i < n; ++i)
@@ -992,13 +992,13 @@ hook_1step(int nr, int n, double *g, double *a, double *udiag, double *p,
 	/*	where h <-- h+amu*(sx**2) [do not actually change (h,udiag)] */
 /* The original code was
    http://people.sc.fsu.edu/~jburkardt/f77_src/uncmin/uncmin.f
-        do 100 j=1,n
-          a(j,j)=udiag(j) + amu*sx(j)*sx(j)
-          if(j.eq.n) go to 100
-          jp1=j+1
-          do i=jp1,n
-            a(i,j)=a(j,i)
-          end do
+	do 100 j=1,n
+	  a(j,j)=udiag(j) + amu*sx(j)*sx(j)
+	  if(j.eq.n) go to 100
+	  jp1=j+1
+	  do i=jp1,n
+	    a(i,j)=a(j,i)
+	  end do
   100   continue
 */
 	for (i = 0; i < n; ++i) {
@@ -1098,7 +1098,7 @@ hookdrv(int nr, int n, double *x, double f, double *g, double *a,
 
     Rboolean fstime, nwtake;
     int i, j;
-    double bet, alpha, fplsp, rnwtln, tmp;
+    double bet, alpha, fplsp = 0.0 /* -Wall */, rnwtln, tmp;
 
     tmp = 0.;
     for (i = 0; i < n; ++i)

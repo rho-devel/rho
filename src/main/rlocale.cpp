@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2005-2014   The R Core Team
+ *  Copyright (C) 2005-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,19 +20,19 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
-/*  This file was contributed by Ei-ji Nakama.
- *  See also the comments in rlocale.h.
+/*  The original version of this file was contributed by Ei-ji Nakama.
+ *  See also the comments in ../include/rlocale.h.
  *
  *  It provides replacements for the wctype functions on
  *  Windows (where they are not correct in e.g. Japanese)
  *  AIX (missing)
- *  MacOS X in CJK (where these just call the ctype functions)
+ *  OS X in CJK (where these just call the ctype functions)
  *
  *  It also provides wc[s]width, where widths of CJK fonts are often
- *  wrong in vendor-supplied versions and in Marcus Kuhn's version
+ *  wrong in vendor-supplied versions and in Markus Kuhn's version
  *  used for Windows in R 2.[12].x.
  */
 
@@ -62,7 +62,26 @@
 #include <limits.h>
 #include <R_ext/Riconv.h>
 
-#include <Defn.h>   
+// This seems based on Markus Kuhn's function but with 1-based 'max'
+static int wcsearch(int wint, const struct interval *table, int max)
+{
+    int min = 0;
+    int mid;
+    max--;
+
+    if (wint < table[0].first || wint > table[max].last)
+	return 0;
+    while (max >= min) {
+	mid = (min + max) / 2;
+	if (wint > table[mid].last)
+	    min = mid + 1;
+	else if (wint < table[mid].first)
+	    max = mid - 1;
+	else
+	    return 1;
+    }
+    return 0;
+}
 
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
@@ -71,7 +90,9 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
     int mid;
     max--;
 
-    if (wint < table[0].first || wint > table[max].last) return 0;
+    /* This quickly gives one for ASCII characters since the table
+       starts at 0xa0 */
+    if (wint < table[0].first || wint > table[max].last) return 1;
     while (max >= min) {
 	mid = (min + max) / 2;
 	if (wint > table[mid].last)
@@ -85,12 +106,28 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
     return -1;
 }
 
+/* The idea here here has never been explained.
+   See also the comments in ../include/rlocale.h.
+
+  That does not explain the separate entries for Singapore
+   (simplified) and Hong Kong/Macau (traditional) where it seems the
+   Windows system font is not different from PRC/Taiwan respectively,
+   nor what font was used for non-Windows, nor where the values came
+   from.
+
+   Except perhaps on OS X, the non-Windows locale names are for the
+   default MBCS encodings (e.g. GBK, GB1312, BIG5, EUCJP, EUCKR).
+   There are other non-UTF-8 encodings for those locales,
+   e.g. ja_JP.SJIS, ko_KR.CP949, zh_CN.eucCN, zh_HK.Big5HKSCS.
+*/
+
 typedef struct {
     CXXRCONST char *name;
     int locale;
 } cjk_locale_name_t;
 
 static cjk_locale_name_t cjk_locale_name[] = {
+    // Windows locale names
     {"CHINESE(SINGAPORE)_SIGNAPORE",		MB_zh_SG},
     {"CHINESE_SIGNAPORE",			MB_zh_SG},
     {"CHINESE(PRC)_PEOPLE'S REPUBLIC OF CHINA",	MB_zh_CN},
@@ -106,20 +143,22 @@ static cjk_locale_name_t cjk_locale_name[] = {
     {"JAPANESE",				MB_ja_JP},
     {"KOREAN_KOREA",				MB_ko_KR},
     {"KOREAN",				        MB_ko_KR},
+    // Other OSes, but only in default encodings.
     {"ZH_TW",                                   MB_zh_TW},
     {"ZH_CN",                                   MB_zh_CN},
     {"ZH_CN.BIG5",                              MB_zh_TW},
     {"ZH_HK",                                   MB_zh_HK},
     {"ZH_SG",                                   MB_zh_SG},
-    {"JA_JP",				MB_ja_JP},
+    {"JA_JP",					MB_ja_JP},
     {"KO_KR",				        MB_ko_KR},
     {"ZH",				        MB_zh_CN},
-    {"JA",				MB_ja_JP},
+    {"JA",					MB_ja_JP},
     {"KO",				        MB_ko_KR},
-    {"",				        MB_UTF8},
+    // Default, where all EA Ambiguous characters have width one.
+    {"",				        MB_Default},
 };
 
-/* used in grDevices */
+// used in character.c, ../gnuwin32/console.c , ../library/grDevices/src/devP*.c :
 int Ri18n_wcwidth(wchar_t c)
 {
     char lc_str[128];
@@ -143,12 +182,15 @@ int Ri18n_wcwidth(wchar_t c)
 	}
     }
 
-    return(wcwidthsearch(c, table_wcwidth,
-			 (CXXRCONSTRUCT(int, sizeof(table_wcwidth)/sizeof(struct interval_wcwidth))),
-			 lc));
+    int wd = wcwidthsearch(c, table_wcwidth,
+			   (sizeof(table_wcwidth)/sizeof(struct interval_wcwidth)),
+			   lc);
+    if (wd >= 0) return wd; // currently all are 1 or 2.
+    int zw = wcsearch(c, zero_width, zero_width_count);
+    return zw ? 0 : 1; // assume unknown chars are width one.
 }
 
-/* Used in charcter.c, gnuwin32/console.c */
+/* Used in character.c, errors.c, ../gnuwin32/console.c */
 attribute_hidden
 int Ri18n_wcswidth (const wchar_t *s, size_t n)
 {
@@ -163,36 +205,13 @@ int Ri18n_wcswidth (const wchar_t *s, size_t n)
     return rs;
 }
 
-#if defined(Win32) || defined(_AIX) || defined(__APPLE__)
-static int wcsearch(int wint, const struct interval *table, int max)
-{
-    int min = 0;
-    int mid;
-    max--;
-
-    if (wint < table[0].first || wint > table[max].last)
-	return 0;
-    while (max >= min) {
-	mid = (min + max) / 2;
-	if (wint > table[mid].last)
-	    min = mid + 1;
-	else if (wint < table[mid].first)
-	    max = mid - 1;
-	else
-	    return 1;
-    }
-    return 0;
-}
-#endif
-
-
 /*********************************************************************
- *  There is MacOS with a CSI(CodeSet Independence) system.
- *  (wchar_t != unicode)
- *  However, it is Unicode at the time of UTF-8.
+ *  OS X's wide character type functions are based on FreeBSD
+ *  and only work correctly for Latin-1 characters.
+ *  So we replace them.  May also be needed on FreeBSD.
  ********************************************************************/
 #if defined(__APPLE__)
-/* allow for both PPC and Intel platforms */
+/* allow for both PowerPC and Intel platforms */
 #ifdef WORDS_BIGENDIAN
 static const char UNICODE[] = "UCS-4BE";
 #else
@@ -201,7 +220,6 @@ static const char UNICODE[] = "UCS-4LE";
 
 /* in Defn.h which is not included here */
 extern const char *locale2charset(const char *);
-
 
 #define ISWFUNC(ISWNAME) static int Ri18n_isw ## ISWNAME (wint_t wc) \
 {	                                                             \
@@ -235,7 +253,7 @@ extern const char *locale2charset(const char *);
   }                                                                  \
   return(-1);                                                        \
 }
-#endif
+#endif // __APPLE__
 
 /*********************************************************************
  *  iswalpha etc. does not function correctly for Windows
@@ -250,14 +268,14 @@ extern const char *locale2charset(const char *);
 #endif
 
 /*********************************************************************
- *  iswalpha etc. does function normally for Linux
+ *  iswalpha etc. do function correctly for Linux
  ********************************************************************/
 #ifndef ISWFUNC
 #define ISWFUNC(ISWNAME) static int Ri18n_isw ## ISWNAME (wint_t wc) \
 {                                                                       \
     return isw ## ISWNAME (wc); \
 }
-/* Solaris 8 is missing iswblank.  Its man page is missing iswcntrl,
+/* Solaris 8 was missing iswblank.  Its man page was missing iswcntrl,
    but the function is there.  MinGW used not to have iswblank until
    mingw-runtime-3.11. */
 #ifndef HAVE_ISWBLANK

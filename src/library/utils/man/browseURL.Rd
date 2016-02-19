@@ -1,5 +1,5 @@
 % File src/library/utils/man/browseURL.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -49,7 +49,7 @@ browseURL(url, browser = getOption("browser"),
   necessary.  This mechanism currently is available for browsers which
   support the \code{"-remote openURL(...)"} interface (which includes
   Mozilla and Opera), Galeon, KDE konqueror (\emph{via} kfmclient) and
-  the GNOME interface to Mozilla. (Firefox has droppped support, but
+  the GNOME interface to Mozilla. (Firefox has dropped support, but
   defaults to using an already-running browser.)  Note that the type of
   browser is determined from its name, so this mechanism will only be
   used if the browser is installed under its canonical name.
@@ -73,7 +73,7 @@ browseURL(url, browser = getOption("browser"),
 \examples{
 \dontrun{## for KDE users who want to open files in a new tab
 options(browser = "kfmclient newTab")
-browseURL("http://www.r-project.org")
+browseURL("https://www.r-project.org")
 }}
 #endif
 #ifdef windows
@@ -90,7 +90,7 @@ browseURL("http://www.r-project.org")
   To suppress showing URLs altogether, set \code{browser = "false"}.
 }
 \examples{
-\dontrun{browseURL("http://www.r-project.org")
+\dontrun{browseURL("https://www.r-project.org")
 browseURL("file://d:/R/R-2.5.1/doc/html/index.html",
           browser = "C:/Program Files/Mozilla Firefox/firefox.exe")
 }}

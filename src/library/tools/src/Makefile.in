@@ -76,7 +76,9 @@ $(srcdir)/gramRd.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
 	@$(ECHO) "re-making gramRd.cpp"
 	$(YACC) $(YFLAGS) -p gramRd_ $(srcdir)/gramRd.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.cpp
-$(srcdir)/gramLatex.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
+
+# depend on gramRd.cpp to avoid race condition with parallel make
+$(srcdir)/gramLatex.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y $(srcdir)/gramRd.cpp
 	@$(ECHO) "re-making gramLatex.c"
 	$(YACC) $(YFLAGS) $(srcdir)/gramLatex.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramLatex.c

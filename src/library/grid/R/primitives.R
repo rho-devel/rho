@@ -1,7 +1,7 @@
 #  File src/library/grid/R/primitives.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 
 # Function that creates a description of an arrow head
@@ -939,7 +939,7 @@ validDetails.beziergrob <- function(x) {
             id <- x$id
         }
         xper <- split(x$x, id)
-        if (any(sapply(xper, length) != 4L))
+        if (any(lengths(xper) != 4L))
             stop("must have exactly 4 control points per Bezier curve")
     }
     if (!(is.null(x$arrow) || inherits(x$arrow, "arrow")))

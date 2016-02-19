@@ -1,5 +1,5 @@
 #  File src/library/stats/tests/ts-tests.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## tests of time-series functionality
 
@@ -48,6 +48,12 @@ pacf(presidents, na.action = na.pass)
 tsdiag(fit1)
 (fit3 <- arima(presidents, c(3, 0, 0)))  # smaller AIC
 tsdiag(fit3)
+
+## Short example for bug PR#15832:
+e <- rep(c(1.48e-6, 1.49e-6, 1.5e-6, 1.51e-6), c(2,3,9,7))
+stopifnot(abs(acf(e, plot=FALSE)$acf) <= 1)
+## Failed for R <= 3.2.0
+
 
 
 ### tests of arima:

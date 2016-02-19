@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -34,7 +34,7 @@
  *
  *    Devroye, L. (1986).
  *    Non-Uniform Random Variate Generation.
- *    New York:Springer-Verlag. Page 480.
+ *    New York:Springer-Verlag.  Pages 488 and 543.
  *
  *  METHOD
  *

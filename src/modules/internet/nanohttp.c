@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1998-2001  Daniel Veillard.
- *  Copyright (C) 2001-2014   The R Core Team.
+ *  Copyright (C) 2001-2015   The R Core Team.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
  *  CXXR is not part of the R project, and bugs and other issues should
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* <UTF8> the only interpretation of char is ASCII 
@@ -60,7 +60,6 @@
 #endif
 
 extern void R_ProcessEvents(void);
-#if !defined(Unix) || defined(HAVE_BSD_NETWORKING)
 
 #ifdef Win32
 #include <io.h>
@@ -97,10 +96,10 @@ extern void R_FlushConsole(void);
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_BSD_NETWORKING
-#  include <netdb.h>
-#  include <sys/socket.h>
-#  include <netinet/in.h>
+#ifdef Unix
+# include <netdb.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
 #endif
 
 #ifdef HAVE_FCNTL_H
@@ -372,7 +371,10 @@ RxmlNanoHTTPScanURL(RxmlNanoHTTPCtxtPtr ctxt, const char *URL)
 	    break;
 	}
 	if(indx >= 40959)
-	    RxmlMessage(2, _("RxmlNanoHTTPScanURL: overlong (invalid?) URL"));	buf[indx++] = *cur++;
+	    RxmlMessage(2, _("RxmlNanoHTTPScanURL: overlong (invalid?) URL"));
+	else {
+	    buf[indx++] = *cur++;
+	}
     }
     if (*cur == 0) return;
 
@@ -400,7 +402,10 @@ RxmlNanoHTTPScanURL(RxmlNanoHTTPCtxtPtr ctxt, const char *URL)
 	    break;
 	}
 	if(indx >= 40959)
-	    RxmlMessage(2, _("RxmlNanoHTTPScanURL: overlong (invalid?) URL"));	buf[indx++] = *cur++;
+	    RxmlMessage(2, _("RxmlNanoHTTPScanURL: overlong (invalid?) URL"));
+	else { 
+	    buf[indx++] = *cur++;
+	}
     }
     if (*cur == 0)
         ctxt->path = xmlMemStrdup("/");
@@ -457,7 +462,9 @@ RxmlNanoHTTPScanProxy(const char *URL)
 	}
 	if(indx >= 4095)
 	    RxmlMessage(2, _("RxmlNanoHTTPScanProxy: overlong (invalid?) URL"));
-	buf[indx++] = *cur++;
+	else {
+	    buf[indx++] = *cur++;
+	}
     }
     if (*cur == 0) return;
 
@@ -492,7 +499,10 @@ RxmlNanoHTTPScanProxy(const char *URL)
 	    break;
 	}
 	if(indx >= 4095)
-	    RxmlMessage(2, _("RxmlNanoHTTPScanProxy: overlong (invalid?) URL"));	buf[indx++] = *cur++;
+	    RxmlMessage(2, _("RxmlNanoHTTPScanProxy: overlong (invalid?) URL"));
+	else {
+	    buf[indx++] = *cur++;
+	}
     }
 }
 
@@ -550,6 +560,7 @@ RxmlNanoHTTPFreeCtxt(RxmlNanoHTTPCtxtPtr ctxt)
     if (ctxt->mimeType != NULL) xmlFree(ctxt->mimeType);
     if (ctxt->location != NULL) xmlFree(ctxt->location);
     if (ctxt->authHeader != NULL) xmlFree(ctxt->authHeader);
+    if (ctxt->statusMsg != NULL) xmlFree(ctxt->statusMsg);
 #ifdef HAVE_ZLIB_H
     if (ctxt->strm != NULL) {
 	inflateEnd(ctxt->strm);
@@ -711,6 +722,12 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 		case EWOULDBLOCK:
 #if defined(EAGAIN) && EAGAIN != EWOULDBLOCK
 		case EAGAIN:
+#endif
+#if defined(WSAEINPROGRESS) && WSAEINPROGRESS != EINPROGRESS
+		case WSAEINPROGRESS:
+#endif
+#if defined(WSAEWOULDBLOCK) && WSAEWOULDBLOCK != EWOULDBLOCK
+		case WSAEWOULDBLOCK:
 #endif
 		    break;
 
@@ -1000,6 +1017,12 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 	switch (socket_errno()) {
 	case EINPROGRESS:
 	case EWOULDBLOCK:
+#if defined(WSAEINPROGRESS) && WSAEINPROGRESS != EINPROGRESS
+	case WSAEINPROGRESS:
+#endif
+#if defined(WSAEWOULDBLOCK) && WSAEWOULDBLOCK != EWOULDBLOCK
+	case WSAEWOULDBLOCK:
+#endif	
 	    break;
 	default:
 	    perror("connect");
@@ -1530,4 +1553,3 @@ RxmlNanoHTTPContentType(void *ctx)
     RxmlNanoHTTPCtxtPtr ctxt = (RxmlNanoHTTPCtxtPtr) ctx;
     return(ctxt->contentType);
 }
-#endif /* !Unix or BSD_NETWORKING */

@@ -1,5 +1,5 @@
 % File src/library/utils/man/packageStatus.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2010 R Core Team
 % Distributed under GPL 2 or later
 
@@ -62,13 +62,14 @@ packageStatus(lib.loc = NULL, repositories = NULL, method,
 
   \item{inst}{a data frame with columns as the \emph{matrix} returned by
     \code{\link{installed.packages}} plus \code{"Status"}, a factor with
-    levels \code{c("ok", "upgrade")}.  Only the newest version of each
-    package is reported, in the first repository in which it appears.
+    levels \code{c("ok", "upgrade", "unavailable")}.  Only the newest 
+    version of each package is reported, in the first repository in 
+    which it appears.
   }
 
   \item{avail}{a data frame with columns as the \emph{matrix} returned by
     \code{\link{available.packages}} plus \code{"Status"}, a factor with
-    levels \code{c("installed", "not installed", "unavailable")}..
+    levels \code{c("installed", "not installed")}.
   }
 
   For the \code{summary} method the result is also of class

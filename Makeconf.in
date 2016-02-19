@@ -27,6 +27,8 @@ CXXPICFLAGS = @CXXPICFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CURL_CPPFLAGS = @CURL_CPPFLAGS@
 CURL_LIBS = @CURL_LIBS@
+## in case we want to link with this for UBSAN checks
+CXX = @CXX@
 DEFS = @DEFS@ @R_DEFS@
 DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)" --exclude="*~"
 DYLIB_EXT = @DYLIB_EXT@
@@ -61,6 +63,10 @@ LIBM = @LIBM@
 LIBR0 = @LIBR0@
 LIBR1 = @LIBR1@
 LIBR = @LIBR0@ @LIBR1@
+## These are the libs which the final R.bin/libR is linked against.
+## Many of these used to be optional: ICU libs still are.
+## There may be platform-specific ones, e.g.
+## -lrt -ldl on Linux, -lnsl -lsocket -lrt -lsunmath -ldl -liconv on Solaris.
 LIBS = @LIBS@
 LIBS = @LIBS@ @LLVM_LDFLAGS@ @LLVM_LIBS@ 
 LIBnn = @LIBnn@
@@ -77,11 +83,13 @@ MAIN_LINK = $(MAIN_LD) $(MAIN_LDFLAGS) $(LIBR0) $(LDFLAGS)
 MKINSTALLDIRS = @R_SHELL@ $(top_srcdir)/src/scripts/mkinstalldirs.in
 NOTANGLE = @NOTANGLE@
 R_ARCH = @R_ARCH@
+R_DYLIB_EXT = @R_DYLIB_EXT@
 R_FRAMEWORK_DIR = $(prefix)/R.framework
 R_GZIPCMD = @R_GZIPCMD@
 ## needed for AIX only
 @USE_EXPORTFILES_TRUE@ R_HOME = $(top_builddir)
 R_OPENMP_CFLAGS = @R_OPENMP_CFLAGS@
+## if ever used, need to check that this is compatible with C OpenMP
 R_OPENMP_FFLAGS = @R_OPENMP_FFLAGS@
 R_OSTYPE = @R_OSTYPE@
 R_PKGS = $(R_PKGS_BASE) @USE_RECOMMENDED_PACKAGES_TRUE@ $(R_PKGS_RECOMMENDED)
@@ -114,6 +122,7 @@ YACC = @YACC@
 ALL_CFLAGS = $(R_XTRA_CFLAGS) $(R_OPENMP_CFLAGS) $(MAIN_CFLAGS) $(CFLAGS)
 ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 ALL_CXXFLAGS = $(R_XTRA_CXXFLAGS) $(MAIN_CXXFLAGS) $(CXXFLAGS)
+## R_OPENMP_FFLAGS should not really be here: see above
 ALL_FFLAGS = $(R_XTRA_FFLAGS) $(R_OPENMP_FFLAGS) $(MAIN_FFLAGS) $(FFLAGS)
 ALL_CFLAGS_LO = $(R_XTRA_CFLAGS) $(R_OPENMP_CFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(CFLAGS)
 ALL_CXXFLAGS_LO = $(R_XTRA_CXXFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(CXXFLAGS)

@@ -1,5 +1,5 @@
 % File src/library/graphics/man/pie.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -95,7 +95,8 @@ n <- 200
 pie(rep(1, n), labels = "", col = rainbow(n), border = NA,
     main = "pie(*, labels=\"\", col=rainbow(n), border=NA,..")
 
-## Another case showing pie() is rather fun than science; original by Daniel Lakens
+## Another case showing pie() is rather fun than science:
+## (original by FinalBackwardsGlance on http://imgur.com/gallery/wWrpU4X)
 pie(c(Sky = 78, "Sunny side of pyramid" = 17, "Shady side of pyramid" = 5),
     init.angle = 315, col = c("deepskyblue", "yellow", "yellow3"), border = FALSE)
 }

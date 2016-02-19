@@ -1,5 +1,5 @@
 % File src/library/stats/man/pairwise.wilcox.test.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -18,7 +18,7 @@ pairwise.wilcox.test(x, g, p.adjust.method = p.adjust.methods,
   \item{x}{ response vector. }
   \item{g}{ grouping vector or factor. }
   \item{p.adjust.method}{ method for adjusting p values (see
-    \code{\link{p.adjust}}). }
+    \code{\link{p.adjust}}). Can be abbreviated.}
   \item{paired}{a logical indicating whether you want a paired test.}
   \item{\dots}{additional arguments to pass to \code{\link{wilcox.test}}.}
 }

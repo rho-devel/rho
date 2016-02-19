@@ -165,6 +165,10 @@ namespace CXXR {
 	    {}
 	};
 
+	enum class Duplicate {
+	    DEEP, SHALLOW
+	};
+
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
@@ -248,10 +252,10 @@ namespace CXXR {
 	 * @param source Non-null pointer to the object from which
 	 *          attributes are to be copied.
 	 *
-	 * @param copyS4 If true, the status of \a source as an S4
-	 *          object (or not) is also copied to \a *this .
+	 * @param deep If deep, copy the full set of attributes.  Otherwise
+	 *          do a shallow copy.
 	 */
-	void copyAttributes(const RObject* source, bool copyS4);
+	void copyAttributes(const RObject* source, Duplicate depth);
 
 	/** @brief Evaluate object in a specified Environment.
 	 *

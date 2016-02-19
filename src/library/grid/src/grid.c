@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -412,10 +412,11 @@ static SEXP findInChildren(SEXP name, SEXP strict, SEXP children, int depth)
     PROTECT(result);
     while (count < n && !found) {
 	result = findViewport(name, strict,
-			      findVar(installChar(STRING_ELT(childnames, count)),
-				      children),
+			      PROTECT(findVar(installChar(STRING_ELT(childnames, count)),
+				      children)),
 			      depth);
 	found = INTEGER(VECTOR_ELT(result, 0))[0] > 0;
+	UNPROTECT(1);
 	count = count + 1;
     }
     if (!found) {
@@ -3120,6 +3121,8 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
 	txt = coerceVector(txt, EXPRSXP);
     else if (!isExpression(txt))
 	txt = coerceVector(txt, STRSXP);
+    UNPROTECT(1);
+    PROTECT(txt);
     if (overlapChecking || !draw) {
 	bounds = (LRect *) R_alloc(nx, sizeof(LRect));
     }

@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -701,7 +701,7 @@ Rf_lookupRegisteredExternalSymbol(DllInfo *info, const char *name)
     return CXXRNOCAST(Rf_DotExternalSymbol*) nullptr;
 }
 
-static DL_FUNC 
+static DL_FUNC
 R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 			 R_RegisteredNativeSymbol *symbol)
 {
@@ -774,7 +774,7 @@ DL_FUNC attribute_hidden
 R_dlsym(DllInfo *info, char const *name,
 	R_RegisteredNativeSymbol *symbol)
 {
-    size_t len = strlen(name) + 4; 
+    size_t len = strlen(name) + 4;
     vector<char> bufv(len);  /* up to 3 additional underscores */
     char* buf = &bufv[0];
 
@@ -817,7 +817,7 @@ R_dlsym(DllInfo *info, char const *name,
 
 /* R_FindSymbol checks whether one of the objects that have been
    loaded contains the symbol name and returns a pointer to that
-   symbol upon success. 
+   symbol upon success.
  */
 
 DL_FUNC R_FindSymbol(char const *name, char const *pkg,
@@ -944,10 +944,10 @@ int R_cairoCdynload(int local, int now)
 
     if(!p) return 0;
 #ifdef R_ARCH
-    snprintf(dllpath, PATH_MAX, "%s/library/grDevices/libs/%s/%s%s", 
+    snprintf(dllpath, PATH_MAX, "%s/library/grDevices/libs/%s/%s%s",
 	     p, R_ARCH, module, SHLIB_EXT);
 #else
-    snprintf(dllpath, PATH_MAX, "%s/library/grDevices/libs/%s%s", 
+    snprintf(dllpath, PATH_MAX, "%s/library/grDevices/libs/%s%s",
 	     p, module, SHLIB_EXT);
 #endif
     res = AddDLL(dllpath, local, now, "");
@@ -992,9 +992,9 @@ Rf_MakeRegisteredNativeSymbol(R_RegisteredNativeSymbol *symbol)
     R_RegisteredNativeSymbol *copy;
     copy = static_cast<R_RegisteredNativeSymbol *>( malloc(1 * sizeof(R_RegisteredNativeSymbol)));
     if(!copy) {
-        error(ngettext("cannot allocate memory for registered native symbol (%d byte)",
+	error(ngettext("cannot allocate memory for registered native symbol (%d byte)",
 		       "cannot allocate memory for registered native symbol (%d bytes)",
-                      (int) sizeof(R_RegisteredNativeSymbol)),
+		      (int) sizeof(R_RegisteredNativeSymbol)),
 	      int( sizeof(R_RegisteredNativeSymbol)));
     }
     *copy = *symbol;
@@ -1185,7 +1185,7 @@ createRSymbolObject(SEXP sname, DL_FUNC f, R_RegisteredNativeSymbol *symbol,
 
     PROTECT(klass = allocVector(STRSXP, (symbol->type != R_ANY_SYM ? 2 : 1)));
     numProtects++;
-    SET_STRING_ELT(klass, length(klass)-1, mkChar("NativeSymbolInfo"));
+    SET_STRING_ELT(klass, LENGTH(klass) - 1, mkChar("NativeSymbolInfo"));
 
     if(n > 3) {
 	/* Add the registration information:
@@ -1369,7 +1369,7 @@ do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op
     PROTECT(nm = allocVector(STRSXP, CountDLL));
     setAttrib(ans, R_NamesSymbol, nm);
     for(int i = 0; i < CountDLL; i++)
-	SET_STRING_ELT(nm, i, 
+	SET_STRING_ELT(nm, i,
 		       STRING_ELT(VECTOR_ELT(VECTOR_ELT(ans, i), 0), 0));
     UNPROTECT(2);
     return ans;

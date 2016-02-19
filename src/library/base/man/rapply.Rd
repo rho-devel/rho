@@ -1,5 +1,5 @@
 % File src/library/base/man/rapply.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -19,7 +19,7 @@ rapply(object, f, classes = "ANY", deflt = NULL,
   \item{classes}{A character vector of \code{\link{class}} names, or
     \code{"ANY"} to match any class.}
   \item{deflt}{The default result (not used if \code{how = "replace"}).}
-  \item{how}{A character string matching the three possibilities given:
+  \item{how}{A character string partially matching the three possibilities given:
     see \sQuote{Details}.}
   \item{\dots}{additional arguments passed to the call to \code{f}.}
 }

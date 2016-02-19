@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -139,8 +139,9 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
     int addit = 0;
     static SEXP do_onexit_formals = NULL;
 
+    checkArity(op, args);
     if (do_onexit_formals == NULL)
-        do_onexit_formals = allocFormalsList2(install("expr"), install("add"));
+	do_onexit_formals = allocFormalsList2(install("expr"), install("add"));
 
     PROTECT(argList =  matchArgs(do_onexit_formals, args, call));
     if (CAR(argList) == R_MissingArg) code = R_NilValue;
@@ -327,19 +328,19 @@ SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR:
 static Rboolean R_IsImportsEnv(SEXP env)
 {
     if (isNull(env) || !isEnvironment(env))
-        return FALSE;
+	return FALSE;
     if (ENCLOS(env) != R_BaseNamespace)
-        return FALSE;
+	return FALSE;
     SEXP name = getAttrib(env, R_NameSymbol);
     if (!isString(name) || length(name) != 1)
-        return FALSE;
+	return FALSE;
 
     const char *imports_prefix = "imports:";
     const char *name_string = CHAR(STRING_ELT(name, 0));
     if (!strncmp(name_string, imports_prefix, strlen(imports_prefix)))
-        return TRUE;
+	return TRUE;
     else
-        return FALSE;
+	return FALSE;
 }
 
 SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* value_)
@@ -890,7 +891,7 @@ static SEXP expandDots(SEXP el, SEXP rho)
 
     while (el != R_NilValue) {
 	if (CAR(el) == R_DotsSymbol) {
-	    SEXP h = findVar(CAR(el), rho);
+	    SEXP h = PROTECT(findVar(CAR(el), rho));
 	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
 		while (h != R_NilValue) {
 		    SETCDR(tail, CONS(CAR(h), R_NilValue));
@@ -900,6 +901,7 @@ static SEXP expandDots(SEXP el, SEXP rho)
 		}
 	    } else if (h != R_MissingArg)
 		error(_("'...' used in an incorrect context"));
+	    UNPROTECT(1); /* h */
 	} else {
 	    SETCDR(tail, CONS(CAR(el), R_NilValue));
 	    tail = CDR(tail);
@@ -917,10 +919,10 @@ static SEXP expandDots(SEXP el, SEXP rho)
 static SEXP setDflt(SEXP arg, SEXP dflt)
 {
     if (dflt) {
-    	SEXP dflt1, dflt2;
-    	PROTECT(dflt1 = deparse1line(dflt, TRUE));
-    	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
-    	error(_("duplicate 'switch' defaults: '%s' and '%s'"),
+	SEXP dflt1, dflt2;
+	PROTECT(dflt1 = deparse1line(dflt, TRUE));
+	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
+	error(_("duplicate 'switch' defaults: '%s' and '%s'"),
 	      CHAR(STRING_ELT(dflt1, 0)), CHAR(STRING_ELT(dflt2, 0)));
 	UNPROTECT(2); /* won't get here, but just for good form */
     }
@@ -1014,7 +1016,8 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    /* fall through to error */
 	}
 	UNPROTECT(1); /* w */
-    }
+    } else
+	warningcall(call, _("'switch' with no alternatives"));
     /* an error */
     UNPROTECT(1); /* x */
     R_Visible = FALSE;

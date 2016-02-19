@@ -1,5 +1,5 @@
 % File src/library/base/man/pushBack.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -23,7 +23,7 @@ clearPushBack(connection)
   \item{connection}{A \link{connection}.}
   \item{newLine}{logical.  If true, a newline is appended to each string
     pushed back.}
-  \item{encoding}{character.  See details.}
+  \item{encoding}{character string, partially matched.  See details.}
 }
 \details{
   Several character strings can be pushed back on one or more occasions.

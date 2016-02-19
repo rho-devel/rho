@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2015  The R Core Team
+ *  Copyright (C) 1997--2016  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* Names of  .Internal(.) and .Primitive(.)  R functions
@@ -76,6 +76,7 @@ CXXR::quick_builtin do_asatomic;
 SEXP do_asfunction(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_);
 SEXP do_assign(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* envir_, CXXR::RObject* inherits_);
 CXXR::quick_builtin do_asvector;
+SEXP do_asCharacterFactor(SEXP, SEXP, SEXP, SEXP);
 SEXP do_AT(SEXP call, SEXP op, SEXP args, SEXP env);  // Special
 SEXP do_attach(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* pos_, CXXR::RObject* name_);
 SEXP do_attr(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
@@ -172,10 +173,11 @@ SEXP do_fileremove(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR
 SEXP do_filerename(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_);
 SEXP do_fileshow(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* files_, CXXR::RObject* header_, CXXR::RObject* title_, CXXR::RObject* delete_file_, CXXR::RObject* pager_);
 SEXP do_filesymlink(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_);
-SEXP do_findinterval(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vec_, CXXR::RObject* x_, CXXR::RObject* rightmost_closed_, CXXR::RObject* all_inside_);
+SEXP do_findinterval(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vec_, CXXR::RObject* x_, CXXR::RObject* rightmost_closed_, CXXR::RObject* all_inside_, CXXR::RObject* left_op_);
 SEXP do_first_min(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_flush(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_);
 SEXP do_for(SEXP, SEXP, SEXP, SEXP);  // Special
+SEXP do_forceAndCall(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_format;
 CXXR::quick_builtin do_formatC;
 SEXP do_formatinfo(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* digits_, CXXR::RObject* nsmall_);
@@ -268,11 +270,11 @@ SEXP do_missing(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_names;
 CXXR::quick_builtin do_namesgets;
 CXXR::quick_builtin do_nargs;
-SEXP do_nchar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* type_, CXXR::RObject* allowNA_);
+CXXR::quick_builtin do_nchar;
 SEXP do_newenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* hash_, CXXR::RObject* parent_, CXXR::RObject* size_);
 SEXP do_nextmethod(SEXP,SEXP,SEXP,SEXP);  // Special
 SEXP do_ngettext(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* msg1_, CXXR::RObject* msg2_, CXXR::RObject* domain_);
-SEXP do_nzchar(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
+CXXR::quick_builtin do_nzchar;
 SEXP do_onexit(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_options(SEXP, SEXP, SEXP, SEXP);
 SEXP do_order(SEXP, SEXP, SEXP, SEXP);
@@ -300,7 +302,7 @@ SEXP do_psort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::ROb
 SEXP do_qsort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* index_return_);
 SEXP do_quit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* save_, CXXR::RObject* status_, CXXR::RObject* runLast_);
 SEXP do_quote(SEXP, SEXP, SEXP, SEXP);  // Special
-SEXP do_radixsort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* na_last_, CXXR::RObject* decreasing_);
+extern "C" SEXP do_radixsort(SEXP, SEXP, SEXP, SEXP);
 SEXP do_range(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_rank;
 CXXR::quick_builtin do_rapply;
@@ -364,8 +366,10 @@ SEXP do_sort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObj
 SEXP do_split(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* f_);
 CXXR::quick_builtin do_sprintf;
 CXXR::quick_builtin do_standardGeneric;
+SEXP do_startsWith(SEXP, SEXP, SEXP, SEXP);
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP) NORET;
 SEXP do_storage_mode(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* obj, CXXR::RObject* value);
+SEXP do_strrep(SEXP, SEXP, SEXP, SEXP);
 SEXP do_strsplit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* split_, CXXR::RObject* fixed_, CXXR::RObject* perl_, CXXR::RObject* useBytes_);
 SEXP do_strptime(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* tz_);
 SEXP do_strtrim(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_);
@@ -410,6 +414,8 @@ SEXP do_unserializeFromConn(CXXR::Expression* call, const CXXR::BuiltInFunction*
 SEXP do_unsetenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_usemethod(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_utf8ToInt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
+SEXP do_validEnc(SEXP, SEXP, SEXP, SEXP);
+SEXP do_validUTF8(SEXP, SEXP, SEXP, SEXP);
 SEXP do_vapply(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_version(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_warning(SEXP, SEXP, SEXP, SEXP);
@@ -492,7 +498,6 @@ extern "C" {
 #if Win32
 SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
 SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
-SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
 SEXP do_tzone_name(SEXP, SEXP, SEXP, SEXP);
 #else

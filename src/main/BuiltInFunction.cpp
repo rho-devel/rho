@@ -19,7 +19,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file BuiltInFunction.cpp
@@ -212,13 +212,12 @@ BuiltInFunction::map* BuiltInFunction::getInternalFunctionLookupTable()
 }
 
 
-BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
+BuiltInFunction* BuiltInFunction::obtainPrimitive(const Symbol* symbol)
 {
-    const Symbol* symbol = Symbol::obtain(name);
     auto location = getPrimitiveFunctionLookupTable()->find(symbol);
     if (location == getPrimitiveFunctionLookupTable()->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
-		   name.c_str());
+		   symbol->name()->c_str());
 	return nullptr;
     }
     return location->second;

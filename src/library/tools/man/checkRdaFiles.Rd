@@ -1,5 +1,5 @@
 % File src/library/tools/man/checkRdaFiles.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 2009-11 R Core Team
 % Distributed under GPL 2 or later
 
@@ -29,7 +29,7 @@ resaveRdaFiles(paths, compress = c("auto", "gzip", "bzip2", "xz"),
     \file{.rda} and \file{.RData} files in that directory.}
 
   \item{compress, compression_level}{type and level of compression: see
-    \code{\link{save}}.}
+    \code{\link{save}}.  Values of \code{compress} can be abbreviated.}
 }
 
 \details{

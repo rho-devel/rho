@@ -1,7 +1,7 @@
 #  File src/library/stats/R/ts.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 start	  <- function(x, ...) UseMethod("start")
 end	  <- function(x, ...) UseMethod("end")
@@ -495,10 +495,10 @@ plot.ts <-
 		do.xax <- i %% nr == 0 || i == nser
 		if(axes) {
 		    axis(y.side, xpd = NA, cex.axis = cex.axis,
-                         col.axis = col.axis, font.axis = font.axis)
+			 col.axis = col.axis, font.axis = font.axis, ...)
 		    if(do.xax)
 			axis(1, xpd = NA, cex.axis = cex.axis,
-                             col.axis = col.axis, font.axis = font.axis)
+			     col.axis = col.axis, font.axis = font.axis, ...)
 		}
 		if(ann) {
 		    mtext(nm[i], y.side, line=3, cex=cex.lab, col=col.lab,
@@ -711,6 +711,7 @@ window.ts <- function (x, ...) as.ts(window.default(x, ...))
     m <- match.call(expand.dots = FALSE)
     m$value <- NULL
     m$extend <- TRUE
+    ## need stats:: for non-standard evaluation
     m[[1L]] <- quote(stats::window)
     xx <- eval.parent(m)
     xxtsp <- tsp(xx)

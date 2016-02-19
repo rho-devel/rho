@@ -1,6 +1,6 @@
 % File src/library/utils/man/getParseData.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 2012-2014 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 2012-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{getParseData}
@@ -54,12 +54,14 @@ getParseText(parseData, id)
   \item{col2}{integer. The column number where the item ends.}
   \item{id}{integer. An identifier associated with this item.}
   \item{parent}{integer. The \code{id} of the parent of this item.}
-  \item{token}{character. The type of the token.}
+  \item{token}{character string. The type of the token.}
   \item{terminal}{logical.  Whether the token is \dQuote{terminal}, i.e.
     a leaf in the parse tree.}
-  \item{text}{character. If \code{includeText} is \code{TRUE}, the
+  \item{text}{character string. If \code{includeText} is \code{TRUE}, the
     text of all tokens; if it is \code{NA} (the default), the text of terminal
-    tokens.  If \code{includeText == FALSE}, this column is not included.}
+    tokens.  If \code{includeText == FALSE}, this column is not included.
+    Very long strings (with source of 1000 characters or more) will not be stored;
+    a message giving their length and delimiter will be included instead.}
 
   The rownames of the data frame will be equal to the \code{id} values,
   and the data frame will have a \code{"srcfile"} attribute containing

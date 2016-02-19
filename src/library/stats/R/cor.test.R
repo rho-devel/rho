@@ -1,7 +1,7 @@
 #  File src/library/stats/R/cor.test.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 cor.test <- function(x, ...) UseMethod("cor.test")
 
@@ -208,6 +208,7 @@ function(formula, data, subset, na.action, ...)
     m <- match.call(expand.dots = FALSE)
     if(is.matrix(eval(m$data, parent.frame())))
         m$data <- as.data.frame(data)
+    ## need stats:: for non-standard evaluation
     m[[1L]] <- quote(stats::model.frame)
     m$... <- NULL
     mf <- eval(m, environment(formula))

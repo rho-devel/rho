@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #include <R.h>
@@ -23,18 +23,22 @@
 
 SEXP R_methods_test_MAKE_CLASS(SEXP className)
 {
+  SEXP classNameChar = PROTECT(asChar(className));
   const char *class;
-  class = CHAR(asChar(className));
-  return MAKE_CLASS(class);
+  class = CHAR(classNameChar);
+  SEXP res = MAKE_CLASS(class);
+  UNPROTECT(1);
+  return res;
 }
 
 SEXP R_methods_test_NEW(SEXP className)
 {
-  SEXP clDef;
+  SEXP classNameChar = PROTECT(asChar(className));
   const char *class;
-  class = CHAR(asChar(className));
-  clDef = MAKE_CLASS(class);
-  return NEW_OBJECT(clDef);
+  class = CHAR(classNameChar);
+  SEXP clDef;
+  PROTECT(clDef = MAKE_CLASS(class));
+  SEXP res = NEW_OBJECT(clDef);
+  UNPROTECT(2);
+  return res;
 }
-
-

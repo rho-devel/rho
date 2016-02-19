@@ -1,5 +1,5 @@
 % File src/library/stats/man/predict.lm.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -25,9 +25,9 @@
   \item{se.fit}{A switch indicating if standard errors are required.}
   \item{scale}{Scale parameter for std.err. calculation.}
   \item{df}{Degrees of freedom for scale.}
-  \item{interval}{Type of interval calculation.}
+  \item{interval}{Type of interval calculation.  Can be abbreviated.}
   \item{level}{Tolerance/confidence level.}
-  \item{type}{Type of prediction (response or model term).}
+  \item{type}{Type of prediction (response or model term).  Can be abbreviated.}
   \item{terms}{If \code{type = "terms"}, which terms (default is all
     terms), a \code{\link{character}} vector.}
   \item{na.action}{function determining what should be done with missing

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2003 The R Core Team.
+ *  Copyright (C) 1997--2016 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,10 +21,18 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  Much of this is from Doug Bates.
  */
+
+/* 
+   This is a legacy header and no longer documented.
+   Code using it should be converted to use R.h
+*/
+
+/* This header includes C headers and so is not safe for inclusion
+   from C++: use R.h instead. */
 
 #ifndef R_S_H
 #define R_S_H
@@ -36,6 +44,7 @@
 #endif
 
 #ifdef __cplusplus
+#warning S.h should not be used from C++ code: use R.h instead
 extern "C" {
 #endif
 
@@ -44,7 +53,7 @@ extern "C" {
 #include <stdio.h>
 #include <limits.h>
 #include <float.h>
-# include <math.h>
+#include <math.h>
 
 #include <Rconfig.h>
 #include <R_ext/Constants.h>

@@ -1,5 +1,5 @@
 % File src/library/stats/man/plot.ts.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -22,7 +22,8 @@
   \item{x, y}{time series objects, usually inheriting from class \code{"ts"}.}
 
   \item{plot.type}{for multivariate time series, should the series by
-    plotted separately (with a common time axis) or on a single plot?}
+    plotted separately (with a common time axis) or on a single plot?
+    Can be abbreviated.}
 
   \item{xy.labels}{logical, indicating if \code{\link{text}()} labels
     should be used for an x-y plot, \emph{or} character, supplying a

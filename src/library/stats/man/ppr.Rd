@@ -1,5 +1,5 @@
 % File src/library/stats/man/ppr.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
@@ -76,6 +76,8 @@ ppr(x, \dots)
     the smoothing spline code underlying \code{smooth.spline}, either with a
     specified (equivalent) degrees of freedom for each ridge functions, or
     to allow the smoothness to be chosen by GCV.
+
+    Can be abbreviated.
   }
   \item{bass}{
     super smoother bass tone control used with automatic span selection

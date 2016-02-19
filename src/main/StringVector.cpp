@@ -19,7 +19,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file StringVector.cpp
@@ -28,6 +28,7 @@
  */
 
 #include "CXXR/StringVector.h"
+#include "Defn.h"
 
 #include <iostream>
 
@@ -84,4 +85,10 @@ void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v)
 	      i, XLENGTH(x));
     String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
+}
+
+extern "C"
+SEXP* attribute_hidden StringVectorDataPtr(SEXP string_vector) {
+    return reinterpret_cast<SEXP*>(
+	&(*(SEXP_downcast<StringVector*>(string_vector)->begin())));
 }
