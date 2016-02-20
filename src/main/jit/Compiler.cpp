@@ -456,17 +456,13 @@ Value* Compiler::emitInlinedAssign(const Expression* expression)
 	    = dynamic_cast<const StringVector*>(lhs_expr);
 	if (symbol_name && symbol_name->size() == 1) {
 	    symbol = Symbol::obtain((*symbol_name)[0]);
-	}
-    }
-    if (!symbol) {
-        if (dynamic_cast<const Expression*>(lhs_expr)) {
+	} else if (dynamic_cast<const Expression*>(lhs_expr)) {
           // Complex assignment.
           emitSetVisibility(false);
           auto applydefine =
               Runtime::getDeclaration("cxxr_runtime_applydefine", this);
           assert(applydefine != nullptr);
           auto call_ptr = emitConstantPointer(expression);
-          assert(call_ptr != nullptr);
           auto applydefine_ptr =
               emitConstantPointer(BuiltInFunction::obtainPrimitive(
                   SEXP_downcast<const Symbol*>(expression->getFunction())));
