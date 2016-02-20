@@ -77,6 +77,13 @@ TEST_P(ControlFlowTest, Assignment)
 	});
 }
 
+TEST_P(ControlFlowTest, ComplexAssignment)
+{
+    runEvaluatorTests({
+	{ "{y <- 1; names(y) <- 'foo'; names(y)}", "'foo'"},
+	});
+}
+
 TEST_P(ControlFlowTest, If)
 {
     runEvaluatorTests({

@@ -1242,7 +1242,7 @@ namespace {
 // Section 13.5 of the 'yellow book' (Chambers' Software for Data
 // Analysis) gives useful background.
 
-static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     GCStackRoot<> expr(CAR(args));
     SEXP functor = CAR(expr);

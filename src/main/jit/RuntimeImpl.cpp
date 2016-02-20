@@ -165,6 +165,8 @@ bool cxxr_runtime_loopExceptionIsNext(void* exception) {
 // In src/main/eval.cpp
 extern "C++"
 Rboolean asLogicalNoNA(SEXP s, SEXP call);
+extern "C++"
+SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho);
 
 bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
     return asLogicalNoNA(object, call);
@@ -196,6 +198,11 @@ void Rf_warning(const char*, ...);
 // To force the symbol to be emitted.
 // TODO(kmillar): remove this once BuiltInFunction is used in this file.
 void force_symbol_emission_built_in_function(BuiltInFunction*) { }
+
+RObject* cxxr_runtime_applydefine(RObject* call, RObject* op, RObject* args,
+                                  RObject* rho) {
+  return applydefine(call, op, args, rho);
+}
 }
 
 void force_exception_handling_symbol_emission() {

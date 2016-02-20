@@ -64,6 +64,7 @@ static llvm::Function* getDeclaration(const std::string& name,
 					     Function::ExternalLinkage,
 					     runtime_function->getName(),
 					     module);
+	assert(resolved_function);
 	resolved_function->setAttributes(runtime_function->getAttributes());
     }
     return resolved_function;
@@ -79,8 +80,7 @@ static llvm::Function* getDeclaration(FunctionId fun, Compiler* compiler)
     return getDeclaration(fun, getModule(compiler));
 }
 
-static llvm::Function* getDeclaration(const std::string& name,
-				      Compiler* compiler)
+llvm::Function* getDeclaration(const std::string& name, Compiler* compiler)
 {
     return getDeclaration(name, getModule(compiler));
 }

@@ -180,13 +180,13 @@ namespace CXXR {
 
 	/** @brief Get a pointer to a BuiltInFunction object.
 	 *
-	 * If \a name is not the name of a built-in primitive this
+	 * If \a symbol does not point to a built-in primitive this
 	 * function will raise a warning and return a null pointer.
 	 * Otherwise the function will return a pointer to the
 	 * (unique) BuiltInFunction object embodying that function.
 	 * If no such object already exists, one will be created.
 	 *
-	 * @param name The name of the built-in function.
+	 * @param symbol Symbol pointing to the built-in function.
 	 *
 	 * @return a pointer to the BuiltInFunction object
 	 * representing the function with the specified \a name, or a
@@ -198,6 +198,7 @@ namespace CXXR {
 	 * an archive will not fail completely simply because it
 	 * refers to an obsolete built-in function.
 	 */
+	static BuiltInFunction* obtainPrimitive(const Symbol* symbol);
 	static BuiltInFunction* obtainPrimitive(const std::string& name);
 
         static void addPrimitivesToEnvironment(Environment* environment);
