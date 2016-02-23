@@ -314,6 +314,22 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
                                       shQuote(file)),
                                     env = env0)
 
+        log <- paste(file_path_sans_ext(file), "log", sep = ".")
+        
+        ## With Texinfo 6.1 (precisely, c6637), texi2dvi may not rerun
+        ## often enough and give a non-zero status value.  Try to catch
+        ## and correct (some of) these cases ...
+        ## Note that texi2dvi may have been run quietly, in which case
+        ## diagnostics will only be in the log file.
+        if(out$status &&
+           file_test("-f", log) &&
+           any(grepl("Rerun to get", readLines(log, warn = FALSE)))) {
+            out <- .system_with_capture(texi2dvi,
+                                        c(opt_pdf, opt_quiet, opt_extra,
+                                          shQuote(file)),
+                                        env = env0)
+        }
+
         ## We cannot necessarily rely on out$status, hence let us
         ## analyze the log files in any case.
         errors <- character()
@@ -1440,10 +1456,7 @@ nonS3methods <- function(package)
              "print.atomic", "print.coefmat",
              "qr.Q", "qr.R", "qr.X", "qr.coef", "qr.fitted", "qr.qty",
              "qr.qy", "qr.resid", "qr.solve",
-             ## round.POSIXt is a method for S3 and S4 group generics with
-             ## deliberately different arg names.
-             "rep.int", "round.POSIXt",
-             "seq.int", "sort.int", "sort.list"),
+             "rep.int", "seq.int", "sort.int", "sort.list"),
              AMORE = "sim.MLPnet",
              BSDA = "sign.test",
              ChemometricsWithR = "lda.loofun",

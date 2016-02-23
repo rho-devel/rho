@@ -1,5 +1,5 @@
 % -*- coding: utf-8 -*-
-\newcommand{\Rlogo}{\if{html}{\figure{../../html/logo.jpg}}\if{latex}{\figure{logo.jpg}{options: width=0.5in}}}
+\newcommand{\Rlogo}{\if{html}{\figure{../../html/Rlogo.svg}{options: class="toplogo" alt="[R logo]"}}\if{latex}{\figure{Rlogo.pdf}{options: width=0.5in}}}
 
 \name{NEWS}
 \title{R News}
@@ -39,8 +39,10 @@
       \code{grep()} and friends.
 
       \item Experimental new functionality for S3 method checking, notably
-      \code{isS3method()}.  Also, the \R \sQuote{language element} names
-      are exported as \code{tools::langElts}.
+      \code{isS3method()}.
+
+      Also, the names of the \R \sQuote{language elements} are exported
+      as character vector \code{tools::langElts}.
 
       \item \code{str(x)} now displays \code{"Time-Series"} also for
       matrix (multivariate) time-series, i.e. when \code{is.ts(x)} is true.
@@ -183,9 +185,10 @@
       The choice can easily be overridden \emph{via} environment
       variable \env{R_INTERACTIVE_DEVICE}.
 
-      \item On unixy platforms (with the \command{getline} C library function),
-      \code{system(*,intern=TRUE)} no longer truncates (output) lines
-      longer than 8192 characters, thanks to Karl Millar's \PR{16544}.
+      \item On Unix-like platforms with the \command{getline} C library
+      function, \code{system(*,intern = TRUE)} no longer truncates
+      (output) lines longer than 8192 characters, thanks to Karl
+      Millar's \PR{16544}.
 
       \item \code{rank()} gains a \code{ties.method = "last"} option,
       for convenience (and symmetry).
@@ -285,6 +288,18 @@
       Option \code{logical = FALSE} is now supported on Linux and recent
       versions of OS X (for the latter, thanks to a suggestion of Kyaw
       Sint).
+
+      \item \code{hist()} for \code{"Date"} or \code{"POSIXt"} objects
+      would sometimes give misleading labels on the breaks, as they
+      were set to the day before the start of the period being
+      displayed.  The display format has been changed, and the shift of the
+      start day has been made conditional on \code{right = TRUE} (the
+      default).  (\PR{16679})
+
+      \item \R now uses a new version of the logo (donated to the R
+      Foundation by RStudio).  It is defined in \file{.svg} format, so
+      will resize without unnecessary degradation when displayed on
+      HTML pages.
     }
   }
 
@@ -298,7 +313,7 @@
       (\emph{via} \CRANpkg{codetools}) with only the base package
       attached.  Functions from default packages other than \pkg{base}
       which are used in the package code but not imported are reported
-      as undefined globals, with a suggested addiiton to the
+      as undefined globals, with a suggested addition to the
       \code{NAMESPACE} file.
 
       \item \command{R CMD check --as-cran} now also checks DOIs in
@@ -338,9 +353,14 @@
 
       \item \code{[<-} with an S4 value into a list currently embeds the
       S4 object into its own list such that the end result is roughly
-      equivalent to using \code{[[<-}. That behavior is deprecated. In
+      equivalent to using \code{[[<-}.  That behavior is deprecated.  In
       the future, the S4 value will be coerced to a list with
-      \code{as.list}.
+      \code{as.list()}.
+
+      \item Package \pkg{tools}' functions \code{package.dependencies},
+      \code{pkgDepends}, etc are deprecated now, mostly in favor of
+      \code{package_dependencies} which is both more flexible and
+      efficient.
     }
   }
 
@@ -374,16 +394,20 @@
       been 8.32 (released in Nov 2012).  Versions 8.10 to 8.31 are now
       deprecated (with warnings from \command{configure}), but for now
       still accepted.
-      
+
+      \item \command{configure} looks for \code{__cospi}, \code{__sinpi}
+      and \code{__tanpi} and uses these if \code{cospi}\emph{etc} are
+      not found.  (OS X is the main instance.)
+
       \item (Windows) An experimental build of R based on \command{gcc}
       4.9.3 is now available on CRAN on the \file{bin/windows/base/rdevel.html}
-      snapshot page.  This build will require recompilation of at least those 
-      packages that include C++ code, and possibly others.  The CRAN 
+      snapshot page.  This build will require recompilation of at least those
+      packages that include C++ code, and possibly others.  The CRAN
       binary packages still use the older toolchain, so package installs
-      default to \code{type = "source"}.  
-      
-      During the transition, the environment variable \env{R_COMPILED_BY} will 
-      be defined to indicate which toolchain was used to compile R (and hence, 
+      default to \code{type = "source"}.
+
+      During the transition, the environment variable \env{R_COMPILED_BY} will
+      be defined to indicate which toolchain was used to compile R (and hence,
       which should be used to compile code in packages).
     }
   }
@@ -392,7 +416,6 @@
     \itemize{
       \item The \command{make} macro \code{AWK} which used to be made
       available to files such as \file{src/Makefile} is no longer set.
-      [Announced and will be implemented once packages are updated.]
     }
   }
 
@@ -424,9 +447,9 @@
       included within an \code{extern "C"} block, and almost all the
       packages affected by this change are doing so.
 
-      \item Including header \file{S.h} from C++ code will fail on some
-      platforms, and so gives a compilation warning on all.
-      
+      \item Including header \file{S.h} from C++ code would fail on some
+      platforms, and so gives a compilation error on all.
+
       \item The deprecated header \file{Rdefines.h} is now compatible
       with defining \code{R_NO_REMAP}.
     }
@@ -477,11 +500,11 @@
       \code{row.names} works better in borderline integer cases, but
       may change the names assigned.  (\PR{16666})
 
-      \item \code{dummy.coef.lm()} now works in more cases, thanks to a
-      proposal by Werner Stahel (\PR{16665}).  In addition, it now works
-      for multivariate linear models (\code{"mlm"}, \code{\link{manova}})
-      thanks to a proposal by Daniel Wollschlaeger.
-      % port to r-patched
+      \item (X11 only)  \code{getGraphicsEvent()} miscoded buttons and
+      missed mouse motion events.  (\PR{16700})
+      % port to r-patched if it doesn't add too many events to graphics windows
+
+      \item \code{methods(round)} now also lists \code{round.POSIXt}.
     }
   }
 }
@@ -504,6 +527,8 @@
       \item The \code{data.frame} method of \code{rbind()} gains an
       optional argument \code{stringsAsFactors} (instead of only
       depending on \code{getOption("stringsAsFactors")}).
+
+      \code{smooth(x, *)} now also works for long vectors.
     }
   }
 
@@ -518,8 +543,8 @@
       \R itself but recorded in file \file{etc/Makeconf} is deprecated
       and will be removed in \R 3.3.0.
 
-      The C header file \file{S.h} is no longer documented: its use
-      should be replaced by \file{R.h}.
+      \item The C header file \file{S.h} is no longer documented: its
+      use should be replaced by \file{R.h}.
     }
   }
 
@@ -574,6 +599,45 @@
 
       \item \code{saveRDS(*, compress = "gzip")} now works as
       documented.  (\PR{16653})
+
+      \item (Windows only) The \command{Rgui} front end did not
+      always initialize the console properly, and could cause
+      \R to crash.  (\PR{16998})
+
+      \item \code{dummy.coef.lm()} now works in more cases, thanks to a
+      proposal by Werner Stahel (\PR{16665}).  In addition, it now works
+      for multivariate linear models (\code{"mlm"}, \code{\link{manova}})
+      thanks to a proposal by Daniel Wollschlaeger.
+
+      \item The \code{as.hclust} method for \code{"dendrogram"}s failed often
+      when there were ties in the heights.
+
+      \item \code{reorder()} and \code{midcache.dendrogram()} now are
+      non-recursive and hence applicable to somewhat deeply nested
+      dendrograms, thanks to a proposal by Suharto Anggono in \PR{16424}.
+
+      \item \code{cor.test()} now calculates very small p values
+      more accurately (affecting the result only in extreme not
+      statistically relevant cases).  (\PR{16704})
+
+      \item \code{smooth(*, do.ends=TRUE)} did not always work correctly
+      in \R versions between 3.0.0 and 3.2.3.
+
+      \item \code{pretty(D)} for date-time objects \code{D} now also
+      works well if \code{range(D)} is (much) smaller than a second.  In
+      the case of only one unique value in \code{D}, the pretty range
+      now is more symmetric around that value than previously.
+      \cr
+      Similarly, \code{pretty(dt)} no longer returns a length 5 vector
+      with duplicated entries for \code{Date} objects \code{dt} which
+      span only a few days.
+
+      \item The figures in help pages such as \code{?points} were
+      accidentally damaged, and did not appear in \R 3.2.3.
+      (\PR{16708})
+
+      \item \code{available.packages()} sometimes deleted the wrong
+      file when cleaning up temporary files.  (\PR{16712})
     }
   }
 }
@@ -620,6 +684,9 @@
 
       \item \code{View()} now displays nested data frames in a more
       friendly way.  (Request with patch in \PR{15915}.)
+
+      \item New \code{.traceback()} returns the stack trace which
+      \code{traceback()} prints.
     }
   }
 

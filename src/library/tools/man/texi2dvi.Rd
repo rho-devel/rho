@@ -1,6 +1,6 @@
 % File src/library/tools/man/texi2dvi.Rd
 % Part of the R package, https://www.R-project.org
-% Copyright 1995-2015 R Core Team
+% Copyright 1995-2016 R Core Team
 % Distributed under GPL 2 or later
 
 \name{texi2dvi}
@@ -29,10 +29,11 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   \item{quiet}{logical.  No output unless an error occurs.}
   \item{texi2dvi}{character string (or \code{NULL}).  Script or program used to
     compile a TeX file to dvi or PDF.
-    The default (selected by \code{""} or \code{NULL}) is to look for a
-    program or script named \file{texi2dvi} on the path and otherwise
-    emulate the script with \code{system2} calls (which can be selected
-    by the value \code{"emulation"}).} 
+    The default (selected by \code{""} or \code{"texi2dvi"} or
+    \code{NULL}) is to look for a program or script named
+    \file{texi2dvi} on the path and otherwise emulate the script with
+    \code{system2} calls (which can be selected by the value
+    \code{"emulation"}).  See also \sQuote{Details}.} 
   \item{texinputs}{\code{NULL} or a character vector of paths to add to
     the LaTeX and bibtex input search paths.}
   \item{index}{logical: should indices be prepared?}
@@ -56,15 +57,20 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   The default option for \code{texi2dvi} is set from environment variable
   \env{R_TEXI2DVICMD}, and the default for that is set from environment
   variable \env{TEXI2DVI} or if that is unset, from a value chosen when
-  \R is configured.  A shell script \command{texi2dvi} is part of GNU's
-  \pkg{texinfo}.
+  \R is configured.
+  
+  %% issues included not re-running latex in texinfo 6.1 and bashisms in
+  %% the /bin/sh script in <= 6.0.
+  A shell script \command{texi2dvi} is part of GNU's \pkg{texinfo}.
+  Several issues have been seen with released versions, so if yours does
+  not work correctly set \env{R_TEXI2DVICMD=emulation}.
 #endif
 
 #ifdef windows
   On Windows the option \code{"texi2dvi"} is normally unset.  The MiKTeX
   command \command{texify.exe} is a suitable choice for \code{texi2dvi},
   and is tried as from \R 3.2.3 if the argument is blank or \code{NULL}
-  and \code{texi2dvi} is not found.
+  and a program or script \code{texi2dvi} is not found.
 
   MiKTeX had a \code{texi2dvi} executable until Sept 2015, but no other
   Windows TeX installation that we know of does, so emulation is used on
@@ -78,6 +84,11 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
 }
 
 \note{
+  %% configure just looks for a texi2dvi command and does not check its
+  %% version.  Howvever, it is normally distributed with texinfo, and
+  %% that is checked to be >= 5.1.
+  %% The OS X distribution by default installs /usr/local/bin/texi2dvi,
+  %% but that is optional and OS X has /usr/bin/texi2dvi stuck at 4.8.
   There are various versions of the \command{texi2dvi} script on
   Unix-alikes and quite a number of bugs have been seen, some of which
   this \R wrapper works around.
@@ -92,9 +103,9 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   exist but the other two approaches do not (and may get confused by
   such files).
   
-  Where supported (\command{texi2dvi} 5.0 and later, and
-  \command{texi2dvi.exe} and \command{texify.exe} from MiKTeX), option
-  \option{--max-iterations=20} is used to avoid infinite retries.
+  Where supported (\command{texi2dvi} 5.0 and later;
+  \command{texify.exe} from MiKTeX), option \option{--max-iterations=20}
+  is used to avoid infinite retries.
   
   The emulation mode supports \code{quiet = TRUE} from \R 3.2.3 only.
 }

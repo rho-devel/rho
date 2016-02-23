@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2015   The R Core Team.
+ *  Copyright (C) 2000-2016   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -906,7 +906,7 @@ static void *in_R_HTTPOpen2(const char *url, const char *headers,
 	return NULL;
     }
 
-    // use keep-alive semantics, do not use local WinInet cache.
+    // use keep-alive semantics, do not use local WinINet cache.
     DWORD flags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_NO_CACHE_WRITE;
     if(!cacheOK) flags |= INTERNET_FLAG_PRAGMA_NOCACHE;
     wictxt->session = InternetOpenUrl(wictxt->hand, url, NULL, 0, flags, 0);

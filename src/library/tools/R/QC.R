@@ -2359,9 +2359,10 @@ function(package, dir, lib.loc = NULL)
         ## arguments the generic has, with positional arguments of g in
         ## the same positions for m.
         ## Exception: '...' in the method swallows anything.
+	if(identical(g, "round") && m == "round.POSIXt") return() # exception
         genfun <- get(g, envir = code_env)
         gArgs <- names(formals(genfun))
-        if(g == "plot") gArgs <- gArgs[-2L]
+        if(identical(g, "plot")) gArgs <- gArgs[-2L] # drop "y"
         ogArgs <- gArgs
         gm <- if(m %in% S3_reg) {
             ## See registerS3method() in ../../base/R/namespace.R.
@@ -7079,6 +7080,11 @@ function(dir)
             out$R_files_non_ASCII <- lines
     }
 
+    size <- Sys.getenv("_R_CHECK_SIZE_OF_TARBALL_",
+                       unset = NA_character_)
+    if(!is.na(size) && (as.integer(size) > 5000000))
+        out$size_of_tarball <- size
+
     ## Is this an update for a package already on CRAN?
     db <- db[(packages == package) &
              (db[, "Repository"] == CRAN) &
@@ -7100,11 +7106,6 @@ function(dir)
             out$bad_license <- meta["License"]
         return(out)
     }
-
-    size <- Sys.getenv("_R_CHECK_SIZE_OF_TARBALL_",
-                       unset = NA_character_)
-    if(!is.na(size) && (as.integer(size) > 5000000))
-        out$size_of_tarball <- size
 
     ## Checks from this point down should be for a package already on CRAN
 
@@ -7175,7 +7176,10 @@ function(x, ...)
 
     c(character(),
       if(length(x$Maintainer))
-          sprintf("Maintainer: %s", sQuote(paste(x$Maintainer, collapse = " ")))
+          sprintf("Maintainer: %s",
+                  sQuote(trimws(gsub("\n", " ",
+                                     paste(x$Maintainer,
+                                           collapse = " ")))))
       else
           "No maintainer field in DESCRIPTION file",
       fmt(c(if(x$empty_Maintainer_name)

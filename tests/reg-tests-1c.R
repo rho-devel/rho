@@ -339,6 +339,7 @@ badstructure(20, "children")
 d <- as.dendrogram(hclust(dist(sin(1:7))))
 (dl <- d[[c(2,1,2)]]) # single-leaf dendrogram
 stopifnot(inherits(dl, "dendrogram"), is.leaf(dl),
+	  identical(attributes(reorder(dl, 1:7)), c(attributes(dl), value = 5L)),
 	  identical(order.dendrogram(dl), as.vector(dl)),
 	  identical(d, as.dendrogram(d)))
 ## as.dendrogram() was hidden;  order.*() failed for leaf
@@ -459,11 +460,14 @@ stopifnot(identical(options(list()), options(NULL)))
 
 
 ## merge.dendrogram(), PR#15648
-mkDend <- function(n, lab, rGen = function(n) 1+round(16*abs(rnorm(n)))) {
+mkDend <- function(n, lab, method = "complete",
+                   ## gives *ties* often:
+		   rGen = function(n) 1+round(16*abs(rnorm(n)))) {
     stopifnot(is.numeric(n), length(n) == 1, n >= 1, is.character(lab))
     a <- matrix(rGen(n*n), n, n)
     colnames(a) <- rownames(a) <- paste0(lab, 1:n)
-    as.dendrogram(hclust(as.dist(a + t(a))))
+    .HC. <<- hclust(as.dist(a + t(a)), method=method)
+    as.dendrogram(.HC.)
 }
 set.seed(7)
 da <- mkDend(4, "A")
@@ -473,6 +477,13 @@ hcab <- as.hclust(d.ab)
 stopifnot(hcab$order == c(2, 4, 1, 3, 7, 5, 6),
 	  hcab$labels == c(paste0("A", 1:4), paste0("B", 1:3)))
 ## was wrong in R <= 3.1.1
+set.seed(1) ; h1 <- as.hclust(mkDend(5, "S", method="single")); hc1 <- .HC.
+set.seed(5) ; h5 <- as.hclust(mkDend(5, "S", method="single")); hc5 <- .HC.
+set.seed(42); h3 <- as.hclust(mkDend(5, "A", method="single")); hc3 <- .HC.
+## all failed (differently!) because of ties in R <= 3.2.3
+stopifnot(all.equal(h1[1:4], hc1[1:4], tol = 1e-12),
+	  all.equal(h5[1:4], hc5[1:4], tol = 1e-12),
+	  all.equal(h3[1:4], hc3[1:4], tol = 1e-12))
 
 
 ## bw.SJ() and similar with NA,Inf values, PR#16024
@@ -952,15 +963,15 @@ d2 <- within(df, {d = a + 2})
 stopifnot(identical(names(d2), c(".id", "a", "d")))
 ## lost the '.id' column in R <= 3.2.2
 
-
 ## system() truncating and splitting long lines of output, PR#16544
-op <- options(warn = 2)# no warnings allowed
-if(.Platform$OS.type == "unix") { # only works when platform has getline() in stdio.h
-    cn <- paste(1:2222, collapse=" ")
-    rs <- system(paste("echo", cn), intern=TRUE)
-    stopifnot(identical(rs, cn))
-}
-options(op)
+## only works when platform has getline() in stdio.h, and Solaris does not.
+## op <- options(warn = 2)# no warnings allowed
+## if(.Platform$OS.type == "unix") { # only works when platform has getline() in stdio.h
+##     cn <- paste(1:2222, collapse=" ")
+##     rs <- system(paste("echo", cn), intern=TRUE)
+##     stopifnot(identical(rs, cn))
+## }
+## options(op)
 
 
 ## tail.matrix()
@@ -1344,4 +1355,66 @@ stopifnot(
     identical(f.raw[["default"]], f.raw[["TRUE"]]),
     identical(f.raw[["default"]], f.raw[[opts["gzip"]]]))
 ## compress = "gzip" failed (PR#16653), but compress = c(a = "xz") did too
+
+
+## recursive dendrogram methods and deeply nested dendrograms
+op <- options(expressions = 999)# , verbose = 2) # -> max. depth= 961
+set.seed(11); d <- mkDend(1500, "A", method="single")
+rd <- reorder(d, nobs(d):1)
+## Error: evaluation nested too deeply: infinite recursion .. in R <= 3.2.3
+stopifnot(is.leaf(r1 <- rd[[1]]),    is.leaf(r2 <- rd[[2:1]]),
+	  attr(r1, "label") == "A1458", attr(r2, "label") == "A1317")
+options(op)# revert
+
+
+## cor.test() with extremely small p values
+b <- 1:10; set.seed(1)
+for(n in 1:256) {
+    a <- round(jitter(b, f = 1/8), 3)
+    p1 <- cor.test(a, b)$ p.value
+    p2 <- cor.test(a,-b)$ p.value
+    stopifnot(abs(p1 - p2) < 8e-16 * (p1+p2))
+    ## on two different Linuxen, they actually are always equal
+}
+## were slightly off in R <= 3.2.3. PR#16704
+
+
+## smooth(*, do.ends=TRUE)
+y <- c(4,2,2,3,10,5:7,7:6)
+stopifnot(
+    identical(c(smooth(y, "3RSR" , do.ends=TRUE, endrule="copy")),
+              c(4, 2, 2, 3, 5, 6, 6, 7, 7, 6) -> sy.c),
+    identical(c(smooth(y, "3RSS" , do.ends=TRUE, endrule="copy")), sy.c),
+    identical(c(smooth(y, "3RS3R", do.ends=TRUE, endrule="copy")), sy.c),
+    identical(c(smooth(y, "3RSR" , do.ends=FALSE, endrule="copy")),
+              c(4, 4, 4, 4, 5, 6, 6, 6, 6, 6)),
+    identical(c(smooth(y, "3RSS" , do.ends=FALSE, endrule="copy")),
+              c(4, 4, 2, 3, 5, 6, 6, 6, 6, 6)),
+    identical(c(smooth(y, "3RS3R", do.ends=FALSE, endrule="copy")),
+              c(4, 4, 3, 3, 5, 6, 6, 6, 6, 6)))
+## do.ends=TRUE was not obeyed for the "3RS*" kinds, for 3.0.0 <= R <= 3.2.3
+
+
+## prettyDate() for subsecond ranges
+sTime <- structure(1455056860.75, class = c("POSIXct", "POSIXt"))
+set.seed(7); for(n in 1:64) {
+    x <- sTime + .001*rlnorm(1) * 0:9
+    np <- length(px <- pretty(x))# n = 5
+    p1 <- pretty(sTime)
+    stopifnot(3 <= np, np <= 8, min(px) <= min(x), max(x) <= max(px),
+	      min(p1) <= sTime, sTime <= max(p1))
+}
+## failed in R <= 3.2.3
+MTbd <- as.Date("1960-02-10")
+stopifnot(
+    identical(pretty(MTbd),            MTbd),
+    identical(pretty(MTbd + rep(0,2)), MTbd),
+    identical(pretty(MTbd +  0:1), MTbd +  0:1),
+    identical(pretty(MTbd + -1:1), MTbd + -1:1),
+    identical(pretty(MTbd +  0:3), MTbd + 0:3) )
+## all pretty() above gave length >= 5 answer (with duplicated values) in R <= 3.2.3
+
+
+stopifnot(c("round.Date", "round.POSIXt") %in% as.character(methods(round)))
+## round.POSIXt suppressed in R <= 3.2.x
 
