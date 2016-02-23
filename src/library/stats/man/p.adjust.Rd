@@ -1,5 +1,5 @@
 % File src/library/stats/man/p.adjust.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
@@ -19,7 +19,7 @@ p.adjust.methods
 \arguments{
   \item{p}{numeric vector of p-values (possibly with \code{\link{NA}}s).
     Any other \R is coerced by \code{\link{as.numeric}}.}
-  \item{method}{correction method}
+  \item{method}{correction method.  Can be abbreviated.}
   \item{n}{number of comparisons, must be at least \code{length(p)};
     only set this (to non-default) when you know what you are doing!}
 }

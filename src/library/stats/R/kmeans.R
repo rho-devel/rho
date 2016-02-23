@@ -1,7 +1,7 @@
 #  File src/library/stats/R/kmeans.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,18 +14,19 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 kmeans <-
 function(x, centers, iter.max = 10L, nstart = 1L,
 	 algorithm = c("Hartigan-Wong", "Lloyd", "Forgy", "MacQueen"),
          trace = FALSE)
 {
+    .Mimax <- .Machine$integer.max
     do_one <- function(nmeth) {
         switch(nmeth,
            {                            # 1 : Hartigan-Wong
-               isteps.Qtran <- 50 * m
-               iTran <- c(as.integer(isteps.Qtran), integer(max(0,k-1)))
+	       isteps.Qtran <- as.integer(min(.Mimax, 50 * m))
+	       iTran <- c(isteps.Qtran, integer(max(0,k-1)))
                Z <- .Fortran(C_kmns, x, m, p,
                              centers = centers,
                              as.integer(k), c1 = integer(m), c2 = integer(m),
@@ -81,10 +82,9 @@ function(x, centers, iter.max = 10L, nstart = 1L,
 	Z
     }
     x <- as.matrix(x)
-    m <- as.integer(nrow(x))
-    if(is.na(m)) stop("invalid nrow(x)")
-    p <- as.integer(ncol(x))
-    if(is.na(p)) stop("invalid ncol(x)")
+    ## as.integer(<too large>) gives NA ==> not allowing too large nrow() / ncol():
+    m <- as.integer(nrow(x)); if(is.na(m)) stop("invalid nrow(x)")
+    p <- as.integer(ncol(x)); if(is.na(p)) stop("invalid ncol(x)")
     if(missing(centers))
 	stop("'centers' must be a number or a matrix")
     nmeth <- switch(match.arg(algorithm),
@@ -93,7 +93,6 @@ function(x, centers, iter.max = 10L, nstart = 1L,
                     "MacQueen" = 3L)
     storage.mode(x) <- "double"
     if(length(centers) == 1L) {
-	if (centers == 1) nmeth <- 3L
 	k <- centers
         ## we need to avoid duplicates here
         if(nstart == 1L)
@@ -116,6 +115,7 @@ function(x, centers, iter.max = 10L, nstart = 1L,
     }
     k <- as.integer(k)
     if(is.na(k)) stop("'invalid value of 'k'")
+    if (k == 1L) nmeth <- 3L # Hartigan-Wong, (Fortran) needs k > 1
     iter.max <- as.integer(iter.max)
     if(is.na(iter.max) || iter.max < 1L) stop("'iter.max' must be positive")
     if(ncol(x) != ncol(centers))

@@ -1,8 +1,8 @@
 #  File src/library/stats/R/model.tables.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1998 B. D. Ripley
-#  Copyright (C) 1998-2013 The R Core Team
+#  Copyright     1998 B. D. Ripley
+#  Copyright (C) 1998-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 model.tables <- function(x, ...) UseMethod("model.tables")
 
@@ -66,7 +66,7 @@ model.tables.aov <- function(x, type = "effects", se = FALSE, cterms, ...)
 	    message("Design is unbalanced - use se.contrast() for se's")
 	    se <- FALSE
 	} else se.tables <- se.aov(x, n, type = type)
-    if(type == "means") {
+    if(type == "means" && "(Intercept)" %in% colnames(prjs)) {
 	gmtable <- mean(prjs[,"(Intercept)"])
 	class(gmtable) <- "mtable"
 	tables <- c("Grand mean" = gmtable, tables)
@@ -110,7 +110,7 @@ model.tables.aovlist <- function(x, type = "effects", se = FALSE, ...)
     factors <- lapply(prjs, attr, "factors")
     dn.proj <- unlist(lapply(factors, names), recursive = FALSE)
     m.factors <- unlist(factors, recursive = FALSE)
-    dn.strata <- rep.int(names(factors), vapply(factors, length, 1L))
+    dn.strata <- rep.int(names(factors), lengths(factors))
     names(dn.strata) <- names(m.factors) <- names(dn.proj) <- unlist(dn.proj)
     t.factor <- attr(prjs, "t.factor")
     efficiency <- FALSE
@@ -304,7 +304,7 @@ replications <- function(formula, data = NULL, na.action)
     labels <- attr(formula, "term.labels")
     vars <- as.character(attr(formula, "variables"))[-1L]
     if(is.null(data)) {
-	v <- c(quote(stats::data.frame), attr(formula, "variables"))
+	v <- c(quote(data.frame), attr(formula, "variables"))
 	data <- eval(as.call(v), parent.frame())
     }
     if(!is.function(na.action)) stop("na.action must be a function")
@@ -483,6 +483,7 @@ model.frame.aovlist <- function(formula, data = NULL, ...)
     args$formula <- form
     env <- environment(Terms)
     if (is.null(env)) env <- parent.frame()
+    ## need stats:: for non-standard evaluation
     fcall <- c(list(quote(stats::model.frame)), args)
     eval(as.call(fcall), env)
 }

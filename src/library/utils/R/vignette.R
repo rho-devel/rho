@@ -1,7 +1,7 @@
 #  File src/library/utils/R/vignette.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,13 +14,13 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 vignette <-
     function(topic, package = NULL, lib.loc = NULL, all = TRUE)
 {
-    vinfo <- tools:::getVignetteInfo(package, lib.loc, all)
-    
+    vinfo <- tools::getVignetteInfo(package, lib.loc, all)
+
     if(!missing(topic)) {
         topic <- topic[1L]               # Just making sure ...
         vinfo <- vinfo[vinfo[, "Topic"] == topic, , drop = FALSE]
@@ -92,7 +92,12 @@ function(x, ...)
 {
     if(nzchar(out <- x$PDF)) {
         ext <- tools::file_ext(out)
-        out <- file.path(x$Dir, "doc", out)
+	port <- if (tolower(ext) == "html") tools::startDynamicHelp(NA) else 0L
+	out <- if(port > 0L)
+	    sprintf("http://127.0.0.1:%d/library/%s/doc/%s",
+                    port, basename(x$Dir), out)
+               else
+                   file.path(x$Dir, "doc", out)
         if(tolower(ext) == "pdf") {
             pdfviewer <- getOption("pdfviewer")
             if(identical(pdfviewer, "false")) {
@@ -102,31 +107,37 @@ function(x, ...)
                               file.path(R.home("bin"), "open.exe")))
             	shell.exec(out)
             else system2(pdfviewer, shQuote(out), wait = FALSE)
-        } else 
+        } else
             browseURL(out)
     } else {
         warning(gettextf("vignette %s has no PDF/HTML",
                          sQuote(x$Topic)),
                 call. = FALSE, domain = NA)
     }
-    
     invisible(x)
 }
 
-edit.vignette <-
-function(name, ...)
-{
-    if(nzchar(p <- name$R)) {
-        f <- tempfile(name$Topic, fileext = ".R")
-        file.copy(file.path(name$Dir, "doc", p), f)
-        file.edit(file = f, ...)
+getSource <- function(x, ...) UseMethod("getSource")
+
+getSource.vignette <- function(x, strict=TRUE, ...) {
+    if(nzchar(p <- x$R)) {
+        file.path(x$Dir, "doc", p)
     } else {
         ## Could try to extract the R code from the source via tangle,
         ## using
         ##   tools::buildVignette(tangle = TRUE, weave = FALSE)
         ## but why should this not have been done at install time?
-        warning(gettextf("vignette %s has no R code",
-                         sQuote(name$Topic)),
-                call. = FALSE, domain = NA)
+        (if(strict) stop else warning)(
+            gettextf("vignette %s has no R code", sQuote(x$Topic)),
+            call. = FALSE, domain = NA)
+    }
+}
+
+edit.vignette <- function(name, ...)
+{
+    if(is.character(src <- getSource(name, strict=FALSE))) {
+        f <- tempfile(name$Topic, fileext = ".R")
+        file.copy(src, f)
+        file.edit(file = f, ...)
     }
 }

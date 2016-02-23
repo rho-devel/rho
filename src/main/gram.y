@@ -2,7 +2,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2014  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2009--2011  Romain Francois
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -23,7 +23,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This code stores a lot of pointers as static data.
@@ -348,10 +348,10 @@ static int	xxvalue(SEXP, int, YYLTYPE *);
 
 %%
 
-prog	:	END_OF_INPUT			{ return 0; }
-	|	'\n'				{ return xxvalue(NULL,2,NULL); }
-	|	expr_or_assign '\n'			{ return xxvalue($1,3,&@1); }
-	|	expr_or_assign ';'			{ return xxvalue($1,4,&@1); }
+prog	:	END_OF_INPUT			{ YYACCEPT; }
+	|	'\n'				{ yyresult = xxvalue(NULL,2,NULL);	goto yyreturn; }
+	|	expr_or_assign '\n'			{ yyresult = xxvalue($1,3,&@1);	goto yyreturn; }
+	|	expr_or_assign ';'			{ yyresult = xxvalue($1,4,&@1);	goto yyreturn; }
 	|	error	 			{ YYABORT; }
 	;
 
@@ -2560,6 +2560,11 @@ static int StringValue(int c, Rboolean forSymbol)
     }
     if (!currtext_truncated)
     	strcpy(yytext, currtext);
+    else if (forSymbol || !use_wcs) {
+        size_t total = strlen(stext);
+        snprintf(yytext, MAXELTSIZE, "[%u chars quoted with '%c']", (unsigned int)total, quote);
+    } else 
+        snprintf(yytext, MAXELTSIZE, "[%d wide chars quoted with '%c']", wcnt, quote);
     if(forSymbol) {
 	PROTECT(yylval = install(stext));
 	if(stext != st0) free(stext);

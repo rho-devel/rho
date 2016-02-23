@@ -84,9 +84,6 @@
 /* Define to 1 if you have the `atanpi' function. */
 /* #undef HAVE_ATANPI */
 
-/* Define if you have BSD networking headers and libraries. */
-/* #undef HAVE_BSD_NETWORKING */
-
 /* Define to 1 if the compiler understands __builtin_expect. (For intl) */
 #define HAVE_BUILTIN_EXPECT 1
 
@@ -169,13 +166,13 @@
 /* Define to 1 if you have the `ctan' function. */
 #define HAVE_CTAN 1
 
+/* Define to 1 if you have the `ctanh' function. */
+#define HAVE_CTANH 1
+
 /* Define to 1 if you have the <curl/curl.h> header file.
    Set on the command line where supported.
 */
 /* #undef HAVE_CURL_CURL_H */
-
-/* Define to 1 if you have the `ctanh' function. */
-#define HAVE_CTANH 1
 
 /* define if the compiler supports basic C++11 syntax */
 #define HAVE_CXX11 1
@@ -293,6 +290,9 @@
 /* Define to 1 if you have the `fdopen' function. */
 #define HAVE_FDOPEN 1
 
+/* Define to 1 if you have the <features.h> header file. */
+/* #undef HAVE_FEATURES_H */
+
 /* Define to 1 if you have the <floatingpoint.h> header file. */
 /* #undef HAVE_FLOATINGPOINT_H */
 
@@ -388,9 +388,6 @@
 /* Define to 1 if the system has the type `int64_t'. */
 #define HAVE_INT64_T 1
 
-/* Define if you have support for ftp/http access. */
-#define HAVE_INTERNET 1
-
 /* Define if you have the 'intmax_t' type in <stdint.h> or <inttypes.h>. (For
    intl) */
 #define HAVE_INTMAX_T 1
@@ -438,8 +435,13 @@
 /* Define if your <locale.h> file defines LC_MESSAGES. */
 /* #undef HAVE_LC_MESSAGES */
 
-/* Define to 1 if you have the `cc_dynamic' library (-lcc_dynamic). */
-/* #undef HAVE_LIBCC_DYNAMIC */
+/* Define if your system has libcurl >= 7.28.0 with support for https.
+   Set on the command line where supported.
+ */
+/* #undef HAVE_LIBCURL */
+
+/* Define if __libc_stack_end is visible. */
+/* #undef HAVE_LIBC_STACK_END */
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 /* #undef HAVE_LIBDL */
@@ -679,9 +681,6 @@
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
 
-/* Define if you have support for sockets. */
-#define HAVE_SOCKETS 1
-
 /* Define to 1 if the system has the type `stack_t'. */
 /* #undef HAVE_STACK_T */
 
@@ -858,6 +857,9 @@
 /* Define to 1 if you have the <utime.h> header file. */
 /* #undef HAVE_UTIME_H */
 
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+/* #undef HAVE_VALGRIND_MEMCHECK_H */
+
 /* Define to 1 if you have the `vasprintf' function. */
 #define HAVE_VASPRINTF 1
 
@@ -953,8 +955,7 @@
 /* Define if you have 32 bit ints. */
 #define INT_32_BITS 1
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
 
 /* Define if mktime sets errno. */
@@ -991,7 +992,7 @@
 #define PACKAGE_TARNAME "R"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL "http://www.r-project.org"
+#define PACKAGE_URL "https://www.r-project.org"
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "@VERSION@"
@@ -1074,6 +1075,11 @@
 /* The size of `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T @ST@
 
+/* Workaround for win64 pow() precision issue in Mingw-w64 V3 and higher
+   See http://sourceforge.net/p/mingw-w64/bugs/466 for discussion. */
+#if defined(_WIN64) && defined(__MINGW64_VERSION_MAJOR) && __MINGW64_VERSION_MAJOR >= 3
+#define USE_POWL_IN_R_POW 1
+#endif
 
 /* Define as the maximum value of type 'size_t', if the system doesn't define
    it. (For intl) */
@@ -1089,9 +1095,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
-
-/* Define if you provide support for the libxml ftp/http functions. */
-#define SUPPORT_LIBXML 1
 
 /* Define if you have C/C++/Fortran OpenMP support for package code. */
 /* #undef SUPPORT_OPENMP */
@@ -1270,4 +1273,3 @@
 #define glthread_once                 libintl_once
 #define glthread_once_call            libintl_once_call
 #define glthread_once_singlethreaded  libintl_once_singlethreaded
-

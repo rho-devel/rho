@@ -1,7 +1,7 @@
 #  File src/library/tools/R/install.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2015 The R Core Team
+#  Copyright (C) 1995-2016 The R Core Team
 #
 # NB: also copyright dates in Usages.
 #
@@ -16,7 +16,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 #### R based engine for  R CMD INSTALL SHLIB Rprof
 ####
@@ -41,6 +41,8 @@
     lockdir <- ""
     is_first_package <- TRUE
     stars <- "*"
+    user.tmpdir <- Sys.getenv("PKG_BUILD_DIR")
+    keep.tmpdir <- nzchar(user.tmpdir)
 
     ## Need these here in case of an early error, e.g. missing etc/Makeconf
     tmpdir <- ""
@@ -79,7 +81,7 @@
 
     do_cleanup <- function()
     {
-        if(nzchar(tmpdir)) do_cleanup_tmpdir()
+        if(!keep.tmpdir && nzchar(tmpdir)) do_cleanup_tmpdir()
         if (!is_first_package) {
             ## Only need to do this in case we successfully installed
             ## at least one package
@@ -93,13 +95,14 @@
     {
         ## Solaris will not remove any directory in the current path
         setwd(startdir)
-        if (dir.exists(tmpdir)) unlink(tmpdir, recursive=TRUE)
+        if (!keep.tmpdir && dir.exists(tmpdir)) unlink(tmpdir, recursive=TRUE)
     }
 
     on.exit(do_exit_on_error())
     WINDOWS <- .Platform$OS.type == "windows"
 
-    MAKE <- Sys.getenv("MAKE") # FIXME shQuote, default?
+    if (WINDOWS) MAKE <- "make"
+    else MAKE <- Sys.getenv("MAKE") # FIXME shQuote, default?
     rarch <- Sys.getenv("R_ARCH") # unix only
     if (WINDOWS && nzchar(.Platform$r_arch))
         rarch <- paste0("/", .Platform$r_arch)
@@ -472,7 +475,7 @@
 		## important since we will blow away .o files so there
 		## is no way to create it later.
 
-		if (dsym && grepl("^darwin", R.version$os) ) {
+		if (dsym && startsWith(R.version$os, "darwin")) {
 		    message(gettextf("generating debug symbols (%s)", "dSYM"),
                             domain = NA)
 		    dylib <- Sys.glob(paste0(dest, "/*", SHLIB_EXT))
@@ -648,7 +651,7 @@
 
 
         if (more_than_libs) {
-            for (f in c("NAMESPACE", "LICENSE", "LICENCE", "NEWS"))
+            for (f in c("NAMESPACE", "LICENSE", "LICENCE", "NEWS", "NEWS.md"))
                 if (file.exists(f)) {
                     file.copy(f, instdir, TRUE)
 		    Sys.chmod(file.path(instdir, f), fmode)
@@ -681,7 +684,7 @@
                 if (length(paths)) {
                     ## check any version requirements
                     have_vers <-
-                        (vapply(linkTo, length, 1L) > 1L) & lpkgs %in% bpaths
+                        (lengths(linkTo) > 1L) & lpkgs %in% bpaths
                     for (z in linkTo[have_vers]) {
                         p <- z[[1L]]
                         path <- paths[bpaths %in% p]
@@ -703,7 +706,8 @@
             if (WINDOWS) {
                 owd <- setwd("src")
                 makefiles <- character()
-                if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA))) {
+                if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER",
+                                           NA_character_))) {
                     if (file.exists(f))  makefiles <- f
                 } else if (file.exists(f <- path.expand("~/.R/Makevars.win")))
                     makefiles <- f
@@ -719,7 +723,7 @@
                 } else { ## no src/Makefile.win
                     srcs <- dir(pattern = "\\.([cfmM]|cc|cpp|f90|f95|mm)$",
                                 all.files = TRUE)
-                    archs <- if (!force_both && !grepl(" x64 ", win.version()))
+                    archs <- if (!force_both && !grepl(" x64 ", utils::win.version()))
                         "i386"
                     else {
                         ## see what is installed
@@ -784,12 +788,13 @@
                     owd <- setwd("src")
                     system_makefile <-
                         file.path(R.home(), paste0("etc", rarch), "Makeconf")
-                    site <- Sys.getenv("R_MAKEVARS_SITE", NA)
+                    site <- Sys.getenv("R_MAKEVARS_SITE", NA_character_)
                     if (is.na(site)) site <- file.path(paste0(R.home("etc"), rarch), "Makevars.site")
                     makefiles <- c(system_makefile,
                                    if(file.exists(site)) site,
                                    "Makefile")
-                    if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA))) {
+                    if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER",
+                                               NA_character_))) {
                         if (file.exists(f))  makefiles <- c(makefiles, f)
                     } else if (file.exists(f <- path.expand(paste("~/.R/Makevars",
                                                                   Sys.getenv("R_PLATFORM"), sep = "-"))))
@@ -879,7 +884,7 @@
         if (WINDOWS && "x64" %in% test_archs) {
             ## we cannot actually test x64 unless this is 64-bit
             ## Windows, even if it is installed.
-            if (!grepl(" x64 ", win.version())) test_archs <- "i386"
+            if (!grepl(" x64 ", utils::win.version())) test_archs <- "i386"
         }
 
 
@@ -1397,9 +1402,23 @@
         args <- args[-1L]
     }
 
-    tmpdir <- tempfile("R.INSTALL")
-    if (!dir.create(tmpdir))
-        stop("cannot create temporary directory")
+    if (keep.tmpdir) {
+      make_tmpdir <- function(prefix, nchars = 8, ntries = 100) {
+        for(i in 1:ntries) {
+          name = paste(sample(c(0:9, letters, LETTERS), nchars, replace=TRUE), collapse="")
+          path = paste(prefix, name, sep = "/")
+          if (dir.create(path, showWarnings = FALSE, recursive = T)) {
+            return(path)
+          }
+        }
+        stop("cannot create unique directory for build")
+      }
+      tmpdir <- make_tmpdir(user.tmpdir)
+    } else {
+      tmpdir <- tempfile("R.INSTALL")
+      if (!dir.create(tmpdir))
+          stop("cannot create temporary directory")
+    }
 
     if (merge) {
         if (length(pkgs) != 1L || !file_test("-f", pkgs))
@@ -1693,7 +1712,7 @@
         SHLIB_LIBADD <- ""
         MAKE <- "make"
         ## Formerly for winshlib.mk to pick up Makeconf
-        rarch <- Sys.getenv("R_ARCH", NA)
+        rarch <- Sys.getenv("R_ARCH", NA_character_)
         if(is.na(rarch)) {
             if (nzchar(.Platform$r_arch)) {
                 rarch <- paste0("/", .Platform$r_arch)
@@ -1706,7 +1725,7 @@
 
     objs <- character()
     shlib <- ""
-    site <- Sys.getenv("R_MAKEVARS_SITE", NA)
+    site <- Sys.getenv("R_MAKEVARS_SITE", NA_character_)
     if (is.na(site))
         site <- file.path(paste0(R.home("etc"), rarch), "Makevars.site")
     makefiles <-
@@ -1795,7 +1814,7 @@
     if (length(objs)) objs <- paste0(objs, OBJ_EXT, collapse = " ")
 
     if (WINDOWS) {
-        if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA))) {
+        if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA_character_))) {
             if (file.exists(f))  makefiles <- c(makefiles, f)
         } else if (rarch == "/x64" &&
                    file.exists(f <- path.expand("~/.R/Makevars.win64")))
@@ -1805,7 +1824,7 @@
         else if (file.exists(f <- path.expand("~/.R/Makevars")))
             makefiles <- c(makefiles, f)
     } else {
-        if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA))) {
+        if (!is.na(f <- Sys.getenv("R_MAKEVARS_USER", NA_character_))) {
             if (file.exists(f))  makefiles <- c(makefiles, f)
         } else if (file.exists(f <- path.expand(paste("~/.R/Makevars",
                                                Sys.getenv("R_PLATFORM"),
@@ -1844,7 +1863,7 @@
         }
     }
     if (!use_cxx1x) {
-        val <- Sys.getenv("USE_CXX1X", NA)
+        val <- Sys.getenv("USE_CXX1X", NA_character_)
         if(!is.na(val)) {
             use_cxx1x <- TRUE
         }
@@ -1899,7 +1918,7 @@
     } else {
         if (preclean) system(paste(cmd, "shlib-clean"))
         res <- system(cmd)
-        if(build_objects_symbol_tables) {
+        if((res == 0L) && build_objects_symbol_tables) {
             ## Should only do this if the previous one went ok.
             system(paste(cmd, "symbols.rds"))
         }
@@ -1978,7 +1997,7 @@
                    Internal = character(),
                    stringsAsFactors = FALSE)
     } else {
-        lens <- sapply(topics, length)
+        lens <- lengths(topics)
         files <- sub("\\.[Rr]d$", "", Rd$File)
         internal <- sapply(Rd$Keywords, function(x) "internal" %in% x)
         data.frame(Topic = unlist(topics),
@@ -1991,8 +2010,9 @@
     outman <- file.path(outDir, "help")
     dir.create(outman, showWarnings = FALSE)
     MM <- M[re(M[, 1L]), 1:2]
-    write.table(MM, file.path(outman, "AnIndex"),
-                quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+    utils::write.table(MM, file.path(outman, "AnIndex"),
+                       quote = FALSE, row.names = FALSE, col.names = FALSE,
+                       sep = "\t")
     a <- structure(MM[, 2L], names=MM[, 1L])
     saveRDS(a, file.path(outman, "aliases.rds"))
 
@@ -2267,7 +2287,7 @@ function(name="", version = "0.0")
         "            VALUE \"FileVersion\", \"", version, "\\0\"\n", sep = "")
     writeLines(c(
                  '            VALUE "Compiled under R Version", R_MAJOR "." R_MINOR " (" R_YEAR "-" R_MONTH "-" R_DAY ")\\0"',
-                 '            VALUE "Project info", "http://www.r-project.org\\0"',
+                 '            VALUE "Project info", "https://www.r-project.org\\0"',
                  '        END',
                  '    END',
                  '    BLOCK "VarFileInfo"',

@@ -1,6 +1,6 @@
 % File src/library/stats/man/cor.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 1995-2014 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{cor}
@@ -43,13 +43,13 @@ cov2cor(V)
     \code{"na.or.complete"}, or \code{"pairwise.complete.obs"}.}
   \item{method}{a character string indicating which correlation
     coefficient (or covariance) is to be computed.  One of
-    \code{"pearson"} (default), \code{"kendall"}, or \code{"spearman"},
+    \code{"pearson"} (default), \code{"kendall"}, or \code{"spearman"}:
     can be abbreviated.}
   \item{V}{symmetric numeric matrix, usually positive definite such as a
     covariance matrix.}
 }
 \value{For \code{r <- cor(*, use = "all.obs")}, it is now guaranteed that
-  \code{all(r <= 1)}.
+  \code{all(abs(r) <= 1)}.
 }
 \details{
   For \code{cov} and \code{cor} one must \emph{either} give a matrix or

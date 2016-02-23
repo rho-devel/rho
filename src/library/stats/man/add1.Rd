@@ -1,5 +1,5 @@
 % File src/library/stats/man/add1.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
@@ -55,6 +55,7 @@ drop1(object, scope, \dots)
     \code{"Rao"} for likelihood ratio tests and Rao's efficient score test.
     The former is synonymous with \code{"Chisq"} (although both have
     an asymptotic chi-square distribution).
+    Values can be abbreviated.
     }
   \item{k}{the penalty constant in AIC / \eqn{C_p}{Cp}.}
   \item{trace}{if \code{TRUE}, print out progress reports.}

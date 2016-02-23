@@ -22,6 +22,7 @@ CAIRO_HOME ?=
 BUILD_HTML ?= NO
 MIKTEX ?= TRUE
 TEXI2ANY ?= missing
+TEXI2DVI ?= texi2dvi
 EOPTS ?= -mtune=core2
 OPENMP ?= -fopenmp
 PTHREAD ?= -pthread
@@ -82,7 +83,6 @@ IMPDIR=$(BINDIR)
 endif
 
 AR=$(BINPREF)ar
-# AWK=gawk
 CAT=cat
 CC=$(BINPREF)gcc$(GCC4_SUFF) $(C99FLAG) $(M_ARCH)
 CP=cp

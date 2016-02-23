@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-12  The R Core Team.
+ *  Copyright (C) 2001-2016  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifndef R_DYNPRIV_H
@@ -29,6 +29,7 @@
 /*****************************************************
  These are internal routines and definitions subject
  to unannounced changes. Do not use for packages, etc.
+ (The header is not installed.)
  
  There is a great deal of repetition in the definitions 
  of the user-level method definitions and in the internal
@@ -37,11 +38,6 @@
  We could do it with typedef's and reduce the code, but it 
  is done now and isn't too complicated yet.
 *****************************************************/
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 #ifdef Win32
@@ -54,6 +50,11 @@ typedef void *HINSTANCE;
 
 #include <Defn.h>
 #include <R_ext/Rdynload.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int R_moduleCdynload(const char *module, int local, int now);
 
   /*

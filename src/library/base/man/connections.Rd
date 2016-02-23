@@ -1,9 +1,10 @@
 % File src/library/base/man/connections.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 1995-2015 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 1995-2016 R Core Team
 % Distributed under GPL 2 or later
 
 \name{connections}
+\title{Functions to Manipulate Connections (Files, URLs, ...)}
 \alias{connections}
 \alias{connection}
 \alias{file}
@@ -33,16 +34,19 @@
 \concept{gzip}
 \concept{bzip2}
 \concept{lzma}
-\title{Functions to Manipulate Connections}
 \description{
-  Functions to create, open and close connections.
+  Functions to create, open and close connections, i.e.,
+  \dQuote{generalized files}, such as possibly compressed files, URLs,
+  pipes, etc.
 }
 \usage{
 file(description = "", open = "", blocking = TRUE,
-     encoding = getOption("encoding"), raw = FALSE)
+     encoding = getOption("encoding"), raw = FALSE,
+     method = getOption("url.method", "default"))
 
 url(description, open = "", blocking = TRUE,
-    encoding = getOption("encoding"), method)
+    encoding = getOption("encoding"),
+    method = getOption("url.method", "default"))
 
 gzfile(description, open = "", encoding = getOption("encoding"),
        compression = 6)
@@ -92,6 +96,7 @@ isIncomplete(con)
     \sQuote{file} may not be seekable.}
   \item{method}{character string, partially matched to
     \code{c("default", "internal", "wininet", "libcurl")}:
+%% FIXME:  Consider  "auto", as in download.file()
     see \sQuote{Details}.}
   \item{compression}{integer in 0--9.  The amount of compression to be
     applied when writing, from none to maximal available.  For
@@ -113,7 +118,7 @@ isIncomplete(con)
 }
 \details{
   The first nine functions create connections.  By default the
-  connection is not opened (except for \code{socketConnection}), but may
+  connection is not opened (except for a \code{socketConnection}), but may
   be opened by setting a non-empty value of argument \code{open}.
 
   For \code{file} the description is a path to the file to be opened or
@@ -126,19 +131,19 @@ isIncomplete(con)
   the subtly different R-level concept of \code{stdin}.
 
   For \code{url} the description is a complete URL including scheme
-  (such as \samp{http://}, \samp{ftp://} or \samp{file://}).  Proxies
-  can be specified for HTTP and FTP \code{url} connections: see
-  \code{\link{download.file}}.  \code{method = "internal"} is the
-  \sQuote{out of the box} default (and that available since connections
-  were introduced): \code{method = "libcurl"} is optionally supported as
-  from \R 3.2.0.  The default can be changed \emph{via}
-  \code{\link{options}(url.method = )} (including for when URLs are
-  passed to \code{file}).  \code{method = "wininet"} is only available on
-  Windows.
-#ifdef windows
-  (See \code{\link{setInternet2}}, which chooses whether \code{"default"}
-  means \code{"internal"} or \code{"wininet"}.)
-#endif
+  (such as \samp{http://}, \samp{https://}, \samp{ftp://} or
+  \samp{file://}).  Method \code{"internal"} is that available since
+  connections were introduced, method \code{"wininet"} is only available
+  on Windows (it uses the WinINet functions of that OS) and method
+  \code{"libcurl"} (using the library of that name:
+  \url{http://curl.haxx.se/libcurl/}) is required on a Unix-alike but
+  optional on Windows.  Method \code{"default"} uses method
+  \code{"internal"} for \samp{file:} URLs and \code{"libcurl"} for
+  \code{ftps:} URLs.  On a Unix-alike it uses \code{"internal"} for
+  \samp{http:} and \code{ftp:} URLs and \code{"libcurl"} for
+  \samp{https:} URLs; on Windows \code{"wininet"} for \samp{http:},
+  \code{ftp:} and \samp{https:} URLs.  Proxies can be specified: see
+  \code{\link{download.file}}.
 
   For \code{gzfile} the description is the path to a file compressed by
   \command{gzip}: it can also open for reading uncompressed files and
@@ -148,8 +153,8 @@ isIncomplete(con)
   \command{bzip2}.
 
   For \code{xzfile} the description is the path to a file compressed by
-  \command{xz} (\url{http://en.wikipedia.org/wiki/Xz}) or (for reading
-  only) \command{lzma} (\url{http://en.wikipedia.org/wiki/LZMA}).
+  \command{xz} (\url{https://en.wikipedia.org/wiki/Xz}) or (for reading
+  only) \command{lzma} (\url{https://en.wikipedia.org/wiki/LZMA}).
 
   \code{unz} reads (only) single files within zip files, in binary mode.
   The description is the full path to the zip file, with \file{.zip}
@@ -159,17 +164,13 @@ isIncomplete(con)
   from.  This is run in a shell, on Windows that specified by the
   \env{COMSPEC} environment variable.
 
-  For \code{fifo} the description is the path of the fifo.
-
-  All platforms support \code{file}, \code{pipe}, \code{gzfile},
-  \code{bzfile}, \code{xzfile}, \code{unz} and \code{url("file://")}
-  connections.  The other connections may be partially implemented or
-  not implemented at all.  (They do work on most Unix platforms, and all
-  on Windows.)
+  For \code{fifo} the description is the path of the fifo.  (Support for
+  \code{fifo} connections is optional but they are available on most
+  Unix platforms and on Windows.)
 
   The intention is that \code{file} and \code{gzfile} can be used
-  generally for text input (from files and \samp{http://} URLs) and
-  binary input respectively.
+  generally for text input (from files, \samp{http://} and
+  \samp{https://} URLs) and binary input respectively.
 
   \code{open}, \code{close} and \code{seek} are generic functions: the
   following applies to the methods relevant to connections.
@@ -199,9 +200,17 @@ isIncomplete(con)
 }
 
 \section{URLs}{
-  \code{url} and \code{file} support URL schemes \samp{http://},
-  \samp{ftp://} and \samp{file://}: the first two require OS support
-  (which all known \R platforms have).
+  \code{url} and \code{file} support URL schemes \samp{file://},
+  \samp{http://}, \samp{https://} and \samp{ftp://}.
+
+  \code{method = "libcurl"} allows more schemes: exactly which schemes
+  is platform-dependent (see \code{\link{libcurlVersion}}), but all
+  Unix-alike platforms will support \samp{https://} and most platforms
+  will support \samp{ftps://}.
+
+  Most methods do not percent-encode special characters such as spaces
+  in \samp{http://} URLs (see \code{\link{URLencode}}), but it seems the
+  \code{"wininet"} method does.
 
   A note on \samp{file://} URLs.  The most general form (from RFC1738) is
   \samp{file://host/path/to/file}, but \R only accepts the form with an
@@ -220,32 +229,15 @@ isIncomplete(con)
   plus \code{path_to_file}.  Also, backslashes are accepted within the
   path even though RFC1738 does not allow them.
 
-  No attempt is made to decode an encoded URL: call
+  No attempt is made to decode a percent-encoded \samp{file:} URL: call
   \code{\link{URLdecode}} if necessary.
 
-  Note that the \samp{https://} URL scheme is not supported by the
-  internal method except on Windows.  There it is only supported if
-  \option{--internet2} or
-#ifdef unix
-  \code{setInternet2(TRUE)}
-#endif
-#ifdef windows
-  \code{\link{setInternet2}(TRUE)}
-#endif
-  was used (to make use of Windows internal functions), and then only
-  if the certificate is considered to be valid.  With that option only,
-  the \samp{http://user:pass@site} notation for sites requiring
-  authentication is also accepted.
+  The \code{"internal"} method does not follow re-directed HTTP URLs:
+  both methods \code{"wininet"} (the default on Windows) and
+  \code{"libcurl"} do (including for HTTPS URLs).
 
-  Where supported, \code{url(method = "libcurl")} allows more schemes:
-  exactly which schemes is platform-dependent (see
-  \code{\link{libcurlVersion}}, but most platforms will support
-  \samp{https://} and \samp{ftps://}.
+  Server-side cached data is always accepted.
 
-  The default internal method does not follow re-directed HTTP URLs:
-  both \code{url(method = "libcurl")} and the use of Windows internal
-  functions do.
-  
   Function \code{\link{download.file}} and contributed package
   \CRANpkg{RCurl} provide more comprehensive facilities to download
   from URLs.
@@ -256,14 +248,14 @@ isIncomplete(con)
   \code{bzfile}, \code{xzfile}, \code{unz} and \code{socketConnection}
   return a connection object which inherits from class
   \code{"connection"} and has a first more specific class.
-  
+
   \code{open} and \code{flush} return \code{NULL}, invisibly.
 
   \code{close} returns either \code{NULL} or an integer status,
   invisibly. The status is from when the connection was last closed and
   is available only for some types of connections (e.g., pipes, files and
   fifos): typically zero values indicate success.
-  
+
   \code{isOpen} returns a logical value, whether the connection is
   currently open.
 
@@ -326,10 +318,9 @@ isIncomplete(con)
 }
 
 \section{Compression}{
-  \R has for a long time supported \command{gzip} and \command{bzip2}
-  compression, and support for \command{xz} compression (and read-only
-  support for its precursor \code{lzma} compression) was added in \R
-  2.10.0.
+  \R supports \command{gzip}, \command{bzip2} and \command{xz}
+  compression (added in \R 2.10.0: also read-only support for its
+  precursor \code{lzma} compression).
 
   For reading, the type of compression (if any) can be determined from
   the first few bytes of the file.  Thus for \code{file(raw = FALSE)}
@@ -395,17 +386,17 @@ isIncomplete(con)
   choose the appropriate byte order, some (including earlier versions of
   \code{glibc}) will not.  There is a subtle distinction between
   \code{"UTF-16"} and \code{"UCS-2"} (see
-  \url{http://en.wikipedia.org/wiki/UTF-16}: the use of characters in
+  \url{https://en.wikipedia.org/wiki/UTF-16}: the use of characters in
   the \sQuote{Supplementary Planes} which need surrogate pairs is very
   rare so \code{"UCS-2LE"} is an appropriate first choice (as it is more
   widely implemented).
 
   As from \R 3.0.0 the encoding \code{"UTF-8-BOM"} is accepted for
   reading and will remove a Byte Order Mark if present (which it often
-  is for files and webpages generated by Microsoft applications).  If it
-  is required (it is not recommended) when writing it should be written
-  explicitly, e.g.\sspace{}by \code{writeChar("\ufeff", con, eos = NULL)} or
-  \code{writeBin(as.raw(c(0xef, 0xbb, 0xbf)), binary_con)}
+  is for files and webpages generated by Microsoft applications).  If a
+  BOM is required (it is not recommended) when writing it should be
+  written explicitly, e.g.\sspace{}by \code{writeChar("\ufeff", con, eos
+  = NULL)} or \code{writeBin(as.raw(c(0xef, 0xbb, 0xbf)), binary_con)}
 
   Encoding names \code{"utf8"}, \code{"mac"} and \code{"macroman"} are
   not portable, and not supported on all current \R platforms.
@@ -487,9 +478,10 @@ isIncomplete(con)
   not work as one might expect.
 #endif
 #ifdef unix
-  Unix users wishing to \emph{write} to one of the selections may be
-  able to do so via \code{xclip}
-  (\url{http://sourceforge.net/projects/xclip/}), for example by
+  Unix users wishing to \emph{write} to one of the X11 selections may be
+  able to do so via \command{xclip}
+  (\url{http://sourceforge.net/projects/xclip/}) or \command{xsel}
+  (\url{http://www.vergenet.net/~conrad/software/xsel/}), for example by
   \code{pipe("xclip -i", "w")} for the primary selection.
 
   OS X users can use \code{pipe("pbpaste")} and
@@ -506,9 +498,9 @@ isIncomplete(con)
   This differs from S, where it is the equivalent of \code{"r+"},
   known as \code{"*"}.
 
-  On (rare) platforms where \code{vsnprintf} does not return the needed length
-  of output there is a 100,000 byte output limit on the length of
-  line for text output on \code{fifo}, \code{gzfile}, \code{bzfile} and
+  On (rare) platforms where \code{vsnprintf} does not return the needed
+  length of output there is a 100,000 byte output limit on the length of
+  a line for text output on \code{fifo}, \code{gzfile}, \code{bzfile} and
   \code{xzfile} connections: longer lines will be truncated with a
   warning.
 }
@@ -517,7 +509,7 @@ isIncomplete(con)
   \emph{Programming with Data.  A Guide to the S Language.} Springer.
 
   Ripley, B. D. (2001) Connections. \emph{R News}, \bold{1/1}, 16--7.
-  \url{http://www.r-project.org/doc/Rnews/Rnews_2001-1.pdf}
+  \url{https://www.r-project.org/doc/Rnews/Rnews_2001-1.pdf}
 }
 
 \seealso{
@@ -532,12 +524,15 @@ isIncomplete(con)
   \code{\link{writeBin}}, \code{\link{writeChar}}, \code{\link{load}}
   and \code{\link{save}}.
 
-  \code{\link{capabilities}} to see if HTTP/FTP \code{url},
-  \code{fifo} and \code{socketConnection} are supported by this build of \R.
+  \code{\link{capabilities}} to see if \code{fifo} connections are
+  supported by this build of \R.
 
   \code{\link{gzcon}} to wrap \command{gzip} (de)compression around a
   connection.
-
+  
+  \code{\link{options}} \code{HTTPUserAgent}, \code{internet.info} and
+  \code{timeout} are used by some of the methods for URL connections.
+  
   \code{\link{memCompress}} for more ways to (de)compress and references
   on data compression.
 #ifdef windows

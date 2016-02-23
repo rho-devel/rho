@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file eval.cpp
@@ -257,8 +257,66 @@ static void doprof(int sig)  /* sig is ignored in Windows */
 	    SEXP fun = CAR(cptr->call);
 	    if(strlen(buf) < PROFLINEMAX) {
 		strcat(buf, "\"");
-		strcat(buf, TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
-		       "<Anonymous>");
+
+		char itembuf[PROFITEMMAX];
+
+		if (TYPEOF(fun) == SYMSXP) {
+		    snprintf(itembuf, PROFITEMMAX-1, "%s", CHAR(PRINTNAME(fun)));
+
+		} else if ((CAR(fun) == R_DoubleColonSymbol ||
+			    CAR(fun) == R_TripleColonSymbol ||
+			    CAR(fun) == R_DollarSymbol) &&
+			   TYPEOF(CADR(fun)) == SYMSXP &&
+			   TYPEOF(CADDR(fun)) == SYMSXP) {
+		    /* Function accessed via ::, :::, or $. Both args must be
+		       symbols. It is possible to use strings with these
+		       functions, as in "base"::"list", but that's a very rare
+		       case so we won't bother handling it. */
+		    snprintf(itembuf, PROFITEMMAX-1, "%s%s%s",
+			     CHAR(PRINTNAME(CADR(fun))),
+			     CHAR(PRINTNAME(CAR(fun))),
+			     CHAR(PRINTNAME(CADDR(fun))));
+
+		} else if (CAR(fun) == R_Bracket2Symbol &&
+			   TYPEOF(CADR(fun)) == SYMSXP &&
+			   ((TYPEOF(CADDR(fun)) == SYMSXP ||
+			     TYPEOF(CADDR(fun)) == STRSXP ||
+			     TYPEOF(CADDR(fun)) == INTSXP ||
+			     TYPEOF(CADDR(fun)) == REALSXP) &&
+			    length(CADDR(fun)) > 0)) {
+		    /* Function accessed via [[. The first arg must be a symbol
+		       and the second can be a symbol, string, integer, or
+		       real. */
+		    SEXP arg1 = CADR(fun);
+		    SEXP arg2 = CADDR(fun);
+		    char arg2buf[PROFITEMMAX];
+
+		    if (TYPEOF(arg2) == SYMSXP) {
+			snprintf(arg2buf, PROFITEMMAX-1, "%s", CHAR(PRINTNAME(arg2)));
+
+		    } else if (TYPEOF(arg2) == STRSXP) {
+			snprintf(arg2buf, PROFITEMMAX-1, "\"%s\"", CHAR(STRING_ELT(arg2, 0)));
+
+		    } else if (TYPEOF(arg2) == INTSXP) {
+			snprintf(arg2buf, PROFITEMMAX-1, "%d", INTEGER(arg2)[0]);
+
+		    } else if (TYPEOF(arg2) == REALSXP) {
+			snprintf(arg2buf, PROFITEMMAX-1, "%.0f", REAL(arg2)[0]);
+
+		    } else {
+			/* Shouldn't get here, but just in case. */
+			arg2buf[0] = '\0';
+		    }
+
+		    snprintf(itembuf, PROFITEMMAX-1, "%s[[%s]]",
+			     CHAR(PRINTNAME(arg1)),
+			     arg2buf);
+
+		} else {
+		    sprintf(itembuf, "<Anonymous>");
+		}
+
+		strcat(buf, itembuf);
 		strcat(buf, "\" ");
 		if (R_Line_Profiling)
 		    lineprof(buf, cptr->srcref);
@@ -496,6 +554,17 @@ static R_INLINE SEXP getSrcref(SEXP srcrefs, int ind)
     return R_NilValue;
 }
 
+/* There's another copy of this in main.c */
+static void PrintCall(SEXP call, SEXP rho)
+{
+    int old_bl = R_BrowseLines,
+        blines = Rf_asInteger(Rf_GetOption1(Rf_install("deparse.max.lines")));
+    if(blines != NA_INTEGER && blines > 0)
+	R_BrowseLines = blines;
+    Rf_PrintValueRec(call, rho);
+    R_BrowseLines = old_bl;
+}
+
 void Closure::DebugScope::startDebugging() const
 {
     const ClosureContext* ctxt = ClosureContext::innermost();
@@ -503,16 +572,8 @@ void Closure::DebugScope::startDebugging() const
     Environment* working_env = ctxt->workingEnvironment();
     working_env->setSingleStepping(true);
     Rprintf("debugging in: ");
-    // Print call:
-    {
-	int old_bl = R_BrowseLines;
-	int blines = Rf_asInteger(Rf_GetOption(Rf_install("deparse.max.lines"),
-					       R_BaseEnv));
-	if(blines != NA_INTEGER && blines > 0)
-	    R_BrowseLines = blines;
-	Rf_PrintValueRec(const_cast<Expression*>(call), nullptr);
-	R_BrowseLines = old_bl;
-    }
+    PrintCall(const_cast<Expression*>(call), working_env);
+
     Rprintf("debug: ");
     Rf_PrintValue(m_closure->m_body);
     do_browser(nullptr, nullptr, nullptr, working_env);
@@ -523,18 +584,67 @@ void Closure::DebugScope::endDebugging() const
     const ClosureContext* ctxt = ClosureContext::innermost();
     try {
 	Rprintf("exiting from: ");
-	int old_bl = R_BrowseLines;
-	int blines
-	    = Rf_asInteger(Rf_GetOption(Rf_install("deparse.max.lines"),
-					R_BaseEnv));
-	if(blines != NA_INTEGER && blines > 0)
-	    R_BrowseLines = blines;
-	Rf_PrintValueRec(const_cast<Expression*>(ctxt->call()), nullptr);
-	R_BrowseLines = old_bl;
+	PrintCall(const_cast<Expression*>(ctxt->call()), nullptr);
     }
     // Don't allow exceptions to escape destructor:
     catch (...) {}
-}   
+}
+
+
+SEXP R_forceAndCall(SEXP e, int n, SEXP rho)
+{
+    Expression* call = SEXP_downcast<Expression*>(e);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+
+    SEXP fun, result;
+    if (TYPEOF(CAR(e)) == SYMSXP)
+       /* This will throw an error if the function is not found */
+       PROTECT(fun = Rf_findFun(CAR(e), rho));
+    else
+       PROTECT(fun = Rf_eval(CAR(e), rho));
+
+    ArgList arglist(call->tail(), ArgList::RAW);
+
+    BuiltInFunction* builtin = dynamic_cast<BuiltInFunction*>(fun);
+    if (builtin) {
+	result = call->applyBuiltIn(builtin, env, &arglist);
+    } else if (TYPEOF(fun) == CLOSXP) {
+	Closure* closure = SEXP_downcast<Closure*>(fun);
+
+	arglist.wrapInPromises(env);
+
+	// Force the promises.
+	const ConsCell* cell = arglist.list();
+	for (int i = 0; i < n && cell; i++, cell = cell->tail()) {
+	    SEXP p = cell->car();
+	    if (TYPEOF(p) == PROMSXP)
+		Rf_eval(p, rho);
+	    else if (p == R_MissingArg)
+		Rf_errorcall(e, _("argument %d is empty"), i + 1);
+	    else
+		Rf_error("something weird happened");
+	}
+	result = call->invokeClosure(closure, env, &arglist);
+    }
+    else {
+       Rf_error(_("attempt to apply non-function"));
+    }
+
+    UNPROTECT(1);
+    return result;
+}
+
+SEXP attribute_hidden do_forceAndCall(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    int n = Rf_asInteger(Rf_eval(CADR(call), rho));
+    SEXP e = CDDR(call);
+
+    /* this would not be needed if CDDR(call) was a LANGSXP */
+    PROTECT(e = LCONS(CAR(e), CDR(e)));
+    SEXP val = R_forceAndCall(e, n, rho);
+    UNPROTECT(1);
+    return val;
+}
 
 /* **** FIXME: Temporary code to execute S4 methods in a way that
    **** preserves lexical scope. */
@@ -919,6 +1029,8 @@ SEXP attribute_hidden do_for_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
+    
     return GCStackFrameBoundary::withStackFrameBoundary(
 	[=]() { return do_for_impl(call, op, args, rho); });
 }
@@ -979,6 +1091,8 @@ static SEXP do_while_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
+
     return GCStackFrameBoundary::withStackFrameBoundary(
 	[=]() {  return do_while_impl(call, op, args, rho); });
 }
@@ -1039,12 +1153,16 @@ static SEXP do_repeat_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
+
     return GCStackFrameBoundary::withStackFrameBoundary(
 	[=]() { return do_repeat_impl(call, op, args, rho); });
 }
 
 SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
+
     Environment* env = SEXP_downcast<Environment*>(rho);
     if (!env->loopActive())
 	Rf_error(_("no loop to break from"));

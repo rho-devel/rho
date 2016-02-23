@@ -1,5 +1,5 @@
 % File src/library/tcltk/man/TkCommands.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -33,10 +33,14 @@
 \alias{tkgrab.release}
 \alias{tkgrab.set}
 \alias{tkgrab.status}
-\alias{tkimage.cget}
-\alias{tkimage.configure}
 \alias{tkimage.create}
+\alias{tkimage.delete}
+\alias{tkimage.height}
+\alias{tkimage.inuse}
 \alias{tkimage.names}
+\alias{tkimage.type}
+\alias{tkimage.types}
+\alias{tkimage.width}
 \alias{tkXselection.clear}
 \alias{tkXselection.get}
 \alias{tkXselection.handle}
@@ -149,10 +153,14 @@ tkgrab.release(...)
 tkgrab.set(...)
 tkgrab.status(...)
 
-tkimage.cget(...)
-tkimage.configure(...)
 tkimage.create(...)
+tkimage.delete(...)
+tkimage.height(...)
+tkimage.inuse(...)
 tkimage.names(...)
+tkimage.type(...)
+tkimage.types(...)
+tkimage.width(...)
 
 ## NB: some widgets also have a selection.clear command,
 ## hence the "X".

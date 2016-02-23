@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This is currently restricted to vectors of length < 2^30 */
@@ -831,7 +831,7 @@ static SEXP match_transform(SEXP s, SEXP env)
     return duplicate(s);
 }
 
-/* currently used by fastmatch */
+// workhorse of R's match() and hence also  " ix %in% itable "
 SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 {
     SEXP ans, x, table;
@@ -861,6 +861,64 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
     else type = TYPEOF(x) < TYPEOF(table) ? TYPEOF(table) : TYPEOF(x);
     PROTECT(x	  = coerceVector(x,	type)); nprot++;
     PROTECT(table = coerceVector(table, type)); nprot++;
+
+    // special case scalar x -- for speed only :
+    if(LENGTH(x) == 1 && !incomp) {
+      PROTECT(ans = ScalarInteger(nmatch)); nprot++;
+      switch (type) {
+      case STRSXP: {
+	  SEXP x_val = STRING_ELT(x,0);
+	  for (int i=0; i < LENGTH(itable); i++) if (STRING_ELT(table,i) == x_val) {
+		  INTEGER(ans)[0] = i + 1; break;
+	      }
+	  break; }
+      case LGLSXP:
+      case INTSXP: {
+	  int x_val = INTEGER(x)[0],
+	      *table_p = INTEGER(table);
+	  for (int i=0; i < LENGTH(itable); i++) if (table_p[i] == x_val) {
+		  INTEGER(ans)[0] = i + 1; break;
+	      }
+	  break; }
+      case REALSXP: {
+	  double x_val = (REAL(x)[0] == 0.) ? 0. : REAL(x)[0],// pblm with signed 0s under IEC60559
+	      *table_p = REAL(table);
+	  /* we want all NaNs except NA equal, and all NAs equal */
+	  if (R_IsNA(x_val)) {
+	      for (int i=0; i < LENGTH(itable); i++) if (R_IsNA(table_p[i])) {
+		      INTEGER(ans)[0] = i + 1; break;
+		  }
+	  }
+	  else if (R_IsNaN(x_val)) {
+	      for (int i=0; i < LENGTH(itable); i++) if (R_IsNaN(table_p[i])) {
+		      INTEGER(ans)[0] = i + 1; break;
+		  }
+	  }
+	  else {
+	      for (int i=0; i < LENGTH(itable); i++) if (table_p[i] == x_val) {
+		      INTEGER(ans)[0] = i + 1; break;
+	      }
+	  }
+	  break; }
+      case CPLXSXP: {
+	  Rcomplex x_val = COMPLEX(x)[0],
+	      *table_p = COMPLEX(table);
+	  for (int i=0; i < LENGTH(itable); i++)
+	      if (table_p[i].r == x_val.r && table_p[i].i == x_val.i) {
+		  INTEGER(ans)[0] = i + 1; break;
+	      }
+	  break; }
+      case RAWSXP: {
+	  Rbyte x_val = RAW(x)[0],
+	      *table_p = RAW(table);
+	  for (int i=0; i < LENGTH(itable); i++) if (table_p[i] == x_val) {
+		  INTEGER(ans)[0] = i + 1; break;
+	      }
+	  break; }
+      }
+    }
+    else { // regular case
+
     if (incomp) { PROTECT(incomp = coerceVector(incomp, type)); nprot++; }
     data.nomatch = nmatch;
     HashTableSetup(table, &data, NA_INTEGER);
@@ -899,6 +957,7 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
     DoHashing(table, &data);
     if (incomp) UndoHashing(incomp, table, &data);
     ans = HashLookup(table, x, &data);
+}
     UNPROTECT(nprot);
     return ans;
 }
@@ -915,6 +974,7 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 }
 
 
+// .Internal(match(x, table, nomatch, incomparables)) :
 SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     if ((!isVector(args[0]) && !isNull(args[0]))
@@ -924,11 +984,11 @@ SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::Bui
     int nomatch = asInteger(args[2]);
     SEXP incomp = args[3];
 
-    if(Rf_length(incomp) && /* S has FALSE to mean empty */
-       !(isLogical(incomp) && Rf_length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
-	return match5(args[1], args[0], nomatch, incomp, env);
+    if (isNull(incomp) || /* S has FALSE to mean empty */
+	(Rf_length(incomp) == 1 && Rf_isLogical(incomp) && LOGICAL(incomp)[0] == 0))
+	return match5(args[1], args[0], nomatch, NULL, env);
     else
-	return matchE(args[1], args[0], nomatch, env);
+	return match5(args[1], args[0], nomatch, incomp, env);
 }
 
 /* pmatch and charmatch return integer positions, so cannot be used
@@ -1431,7 +1491,7 @@ rowsum(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     setAttrib(ans, R_DimNamesSymbol, dn);
     SET_VECTOR_ELT(dn, 0, rn);
     dn2 = getAttrib(x, R_DimNamesSymbol);
-    if(Rf_length(dn2 = getAttrib(x, R_DimNamesSymbol)) >= 2 &&
+    if(Rf_length(dn2) >= 2 &&
        !isNull(dn3 = VECTOR_ELT(dn2, 1))) SET_VECTOR_ELT(dn, 1, dn3);
 
     UNPROTECT(3); /* HashTable, matches, ans */
@@ -1661,12 +1721,14 @@ SEXP Rf_csduplicated(SEXP x)
 
 #include <R_ext/Random.h>
 
+// more fine-grained  unif_rand() for n > INT_MAX
 static R_INLINE double ru()
 {
     double U = 33554432.0;
     return (floor(U*unif_rand()) + unif_rand())/U;
 }
 
+// sample.int(.) --> .Internal(sample2(n, size)) :
 SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* size_)
 {
     SEXP ans;

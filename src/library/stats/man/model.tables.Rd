@@ -1,6 +1,6 @@
 % File src/library/stats/man/model.tables.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{model.tables}
@@ -22,7 +22,7 @@ model.tables(x, \dots)
 \arguments{
   \item{x}{a model object, usually produced by \code{aov}}
   \item{type}{type of table: currently only \code{"effects"} and
-    \code{"means"} are implemented.}
+    \code{"means"} are implemented.  Can be abbreviated.}
   \item{se}{should standard errors be computed?}
   \item{cterms}{A character vector giving the names of the terms for
     which tables should be computed. The default is all tables.}

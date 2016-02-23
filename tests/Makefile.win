@@ -39,6 +39,7 @@ all check test-all-basics test-all-devel: Makefile.win Makefile.common
 
 test-system2.exe: test-system2.c
 
+## Not run by any other target
 test-System: test-system2.exe
 	@$(MAKE) $(MK_EXTRA_FLAGS) test-system.Rout
 
@@ -70,7 +71,7 @@ clean:
 	  reg-examples-*.pdf  testCID.* \
 	  reg-plot-latin1.ps reg-plot.ps \
 	  reg-plot-latin1.pdf reg-plot.pdf reg-tests-*.pdf \
-	  R-exts.* R-intro.R 
+	  R-exts.* R-intro.R no-segfault.R
 	@rm -f R-exts_res.rc Makedeps
 	@rm -f FALSE* PACKAGES* .R .tex mirrors.html ./-package.Rd ex.gz
 	@rm -f testit.txt testit.html testit.tex testit-Ex.R
@@ -81,6 +82,7 @@ clean:
 	@$(MAKE) $(MK_EXTRA_FLAGS) -C Examples $@
 	@$(MAKE) $(MK_EXTRA_FLAGS) -C Embedding $@
 	-@rm -f *.log *.tsin *.trin
+	-@rm -f df0.Rd l0.Rd m0.Rd 'integer(0)-package.Rd'
 
 distclean: clean
 	@$(MAKE) $(MK_EXTRA_FLAGS) -C Examples $@

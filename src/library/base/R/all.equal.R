@@ -1,5 +1,5 @@
 #  File src/library/base/R/all.equal.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2014 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 all.equal <- function(target, current, ...) UseMethod("all.equal")
 
@@ -149,8 +149,8 @@ all.equal.character <-
 ## In 'base' these are all visible, so need to test both args:
 
 all.equal.envRefClass <- function (target, current, ...) {
-    if(!is (target, "envRefClass")) return("'target' is not an envRefClass")
-    if(!is(current, "envRefClass")) return("'current' is not an envRefClass")
+    if(!methods::is(target, "envRefClass")) return("'target' is not an envRefClass")
+    if(!methods::is(current, "envRefClass")) return("'current' is not an envRefClass")
     if(!isTRUE(ae <- all.equal(class(target), class(current), ...)))
 	return(sprintf("Classes differ: %s", paste(ae, collapse=" ")))
     getCl <- function(x) { cl <- tryCatch(x$getClass(), error=function(e) NULL)
@@ -179,7 +179,8 @@ all.equal.envRefClass <- function (target, current, ...) {
     sns <- names(cld@slots); sns <- sns[sns != ".xData"]
     msg <- if(length(sns)) {
 	L <- lapply(sns, function(sn)
-	    all.equal(slot(target, sn), slot(current, sn), ...))
+	    all.equal(methods::slot(target, sn),
+                      methods::slot(current, sn), ...))
 	unlist(L[vapply(L, is.character, NA)])
     }
     if(is.character(n)) msg <- c(msg, n)

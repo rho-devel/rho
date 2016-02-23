@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2015  The R Core Team
- *  Copyright (C) 2003--2015  The R Foundation
+ *  Copyright (C) 1997--2016  The R Core Team
+ *  Copyright (C) 2003--2016  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -113,11 +113,11 @@ BuiltInFunction::getFunctionTable() {
 
 /* Primitives */
 {"if",		do_if,		0,	200,	-1,	{PP_IF,	     PREC_FN,	  1}},
-{"while",	do_while,	0,	100,	-1,	{PP_WHILE,   PREC_FN,	  0}},
-{"for",		do_for,		0,	100,	-1,	{PP_FOR,     PREC_FN,	  0}},
-{"repeat",	do_repeat,	0,	100,	-1,	{PP_REPEAT,  PREC_FN,	  0}},
-{"break",	do_break,       2,	0,	-1,	{PP_BREAK,   PREC_FN,	  0}},
-{"next",	do_break,       1,	0,	-1,	{PP_NEXT,    PREC_FN,	  0}},
+{"while",	do_while,	0,	100,	2,	{PP_WHILE,   PREC_FN,	  0}},
+{"for",		do_for,		0,	100,	3,	{PP_FOR,     PREC_FN,	  0}},
+{"repeat",	do_repeat,	0,	100,	1,	{PP_REPEAT,  PREC_FN,	  0}},
+{"break",	do_break,       0,	0,	0,	{PP_BREAK,   PREC_FN,	  0}},
+{"next",	do_break,       1,	0,	0,	{PP_NEXT,    PREC_FN,	  0}},
 {"return",	do_return,	0,	0,	-1,	{PP_RETURN,  PREC_FN,	  0}},
 {"function",	do_function,	0,	0,	-1,	{PP_FUNCTION,PREC_FN,	  0}},
 {"<-",		do_set,		1,	100,	-1,	{PP_ASSIGN,  PREC_LEFT,	  1}},
@@ -136,8 +136,8 @@ BuiltInFunction::getFunctionTable() {
 {"$<-",		do_subassign3,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"switch",	do_switch,	0,	200,	-1,	{PP_FUNCALL, PREC_FN,	  0}, "EXPR"},
 {"browser",	do_browser,	0,	101,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
-{".primTrace",	do_trace,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}, "x"},
-{".primUntrace",do_trace,	1,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}, "x"},
+{".primTrace",	do_trace,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+{".primUntrace",do_trace,	1,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".Internal",	do_internal,	0,	200,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".Primitive",	do_primitive,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"call",	do_call,	0,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}, "name"},
@@ -146,6 +146,7 @@ BuiltInFunction::getFunctionTable() {
 {"missing",	do_missing,	1,	0,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"nargs",	do_nargs,	1,	1,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"on.exit",	do_onexit,	0,	100,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"forceAndCall",do_forceAndCall,	0,	0,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
 
 /* .Internals */
 
@@ -177,13 +178,13 @@ BuiltInFunction::getFunctionTable() {
 
 /* Binary Operators, all primitives */
 /* these are group generic and so need to eval args */
-{"+",		do_arith, PLUSOP,	1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, nullptr, Dispatch::GROUP_OPS},
-{"-",		do_arith, MINUSOP,1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, nullptr, Dispatch::GROUP_OPS},
-{"*",		do_arith, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}, nullptr, Dispatch::GROUP_OPS},
-{"/",		do_arith, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}, nullptr, Dispatch::GROUP_OPS},
-{"^",		do_arith, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}, nullptr, Dispatch::GROUP_OPS},
-{"%%",		do_arith, MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, nullptr, Dispatch::GROUP_OPS},
-{"%/%",		do_arith, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, nullptr, Dispatch::GROUP_OPS},
+{"+",		do_arith,	PLUSOP,	1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, nullptr, Dispatch::GROUP_OPS},
+{"-",		do_arith,	MINUSOP,1,	-1,	{PP_BINARY,  PREC_SUM,	  0}, nullptr, Dispatch::GROUP_OPS},
+{"*",		do_arith,	TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}, nullptr, Dispatch::GROUP_OPS},
+{"/",		do_arith,	DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}, nullptr, Dispatch::GROUP_OPS},
+{"^",		do_arith,	POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}, nullptr, Dispatch::GROUP_OPS},
+{"%%",		do_arith,	MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, nullptr, Dispatch::GROUP_OPS},
+{"%/%",		do_arith,	IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}, nullptr, Dispatch::GROUP_OPS},
 {"%*%",		do_matprod,	0,	1,	2,	{PP_BINARY,  PREC_PERCENT,0}},
 
 {"==",		do_relop, EQOP,	1,	-1,	{PP_BINARY,  PREC_COMPARE,0}, nullptr, Dispatch::GROUP_OPS},
@@ -276,7 +277,7 @@ BuiltInFunction::getFunctionTable() {
 {"match.call",	do_matchcall,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"crossprod",	do_crossprod,	1,	11,	2,	{PP_FUNCALL, PREC_FN,   0}},
 {"tcrossprod",	do_crossprod,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"lengths",	do_lengths,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}, },
+{"lengths",	do_lengths,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}, },
 
 {"attach",	do_attach,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"detach",	do_detach,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -345,9 +346,8 @@ BuiltInFunction::getFunctionTable() {
 {"psigamma",	do_math2,	26,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
 
-/* Mathematical Functions of a Complex Argument */
-
-/* these are group generic and so need to eval args */
+/* Mathematical Functions of a Complex Argument:
+ * These are group generic and so need to eval args --> ./complex.c */
 
 {"Re",		do_cmathfuns,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "z"},
 {"Im",		do_cmathfuns,	2,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "z"},
@@ -391,27 +391,31 @@ BuiltInFunction::getFunctionTable() {
 {"as.character",do_asatomic,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.integer",	do_asatomic,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.double",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
+{"as.numeric",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.complex",	do_asatomic,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.logical",	do_asatomic,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.raw",	do_asatomic,	5,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::INTERNAL},
 {"as.call",	do_ascall,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"as.environment",do_as_environment,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "object", Dispatch::INTERNAL},
 {"storage.mode<-",do_storage_mode,0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}, "x"},
+{"asCharacterFactor",	do_asCharacterFactor,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 
 {"as.vector",	do_asvector,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}, nullptr, Dispatch::INTERNAL},
 {"paste",	do_paste,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"paste0",	do_paste,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.path",	do_filepath,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"format",	do_format,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
+{"format",	do_format,	0,	11,	9,	{PP_FUNCALL, PREC_FN,	0}},
 {"format.info",	do_formatinfo,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"cat",		do_cat,		0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"do.call",	do_docall,	0,	211,	3,	{PP_FUNCALL, PREC_FN,	0}},
 
 /* String Manipulation */
 
-{"nchar",	do_nchar,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"nzchar",	do_nzchar,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
+{"nchar",	do_nchar,	1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
+{"nzchar",	do_nzchar,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"substr",	do_substr,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"startsWith",	do_startsWith,  0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"endsWith",	do_startsWith,  1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"substr<-",	do_substrgets,	1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"strsplit",	do_strsplit,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"abbreviate",	do_abbrev,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
@@ -442,10 +446,13 @@ BuiltInFunction::getFunctionTable() {
 {"packBits",	do_packBits,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"utf8ToInt",	do_utf8ToInt,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"intToUtf8",	do_intToUtf8,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"validUTF8",	do_validUTF8,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"validEnc",	do_validEnc,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"encodeString",do_encodeString,1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"iconv",	do_iconv,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"strtrim",	do_strtrim,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"strtoi",	do_strtoi,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"strrep",	do_strrep,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
 /* Type Checking (typically implemented in ./coerce.c ) */
 
@@ -456,6 +463,7 @@ BuiltInFunction::getFunctionTable() {
 {"is.complex",	do_is,		CPLXSXP,1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"is.character",do_is,		STRSXP,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"is.symbol",	do_is,		SYMSXP,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
+{"is.name",	do_is,		SYMSXP,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"is.environment",do_is,	ENVSXP,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"is.list",	do_is,		VECSXP,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
 {"is.pairlist",	do_is,		LISTSXP,1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x"},
@@ -536,13 +544,12 @@ BuiltInFunction::getFunctionTable() {
 #ifdef Win32
 {"shell.exec",	do_shellexec,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.which",	do_syswhich,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"useInternet2",do_setInternet2,0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"mkjunction", do_mkjunction,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"tzone_name", do_tzone_name,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 #endif
 {"parse",	do_parse,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
-//{"parse_Rd", 	do_parseRd,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
-//{"deparseRd", 	do_deparseRd, 	0, 	11, 	2,	{PP_FUNCALL, PREC_FN, 	0}},
+//{"parse_Rd",	do_parseRd,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
+//{"deparseRd",	do_deparseRd,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 //{"parseLatex",  do_parseLatex,  0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"save",	do_save,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"saveToConn",	do_saveToConn,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
@@ -581,16 +588,16 @@ BuiltInFunction::getFunctionTable() {
 {"sys.on.exit",	do_sys,		7,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.parents",	do_sys,		8,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.function",do_sys,		9,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"traceback",	do_traceback,  	0,      11,     1,      {PP_FUNCALL, PREC_FN,   0}},
+{"traceback",	do_traceback,	0,      11,     1,      {PP_FUNCALL, PREC_FN,   0}},
 {"browserText", do_sysbrowser,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"browserCondition", do_sysbrowser,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"browserSetDebug", do_sysbrowser,	3,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"parent.frame",do_parentframe,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"parent.frame",do_parentframe,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sort",	do_sort,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"is.unsorted",	do_isunsorted,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}, nullptr, Dispatch::INTERNAL},
 {"psort",	do_psort,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"qsort",	do_qsort,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"radixsort",	do_radixsort,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"radixsort",	do_radixsort,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"order",	do_order,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rank",	do_rank,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"scan",	do_scan,	0,	11,	19,	{PP_FUNCALL, PREC_FN,	0}},
@@ -617,7 +624,7 @@ BuiltInFunction::getFunctionTable() {
 {"tracemem",    do_tracemem,    0,      1,	1,      {PP_FUNCALL, PREC_FN,	0}, "x"},
 {"retracemem",  do_retracemem,  0,      201,     -1,      {PP_FUNCALL, PREC_FN,	0}},
 {"untracemem",  do_untracemem,  0,      101,	1,      {PP_FUNCALL, PREC_FN,	0}, "x"},
-{"inspect",	do_inspect,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"inspect",	do_inspect,	0,	111,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"address",     do_address,     0,       11,     1,     {PP_FUNCALL, PREC_FN, 0}},
 {"refcnt",      do_refcnt,      0,       11,     1,     {PP_FUNCALL, PREC_FN, 0}},
 {"merge",	do_merge,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
@@ -724,7 +731,7 @@ BuiltInFunction::getFunctionTable() {
 {"isSeekable",	do_isseekable,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"close",	do_close,	0,      111,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"flush",	do_flush,	0,      111,     1,      {PP_FUNCALL, PREC_FN,	0}},
-{"file",	do_url,		1,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
+{"file",	do_url,		1,      11,     6,      {PP_FUNCALL, PREC_FN,	0}},
 {"url",		do_url,		0,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
 {"pipe",	do_pipe,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"fifo",	do_fifo,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
@@ -792,51 +799,51 @@ BuiltInFunction::getFunctionTable() {
 {"lazyLoadDBinsertValue",do_lazyLoadDBinsertValue, 0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"bincode",	do_bincode,	 0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"tabulate",	do_tabulate,	 0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"findInterval",do_findinterval, 0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
-{"pretty",	do_pretty, 	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
-{"formatC",	do_formatC, 	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseAnd",	do_bitwise, 	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseNot",	do_bitwise, 	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseOr",	do_bitwise, 	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseXor",	do_bitwise, 	4,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseShiftL", do_bitwise, 	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"bitwiseShiftR",  do_bitwise, 	6,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"serialize",	do_serialize, 	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"serializeb",	do_serialize, 	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"unserialize",	do_serialize, 	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"rowsum_matrix",do_rowsum, 	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"rowsum_df",	do_rowsum, 	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"findInterval",do_findinterval, 0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"pretty",	do_pretty,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
+{"formatC",	do_formatC,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseAnd",	do_bitwise,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseNot",	do_bitwise,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseOr",	do_bitwise,	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseXor",	do_bitwise,	4,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseShiftL", do_bitwise,	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"bitwiseShiftR",  do_bitwise,	6,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"serialize",	do_serialize,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"serializeb",	do_serialize,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"unserialize",	do_serialize,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"rowsum_matrix",do_rowsum,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"rowsum_df",	do_rowsum,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"setS4Object",	do_setS4Object, 0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"traceOnOff",	do_traceOnOff, 	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"debugOnOff",	do_traceOnOff, 	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"traceOnOff",	do_traceOnOff,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"debugOnOff",	do_traceOnOff,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"La_qr_cmplx",	do_lapack,     	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rs",	do_lapack,     	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rs_cmplx",do_lapack,     	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rg",	do_lapack,     	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rg_cmplx",do_lapack,     	41,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_qr_cmplx",	do_lapack,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_rs",	do_lapack,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_rs_cmplx",do_lapack,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_rg",	do_lapack,	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_rg_cmplx",do_lapack,	41,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 // {"La_rs",	do_lapack,     	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 // {"La_rs_cmplx",	do_lapack,     	51,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_dlange",	do_lapack,     	6,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_dgecon",	do_lapack,     	7,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_dtrcon",	do_lapack,     	8,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_zgecon",	do_lapack,     	9,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_ztrcon",	do_lapack,     	10,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_dlange",	do_lapack,	6,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_dgecon",	do_lapack,	7,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_dtrcon",	do_lapack,	8,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_zgecon",	do_lapack,	9,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_ztrcon",	do_lapack,	10,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_solve_cmplx",do_lapack,    11,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_solve",	do_lapack,     	100,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_qr",	do_lapack,     	101,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_chol",	do_lapack,     	200,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_chol2inv",	do_lapack,     	201,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_solve",	do_lapack,	100,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_qr",	do_lapack,	101,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_chol",	do_lapack,	200,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_chol2inv",	do_lapack,	201,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"qr_coef_real",do_lapack,     	300,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"qr_qy_real",	do_lapack,     	301,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"det_ge_real",	do_lapack,     	302,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"qr_coef_cmplx",do_lapack,    	303,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"qr_qy_cmplx",	do_lapack,     	304,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"qr_coef_real",do_lapack,	300,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"qr_qy_real",	do_lapack,	301,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"det_ge_real",	do_lapack,	302,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"qr_coef_cmplx",do_lapack,	303,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"qr_qy_cmplx",	do_lapack,	304,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 
-{"La_svd",	do_lapack,     	400,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_svd_cmplx",do_lapack,     	401,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_version",	do_lapack,     	1000,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_svd",	do_lapack,	400,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_svd_cmplx",do_lapack,	401,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_version",	do_lapack,	1000,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 
 // {"bcprofcounts",do_bcprofcounts,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 // {"bcprofstart",	do_bcprofstart,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},

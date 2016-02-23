@@ -1,5 +1,5 @@
 % File src/library/stats/man/runmed.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
@@ -26,6 +26,7 @@ runmed(x, k, endrule = c("median", "keep", "constant"),
     isolated outliers.}
   \item{endrule}{character string indicating how the values at the
     beginning and the end (of the data) should be treated.
+    Can be abbreviated.  Possible values are:
     \describe{
       \item{\code{"keep"}}{keeps the first and last \eqn{k_2}{k2} values
         at both ends, where \eqn{k_2}{k2} is the half-bandwidth

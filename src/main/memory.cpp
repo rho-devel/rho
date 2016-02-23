@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file memory.cpp
@@ -361,7 +361,7 @@ SEXP allocVector3(SEXPTYPE type, R_xlen_t length, void*)
     return s;
 }
 
-SEXP allocFormalsList(int nargs, ...) {
+static SEXP allocFormalsList(int nargs, ...) {
     SEXP res = R_NilValue;
     SEXP n;
     int i;
@@ -589,11 +589,9 @@ void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
 {
     std::size_t blen1, bsize = buf->defaultSize;
 
-    /* for backwards compatibility, probably no longer needed */
+    /* for backwards compatibility, this used to free the buffer */
     if(blen == std::size_t(-1)) {
-	warning("R_AllocStringBuffer(-1) used: please report");
-	R_FreeStringBufferL(buf);
-	return nullptr;
+	error("R_AllocStringBuffer( (size_t)-1 ) is no longer allowed");
     }
 
     if(blen * sizeof(char) < buf->bufsize) return buf->data;

@@ -880,7 +880,7 @@ m1 <- methods(na.omit) ## should give (no warning):
 setClass("bla")
 setMethod("na.omit", "bla", function(object, ...) "na.omit(<bla>)")
 (m2 <- methods(na.omit)) ## should give (no warning):
-stopifnot(identical(m1, m2))
+stopifnot(identical(m1, .S3methods("na.omit")))
 options(op)
 ## gave two warnings, when an S3 generic had turned into an S4 one
 
@@ -2095,23 +2095,7 @@ assertError( aperm(a, "A"))
 stopifnot(identical(NA_character_, enc2utf8(NA_character_)))
 ## gave "NA" instead of NA_character_
 
-
-## checking all.equal() with externalptr
-library(methods) # getClass()'s versionKey is an e.ptr
-cA <- getClass("ANY")
-stopifnot(all.equal(cA, cA),
-          is.character(all.equal(cA, getClass("S4"))))
-# both all.equal() failed in R <= 3.1.1
-
-
-## as.hexmode(x), as.octmode(x)  when x is double
-x <- c(NA, 1)
-stopifnot(identical(x == x,
-		    as.hexmode(x) == as.octmode(x)))
-p <- c(1, pi)
-assertError(as.hexmode(p))
-assertError(as.octmode(p))
-## where all "wrong" in R <= 3.1.1
-
+## End of regression tests for R < 3.0.0
+## -------------------------------------
 
 proc.time()

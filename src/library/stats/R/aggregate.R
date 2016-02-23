@@ -1,5 +1,5 @@
 #  File src/library/stats/R/aggregate.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 aggregate <-
 function(x, ...)
@@ -30,7 +30,7 @@ function(x, ...)
 }
 
 aggregate.data.frame <-
-function(x, by, FUN, ..., simplify = TRUE)
+function(x, by, FUN, ..., simplify = TRUE, drop = TRUE)
 {
     if(!is.data.frame(x)) x <- as.data.frame(x)
     ## Do this here to avoid masking by non-function (could happen)
@@ -53,7 +53,7 @@ function(x, by, FUN, ..., simplify = TRUE)
 
     nrx <- NROW(x)
 
-    if(any(unlist(lapply(by, length)) != nrx))
+    if(any(lengths(by) != nrx))
         stop("arguments must have same length")
 
     y <- as.data.frame(by, stringsAsFactors = FALSE)
@@ -65,18 +65,25 @@ function(x, by, FUN, ..., simplify = TRUE)
 
     # Generate a group identifier vector with integers and dots.
     ident <- function(x){
-           y <- as.integer(as.factor(x))
-           z <- gsub(" ", "0", format(y, scientific = FALSE)) # for right sort order
-           return(z)
+        y <- as.integer(as.factor(x))
+        z <- gsub(" ", "0", format(y, scientific = FALSE)) # for right sort order
+        return(z)
        }
     grp <- if(ncol(y)) {
         grp <- lapply(rev(y), ident)
         names(grp) <- NULL
-	do.call(paste, c(grp, list(sep = ".")))
+        do.call(paste, c(grp, list(sep = ".")))
     } else
 	integer(nrx)
 
-    y <- y[match(sort(unique(grp)), grp, 0L), , drop = FALSE]
+    if(!drop && ncol(y)) {
+        y <- expand.grid(lapply(y, function(e) sort(unique(e))))
+        lev <- lapply(rev(y), ident)
+        names(lev) <- NULL
+        lev <- do.call(paste, c(lev, list(sep = ".")))
+        grp <- factor(grp, levels = lev)
+    } else
+        y <- y[match(sort(unique(grp)), grp, 0L), , drop = FALSE]
     nry <- NROW(y)
     z <- lapply(x,
                 function(e) {
@@ -84,7 +91,7 @@ function(x, by, FUN, ..., simplify = TRUE)
                     ## the transpose of what we need ...
                     ans <- lapply(X = split(e, grp), FUN = FUN, ...)
                     if(simplify &&
-                       length(len <- unique(sapply(ans, length))) == 1L) {
+                       length(len <- unique(lengths(ans))) == 1L) {
                         ## this used to lose classes
                         if(len == 1L) {
                             cl <- lapply(ans, oldClass)
@@ -129,6 +136,7 @@ function(formula, data, FUN, ..., subset, na.action = na.omit)
     if(is.matrix(eval(m$data, parent.frame())))
         m$data <- as.data.frame(data)
     m$... <- m$FUN <- NULL
+    ## need stats:: for non-standard evaluation
     m[[1L]] <- quote(stats::model.frame)
 
     if (formula[[2L]] == ".") {

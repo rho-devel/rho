@@ -1,5 +1,5 @@
 % File src/library/base/man/ns-internal.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -8,6 +8,7 @@
 
 \alias{asNamespace}
 \alias{getNamespaceInfo}
+\alias{.getNamespaceInfo}
 \alias{importIntoEnv}
 \alias{isBaseNamespace}
 \alias{isNamespace}
@@ -88,12 +89,24 @@ loadingNamespaceInfo()
   which \pkg{base} and some legacy packages do not.  But then you are
   not intended to be using it \dots.
 }
-
-\keyword{internal}
+\seealso{
+  \code{\link{loadNamespace}} or \code{\link{getNamespace}} are somewhat
+  higher level namespace related functions.
+}
 \author{
   Luke Tierney and other members of the R Core Team.
 }
 \examples{
+nsName <- "stats"
+(ns <- asNamespace(nsName)) # <environment: namespace:stats>
+
+## Inverse function of asNamespace() :
+environmentName(asNamespace("stats")) # "stats"
+environmentName(asNamespace("base"))  # "base"
+getNamespaceInfo(ns, "spec")[["name"]] ## -> "stats"
+\dontshow{stopifnot(identical(nsName,
+                      getNamespaceInfo(ns, "spec")[["name"]]))}
+
 ## Only for for the daring ones, trying to get into the bowels :
 
 lsNamespaceInfo <- function(ns, ...) {
@@ -105,3 +118,4 @@ allinfoNS <- function(ns) sapply(lsNamespaceInfo(ns), getNamespaceInfo, ns=ns)
 utils::str(allinfoNS("stats"))
 utils::str(allinfoNS("stats4"))
 }
+\keyword{internal}

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2007 The R Core Team.
+ *  Copyright (C) 1999-2016 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* Included by R.h: API */
@@ -29,7 +29,11 @@
 #define R_RS_H
 
 #ifndef NO_C_HEADERS
-# include <string.h>		/* for memcpy, memset */
+# if defined(__cplusplus) && !defined(DO_NOT_USE_CXX_HEADERS)
+#  include <cstring>
+# else
+#  include <string.h>		/* for memcpy, memset */
+# endif
 #endif
 
 #include <Rconfig.h>		/* for F77_APPEND_UNDERSCORE */
@@ -68,7 +72,7 @@ extern void R_chk_free(void *);
 /* S-PLUS 3.x but not 5.x NULLs the pointer in the following */
 #define Calloc(n, t)   reinterpret_cast<t *>(R_chk_calloc(size_t(n), sizeof(t) ))
 #define Realloc(p,n,t) reinterpret_cast<t *>(R_chk_realloc( p, size_t((n) * sizeof(t)) ))
-#define Free(p)        (R_chk_free(p), (p) = NULL)
+#define Free(p)        (R_chk_free((void*)p), (p) = NULL)
 #endif
 #define R_Calloc(n, t)   reinterpret_cast<t *>(R_chk_calloc( size_t(n), sizeof(t) ))
 #define R_Realloc(p,n,t) reinterpret_cast<t *>(R_chk_realloc( (p), (size_t)((n) * sizeof(t)) ))

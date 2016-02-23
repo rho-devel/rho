@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -31,6 +31,7 @@
 #include "Defn.h"
 #include <Internal.h>
 #include "Print.h"
+#include <Rinternals.h>
 
 #include "CXXR/Evaluator.h"
 #include "CXXR/StackChecker.hpp"
@@ -181,6 +182,7 @@ Rboolean Rf_GetOptionDeviceAsk(void)
 static SEXP SetOption(SEXP tag, SEXP value)
 {
     SEXP opt, old, t;
+    PROTECT(value);
     t = opt = SYMVALUE(Options());
     if (!isList(opt))
 	error(_("corrupted options list"));
@@ -192,8 +194,10 @@ static SEXP SetOption(SEXP tag, SEXP value)
 	    if (TAG(CDR(t)) == tag) {
 		old = CAR(CDR(t));
 		SETCDR(t, CDDR(t));
+		UNPROTECT(1); /* value */
 		return old;
 	    }
+	UNPROTECT(1); /* value */
 	return R_NilValue;
     }
     /* If the option is new, a new slot */
@@ -201,14 +205,13 @@ static SEXP SetOption(SEXP tag, SEXP value)
     if (opt == R_NilValue) {
 	while (CDR(t) != R_NilValue)
 	    t = CDR(t);
-	PROTECT(value);
 	SETCDR(t, allocList(1));
-	UNPROTECT(1);
 	opt = CDR(t);
 	SET_TAG(opt, tag);
     }
     old = CAR(opt);
     SETCAR(opt, value);
+    UNPROTECT(1); /* value */
     return old;
 }
 
@@ -362,6 +365,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
        would apply to R_SetOption* too.
     */
 
+    checkArity(op, args);
     if (args == R_NilValue) {
 	/* This is the zero argument case.
 	   We alloc up a vector list and write the system values into it.
@@ -472,13 +476,13 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "editor") && isString(argi)) {
 		SEXP s =  asChar(argi);
-		if (s == NA_STRING || length(s) == 0)
+		if (s == NA_STRING || LENGTH(s) == 0)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarString(s)));
 	    }
 	    else if (streql(CHAR(namei), "continue")) {
 		SEXP s =  asChar(argi);
-		if (s == NA_STRING || length(s) == 0)
+		if (s == NA_STRING || LENGTH(s) == 0)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		/* We want to make sure these are in the native encoding */
 		SET_VECTOR_ELT(value, i,
@@ -486,7 +490,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "prompt")) {
 		SEXP s =  asChar(argi);
-		if (s == NA_STRING || length(s) == 0)
+		if (s == NA_STRING || LENGTH(s) == 0)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		/* We want to make sure these are in the native encoding */
 		SET_VECTOR_ELT(value, i,
@@ -505,7 +509,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "warn")) {
-		if (!isNumeric(argi) || length(argi) != 1)
+		if (!isNumeric(argi) || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		SET_VECTOR_ELT(value, i, SetOption(tag, argi));
 	    }
@@ -542,7 +546,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 /* handle this here to avoid GetOption during error handling */
 	    else if ( streql(CHAR(namei), "show.error.messages") ) {
-		if( !isLogical(argi) && length(argi) != 1 )
+		if( !isLogical(argi) && LENGTH(argi) != 1 )
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		SET_VECTOR_ELT(value, i, SetOption(tag, argi));
 		R_ShowErrorMessages = LOGICAL(argi)[0];
@@ -561,6 +565,10 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != STRSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		static char sdec[11];
+		if(R_nchar(STRING_ELT(argi, 0), Chars,
+			   /* allowNA = */ FALSE, /* keepNA = */ FALSE,
+			   "OutDec") != 1) // will become an error
+		    warning(_("'OutDec' must be a string of one character"));
 		strncpy(sdec, CHAR(STRING_ELT(argi, 0)), 10);
 		sdec[10] = '\0';
 		OutDec = sdec;

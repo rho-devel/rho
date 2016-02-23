@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2015   The R Core Team.
+ *  Copyright (C) 1999-2016   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This file is installed and available to packages, but only a small
@@ -51,15 +51,22 @@
 #ifndef R_INTERNALS_H_
 #define R_INTERNALS_H_
 
+// Support for NO_C_HEADERS added in R 3.3.0
 #ifdef __cplusplus
-# include <cstdio>
-# ifdef __SUNPRO_CC
+# ifndef NO_C_HEADERS
+#  include <cstdio>
+#  ifdef __SUNPRO_CC
 using std::FILE;
+#  endif
+#  include <climits>
+#  include <cstddef>
 # endif
-# include <climits>
 #else
-# include <stdio.h>
-# include <limits.h> /* for INT_MAX */
+# ifndef NO_C_HEADERS
+#  include <stdio.h>
+#  include <limits.h> /* for INT_MAX */
+#  include <stddef.h> /* for ptrdiff_t */
+# endif
 #endif
 
 #include <R_ext/Arith.h>
@@ -72,6 +79,7 @@ using std::FILE;
 
 #include <R_ext/libextern.h>
 
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/Closure.h"
 #include "CXXR/ComplexVector.h"
 #include "CXXR/DotInternal.h"
@@ -228,6 +236,7 @@ int  (NAMED)(SEXP x);
 void (SET_NAMED)(SEXP x, int v);
 void SET_ATTRIB(SEXP x, SEXP v);
 void DUPLICATE_ATTRIB(SEXP to, SEXP from);
+void SHALLOW_DUPLICATE_ATTRIB(SEXP to, SEXP from);
 
 /* S4 object testing */
 Rboolean (IS_S4_OBJECT)(SEXP x);
@@ -417,6 +426,7 @@ LibExtern SEXP  R_dot_defined;      /* ".defined" */
 LibExtern SEXP  R_dot_Method;       /* ".Method" */
 LibExtern SEXP	R_dot_packageName;// ".packageName"
 LibExtern SEXP  R_dot_target;       /* ".target" */
+LibExtern SEXP  R_dot_Generic;      /* ".Generic" */
 
 /* Missing Values - others from Arith.h */
 #define NA_STRING	R_NaString
@@ -508,6 +518,7 @@ SEXP Rf_installDDVAL(int i);
 SEXP Rf_installS3Signature(const char *, const char *);
 Rboolean Rf_isFree(SEXP);
 Rboolean Rf_isOrdered(SEXP);
+Rboolean Rf_isUnmodifiedSpecSym(SEXP sym, SEXP env);
 Rboolean Rf_isUnordered(SEXP);
 Rboolean Rf_isUnsorted(SEXP, Rboolean);
 SEXP Rf_lengthgets(SEXP, R_len_t);
@@ -523,6 +534,11 @@ Rboolean Rf_NonNullStringMatch(SEXP, SEXP);
 int Rf_ncols(SEXP);
 int Rf_nrows(SEXP);
 SEXP Rf_nthcdr(SEXP, int);
+
+// ../main/character.c :
+typedef enum {Bytes, Chars, Width} nchar_type;
+int R_nchar(SEXP string, nchar_type type_,
+	    Rboolean allowNA, Rboolean keepNA, const char* msg_name);
 
 Rboolean Rf_pmatch(SEXP, SEXP, Rboolean);
 Rboolean Rf_psmatch(const char *, const char *, Rboolean);
@@ -580,6 +596,9 @@ const char *Rf_reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst);
 #undef extern
 #undef LibExtern
 #endif
+
+/* Calling a function with arguments evaluated */
+SEXP R_forceAndCall(SEXP e, int n, SEXP rho);
 
 /* External pointer interface */
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot);
@@ -719,6 +738,8 @@ SEXP R_Unserialize(R_inpstream_t ips);
 SEXP R_do_slot(SEXP obj, SEXP name);
 SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value);
 int R_has_slot(SEXP obj, SEXP name);
+/* S3-S4 class (inheritance), attrib.c */
+SEXP R_S4_extends(SEXP klass, SEXP useTable);
 
 /* class definition, new objects (objects.c) */
 SEXP R_do_MAKE_CLASS(const char *what);
@@ -760,7 +781,9 @@ Rboolean R_compute_identical(SEXP, SEXP, int);
 
 /* C version of R's  indx <- order(..., na.last, decreasing) :
    e.g.  arglist = Rf_lang2(x,y)  or  Rf_lang3(x,y,z) */
-void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean decreasing);
+void R_orderVector (int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean decreasing);
+// C version of R's  indx <- order(x, na.last, decreasing) :
+void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean decreasing);
 
 /* These Rf_ macros are retained for backwards compatibility, but
  * their use is deprecated within CXXR.  In particular header files
@@ -859,6 +882,7 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define isS4			Rf_isS4
 #define isString		Rf_isString
 #define isTs			Rf_isTs
+#define isUnmodifiedSpecSym	Rf_isUnmodifiedSpecSym
 #define isUnordered		Rf_isUnordered
 #define isUnsorted		Rf_isUnsorted
 #define isUserBinop		Rf_isUserBinop

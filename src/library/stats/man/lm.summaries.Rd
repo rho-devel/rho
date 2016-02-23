@@ -1,5 +1,5 @@
 % File src/library/stats/man/lm.summaries.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
@@ -25,7 +25,7 @@
   \item{object, x}{an object inheriting from class \code{lm}, usually
     the result of a call to \code{\link{lm}} or \code{\link{aov}}.}
   \item{\dots}{further arguments passed to or from other methods.}
-  \item{type}{the type of residuals which should be returned.}
+  \item{type}{the type of residuals which should be returned.  Can be abbreviated.}
 }
 \description{
   All these functions are \code{\link{methods}} for class \code{"lm"}  objects.

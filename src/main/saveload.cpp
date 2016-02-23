@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2014  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* <UTF8> byte-level access is only to compare with chars <= 0x7F */
@@ -126,6 +126,9 @@ typedef struct {
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 
+#define SMBUF_SIZE 512
+#define SMBUF_SIZED_STRING "%511s"
+
 typedef struct {
 /* These variables are accessed in the
    InInteger, InComplex, InReal, InString
@@ -138,11 +141,10 @@ mean some of them wouldn't need the extra argument.
 */
 
     R_StringBuffer buffer;
-    char smbuf[512];		/* Small buffer for temp use */
+    char smbuf[SMBUF_SIZE];	/* Small buffer for temp use */
 				/* smbuf is only used by Ascii. */
     XDR xdrs;
 } SaveLoadData;
-
 
 /* ----- I / O -- F u n c t i o n -- P o i n t e r s ----- */
 
@@ -198,7 +200,7 @@ static void DummyTerm(FILE *fp, SaveLoadData *d)
 static int AsciiInInteger(FILE *fp, SaveLoadData *d)
 {
     int x, res;
-    res = fscanf(fp, "%s", d->smbuf);
+    res = fscanf(fp, SMBUF_SIZED_STRING, d->smbuf);
     if(res != 1) error(_("read error"));
     if (strcmp(d->smbuf, "NA") == 0)
 	return NA_INTEGER;
@@ -212,7 +214,7 @@ static int AsciiInInteger(FILE *fp, SaveLoadData *d)
 static double AsciiInReal(FILE *fp, SaveLoadData *d)
 {
     double x;
-    int res = fscanf(fp, "%s", d->smbuf);
+    int res = fscanf(fp, SMBUF_SIZED_STRING, d->smbuf);
     if(res != 1) error(_("read error"));
     if (strcmp(d->smbuf, "NA") == 0)
 	x = NA_REAL;
@@ -222,7 +224,7 @@ static double AsciiInReal(FILE *fp, SaveLoadData *d)
 	x = R_NegInf;
     else
 	res  = sscanf(d->smbuf, "%lg", &x);
-	if(res != 1) error(_("read error"));
+    if(res != 1) error(_("read error"));
     return x;
 }
 
@@ -230,7 +232,7 @@ static Rcomplex AsciiInComplex(FILE *fp, SaveLoadData *d)
 {
     Rcomplex x;
     int res;
-    res = fscanf(fp, "%s", d->smbuf);
+    res = fscanf(fp, SMBUF_SIZED_STRING, d->smbuf);
     if(res != 1) error(_("read error"));
     if (strcmp(d->smbuf, "NA") == 0)
 	x.r = NA_REAL;
@@ -243,7 +245,7 @@ static Rcomplex AsciiInComplex(FILE *fp, SaveLoadData *d)
 	if(res != 1) error(_("read error"));
     }
 
-    res = fscanf(fp, "%s", d->smbuf);
+    res = fscanf(fp, SMBUF_SIZED_STRING, d->smbuf);
     if(res != 1) error(_("read error"));
     if (strcmp(d->smbuf, "NA") == 0)
 	x.i = NA_REAL;
@@ -1297,7 +1299,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
 	PROTECT(s = BuiltInFunction::obtainPrimitive(m->InString(fp, d)));
 	if (s == R_NilValue) {
-	    warning(_("unrecognized internal function name \"%s\""), d->buffer.data); 
+	    warning(_("unrecognized internal function name \"%s\""), d->buffer.data);
 	}
 	break;
     case CHARSXP:
@@ -1400,7 +1402,7 @@ static int InIntegerAscii(FILE *fp, SaveLoadData *unused)
 {
     char buf[128];
     int x, res;
-    res = fscanf(fp, "%s", buf);
+    res = fscanf(fp, SMBUF_SIZED_STRING, buf);
     if(res != 1) error(_("read error"));
     if (strcmp(buf, "NA") == 0)
 	return NA_INTEGER;
@@ -1517,7 +1519,7 @@ static double InDoubleAscii(FILE *fp, SaveLoadData *unused)
     char buf[128];
     double x;
     int res;
-    res = fscanf(fp, "%s", buf);
+    res = fscanf(fp, "%127s", buf);
     if(res != 1) error(_("read error"));
     if (strcmp(buf, "NA") == 0)
 	x = NA_REAL;
@@ -2209,7 +2211,7 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
 	invisible(serialize(val, con, ascii = ascii))
 
    Unfortunately, this will result in too much duplication in the lapply
-   (and any other way of doing this).  Hence we need an internal version. 
+   (and any other way of doing this).  Hence we need an internal version.
 
    In case anyone wants to do this another way, in fact it is a
    pairlist of objects that is serialized, but RestoreToEnv copes
@@ -2255,7 +2257,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 
     wasopen = con->isopen;
     if(!wasopen) {
-	char mode[5];	
+	char mode[5];
 	strcpy(mode, con->mode);
 	strcpy(con->mode, "wb");
 	if(!con->open(con)) error(_("cannot open the connection"));
@@ -2336,7 +2338,7 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
     con = getConnection(asInteger(con_));
     wasopen = con->isopen;
     if(!wasopen) {
-	char mode[5];	
+	char mode[5];
 	strcpy(mode, con->mode);
 	strcpy(con->mode, "rb");
 	if(!con->open(con)) error(_("cannot open the connection"));

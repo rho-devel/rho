@@ -9,7 +9,7 @@
 
 ## =========== configuration macros for building packages ================
 # Absolute path to '/usr/local' software collection.  The versions used
-# on CRAN can be found at http://www.stats.ox.ac.uk/pub/Rtools/libs.html
+# on CRAN can be found at https://www.stats.ox.ac.uk/pub/Rtools/libs.html
 # It can be interrogated by 'R CMD config LOCAL_SOFT'
 # Use 'make rsync-extsoft' to populate the default directory.
 # LOCAL_SOFT = $(R_HOME)/extsoft
@@ -19,7 +19,7 @@
 # Path of library directory containing zlib, bzlib, liblzma, pcre,
 # libpng, libjpeg, libtiff.
 # A suitable version can be found at
-# http://www.stats.ox.ac.uk/pub/Rtools/libs.html
+# https://www.stats.ox.ac.uk/pub/Rtools/libs.html
 # or use 'make rsync-extsoft' to populate the default directory.
 # EXT_LIBS = $(LOCAL_SOFT)
 
@@ -32,22 +32,27 @@
 
 # Support for the ACML and Goto BLASes has been withdrawn: see R-admin.html
 
-# With the recommended toolchain, set this to 32 or 64
+# With the recommended gcc 4.6.3 toolchain, set this to 32 or 64
 # MULTI =
 # If the toolchain's bin directory is not in your path, set this to the path
 # (including the trailing /, and use / not \).
 # TOOL_PATH =
 # for other toolchains leave these empty and set the more detailed options below
 
+# With the experimental gcc 4.9.2 toolchain or another toolchain, set 
+# BINPREF and BINPREF64 (below) to the respective bin directories.  
+# Include the trailing /, and use / not \.
+# Do this in the more detailed options below
+
 
 ### BEGIN more detailed options
 # Some of the toolchains have prefixes for e.g. ar, gcc.
 # This can also be used to give the full path to the compiler, 
-# including a trailing / .
-# prefix for 32-bit: path or i686-w64-mingw32-
-# BINPREF =
-# prefix for 64-bit: path or x86_64-w64-mingw32-
-# BINPREF64 = x86_64-w64-mingw32-
+# including a trailing / .  The experimental gcc 4.9.2 defaults are shown;
+# actual defaults are blank for both of these.
+# BINPREF = c:/Rtools/gcc492_32/bin/
+# prefix for 64-bit:
+# BINPREF64 = c:/Rtools/gcc492_64/bin/
 
 # Others use a -m64 or -m32 option to select architectures
 # M_ARCH =
@@ -91,7 +96,7 @@
 
 # For the cairographics devices
 # Optionally use a static build of cairographics from
-#   http://www.rforge.net/Cairo/files/cairo-current-win.tar.gz
+#   https://www.rforge.net/Cairo/files/cairo-current-win.tar.gz
 # and set CAIRO_HOME to the parent of the win32/win64 directories
 #
 # If CAIRO_HOME is not set the devices are not built.
@@ -102,6 +107,8 @@
 
 # unset this if you are *not* using MiKTeX
 # MIKTEX = TRUE
+# Recent MiKTEX does not provide texi2dvi and needs something like
+# TEXI2DVI = TEXINDEX=/Rtools/bin/texindex.exe texify
 
 # for texinfo >= 5.1. If the texinfo files are installed at /packages/texinfo,
 # TEXI2ANY = /path/to/perl -I/packages/texinfo /packages/texinfo/texi2any

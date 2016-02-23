@@ -1,6 +1,6 @@
 % File src/library/base/man/Arithmetic.Rd
-% Part of the R package, http://www.R-project.org
-% Copyright 1995-2014 R Core Team
+% Part of the R package, https://www.R-project.org
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Arithmetic}
@@ -57,7 +57,7 @@ x \%/\% y
   x \%/\% y )} (up to rounding error) unless \code{y == 0} where the
   result of \code{\%\%} is \code{\link{NA_integer_}} or
   \code{\link{NaN}} (depending on the \code{\link{typeof}} of the
-  arguments).
+  arguments), and for non-\link{finite} arguments.
 
   If either argument is complex the result will be complex, otherwise if
   one or both arguments are numeric, the result will be numeric.  If
@@ -95,7 +95,8 @@ x \%/\% y
 
   \code{1 ^ y} and \code{y ^ 0} are \code{1}, \emph{always}.
   \code{x ^ y} should also give the proper limit result when
-  either argument is infinite (i.e., \code{+- \link{Inf}}).
+  either (numeric) argument is \link{infinite} (one of \code{Inf} or
+  \code{-Inf}). 
 
   Objects such as arrays or time-series can be operated on this
   way provided they are conformable.
@@ -151,9 +152,9 @@ x \%/\% y
   All logical operations involving a zero-length vector have a
   zero-length result.
 
-  The binary operators are sometimes called as functions as e.g.
-  \code{`&`(x, y)}: see the description of how argument-matching is done
-  in \code{\link[base]{Ops}}.
+  The binary operators are sometimes called as functions as
+  e.g.\sspace{}\code{`&`(x, y)}: see the description of how
+  argument-matching is done in \code{\link[base]{Ops}}.
 
   \code{**} is translated in the parser to \code{^}, but this was
   undocumented for many years.  It appears as an index entry in Becker

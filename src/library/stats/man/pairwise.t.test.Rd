@@ -1,5 +1,5 @@
 % File src/library/stats/man/pairwise.t.test.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -25,7 +25,7 @@ pairwise.t.test(x, g, p.adjust.method = p.adjust.methods,
     t-tests. }
  \item{alternative}{ a character string specifying the alternative
     hypothesis, must be one of \code{"two.sided"} (default),
-    \code{"greater"} or \code{"less"}.  }
+    \code{"greater"} or \code{"less"}.  Can be abbreviated.}
  \item{\dots}{ additional arguments to pass to \code{t.test}. }
 }
 \details{ The \code{pool.sd} switch calculates a common SD for all

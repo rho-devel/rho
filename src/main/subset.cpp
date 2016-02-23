@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2014   The R Core Team
+ *  Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *  Vector and List Subsetting
@@ -433,7 +433,7 @@ static R_INLINE R_xlen_t scalarIndex(SEXP s)
 	}
     else return -1;
 }
-    
+
 SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     GCStackRoot<> argsrt(args);
@@ -463,6 +463,15 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    case LGLSXP:
 		if (i >= 1 && i <= XLENGTH(x))
 		    return ScalarLogical( LOGICAL(x)[i-1] );
+		break;
+//	    do the more rare cases as well, since we've already prepared everything:
+	    case CPLXSXP:
+		if (i >= 1 && i <= XLENGTH(x))
+		    return ScalarComplex( COMPLEX(x)[i-1] );
+		break;
+	    case RAWSXP:
+		if (i >= 1 && i <= XLENGTH(x))
+		    return ScalarRaw( RAW(x)[i-1] );
 		break;
 	    default: break;
 	    }
@@ -499,6 +508,14 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    case LGLSXP:
 			if (k < LENGTH(x))
 			    return ScalarLogical( LOGICAL(x)[k] );
+			break;
+		    case CPLXSXP:
+			if (k < LENGTH(x))
+			    return ScalarComplex( COMPLEX(x)[k] );
+			break;
+		    case RAWSXP:
+			if (k < LENGTH(x))
+			    return ScalarRaw( RAW(x)[k] );
 			break;
 		    default: break;
 		    }
@@ -667,7 +684,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 
     /* code to allow classes to extend environment */
     if (TYPEOF(x) == S4SXP) {
-        x = R_getS4DataSlot(x, ANYSXP);
+	x = R_getS4DataSlot(x, ANYSXP);
 	if (x == R_NilValue)
 	  errorcall(call, _("this S4 class is not subsettable"));
     }
@@ -720,7 +737,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 #endif
 	    named_x = NAMED(x);
 	}
-	
+
 	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
 			   xlength(x), pok, len > 1 ? len-1 : -1, call);
 	if (offset < 0 || offset >= xlength(x)) {
@@ -857,6 +874,8 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
     input = PROTECT(allocVector(STRSXP, 1));
 
     nlist = CADR(args);
+    if (TYPEOF(nlist) == PROMSXP)
+	nlist = eval(nlist, env);
     if(isSymbol(nlist) )
 	SET_STRING_ELT(input, 0, PRINTNAME(nlist));
     else if(isString(nlist) )
@@ -886,7 +905,7 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 	return(ans);
     }
 
-    UNPROTECT(2);
+    UNPROTECT(2); /* input, args */
     return R_subset3_dflt(CAR(ans), STRING_ELT(input, 0), call);
 }
 
@@ -903,7 +922,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
     slen = strlen(translateChar(input));
      /* The mechanism to allow a class extending "environment" */
     if( IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP ){
-        x = R_getS4DataSlot(x, ANYSXP);
+	x = R_getS4DataSlot(x, ANYSXP);
 	if(x == R_NilValue)
 	    errorcall(call, "$ operator not defined for this S4 class");
     }

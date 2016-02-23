@@ -1,6 +1,6 @@
 #  File src/gnuwin32/installer/JRins.R
 #
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -13,11 +13,11 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
-### JRins.R Rversion srcdir MDISDI HelpStyle Internet Producer ISDIR
+### JRins.R Rversion srcdir MDISDI HelpStyle Producer ISDIR
 
-.make_R.iss <- function(RW, srcdir, MDISDI=0, HelpStyle=1, Internet=0,
+.make_R.iss <- function(RW, srcdir, MDISDI=0, HelpStyle=1,
                        Producer = "R-core", ISDIR)
 {
     have32bit <- file_test("-d", file.path(srcdir, "bin", "i386"))
@@ -85,7 +85,6 @@
     lines <- readLines("code.iss")
     lines <- gsub("@MDISDI@", MDISDI, lines)
     lines <- gsub("@HelpStyle@", HelpStyle, lines)
-    lines <- gsub("@Internet@", Internet, lines)
     writeLines(lines, con)
 
     writeLines(c("", "", "[Files]"), con)

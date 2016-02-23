@@ -29,6 +29,7 @@ all: Makefile DESCRIPTION
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)/doc
 	@$(MAKE) mkR1 mkdesc instdirs iconvlist
 	@$(MAKE) mksrc
+	@$(MAKE) sysdata
 	@$(MAKE) mklazy
 
 mkR: mkR1

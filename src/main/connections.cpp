@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* Notes on so-called 'Large File Support':
@@ -267,7 +267,7 @@ void set_iconv(Rconnection con)
 	   Was Windows-only until 2.12.0, but we now require iconv.
 	 */
 	Rboolean useUTF8 = CXXRCONSTRUCT(Rboolean, !utf8locale && con->UTF8out);
-	const char *enc = 
+	const char *enc =
 	    streql(con->encname, "UTF-8-BOM") ? "UTF-8" : con->encname;
 	tmp = Riconv_open(useUTF8 ? "UTF-8" : "", enc);
 	if(tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
@@ -278,7 +278,7 @@ void set_iconv(Rconnection con)
 	con->navail = short(50-onb); con->inavail = 0;
 	/* libiconv can handle BOM marks on Windows Unicode files, but
 	   glibc's iconv cannot. Aargh ... */
-	if(streql(con->encname, "UCS-2LE") || 
+	if(streql(con->encname, "UCS-2LE") ||
 	   streql(con->encname, "UTF-16LE")) con->inavail = -2;
 	/* Discaard BOM */
 	if(streql(con->encname, "UTF-8-BOM")) con->inavail = -3;
@@ -632,7 +632,7 @@ static Rboolean file_open(Rconnection con)
 	unlink(name);
 #ifdef Win32
 	strncpy(thisconn->name, name, PATH_MAX);
-        thisconn->name[PATH_MAX - 1] = '\0';
+	thisconn->name[PATH_MAX - 1] = '\0';
 #endif
 	free(const_cast<char *>( name)); /* only free if allocated by R_tmpnam */
     }
@@ -990,8 +990,8 @@ static char* win_getlasterror_str(void)
     unsigned int err_msg_len;
     char *err_msg = NULL;
 
-    err_msg_len = 
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+    err_msg_len =
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		      FORMAT_MESSAGE_FROM_SYSTEM |
 		      FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(),
 		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -1053,9 +1053,9 @@ static Rboolean	fifo_open(Rconnection con)
 	win_namedpipe_secattr.lpSecurityDescriptor = NULL;
 	win_namedpipe_secattr.bInheritHandle = FALSE;
 
-	this->hdl_namedpipe = 
+	this->hdl_namedpipe =
 	    CreateNamedPipeA(hch_pipename,
-			     (con->canread ? PIPE_ACCESS_DUPLEX : 
+			     (con->canread ? PIPE_ACCESS_DUPLEX :
 			      PIPE_ACCESS_OUTBOUND) | FILE_FLAG_OVERLAPPED,
 			     PIPE_TYPE_BYTE, PIPE_UNLIMITED_INSTANCES , 0, 0,
 			     FILE_FLAG_NO_BUFFERING, &win_namedpipe_secattr);
@@ -1066,7 +1066,7 @@ static Rboolean	fifo_open(Rconnection con)
 	    */
 	    if (GetLastError() != 231) {
 		char *hch_err_msg = win_getlasterror_str();
-		warning(_("cannot create fifo '%s', reason '%s'"), 
+		warning(_("cannot create fifo '%s', reason '%s'"),
 			hch_pipename, hch_err_msg);
 		free(hch_err_msg);
 		boo_retvalue = FALSE;
@@ -1075,20 +1075,20 @@ static Rboolean	fifo_open(Rconnection con)
     }
 
     /* Open existing named pipe */
-    if ((boo_retvalue || GetLastError() == 231) && 
+    if ((boo_retvalue || GetLastError() == 231) &&
 	this->hdl_namedpipe <= (HANDLE)(LONG_PTR) 0) {
 	DWORD dwo_openmode = 0;
 	if (con->canread) dwo_openmode |= GENERIC_READ;
 	if (con->canwrite) dwo_openmode |= GENERIC_WRITE;
-	this->hdl_namedpipe = 
+	this->hdl_namedpipe =
 	    CreateFileA(hch_pipename, dwo_openmode,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, 
+			NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 			NULL);
 	if (this->hdl_namedpipe == INVALID_HANDLE_VALUE) {
 	    char *hch_err_msg = win_getlasterror_str();
-	    warning(_("cannot open fifo '%s', reason '%s'"), 
+	    warning(_("cannot open fifo '%s', reason '%s'"),
 		    hch_pipename, hch_err_msg);
 	    free(hch_err_msg);
 	    boo_retvalue = FALSE;
@@ -1130,7 +1130,7 @@ static size_t fifo_read(void* ptr, size_t size, size_t nitems, Rconnection con)
 
     wchar_t *buffer = (wchar_t*)malloc((size * sizeof(wchar_t)) * nitems);
     if (!buffer) error(_("allocation of fifo buffer failed"));
-    ReadFile(this->hdl_namedpipe, buffer, 
+    ReadFile(this->hdl_namedpipe, buffer,
 	     (size * sizeof(wchar_t)) * nitems, (LPDWORD)&read_byte,
 	     this->overlapped_write);
     wcstombs(ptr, buffer, read_byte / sizeof(wchar_t));
@@ -1138,7 +1138,7 @@ static size_t fifo_read(void* ptr, size_t size, size_t nitems, Rconnection con)
     return (read_byte / sizeof(wchar_t)) / size;
 }
 
-static size_t	
+static size_t
 fifo_write(const void *ptr, size_t size, size_t nitems, Rconnection con)
 {
     Rfifoconn this = con->private;
@@ -1157,7 +1157,7 @@ fifo_write(const void *ptr, size_t size, size_t nitems, Rconnection con)
     mbstowcs(buffer, (const char*) ptr, str_len);
 
     /* Write data */
-    if (WriteFile(this->hdl_namedpipe, buffer, 
+    if (WriteFile(this->hdl_namedpipe, buffer,
 		  size * sizeof(wchar_t) * nitems, (LPDWORD) &written_bytes,
 		  NULL) == FALSE && GetLastError() != ERROR_IO_PENDING) {
 	char *hch_err_msg = win_getlasterror_str();
@@ -1704,7 +1704,7 @@ static size_t bzfile_read(void *ptr, size_t size, size_t nitems,
 		    memcpy(next_unused, unused, nUnused);
 		}
 		if (nUnused > 0 || !feof(bz->fp)) {
-		    BZ2_bzReadClose(&bzerror, bz->bfp);	
+		    BZ2_bzReadClose(&bzerror, bz->bfp);
 		    bz->bfp = BZ2_bzReadOpen(&bzerror, bz->fp, 0, 0, next_unused, nUnused);
 		    if(bzerror != BZ_OK)
 			warning(_("file '%s' has trailing content that appears not to be compressed by bzip2"),
@@ -2755,12 +2755,12 @@ static void text_init(Rconnection con, SEXP text, int type)
     const void *vmax = vmaxget();
 
     for(i = 0; i < nlines; i++)
-	dnc += 
+	dnc +=
 	    double( strlen(type == 1 ? translateChar(STRING_ELT(text, i))
 			    : ((type == 3) ?translateCharUTF8(STRING_ELT(text, i))
 			       : CHAR(STRING_ELT(text, i))) ) + 1);
-    if (dnc >= std::numeric_limits<size_t>::max()) 
- 	error(_("too many characters for text connection"));
+    if (dnc >= std::numeric_limits<size_t>::max())
+	error(_("too many characters for text connection"));
     else nchars = size_t( dnc);
     thisconn->data = static_cast<char *>( malloc(nchars+1));
     if(!thisconn->data) {
@@ -2903,7 +2903,6 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 	already = int( strlen(thisconn->lastline)); // we do not allow longer lines
     SEXP tmp;
 
-#ifdef HAVE_VA_COPY
     va_list aq;
     va_copy(aq, ap);
     if(already >= BUFSIZE) {
@@ -2938,19 +2937,6 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 	    warning(_("printing of extremely long output is truncated"));
 	}
     }
-#else /* no va_copy: very rare so don't try too hard */
-    if(already >= BUFSIZE) {
-	res = -1;
-    } else {
-	strcpy(b, thisconn->lastline);
-	p = b + already;
-	buffree = BUFSIZE - already;
-	res = vsnprintf(p, buffree, format, ap);
-	b[BUFSIZE-1] = '\0';
-    }
-    if (res >= buffree || res < 0)
-	warning(_("printing of extremely long output is truncated"));
-#endif
 
     /* copy buf line-by-line to object */
     for(p = b; ; p = q+1) {
@@ -3167,7 +3153,6 @@ SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::
     int ncon, port, server, blocking, timeout;
     Rconnection con = nullptr;
 
-#ifdef HAVE_SOCKETS
     scmd = host_;
     if(!isString(scmd) || Rf_length(scmd) != 1)
 	error(_("invalid '%s' argument"), "host");
@@ -3216,9 +3201,6 @@ SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::
     setAttrib(ans, R_ConnIdSymbol, CXXRSCAST(SEXP, con->ex_ptr));
     R_RegisterCFinalizerEx(CXXRSCAST(SEXP, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(3);
-#else
-    error(_("sockets are not available on this system"));
-#endif
     return ans;
 }
 
@@ -3396,6 +3378,8 @@ SEXP attribute_hidden do_close(/*const*/ CXXR::Expression* call, const CXXR::Bui
     if(i == R_ErrorCon)
 	error(_("cannot close messages sink connection"));
     Rconnection con = getConnection(i);
+    // close to get the status set for pipes (PR#16481)
+    if(con->isopen && streql(con->connclass, "pipe")) con->close(con);
     int status = con->status;
     con_close1(con);
     free(Connections[i]);
@@ -3583,7 +3567,7 @@ SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR:
 		con->close(con);
 		error(_("cannot read from this connection"));
 	    }
-	} else { 
+	} else {
 	    if(!con->canread) error(_("cannot read from this connection"));
 	    /* for a non-blocking connection, more input may
 	       have become available, so re-position */
@@ -3995,7 +3979,7 @@ SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::B
 		if(swap && size > 1)
 		    for(i = 0; i < m; i++) swapb(static_cast<char *>(p)+i*size, size);
 	    } else {
-		char buf[size];
+		alignas(double) char buf[size];
 		R_xlen_t s;
 		if(mode == 1) {
 		    for(i = 0, m = 0; i < n; i++) {
@@ -4668,7 +4652,7 @@ void con_pushback(Rconnection con, Rboolean newLine, char *line)
     int nexists = con->nPushBack;
     char **q;
 
-    if (nexists == INT_MAX) 
+    if (nexists == INT_MAX)
 	error(_("maximum number of pushback lines exceeded"));
     if(nexists > 0) {
 	q = static_cast<char **>( realloc(con->PushBack, (nexists+1)*sizeof(char *)));
@@ -4914,7 +4898,7 @@ do_getconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
     what = asInteger(what_);
     if (what == NA_INTEGER)
 	error(_("there is no connection NA"));
-    if (what < 0 || what >= NCONNECTIONS || !Connections[what]) 
+    if (what < 0 || what >= NCONNECTIONS || !Connections[what])
 	error(_("there is no connection %d"), what);
 
     con = Connections[what];
@@ -4967,35 +4951,32 @@ SEXP attribute_hidden do_sumconnection(/*const*/ CXXR::Expression* call, const C
 #endif
 
 // in internet module: 'type' is unused
-extern Rconnection 
+extern Rconnection
 R_newCurlUrl(const char *description, const char * const mode, int type);
 
-/* op = 0: url(description, open, blocking, encoding)
-   op = 1: file(description, open, blocking, encoding)
+/* op = 0: .Internal( url(description, open, blocking, encoding, method))
+   op = 1: .Internal(file(description, open, blocking, encoding, method, raw))
 */
 SEXP attribute_hidden do_url(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     CXXRCONST char *class2 = "url";
     const char *url, *open;
-    int ncon, block, raw = 0, meth = 0;
-#ifdef Win32
-    int urlmeth = UseInternet2;
-#endif
+    int ncon, block, raw = 0, defmeth,
+	meth = 0, // 0: "internal",          1: "libcurl"
+	urlmeth;  // 0: (Unix || "default"), 1: UseInternet2 || "wininet"
     cetype_t ienc = CE_NATIVE;
     Rconnection con = nullptr;
-#ifdef HAVE_INTERNET
-    UrlScheme type = HTTPsh;	/* -Wall */
-#endif
 
+    // --------- description
     scmd = args[0];
     if(!isString(scmd) || Rf_length(scmd) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(scmd) > 1)
 	warning(_("only first element of 'description' argument used"));
-    url = CHAR(STRING_ELT(scmd, 0)); /* ASCII */
 #ifdef Win32
-    if(PRIMVAL(op) == 1 && !IS_ASCII(STRING_ELT(scmd, 0)) ) {
+    urlmeth = 1;
+    if(PRIMVAL(op) == 1 && !IS_ASCII(STRING_ELT(scmd, 0)) ) { // file(<non-ASCII>, *)
 	ienc = CE_UTF8;
 	url = translateCharUTF8(STRING_ELT(scmd, 0));
     } else {
@@ -5006,91 +4987,80 @@ SEXP attribute_hidden do_url(/*const*/ CXXR::Expression* call, const CXXR::Built
 	    url = translateChar(STRING_ELT(scmd, 0));
     }
 #else
-	url = translateChar(STRING_ELT(scmd, 0));
+    urlmeth = 0;
+    url = translateChar(STRING_ELT(scmd, 0));
 #endif
 
-#ifdef HAVE_INTERNET
-    if (strncmp(url, "http://", 7) == 0) type = HTTPsh;
-    else if (strncmp(url, "ftp://", 6) == 0) type = FTPsh;
-    else if (strncmp(url, "https://", 8) == 0) type = HTTPSsh;
+    UrlScheme type = HTTPsh;	/* -Wall */
+    Rboolean inet = TRUE;
+    if (strncmp(url, "http://", 7) == 0)
+	type = HTTPsh;
+    else if (strncmp(url, "ftp://", 6) == 0)
+	type = FTPsh;
+    else if (strncmp(url, "https://", 8) == 0)
+	type = HTTPSsh;
     // ftps:// is available via most libcurl.
-    else if (strncmp(url, "ftps://", 7) == 0) type = FTPSsh;
-#endif
+    else if (strncmp(url, "ftps://", 7) == 0)
+	type = FTPSsh;
+    else
+	inet = FALSE;
 
+    // --------- open
     sopen = args[1];
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
+    // --------- blocking
     block = asLogical(args[2]);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "block");
+    // --------- encoding
     enc = args[3];
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
-    if(op->variant() == 1) {
-	raw = asLogical(args[4]);
+
+    // --------- method
+    const char *cmeth = CHAR(asChar(args[4]));
+    meth = streql(cmeth, "libcurl"); // 1 if "libcurl", else 0
+    defmeth = streql(cmeth, "default");
+    if (streql(cmeth, "wininet")) {
+#ifdef Win32
+	urlmeth = 1;  // it already was as this is the default
+#else
+	error(_("method = \"wininet\" is only supported on Windows"));
+#endif
+    }
+#ifdef Win32
+    else if (streql(cmeth, "internal")) urlmeth = 0;
+#endif
+
+    if(op->variant() == 1) { // file() -- has extra  'raw'  argument
+	raw = asLogical(args[5]);
 	if(raw == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "raw");
     }
 
-    if(op->variant() == 0) {
-	const char *cmeth = CHAR(asChar(args[4]));
-	meth = streql(cmeth, "libcurl");
-	if (streql(cmeth, "wininet")) {
-#ifdef Win32
-	    urlmeth = 1;
-#else
-	    error(_("method = \"wininet\" is only supported on Windows"));
-#endif    
-	} 
-#ifdef Win32
-	else if (streql(cmeth, "internal")) urlmeth = 0;
-#endif
-    } else { // file(), look at option.
-	SEXP opt = GetOption1(install("url.method"));
-	if (isString(opt) && LENGTH(opt) >= 1) {
-	    const char *val = CHAR(STRING_ELT(opt, 0));
-	    if (streql(val, "libcurl")) meth = 1;
-#ifdef Win32
-	    if (streql(val, "wininet")) urlmeth = 1;
-#endif
-	}
-    }
-
     if(!meth) {
-	if (strncmp(url, "ftps://", 7) == 0)
-#ifdef HAVE_CURL_CURL_H
-	{
-	    // this is slightly optimistic: we did not check the libcurl build
-	    REprintf("ftps:// URLs are not supported by the default method: trying \"libcurl\"\n");
-	    R_FlushConsole();
-	    meth = 1;
-	}
-//	error("ftps:// URLs are not supported by the default method:\n   consider url(method = \"libcurl\")");
-#else
-	error("ftps:// URLs are not supported");
+	if (strncmp(url, "ftps://", 7) == 0) {
+#ifdef HAVE_LIBCURL
+	    if (defmeth) meth = 1; else
 #endif
+		error("ftps:// URLs are not supported by this method");
+	}
 #ifdef Win32
 	if (!urlmeth && strncmp(url, "https://", 8) == 0) {
-	    REprintf("https:// URLs are not supported by the default method: using \"wininet\"\n");
-	    R_FlushConsole();
-	    urlmeth = 1;
-	}
-	//   error("for https:// URLs use setInternet2(TRUE)");
-#else
-	if (strncmp(url, "https://", 8) == 0)
-# ifdef HAVE_CURL_CURL_H
-	{
-	    // this is slightly optimistic: we did not check the libcurl build
-	    REprintf("https:// URLs are not supported by the default method: trying \"libcurl\"\n");
-	    R_FlushConsole();
-	    meth = 1;
-	}
-//	    error("https:// URLs are not supported by the default method:\n  consider url(method = \"libcurl\")");
-# else
-	error("https:// URLs are not supported");
+# ifdef HAVE_LIBCURL
+	    if (defmeth) meth = 1; else
 # endif
+		error("https:// URLs are not supported by this method");
+	}
+#else // Unix
+	if (strncmp(url, "https://", 8) == 0) {
+	    // We check the libcurl build does support https as from R 3.3.0
+	    if (defmeth) meth = 1; else
+		error("https:// URLs are not supported by the \"internal\" method");
+	}
 #endif
     }
 
@@ -5104,27 +5074,17 @@ SEXP attribute_hidden do_url(/*const*/ CXXR::Expression* call, const CXXR::Built
 #endif
 	con = newfile(url + nh, ienc, strlen(open) ? open : "r", raw);
 	class2 = "file";
-#ifdef HAVE_INTERNET
-	// we could pass others to libcurl.
-    } else if (strncmp(url, "http://", 7) == 0 ||
-	       strncmp(url, "https://", 8) == 0 ||
-	       strncmp(url, "ftp://", 6) == 0 ||
-	       strncmp(url, "ftps://", 7) == 0) {
+    } else if (inet) {
 	if(meth) {
-#ifdef HAVE_CURL_CURL_H
+# ifdef HAVE_LIBCURL
 	    con = R_newCurlUrl(url, strlen(open) ? open : "r", 0);
-#else
+# else
 	    error("url(method = \"libcurl\") is not supported on this platform");
-#endif
+# endif
 	} else {
-#ifdef Win32
 	    con = R_newurl(url, strlen(open) ? open : "r", urlmeth);
-#else
-	    con = R_newurl(url, strlen(open) ? open : "r", 0);
-#endif
 	    ((Rurlconn)con->connprivate)->type = type;
 	}
-#endif
     } else {
 	if(op->variant() == 1) { /* call to file() */
 	    if(strlen(url) == 0) {
@@ -5184,7 +5144,7 @@ SEXP attribute_hidden do_url(/*const*/ CXXR::Expression* call, const CXXR::Built
 		    con = newfile(url, ienc, strlen(open) ? open : "r", raw);
 	    }
 	    class2 = "file";
-	} else {
+	} else { // url()
 	    error(_("URL scheme unsupported by this method"));
 	}
     }
@@ -5608,7 +5568,7 @@ static inline unsigned int uiSwap (unsigned int x)
 }
 #endif
 
-/* These are all hidden and used only in serialize.c, 
+/* These are all hidden and used only in serialize.c,
    so managing R_alloc stack is prudence. */
 attribute_hidden
 SEXP R_compress1(SEXP in)
@@ -6077,7 +6037,7 @@ do_memDecompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
 	    if (strm.avail_in > 0) {
 		/* Decompression failed, free lzma_stream. */
 		lzma_end(&strm);
-		/* Because it ran out of output buffer? 
+		/* Because it ran out of output buffer?
 		 *
 		 * This used to only check if LZMA_BUF_ERROR was
 		 * returned, but apparently XZ will also signal an out
@@ -6129,13 +6089,13 @@ SEXP R_new_custom_connection(const char *description, const char *mode, const ch
     if(!newconn) error(_("allocation of %s connection failed"), class_name);
     newconn->connclass = static_cast<char *>( malloc(strlen(class_name) + 1));
     if(!newconn->connclass) {
-        free(newconn);
-        error(_("allocation of %s connection failed"), class_name);
+	free(newconn);
+	error(_("allocation of %s connection failed"), class_name);
     }
     strcpy(newconn->connclass, class_name);
     newconn->description = static_cast<char *>( malloc(strlen(description) + 1));
     if(!newconn->description) {
-        free(newconn->connclass); free(newconn);
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of %s connection failed"), class_name);
     }
     init_con(newconn, description, CE_NATIVE, mode);
@@ -6158,7 +6118,7 @@ SEXP R_new_custom_connection(const char *description, const char *mode, const ch
     setAttrib(ans, R_ConnIdSymbol, CXXRSCAST(SEXP, newconn->ex_ptr));
     R_RegisterCFinalizerEx(CXXRSCAST(SEXP, newconn->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(3);
-    
+
     if (ptr) ptr[0] = newconn;
 
     return ans;

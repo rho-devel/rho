@@ -21,8 +21,10 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
+
+/* Internal header, not installed */
 
 /** @file Defn.h
  *
@@ -106,7 +108,6 @@ extern0 SEXP	R_ColonSymbol;         /* ":" */
 extern0 SEXP    R_ConnIdSymbol;  /* "conn_id" */
 extern0 SEXP    R_DevicesSymbol;  /* ".Devices" */
 
-extern0 SEXP    R_dot_Generic;  /* ".Generic" */
 extern0 SEXP    R_dot_Methods;  /* ".Methods" */
 extern0 SEXP    R_dot_Group;  /* ".Group" */
 extern0 SEXP    R_dot_Class;  /* ".Class" */
@@ -512,10 +513,6 @@ LibExtern SEXP R_TrueValue INI_as(NULL);
 LibExtern SEXP R_FalseValue INI_as(NULL);
 LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 
-#ifdef Win32
-LibExtern Rboolean UseInternet2;
-#endif
-
 #ifdef __MAIN__
 # undef extern
 # undef extern0
@@ -562,7 +559,6 @@ LibExtern Rboolean UseInternet2;
 # define EncodeReal2            Rf_EncodeReal2
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
-# define envlength		Rf_envlength
 # define ErrorMessage		Rf_ErrorMessage
 # define evalListKeepMissing	Rf_evalListKeepMissing
 # define factorsConform		Rf_factorsConform
@@ -614,6 +610,8 @@ LibExtern Rboolean UseInternet2;
 # define matchPar		Rf_matchPar
 # define Mbrtowc		Rf_mbrtowc
 # define mbtoucs		Rf_mbtoucs
+# define mbcsToUcs2		Rf_mbcsToUcs2
+# define memtrace_report	Rf_memtrace_report
 # define mkCLOSXP		Rf_mkCLOSXP
 # define mkFalse		Rf_mkFalse
 # define mkPROMISE		Rf_mkPROMISE
@@ -750,7 +748,6 @@ int Rf_DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated3(SEXP, SEXP, Rboolean);
-int Rf_envlength(SEXP);
 SEXP Rf_evalListKeepMissing(SEXP, SEXP);
 int Rf_factorsConform(SEXP, SEXP);
 SEXP Rf_findVar1(SEXP, SEXP, SEXPTYPE, int);
@@ -1024,14 +1021,25 @@ extern const char *locale2charset(const char *);
 } while(0)
 
 
+/* 
+   alloca is neither C99 nor POSIX.
+
+   It might be better to try alloca.h first, see
+   https://www.gnu.org/software/autoconf/manual/autoconf-2.60/html_node/Particular-Functions.html
+*/
 #ifdef __GNUC__
+// This covers GNU, Clang and Intel compilers
+// The undef is needed in case some other header, e.g. malloc.h, already did this
 # undef alloca
 # define alloca(x) __builtin_alloca((x))
 #else
 # ifdef HAVE_ALLOCA_H
+// Needed for native compilers on Solaris and AIX
 #  include <alloca.h>
 # endif
+// it might have been defined via some other standard header, e.g. stdlib.h
 # if !HAVE_DECL_ALLOCA
+#  include <stddef.h> // for size_t
 extern void *alloca(size_t);
 # endif
 #endif

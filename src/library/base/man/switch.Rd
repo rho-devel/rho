@@ -1,5 +1,5 @@
 % File src/library/base/man/switch.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -41,11 +41,14 @@ switch(EXPR, \dots)
   \code{2}.  If there is more than one match, the first matching element
   is used.  In the case of no match, if there is a unnamed element of
   \code{\dots} its value is returned.  (If there is more than one such
-  argument an error is returned.)
+  argument an error is signaled.)
 
   The first argument is always taken to be \code{EXPR}: if it is named
   its name must (partially) match.
 
+  A warning is signaled if no alternatives are provides, as this is
+  usually a coding error.
+  
   This is implemented as a \link{primitive} function that only evaluates
   its first argument and one other if one is selected.
 }

@@ -5,16 +5,16 @@
  *CXXR documentation taken from the R project itself, incorporated into
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
- *CXXR 
+ *CXXR
  *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
+ *CXXR
  *CXXR CXXR is not part of the R project, and bugs and other issues should
  *CXXR not be reported via r-bugs or other R project channels; instead refer
  *CXXR to the CXXR website.
  *CXXR */
 
-/* For inclusion by datetime.cpp. 
+/* For inclusion by datetime.cpp.
 
    A modified version of code from the GNU C library with locale
    support removed and wchar support added.
@@ -44,7 +44,7 @@ extern "C" {
 
    You should have received a copy of the GNU Library General Public
    License along with the GNU C Library; see the file COPYING.LIB.  If not,
-   a copy is available at http://www.r-project.org/licenses/
+   a copy is available at https://www.R-project.org/Licenses/
 */
 /* XXX This version of the implementation is not really complete.
    Some of the fields cannot add information alone.  But if seeing
@@ -114,29 +114,34 @@ static void get_locale_w_strings(void);
 
 /* This version: may overwrite these with versions for the locale,
  * hence the extra length of the fields.
- * Some OSes (e.g. glibc) have longer than 3-char abbreviations.
+ * The limits here are overestimates from known locales: rare locales
+ * have no abbreviations.
+ * glibc has 11-char am_pm, 10-char abday, 11-char abmon (Dhivehi).
+ * Gaelic has 12-char month names.
+ * Allow for UTF-8 expansion, so these are 4x the wchar limits.
  */
-static char weekday_name[][50] =
+#define DT_BUFSIZE 100
+static char weekday_name[][DT_BUFSIZE] =
 {
     "Sunday", "Monday", "Tuesday", "Wednesday",
     "Thursday", "Friday", "Saturday"
 };
-static char ab_weekday_name[][10] =
+static char ab_weekday_name[][DT_BUFSIZE] =
 {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
-static char month_name[][50] =
+static char month_name[][DT_BUFSIZE] =
 {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 };
-static char ab_month_name[][10] =
+static char ab_month_name[][DT_BUFSIZE] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static char am_pm[][10] = {"AM", "PM"};
+static char am_pm[][DT_BUFSIZE] = {"AM", "PM"};
 
 
 # define HERE_D_T_FMT "%a %b %e %H:%M:%S %Y"
@@ -197,27 +202,28 @@ day_of_the_year (stm *tm)
 #include <wchar.h>
 #include <wctype.h>
 
-static wchar_t w_weekday_name[][50] =
+#define DT_WBUFSIZE 25
+static wchar_t w_weekday_name[][DT_WBUFSIZE] =
 {
     L"Sunday", L"Monday", L"Tuesday", L"Wednesday",
     L"Thursday", L"Friday", L"Saturday"
 };
-static wchar_t w_ab_weekday_name[][10] =
+static wchar_t w_ab_weekday_name[][DT_WBUFSIZE] =
 {
     L"Sun", L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat"
 };
-static wchar_t w_month_name[][50] =
+static wchar_t w_month_name[][DT_WBUFSIZE] =
 {
     L"January", L"February", L"March", L"April", L"May", L"June",
     L"July", L"August", L"September", L"October", L"November", L"December"
 };
-static wchar_t w_ab_month_name[][10] =
+static wchar_t w_ab_month_name[][DT_WBUFSIZE] =
 {
     L"Jan", L"Feb", L"Mar", L"Apr", L"May", L"Jun",
     L"Jul", L"Aug", L"Sep", L"Oct", L"Nov", L"Dec"
 };
 
-static wchar_t w_am_pm[][10] = {L"AM", L"PM"};
+static wchar_t w_am_pm[][DT_WBUFSIZE] = {L"AM", L"PM"};
 
 /* Need case-insensitive version */
 static int Rwcsncasecmp(const wchar_t *cs1, const wchar_t *s2)
@@ -297,12 +303,12 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, stm *tm,
 	/* try full name first */
 	    for (cnt = 0; cnt < 7; ++cnt)
 		if (w_match_string (w_weekday_name[cnt], rp)) break;
-	    
+
 	    if (cnt == 7) {
 		for (cnt = 0; cnt < 7; ++cnt)
 		    if (w_match_string (w_ab_weekday_name[cnt], rp)) break;
 	    }
-		
+
 	    if (cnt == 7)
 		/* Does not match a weekday name.  */
 		return NULL;
@@ -532,7 +538,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, stm *tm,
 		    if (val % 100 >= 60) return NULL;
 		    val = (val / 100) * 100 + ((val % 100) * 50) / 30;
 		}
-		/* http://en.wikipedia.org/wiki/List_of_UTC_time_offsets */
+		/* https://en.wikipedia.org/wiki/List_of_UTC_time_offsets */
 		if (val > 1400) return NULL;
 		off = ((val * 3600) / 100);
 		if (neg) off = -off;
@@ -559,7 +565,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, stm *tm,
 	    case L'e':
 		/* Match day of month using alternate numeric symbols.  */
 		get_alt_number (1, 31, 2);
-	        tm->tm_mday = val;
+		tm->tm_mday = val;
 		have_mday = 1;
 		want_xday = 1;
 		break;
@@ -567,27 +573,27 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, stm *tm,
 		/* Match hour in 24-hour clock using alternate numeric
 		   symbols.  */
 		get_alt_number (0, 23, 2);
-	        tm->tm_hour = val;
+		tm->tm_hour = val;
 		have_I = 0;
 		break;
 	    case L'I':
 		/* Match hour in 12-hour clock using alternate numeric
 		   symbols.  */
 		get_alt_number (1, 12, 2);
-	        tm->tm_hour = val % 12;
+		tm->tm_hour = val % 12;
 		have_I = 1;
 		break;
 	    case L'm':
 		/* Match month using alternate numeric symbols.  */
 		get_alt_number (1, 12, 2);
-	        tm->tm_mon = val - 1;
+		tm->tm_mon = val - 1;
 		have_mon = 1;
 		want_xday = 1;
 		break;
 	    case L'M':
 		/* Match minutes using alternate numeric symbols.  */
 		get_alt_number (0, 59, 2);
-	        tm->tm_min = val;
+		tm->tm_min = val;
 		break;
 	    case L'S':
 		/* Match seconds using alternate numeric symbols.
@@ -1188,7 +1194,7 @@ strptime_internal (const char *rp, const char *fmt, stm *tm,
 */
 
 attribute_hidden
-void dt_invalidate_locale() // used in plaform.c
+void dt_invalidate_locale() // used in platform.c
 {
     locale_strings_set = 0;
     locale_w_strings_set = 0;
@@ -1199,30 +1205,38 @@ static void get_locale_strings(void)
 {
     int i;
     struct tm tm;
-    char buff[4];
+    char buff[DT_BUFSIZE];
 
     tm.tm_sec = tm.tm_min = tm.tm_hour = tm.tm_mday = tm.tm_mon
 	= tm.tm_isdst = 0;
     tm.tm_year = 30;
     for(i = 0; i < 12; i++) {
 	tm.tm_mon = i;
-	strftime(ab_month_name[i], 10, "%b", &tm);
-	strftime(month_name[i], 50, "%B", &tm);
+	// What happens if this does not fit is not well-defined,
+	// so we null-terminate as a precaution.
+	strftime(ab_month_name[i], DT_BUFSIZE, "%b", &tm);
+	ab_month_name[i][DT_BUFSIZE-1] = '\0';
+	strftime(month_name[i], DT_BUFSIZE, "%B", &tm);
+	month_name[i][DT_BUFSIZE-1] = '\0';
     }
     tm.tm_mon = 0;
     for(i = 0; i < 7; i++) {
-	tm.tm_mday = tm.tm_yday = i+1; /* 2000-1-2 was a Sunday */
+	tm.tm_mday = tm.tm_yday = i+1; /* 2000-01-02 was a Sunday */
 	tm.tm_wday = i;
-	strftime(ab_weekday_name[i], 10, "%a", &tm);
-	strftime(weekday_name[i], 50, "%A", &tm);
+	strftime(ab_weekday_name[i], DT_BUFSIZE, "%a", &tm);
+	ab_weekday_name[i][DT_BUFSIZE-1] = '\0';
+	strftime(weekday_name[i], DT_BUFSIZE, "%A", &tm);
+	weekday_name[i][DT_BUFSIZE-1] = '\0';
     }
     tm.tm_hour = 1;
     /* in locales where these are unused, they may be empty:
        better not to reset them then */
-    strftime(buff, 10, "%p", &tm);
+    strftime(buff, DT_BUFSIZE, "%p", &tm);
+    buff[DT_BUFSIZE-1] = '\0';
     if(strlen(buff)) strcpy(am_pm[0], buff);
     tm.tm_hour = 13;
-    strftime(buff, 10, "%p", &tm);
+    strftime(buff, DT_BUFSIZE, "%p", &tm);
+    buff[DT_BUFSIZE-1] = '\0';
     if(strlen(buff)) strcpy(am_pm[1], buff);
     locale_strings_set = 1;
 }
@@ -1232,30 +1246,36 @@ static void get_locale_w_strings(void)
 {
     int i;
     struct tm tm;
-    wchar_t buff[4];
+    wchar_t buff[DT_WBUFSIZE];
 
     tm.tm_sec = tm.tm_min = tm.tm_hour = tm.tm_mday = tm.tm_mon
 	= tm.tm_isdst = 0;
     tm.tm_year = 30;
     for(i = 0; i < 12; i++) {
 	tm.tm_mon = i;
-	wcsftime(w_ab_month_name[i], 10, L"%b", &tm);
-	wcsftime(w_month_name[i], 50, L"%B", &tm);
+	wcsftime(w_ab_month_name[i], DT_WBUFSIZE, L"%b", &tm);
+	w_ab_month_name[i][DT_WBUFSIZE - 1] = L'\0';
+	wcsftime(w_month_name[i], DT_WBUFSIZE, L"%B", &tm);
+	w_month_name[i][DT_WBUFSIZE - 1] = L'\0';
     }
     tm.tm_mon = 0;
     for(i = 0; i < 7; i++) {
-	tm.tm_mday = tm.tm_yday = i+1; /* 2000-1-2 was a Sunday */
+	tm.tm_mday = tm.tm_yday = i+1; /* 2000-01-02 was a Sunday */
 	tm.tm_wday = i;
-	wcsftime(w_ab_weekday_name[i], 10, L"%a", &tm);
-	wcsftime(w_weekday_name[i], 50, L"%A", &tm);
+	wcsftime(w_ab_weekday_name[i], DT_WBUFSIZE, L"%a", &tm);
+	w_ab_weekday_name[i][DT_WBUFSIZE - 1] = L'\0';
+	wcsftime(w_weekday_name[i], DT_WBUFSIZE, L"%A", &tm);
+	w_weekday_name[i][DT_WBUFSIZE - 1] = L'\0';
     }
     tm.tm_hour = 1;
     /* in locales where these are unused, they may be empty:
        better not to reset them then */
-    wcsftime(buff, 10, L"%p", &tm);
+    wcsftime(buff, DT_WBUFSIZE, L"%p", &tm);
+    buff[DT_WBUFSIZE - 1] = L'\0';
     if(wcslen(buff)) wcscpy(w_am_pm[0], buff);
     tm.tm_hour = 13;
-    wcsftime(buff, 10, L"%p", &tm);
+    wcsftime(buff, DT_WBUFSIZE, L"%p", &tm);
+    buff[DT_WBUFSIZE - 1] = L'\0';
     if(wcslen(buff)) wcscpy(w_am_pm[1], buff);
     locale_w_strings_set = 1;
 }
@@ -1264,7 +1284,7 @@ static void get_locale_w_strings(void)
 
 /* We only care if the result is null or not */
 static void *
-R_strptime (const char *buf, const char *format, stm *tm, 
+R_strptime (const char *buf, const char *format, stm *tm,
 	    double *psecs, int *poffset)
 {
 #if defined(HAVE_WCSTOD)

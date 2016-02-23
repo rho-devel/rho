@@ -3,7 +3,7 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004        The R Foundation
- *  Copyright (C) 2004-2014   The R Core Team
+ *  Copyright (C) 2004-2015   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /*--- Device Driver for Windows; this file started from
@@ -1663,7 +1663,7 @@ setupScreenDevice(pDevDesc dd, gadesc *xd, double w, double h,
     MCHECK(xd->mclpwm = newmenuitem(G_("as a Metafile\tCTRL+W"), 0, menuclpwm));
     addto(m);
     MCHECK(newmenuitem("-", 0, NULL));
-    MCHECK(xd->mprint = newmenuitem(G_("Print...\tCTRL+P"), 0, menuprint));
+    MCHECK(xd->mprint = newmenuitem(G_("Print..."), 'P', menuprint));
     MCHECK(newmenuitem("-", 0, NULL));
     MCHECK(xd->mclose = newmenuitem(G_("close Device"), 0, menuclose));
     MCHECK(newmenu(G_("History")));
@@ -1705,7 +1705,7 @@ setupScreenDevice(pDevDesc dd, gadesc *xd, double w, double h,
     MCHECK(xd->grmenustayontop = newmenuitem(G_("Stay on top"), 0, menustayontop));
     setdata(xd->grmenustayontop, (void *) dd);
     MCHECK(newmenuitem("-", 0, NULL));
-    MCHECK(m = newmenuitem(G_("Print..."), 0, menuprint));
+    MCHECK(m = newmenuitem(G_("Print..."), 'P', menuprint));
     setdata(m, (void *) dd);
     gchangepopup(xd->gawin, xd->grpopup);
 
@@ -3802,9 +3802,12 @@ static void GA_eventHelper(pDevDesc dd, int code)
     	gchangepopup(xd->gawin, NULL);
     	if (isEnvironment(dd->eventEnv)) {
     	    SEXP prompt = findVar(install("prompt"), dd->eventEnv);
-    	    if (length(prompt) == 1) {
+    	    if (isString(prompt) && length(prompt) == 1) {
     		setstatus(CHAR(asChar(prompt)));
     		settext(xd->gawin, CHAR(asChar(prompt)));
+    	    } else {
+    	    	setstatus("");
+    	    	settext(xd->gawin, "");
     	    }
     	}
     	dd->onExit = GA_onExit;  /* install callback for cleanup */

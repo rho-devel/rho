@@ -1,5 +1,5 @@
 % File src/library/stats/man/scatter.smooth.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
@@ -28,7 +28,8 @@ loess.smooth(x, y, span = 2/3, degree = 1,
   \item{span}{smoothness parameter for \code{loess}.}
   \item{degree}{degree of local polynomial used.}
   \item{family}{if \code{"gaussian"} fitting is by least-squares, and if
-    \code{family = "symmetric"} a re-descending M estimator is used.}
+    \code{family = "symmetric"} a re-descending M estimator is used.
+    Can be abbreviated.}
   \item{xlab}{label for x axis.}
   \item{ylab}{label for y axis.}
   \item{ylim}{the y limits of the plot.}

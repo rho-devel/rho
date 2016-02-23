@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-2014  The R Core Team
+ *  Copyright (C) 2003-2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  */
 #ifdef HAVE_CONFIG_H
@@ -54,7 +54,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
 	error(_("zero-length inputs cannot be mixed with those of non-zero length"));
 
     counters = static_cast<R_xlen_t *>( CXXR_alloc(m, sizeof(R_xlen_t)));
-    memset(counters, 0, m * sizeof(R_xlen_t));
+    if (m) memset(counters, 0, m * sizeof(R_xlen_t));
 
     SEXP mindex = PROTECT(allocVector(VECSXP, m));
     SEXP nindex = PROTECT(allocVector(VECSXP, m));
@@ -98,7 +98,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
 	    else
 		INTEGER(VECTOR_ELT(nindex, j))[0] = int( counters[j]);
 	}
-	SEXP tmp = eval(fcall, rho);
+	SEXP tmp = R_forceAndCall(fcall, m, rho);
 	if (MAYBE_REFERENCED(tmp))
 	    tmp = duplicate(tmp);
 	SET_VECTOR_ELT(ans, i, tmp);

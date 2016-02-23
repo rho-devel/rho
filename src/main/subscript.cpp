@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2014  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  * EXPORTS:
  *
@@ -49,7 +49,8 @@ using namespace std;
 using namespace CXXR;
 
 /* We might get a call with R_NilValue from subassignment code */
-#define ECALL(call, yy) if(call == R_NilValue) error(yy); else errorcall(call, yy);
+#define ECALL(call, yy)     if(call == R_NilValue) error(yy);    else errorcall(call, yy);
+#define ECALL3(call, yy, A) if(call == R_NilValue) error(yy, A); else errorcall(call, yy, A);
 
 /* This allows for the unusual case where x is of length 2,
    and x[[-m]] selects one element for m = 1, 2.
@@ -62,18 +63,18 @@ static R_INLINE int integerOneIndex(int i, R_xlen_t len, SEXP call)
     if (i > 0) /* a regular 1-based index from R */
 	indx = i - 1;
     else if (i == 0 || len < 2) {
-	ECALL(call, _("attempt to select less than one element"));
+	ECALL3(call, _("attempt to select less than one element in %s"), "integerOneIndex");
     } else if (len == 2 && i > -3)
 	indx = 2 + i;
     else {
-	ECALL(call, _("attempt to select more than one element"));
+	ECALL3(call, _("attempt to select more than one element in %s"), "integerOneIndex");
     }
     return indx;
 }
 
 /* Utility used (only in) do_subassign2_dflt(), i.e. "[[<-" in ./subassign.c : */
 R_xlen_t attribute_hidden
-OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname, 
+OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
 	 int pos, SEXP call)
 {
     SEXP names;
@@ -81,10 +82,10 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
     const void *vmax;
 
     if (pos < 0 && Rf_length(s) > 1) {
-	ECALL(call, _("attempt to select more than one element"));
+	ECALL3(call, _("attempt to select more than one element in %s"), "OneIndex");
     }
     if (pos < 0 && Rf_length(s) < 1) {
-	ECALL(call, _("attempt to select less than one element"));
+	ECALL3(call, _("attempt to select less than one element in %s"), "OneIndex");
     }
 
     if(pos < 0) pos = 0;
@@ -102,7 +103,7 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
     case STRSXP:
 	vmax = vmaxget();
 	nx = xlength(x);
-	names = getAttrib(x, R_NamesSymbol);
+	names = PROTECT(getAttrib(x, R_NamesSymbol));
 	if (names != R_NilValue) {
 	    /* Try for exact match */
 	    for (i = 0; i < nx; i++) {
@@ -128,6 +129,7 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
 		}
 	    }
 	}
+	UNPROTECT(1); /* names */
 	if (indx == -1)
 	    indx = nx;
 	*newname = STRING_ELT(s, pos);
@@ -138,12 +140,14 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
 	nx = xlength(x);
 	names = getAttrib(x, R_NamesSymbol);
 	if (names != R_NilValue) {
+	    PROTECT(names);
 	    for (i = 0; i < nx; i++)
 		if (streql(translateChar(STRING_ELT(names, i)),
 			   translateChar(PRINTNAME(s)))) {
 		    indx = i;
 		    break;
 		}
+	    UNPROTECT(1); /* names */
 	}
 	if (indx == -1)
 	    indx = nx;
@@ -151,11 +155,7 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
 	vmaxset(vmax);
 	break;
     default:
-	if (call == R_NilValue)
-	    error(_("invalid subscript type '%s'"), type2char(TYPEOF(s)));
-	else
-	    errorcall(call, _("invalid subscript type '%s'"),
-		      type2char(TYPEOF(s)));
+	ECALL3(call, _("invalid subscript type '%s'"), type2char(TYPEOF(s)));
     }
     return indx;
 }
@@ -186,9 +186,9 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 
     if (pos < 0 && Rf_length(s) != 1) {
 	if (Rf_length(s) > 1) {
-	    ECALL(call, _("attempt to select more than one element"));
+	    ECALL3(call, _("attempt to select more than one element in %s"), "get1index");
 	} else {
-	    ECALL(call, _("attempt to select less than one element"));
+	    ECALL3(call, _("attempt to select less than one element in %s"), "get1index");
 	}
     } else
 	if (pos >= Rf_length(s)) {
@@ -212,11 +212,11 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 	    /* see comment above integerOneIndex */
 	    if (dblind > 0) indx = R_xlen_t(dblind - 1);
 	    else if (dblind == 0 || len < 2) {
-		ECALL(call, _("attempt to select less than one element"));
+		ECALL3(call, _("attempt to select less than one element in %s"), "get1index <real>");
 	    } else if (len == 2 && dblind > -3)
 		indx = R_xlen_t(2 + dblind);
 	    else {
-		ECALL(call, _("attempt to select more than one element"));
+		ECALL3(call, _("attempt to select more than one element in %s"), "get1index <real>");
 	    }
 	}
 	break;
@@ -285,23 +285,19 @@ get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
 		break;
 	    }
     default:
-	if (call == R_NilValue)
-	    error(_("invalid subscript type '%s'"), type2char(TYPEOF(s)));
-	else
-	    errorcall(call, _("invalid subscript type '%s'"),
-		      type2char(TYPEOF(s)));
+	ECALL3(call, _("invalid subscript type '%s'"), type2char(TYPEOF(s)));
     }
     return indx;
 }
 
 /* This is used for [[ and [[<- with a vector of indices of length > 1 .
-   x is a list or pairlist, and it is indexed recusively from 
+   x is a list or pairlist, and it is indexed recusively from
    level start to level stop-1.  ( 0...len-1 or 0..len-2 then len-1).
    For [[<- it needs to duplicate if substructure might be shared.
  */
 SEXP attribute_hidden
 vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
-	    Rboolean dup) 
+	    Rboolean dup)
 {
     int i;
     R_xlen_t offset;
@@ -316,10 +312,13 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
 	    if (i)
 		errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
 	    else
-		errorcall(call, _("attempt to select more than one element"));
+		errorcall(call, _("attempt to select more than one element in %s"), "vectorIndex");
 	}
-	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
-		           xlength(x), pok, i, call);
+	PROTECT(x);
+	SEXP names = PROTECT(getAttrib(x, R_NamesSymbol));
+	offset = get1index(thesub, names,
+			   xlength(x), pok, i, call);
+	UNPROTECT(2); /* x, names */
 	if(offset < 0 || offset >= xlength(x))
 	    errorcall(call, _("no such index at level %d\n"), i+1);
 	if(isPairList(x)) {
@@ -344,7 +343,7 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
 		x = shallow_duplicate(x);
 		SET_VECTOR_ELT(cx, offset, x);
 	    }
-    	}
+	}
     }
     return x;
 }
@@ -462,20 +461,20 @@ SEXP attribute_hidden strmat2intmat(SEXP s, SEXP dnamelist, SEXP call)
     PROTECT(si = allocVector(INTSXP, xlength(s)));
     dimgets(si, getAttrib(s, R_DimSymbol));
     for (i = 0; i < Rf_length(dnamelist); i++) {
-        dnames = VECTOR_ELT(dnamelist, i);
-        for (j = 0; j < nr; j++)
-            SET_STRING_ELT(snames, j, STRING_ELT(s, j + (i * NR)));
-        PROTECT(sicol = match(dnames, snames, 0));
-        for (j = 0; j < nr; j++) {
-            v = INTEGER(sicol)[j];
-            idx = j + (i * NR);
-            s_elt = STRING_ELT(s, idx);
-            if (s_elt == NA_STRING) v = NA_INTEGER;
-            if (!CHAR(s_elt)[0]) v = 0; /* disallow "" match */
-            if (v == 0) errorcall(call, _("subscript out of bounds"));
-            INTEGER(si)[idx] = v;
-        }
-        UNPROTECT(1);
+	dnames = VECTOR_ELT(dnamelist, i);
+	for (j = 0; j < nr; j++)
+	    SET_STRING_ELT(snames, j, STRING_ELT(s, j + (i * NR)));
+	PROTECT(sicol = match(dnames, snames, 0));
+	for (j = 0; j < nr; j++) {
+	    v = INTEGER(sicol)[j];
+	    idx = j + (i * NR);
+	    s_elt = STRING_ELT(s, idx);
+	    if (s_elt == NA_STRING) v = NA_INTEGER;
+	    if (!CHAR(s_elt)[0]) v = 0; /* disallow "" match */
+	    if (v == 0) errorcall(call, _("subscript out of bounds"));
+	    INTEGER(si)[idx] = v;
+	}
+	UNPROTECT(1);
     }
     UNPROTECT(2);
     return si;
@@ -486,10 +485,10 @@ static SEXP nullSubscript(R_xlen_t n)
     SEXP indx;
 #ifdef LONG_VECTOR_SUPPORT
     if (n > R_SHORT_LEN_MAX) {
- 	indx = allocVector(REALSXP, n);
+	indx = allocVector(REALSXP, n);
 	for (R_xlen_t i = 0; i < n; i++)
 	    REAL(indx)[i] = double(i + 1);
-    } else 
+    } else
 #endif
     {
 	indx = allocVector(INTSXP, n);
@@ -499,7 +498,7 @@ static SEXP nullSubscript(R_xlen_t n)
     return indx;
 }
 
-static SEXP 
+static SEXP
 logicalSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 {
     bool canstretch = (*stretch != 0);
@@ -526,7 +525,7 @@ static SEXP integerSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch
     return coerceVector(pr.first, INTSXP);
 }
 
-static SEXP 
+static SEXP
 realSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 {
     R_xlen_t i;
@@ -683,7 +682,7 @@ int_arraySubscript(int dim, SEXP s, SEXP dims, SEXP x, SEXP call)
 	if (s == R_MissingArg)
 	    return nullSubscript(nd);
     default:
-	    error(_("invalid subscript type '%s'"), type2char(TYPEOF(s)));
+	ECALL3(call, _("invalid subscript type '%s'"), type2char(TYPEOF(s)));
     }
     return R_NilValue;
 }
@@ -738,10 +737,6 @@ makeSubscript(SEXP x, SEXP s, R_xlen_t *stretch, SEXP call)
 	    }
 	}
     }
-    s = duplicate(s);
-    if (s) {
-	s->clearAttributes();
-    }
 
     SEXP ans = R_NilValue;
     switch (TYPEOF(s)) {
@@ -753,20 +748,26 @@ makeSubscript(SEXP x, SEXP s, R_xlen_t *stretch, SEXP call)
 	ans = logicalSubscript(s, ns, nx, stretch, call);
 	break;
     case INTSXP:
+	s = duplicate(s);
+	if (s) {
+	    s->clearAttributes();
+	}
 	ans = integerSubscript(s, ns, nx, stretch, call);
 	break;
     case REALSXP:
 	ans = realSubscript(s, ns, nx, stretch, call);
 	break;
     case STRSXP:
-	{
-	    // If x is a pairlist, names will be created on the fly,
-	    // and so needs protecting:
-	    GCStackRoot<> names(getAttrib(x, R_NamesSymbol));
-	    /* *stretch = 0; */
-	    ans = stringSubscript(s, ns, nx, names, stretch, call);
-	    break;
+    {
+	s = duplicate(s);
+	if (s) {
+	    s->clearAttributes();
 	}
+	SEXP names = getAttrib(x, R_NamesSymbol);
+	/* *stretch = 0; */
+	ans = stringSubscript(s, ns, nx, names, stretch, call);
+	break;
+    }
     case SYMSXP:
 	*stretch = 0;
 	if (s == R_MissingArg) {
@@ -774,11 +775,7 @@ makeSubscript(SEXP x, SEXP s, R_xlen_t *stretch, SEXP call)
 	    break;
 	}
     default:
-	if (call == R_NilValue)
-	    error(_("invalid subscript type '%s'"), type2char(TYPEOF(s)));
-	else
-	    errorcall(call, _("invalid subscript type '%s'"),
-		      type2char(TYPEOF(s)));
+	ECALL3(call, _("invalid subscript type '%s'"), type2char(TYPEOF(s)));
     }
     return ans;
 }

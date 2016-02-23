@@ -1,5 +1,5 @@
 #  File src/library/methods/R/rbind.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 #### S4-ized  rbind() --- this is entirely parallel to ./cbind() --- KEEP IN SYNC!
 ###  -------------------- built by
@@ -67,7 +67,7 @@ rbind <- function(..., deparse.level = 1)
 	fix.na <- identical(nrs[(na-1L):na], list(NULL,NULL))
 	if(fix.na) {
 	    ## "fix" last argument, using 1-row `matrix' of proper ncol():
-	    nr <- max(if(all(iV)) vapply(argl, length, 1) else unlist(nrs[!iV]))
+	    nr <- max(if(all(iV)) lengths(argl) else unlist(nrs[!iV]))
 	    argl[[na]] <- rbind(rep(argl[[na]], length.out = nr),
 				deparse.level = 0)
 	    ## and since it's a 'matrix' now, rbind() below may not name it

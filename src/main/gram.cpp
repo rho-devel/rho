@@ -76,7 +76,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2014  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2009--2011  Romain Francois
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -97,7 +97,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This code stores a lot of pointers as static data.
@@ -1954,25 +1954,25 @@ yyreduce:
     {
         case 2:
 #line 351 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
-    { return 0; }
+    { YYACCEPT; }
 #line 1959 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
 #line 352 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
-    { return xxvalue(NULL,2,NULL); }
+    { yyresult = xxvalue(NULL,2,NULL);	goto yyreturn; }
 #line 1965 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
 #line 353 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
-    { return xxvalue((yyvsp[-1]),3,&(yylsp[-1])); }
+    { yyresult = xxvalue((yyvsp[-1]),3,&(yylsp[-1]));	goto yyreturn; }
 #line 1971 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
 #line 354 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
-    { return xxvalue((yyvsp[-1]),4,&(yylsp[-1])); }
+    { yyresult = xxvalue((yyvsp[-1]),4,&(yylsp[-1]));	goto yyreturn; }
 #line 1977 "y.tab.c" /* yacc.c:1646  */
     break;
 
@@ -4815,6 +4815,11 @@ static int StringValue(int c, Rboolean forSymbol)
     }
     if (!currtext_truncated)
     	strcpy(yytext, currtext);
+    else if (forSymbol || !use_wcs) {
+        size_t total = strlen(stext);
+        snprintf(yytext, MAXELTSIZE, "[%u chars quoted with '%c']", (unsigned int)total, quote);
+    } else 
+        snprintf(yytext, MAXELTSIZE, "[%d wide chars quoted with '%c']", wcnt, quote);
     if(forSymbol) {
 	PROTECT(yylval = install(stext));
 	if(stext != st0) free(stext);

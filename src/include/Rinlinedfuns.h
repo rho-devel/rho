@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2012  The R Core Team.
+ *  Copyright (C) 1999-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,8 +21,10 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
+
+/* Internal header, not installed */
 
 /* this header is always to be included from others.
    It is only called if COMPILING_R is defined (in util.c) or
@@ -137,6 +139,7 @@ INLINE_FUN void R_Reprotect(SEXP s, PROTECT_INDEX i)
 R_len_t Rf_length(SEXP s);
 
 R_xlen_t Rf_xlength(SEXP s);
+R_xlen_t Rf_envxlength(SEXP rho);
 
 /* regular allocVector() as a special case of allocVector3() with no custom allocator */
 INLINE_FUN SEXP Rf_allocVector(SEXPTYPE type, R_xlen_t length)

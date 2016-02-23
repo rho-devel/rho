@@ -1,7 +1,7 @@
 #  File src/library/stats/R/princomp.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 princomp <- function(x, ...) UseMethod("princomp")
 
@@ -26,6 +26,7 @@ princomp.formula <- function(formula, data = NULL, subset, na.action, ...)
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
     mf$... <- NULL
+    ## need stats:: for non-standard evaluation
     mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     ## this is not a `standard' model-fitting function,
@@ -52,6 +53,7 @@ princomp.default <-
     function(x, cor = FALSE, scores = TRUE, covmat = NULL,
              subset = rep_len(TRUE, nrow(as.matrix(x))), ...)
 {
+    chkDots(...)
     cl <- match.call()
     cl[[1L]] <- as.name("princomp")
     z <- if(!missing(x)) as.matrix(x)[subset, , drop = FALSE]

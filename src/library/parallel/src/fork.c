@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
 
    fork.c
    interface to system-level tools for spawning copies of the current
@@ -108,7 +108,6 @@ static void terminated_child(int pid) {
 	if (ci->pid == pid) {
 	    if (ci->pfd > 0) { close(ci->pfd); ci->pfd = -1; }
             if (ci->sifd > 0) { close(ci->sifd); ci->sifd = -1; }
-	    ci->pid = 0;
 	    break;
 	}
 	ci = ci->next;
@@ -208,7 +207,6 @@ static void parent_sig_handler(int sig, siginfo_t *info, void *context) {
 #endif			
 			if (ci->pfd > 0)  { close(ci->pfd); ci->pfd = -1; }
 			if (ci->sifd > 0) { close(ci->sifd); ci->sifd = -1; }
-			ci->pid = 0;
 		    }
 		    break;
 		}
@@ -245,9 +243,9 @@ SEXP mc_fork(SEXP sEstranged)
     int pipefd[2]; /* write end, read end */
     int sipfd[2];
     pid_t pid;
+    int estranged = (asInteger(sEstranged) > 0);
     SEXP res = allocVector(INTSXP, 3);
     int *res_i = INTEGER(res);
-    int estranged = (asInteger(sEstranged) > 0);
 
     if (!estranged) {
 	if (pipe(pipefd)) error(_("unable to create a pipe"));

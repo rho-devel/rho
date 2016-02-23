@@ -1,5 +1,5 @@
 #  File src/library/methods/R/trace.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## some temporary (!) hooks to trace the tracing code
 .doTraceTrace <- function(on) {
@@ -133,6 +133,7 @@
         temp <- .findFunEnvAndName(what, where, signature)
         whereF <- temp$whereF
         pname <- temp$pname
+        fname <- what
     }
     if(what %in% .InvalidTracedFunctions)
         stop(gettextf("tracing the internal function %s is not allowed",
@@ -159,7 +160,9 @@
     if(is(def, "traceable") && identical(edit, FALSE) && !untrace)
         def <- .untracedFunction(def)
     if(!is.null(signature)) {
-        fdef <- if(is.primitive(def))  getGeneric(what, TRUE, where) else def
+        fdef <- if (!is(def, "genericFunction"))
+                    getGeneric(as.character(fname), TRUE, where)
+                else def
         def <- selectMethod(what, signature, fdef = fdef, optional = TRUE)
         if(is.null(def)) {
             warning(gettextf("cannot untrace method for %s; no method defined for this signature: %s",
@@ -248,6 +251,18 @@
             .assignOverBinding(what, newFun, whereF, global)
         else
             assign(what, newFun, whereF)
+        if (length(pname) != 0) {
+            ## update the function also in "imports:" environments of already
+            ## loaded packages that import package pname
+
+            spname = sub("^namespace:", "", pname)
+                # catching error in case when spname is not a name of a namespace, but
+                # e.g. a reference class
+            ipkgs = tryCatch(getNamespaceUsers(spname), error=function(e){c()})
+            for(importingPkg in ipkgs) {
+              .updateInImportsEnv(what, newFun, importingPkg)
+            }
+        }
         if(length(grep("[^.]+[.][^.]+", what)) > 0) { #possible S3 method
             ## check for a registered version of the object
             S3MTableName <- ".__S3MethodsTable__."
@@ -303,12 +318,18 @@
 
 .makeTracedFunction <- function(def, tracer, exit, at, print, doEdit) {
     switch(typeof(def),
-           builtin = , special = {
+           builtin = {
                fBody <- substitute({.prim <- DEF; .prim(...)},
                                    list(DEF = def))
                def <- eval(function(...)NULL)
                body(def, envir = .GlobalEnv) <- fBody
-               warning("making a traced version of a primitive; arguments will be treated as '...'")
+           },
+           special = {
+               fBody <- substitute({do.call(DEF, list(...))},
+                                   list(DEF = def))
+               def <- eval(function(...)NULL)
+               body(def, envir = .GlobalEnv) <- fBody
+               warning("making a traced version of a special; arguments may be altered")
            }
            )
     if(!identical(doEdit, FALSE)) {
@@ -537,6 +558,26 @@ setCacheOnAssign <- function(env, onOff = cacheOnAssign(env))
     }
 }
 
+.getImportsEnv <- function(pkg) {
+    iname = paste("imports:", pkg, sep="")
+    empty = emptyenv()
+    env = asNamespace(pkg)
+
+    while(!identical(env, empty)) {
+        if (identical(attr(env, "name"), iname))
+            return(env)
+        env = parent.env(env)
+    }
+    NULL
+}
+
+.updateInImportsEnv <- function(what, newFun, importingPkg) {
+    where = .getImportsEnv(importingPkg)
+    if (!is.null(where) && (what %in% names(where))) {
+        .assignOverBinding(what, newFun, where, FALSE)
+    }
+}
+
 ### finding the package name for a loaded namespace
 .searchNamespaceNames <- function(env)
     paste("namespace", getNamespaceName(env), sep=":")
@@ -618,7 +659,8 @@ utils::globalVariables("fdef")
     allObjects <- names(env)
     allObjects <- allObjects[is.na(match(allObjects, .functionsOverriden))]
     ## counts of packaages containing objects; objects not found don't count
-    possible <- sort(table(unlist(lapply(allObjects, find))), decreasing = TRUE)
+    possible <- sort(table(unlist(lapply(allObjects, utils::find))),
+                     decreasing = TRUE)
 ##    message <- ""
     if(length(possible) == 0)
         stop("none of the objects in the source code could be found:  need to attach or specify the package")
@@ -634,7 +676,7 @@ utils::globalVariables("fdef")
                                    collapse = ", ")),
                     domain = NA)
     }
-    sub("package:","", names(possible[1L])) # the package name, or .GlobalEnv
+    .rmpkg(names(possible[1L])) # the package name, or .GlobalEnv
 }
 
 ## extract the new definitions from the source file

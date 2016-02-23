@@ -1,5 +1,5 @@
 % File src/library/base/man/dump.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -17,7 +17,7 @@ dump(list, file = "dumpdata.R", append = FALSE,
   \R session.
 }
 \arguments{
-  \item{list}{character.  The names of one or more \R objects to be dumped.}
+  \item{list}{character vector.  The names of one or more \R objects to be dumped.}
 
   \item{file}{either a character string naming a file or a
     \link{connection}.  \code{""} indicates output to the console.}

@@ -1,7 +1,7 @@
 # Refer to all C routines by their name prefixed by C_
 useDynLib(utils, .registration = TRUE, .fixes = "C_")
 
-export("?", .DollarNames, CRAN.packages, Rprof, Rprofmem, RShowDoc,
+export("?", .DollarNames, .S3methods, CRAN.packages, Rprof, Rprofmem, RShowDoc,
        RSiteSearch, URLdecode, URLencode, View, adist, alarm, apropos,
        aregexec, argsAnywhere, assignInMyNamespace, assignInNamespace,
        as.roman, as.person, as.personList, as.relistable, aspell,
@@ -18,10 +18,10 @@ export("?", .DollarNames, CRAN.packages, Rprof, Rprofmem, RShowDoc,
        file_test, file.edit, fileSnapshot, find, fix, fixInNamespace, findLineNum,
        flush.console, formatOL, formatUL, getAnywhere, getCRANmirrors,
        getFromNamespace, getParseData, getParseText, getS3method,
-       getSrcDirectory, getSrcFilename, getSrcLocation, getSrcref,
+       getSrcDirectory, getSrcFilename, getSrcLocation, getSrcref, # getSource,
        glob2rx, globalVariables, head, head.matrix, help,
        help.request, help.search, help.start, history,
-       install.packages, installed.packages, is.relistable,
+       install.packages, installed.packages, is.relistable, isS3method,
        limitedLabels, loadhistory, localeToCharset, ls.str, lsf.str,
        maintainer, make.packages.html, make.socket, memory.limit,
        memory.size, menu, methods, mirror2html, modifyList,
@@ -61,6 +61,7 @@ S3method(format, "aspell")
 S3method(format, "news_db")
 S3method(format, "object_size")
 S3method(format, "roman")
+S3method(getSource, vignette)
 S3method(head, data.frame)
 S3method(head, default)
 S3method(head, "function")

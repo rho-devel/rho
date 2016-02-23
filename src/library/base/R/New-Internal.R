@@ -1,5 +1,5 @@
 #  File src/library/base/R/New-Internal.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 geterrmessage <- function() .Internal(geterrmessage())
 
@@ -114,7 +114,7 @@ rbind <- function(..., deparse.level = 1)
     if (any(opts == 1L))
         opts <- unique(c(opts[opts != 1L], 2L,3L,4L,5L,6L,8L)) # not (7,9:11)
     if(10L %in% opts && 11L %in% opts)
-        stop('"hexNumeric"and "digits17" are mutually exclusive')
+        stop('"hexNumeric" and "digits17" are mutually exclusive')
     return(sum(2^(opts-2)))
 }
 
@@ -164,8 +164,8 @@ is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
     .Internal(is.unsorted(x, strictly))
 }
 
-nchar <- function(x, type = "chars", allowNA = FALSE)
-    .Internal(nchar(x, type, allowNA))
+nchar <- function(x, type = "chars", allowNA = FALSE, keepNA = NA)
+    .Internal(nchar(x, type, allowNA, keepNA))
 
 polyroot <- function(z) .Internal(polyroot(z))
 
@@ -290,6 +290,8 @@ libcurlVersion <- function() .Internal(curlVersion())
 curlGetHeaders <- function(url, redirect = TRUE, verify = TRUE)
     .Internal(curlGetHeaders(url, redirect, verify))
 
+
+lengths <- function(x, use.names=TRUE) .Internal(lengths(x, use.names))
 
 ## base has no S4 generics
 .noGenerics <- TRUE

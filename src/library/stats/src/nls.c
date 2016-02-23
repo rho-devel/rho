@@ -5,7 +5,7 @@
  *  Copyright 1999-2001 Douglas M. Bates
  *                      Saikat DebRoy
  *
- *  Copyright 2005--2014  The R Core Team
+ *  Copyright 2005--2016  The R Core Team
  *  Copyright 2006	  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -21,13 +21,15 @@
  *
  *  You should have received a copy of the GNU General Public
  *  License along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
 #include <R.h>
 #include <Rinternals.h>
-#include <stdlib.h>
-#include <float.h>
 #include "nls.h"
 
 #ifndef MIN
@@ -313,15 +315,14 @@ numeric_deriv(SEXP expr, SEXP theta, SEXP rho, SEXP dir)
     const void *vmax = vmaxget();
     for(i = 0; i < LENGTH(theta); i++) {
 	const char *name = translateChar(STRING_ELT(theta, i));
-	SEXP temp = findVar(install(name), rho);
+	SEXP s_name = install(name);
+	SEXP temp = findVar(s_name, rho);
 	if(isInteger(temp))
 	    error(_("variable '%s' is integer, not numeric"), name);
 	if(!isReal(temp))
 	    error(_("variable '%s' is not numeric"), name);
-	if (MAYBE_SHARED(temp)) { /* We'll be modifying the variable, so need to make sure it's unique PR#15849 */
-	    SEXP s_name = install(name);
+	if (MAYBE_SHARED(temp)) /* We'll be modifying the variable, so need to make sure it's unique PR#15849 */
 	    defineVar(s_name, temp = duplicate(temp), rho);
-	}
 	MARK_NOT_MUTABLE(temp);
 	SET_VECTOR_ELT(pars, i, temp);
 	lengthTheta += LENGTH(VECTOR_ELT(pars, i));

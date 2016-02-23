@@ -1,5 +1,5 @@
 % File src/library/stats/man/density.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
@@ -40,7 +40,7 @@ density(x, \dots)
     bandwidth.}
 
   \item{kernel, window}{a character string giving the smoothing kernel
-    to be used. This must be one of \code{"gaussian"},
+    to be used. This must partially match one of \code{"gaussian"},
     \code{"rectangular"}, \code{"triangular"}, \code{"epanechnikov"},
     \code{"biweight"}, \code{"cosine"} or \code{"optcosine"}, with default
     \code{"gaussian"}, and may be abbreviated to a unique prefix (single

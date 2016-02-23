@@ -1,5 +1,5 @@
 % File src/library/stats/man/cov.wt.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -27,7 +27,7 @@ cov.wt(x, wt = rep(1/nrow(x), nrow(x)), cor = FALSE, center = TRUE,
     used.  If \code{center} is numeric, its length must equal the number
     of columns of \code{x}.}
   \item{method}{string specifying how the result is scaled, see
-    \sQuote{Details} below.}
+    \sQuote{Details} below.  Can be abbreviated.}
 }
 \value{
   A list containing the following named components:

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-2014   The R Core Team
+ *  Copyright (C) 2001-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -80,8 +80,8 @@ SEXP attribute_hidden getParseContext(void)
     }
     /* get rid of empty line after last newline */
     if (nread && !length(STRING_ELT(ans, nread-1))) {
-    	nread--;
-    	R_ParseContextLine--;
+	nread--;
+	R_ParseContextLine--;
     }
     PROTECT(ans2 = allocVector(STRSXP, nread));
     for(i = 0; i < nread; i++)
@@ -94,18 +94,18 @@ static void getParseFilename(char* buffer, size_t buflen)
 {
     buffer[0] = '\0';
     if (R_ParseErrorFile) {
-    	if (isEnvironment(R_ParseErrorFile)) {
+	if (isEnvironment(R_ParseErrorFile)) {
 	    SEXP filename;
 	    PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
 	    if (isString(filename) && length(filename)) {
 		strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
-                buffer[buflen - 1] = '\0';
-            }
+		buffer[buflen - 1] = '\0';
+	    }
 	    UNPROTECT(1);
-        } else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) {
-            strncpy(buffer, CHAR(STRING_ELT(R_ParseErrorFile, 0)), buflen - 1);
-            buffer[buflen - 1] = '\0';
-        }
+	} else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) {
+	    strncpy(buffer, CHAR(STRING_ELT(R_ParseErrorFile, 0)), buflen - 1);
+	    buffer[buflen - 1] = '\0';
+	}
     }
 }
 
@@ -118,20 +118,20 @@ static SEXP tabExpand(SEXP strings)
     PROTECT(strings);
     PROTECT(result = allocVector(STRSXP, length(strings)));
     for (i = 0; i < length(strings); i++) {
-    	input = CHAR(STRING_ELT(strings, i));
-    	for (b = buffer; *input && (b-buffer < 192); input++) {
-    	    if (*input == '\t') do {
-    	    	*b++ = ' ';
-    	    } while (((b-buffer) & 7) != 0);
-    	    else *b++ = *input;
-    	}
-    	*b = '\0';
-    	SET_STRING_ELT(result, i, mkCharCE(buffer, Rf_getCharCE(STRING_ELT(strings, i))));
+	input = CHAR(STRING_ELT(strings, i));
+	for (b = buffer; *input && (b-buffer < 192); input++) {
+	    if (*input == '\t') do {
+		*b++ = ' ';
+	    } while (((b-buffer) & 7) != 0);
+	    else *b++ = *input;
+	}
+	*b = '\0';
+	SET_STRING_ELT(result, i, mkCharCE(buffer, Rf_getCharCE(STRING_ELT(strings, i))));
     }
     UNPROTECT(2);
     return result;
 }
-    	
+
 void NORET parseError(SEXP call, int linenum)
 {
     SEXP context;
@@ -149,10 +149,10 @@ void NORET parseError(SEXP call, int linenum)
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg);
 	    break;
 	case 1: // replaces use of %n
-	    width = snprintf(buffer, 10, "%d: ", R_ParseContextLine); 
+	    width = snprintf(buffer, 10, "%d: ", R_ParseContextLine);
 	    error("%s%d:%d: %s\n%d: %s\n%*s",
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
-		  R_ParseContextLine, CHAR(STRING_ELT(context, 0)), 
+		  R_ParseContextLine, CHAR(STRING_ELT(context, 0)),
 		  width+R_ParseErrorCol+1, "^");
 	    break;
 	default:
@@ -160,7 +160,7 @@ void NORET parseError(SEXP call, int linenum)
 	    error("%s%d:%d: %s\n%d: %s\n%d: %s\n%*s",
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
 		  R_ParseContextLine-1, CHAR(STRING_ELT(context, len-2)),
-		  R_ParseContextLine, CHAR(STRING_ELT(context, len-1)), 
+		  R_ParseContextLine, CHAR(STRING_ELT(context, len-1)),
 		  width+R_ParseErrorCol+1, "^");
 	    break;
 	}
@@ -229,8 +229,8 @@ SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::Bui
     } else if(streql(encoding, "UTF-8"))  {
 	known_to_be_utf8 = TRUE;
 	allKnown = FALSE;
-    } else if(!streql(encoding, "unknown") && !streql(encoding, "native.enc")) 
-    	warning(_("argument '%s = \"%s\"' will be ignored"), "encoding", encoding);
+    } else if(!streql(encoding, "unknown") && !streql(encoding, "native.enc"))
+	warning(_("argument '%s = \"%s\"' will be ignored"), "encoding", encoding);
 
     if (prompt == R_NilValue)
 	PROTECT(prompt);

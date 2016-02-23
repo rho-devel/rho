@@ -1,5 +1,5 @@
 % File src/library/utils/man/sourceutils.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 2011-2013 R Core Team
 % Distributed under GPL 2 or later
 
@@ -32,7 +32,7 @@ getSrcLocation(x, which = c("line", "column", "byte", "parse"),
     Whether to list only unique filenames/directories.
   }
   \item{which}{
-    Which part of a source reference to extract.
+    Which part of a source reference to extract.  Can be abbreviated.
   }
   \item{first}{
     Whether to show the first (or last) location of the object.

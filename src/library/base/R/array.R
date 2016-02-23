@@ -1,7 +1,7 @@
 #  File src/library/base/R/array.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 array <-
 function(data = NA, dim = length(data), dimnames = NULL)
@@ -60,18 +60,19 @@ function(x, MARGIN)
     y
 }
 
-provideDimnames <- function(x, sep = "", base = list(LETTERS))
+provideDimnames <- function(x, sep = "", base = list(LETTERS), unique = TRUE)
 {
     ## provide dimnames where missing - not copying x unnecessarily
     dx <- dim(x)
     dnx <- dimnames(x)
     if(new <- is.null(dnx))
 	dnx <- vector("list", length(dx))
-    k <- length(M <- vapply(base, length, 1L))
+    k <- length(M <- lengths(base))
     for(i in which(vapply(dnx, is.null, NA))) {
 	ii <- 1L+(i-1L) %% k # recycling
         ss <- seq_len(dx[i]) - 1L # dim could be zero
-	dnx[[i]] <- make.unique(base[[ii]][1L+ (ss %% M[ii])], sep = sep)
+	bi <- base[[ii]][1L+ (ss %% M[ii])]
+	dnx[[i]] <- if(unique) make.unique(bi, sep = sep) else bi
 	new <- TRUE
     }
     if(new) dimnames(x) <- dnx

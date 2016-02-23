@@ -1,5 +1,5 @@
 % File src/library/graphics/man/par.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -298,10 +298,11 @@ par(\dots, no.readonly = FALSE)
       the default device fonts will be used (and what those are should
       be listed on the help page for the device).  Standard values are
       \code{"serif"}, \code{"sans"} and \code{"mono"}, and the
-      \link{Hershey} font families are also available.  (Different
-      devices may define others, and some devices will ignore this
-      setting completely.)  This can be specified inline for
-      \code{\link{text}}.}
+      \link{Hershey} font families are also available.  (Devices may
+      define others, and some devices will ignore this setting
+      completely.  Names starting with \code{"Hershey"} are treated
+      specially and should only be used for the built-in Hershey font
+      families.)  This can be specified inline for \code{\link{text}}.}
     \item{\code{fg}}{The color to be used for the foreground of plots.
       This is the default color used for things like axes and boxes
       around plots.  When called from \code{par()} this also sets
@@ -615,8 +616,7 @@ par(\dots, no.readonly = FALSE)
   \code{0} corresponds to the background color.  Note that the palette
   (apart from \code{0} which is per-device) is a per-session setting.
 
-  Negative integer colours were accepted prior to \R 3.0.0, but treated
-  inconsistently.  They are now errors.
+  Negative integer colours are errors.
 
   Additionally, \code{"transparent"} is \emph{transparent}, useful for
   filled areas (such as the background!), and just invisible for things
@@ -630,8 +630,6 @@ par(\dots, no.readonly = FALSE)
   The functions \code{\link{rgb}}, \code{\link{hsv}}, \code{\link{hcl}},
   \code{\link{gray}} and \code{\link{rainbow}} provide additional ways
   of generating colors.
-
-  It was possible to specify color numbers as strings prior to \R 3.0.0.
 }
 
 \section{Line Type Specification}{

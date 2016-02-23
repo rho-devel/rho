@@ -1,5 +1,5 @@
 % File src/library/base/man/curlGetHeaders.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -57,13 +57,15 @@ curlGetHeaders(url, redirect = TRUE, verify = TRUE)
   the headers for all the URLs visited.
 
   For the interpretation of \sQuote{status} codes see
-  \url{http://en.wikipedia.org/wiki/List_of_HTTP_status_codes} and
-  \url{http://en.wikipedia.org/wiki/List_of_FTP_server_return_codes}.
+  \url{https://en.wikipedia.org/wiki/List_of_HTTP_status_codes} and
+  \url{https://en.wikipedia.org/wiki/List_of_FTP_server_return_codes}.
   A successful FTP connection will usually have status 250 or 350.  
 }
 
 \seealso{
   \code{\link{capabilities}("libcurl")} to see if this is supported.
+
+  \code{\link{options}} \code{HTTPUserAgent} and \code{timeout} are used.
 }
 
 % http://forum.rebex.net/questions/1343/open-ftps-and-sftp-servers-for-testing-our-code-and-connectivity

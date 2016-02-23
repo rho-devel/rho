@@ -1,5 +1,5 @@
 % File src/library/stats/man/glm.summaries.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -18,7 +18,8 @@
     a call to \code{\link{glm}}.}
   \item{type}{the type of residuals which should be returned.
     The alternatives are: \code{"deviance"} (default), \code{"pearson"},
-    \code{"working"}, \code{"response"}, and \code{"partial"}.}
+    \code{"working"}, \code{"response"}, and \code{"partial"}.
+    Can be abbreviated.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \description{

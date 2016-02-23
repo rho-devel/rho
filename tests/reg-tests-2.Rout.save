@@ -1,7 +1,7 @@
 
-R Under development (unstable) (2015-03-03 r67930) -- "Unsuffered Consequences"
-Copyright (C) 2015 The R Foundation for Statistical Computing
-Platform: x86_64-unknown-linux-gnu (64-bit)
+R Under development (unstable) (2016-02-05 r70096) -- "Unsuffered Consequences"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -463,7 +463,8 @@ numeric(0)
    100 -1e-13    Inf   -Inf    NaN   3.14     NA 
    100      0     NA     NA     NA      3     NA 
 Warning message:
-In structure(as.integer(x), names = names(x)) : NAs introduced by coercion
+In structure(as.integer(x), names = names(x)) :
+  NAs introduced by coercion to integer range
 > ##-   100 -1e-13    Inf   -Inf    NaN   3.14     NA
 > ##-   100      0     NA     NA     NA      3     NA
 > all(is.na(ix) != is.finite(ix) | is.infinite(ix)) # TRUE (still)
@@ -3260,7 +3261,7 @@ Error in `[.data.frame`(x, 1, c("a", "c")) : undefined columns selected
 > 
 > ## methods(class = ) with namespaces, .Primitives etc (many missing in 1.7.x):
 > meth2gen <- function(cl)
-+     noquote(sub(paste("\\.",cl,"$",sep=""),"", c(methods(class = cl))))
++     noquote(sub(paste("\\.",cl,"$",sep=""),"", c(.S3methods(class = cl))))
 > meth2gen("data.frame")
  [1] $             $<-           Math          Ops           Summary      
  [6] [             [<-           [[            [[<-          aggregate    
@@ -4881,7 +4882,7 @@ coef[0] = 1
 > DF <- data.frame(A=1:2, B=3:4)
 > try(DF[2, 1:3] <- NULL)
 Error in `[<-.data.frame`(`*tmp*`, 2, 1:3, value = NULL) : 
-  replacement has 0 items, need 3
+  replacement has length zero
 > ## wrong error message in R < 2.2.0
 > 
 > 
@@ -5108,7 +5109,7 @@ Calls: do.call -> <Anonymous>
 2: (function (...) 
    stop())(mpg = c(21, 21, 22.8, 21.4, 18.7, 18.1, 14.3, 24.4, 22.8, 
    19.2, 17.8, 16.4, 17.3, 15.2, 10.4, 10.4, 14.7, 32.4, 30.4, 33.9, 
-     ...
+    ...
 1: do.call(f, mtcars)
 > 
 > options(op)
@@ -6404,15 +6405,15 @@ function ()
 > print.function
 function (x, ...)  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 19 1 63 19 63 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x30875e0> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x48a7368> 
 > f
 function ()  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 17 1 28 17 28 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x30b9248> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x489dbb0> 
  - attr(*, "note")= chr "just a note"
  - attr(*, "yada")=function ()  
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 2 24 2 48 24 48 2 2
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x30b9248> 
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x489dbb0> 
 > rm(print.function)
 > ## auto-printing and printing differed up to R 2.9.x
 > 
@@ -7153,9 +7154,9 @@ arima(x = x, order = c(1, 1, 1), seasonal = c(1, 0, 1), xreg = xreg)
 Coefficients:
           ar1     ma1    sar1     sma1    xreg
       -0.4791  0.3525  0.9877  -0.8295  0.3574
-s.e.   0.4184  0.4444  0.0331   0.2221  0.7480
+s.e.   0.4162  0.4420  0.0329   0.2209  0.7440
 
-sigma^2 estimated as 0.001515:  log likelihood = 162.05,  aic = -312.09
+sigma^2 estimated as 0.001499:  log likelihood = 163.79,  aic = -315.58
 > (f2 <- arima(diff(x), xreg = diff(xreg), order = c(1,0,1), seasonal = c(1,0,1),
 +              include.mean = FALSE))
 
@@ -7673,4 +7674,118 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    TRUE 
 > ##
+> 
+> 
+> ## PR#16437
+> dd <- data.frame(F = factor(rep(c("A","B","C"), each = 3)), num = 1:9)
+> cs <- list(F = contr.sum(3, contrasts = FALSE))
+> a1 <- aov(num ~ F, data = dd, contrasts = cs)
+> model.tables(a1, "means")
+Tables of means
+Grand mean
+  
+5 
+
+ F 
+F
+A B C 
+2 5 8 
+> t1 <- TukeyHSD(a1) ## don't print to avoid precision issues.
+> a2 <- aov(num ~ 0+F, data = dd, contrasts = cs)
+> model.tables(a2, "means")
+Tables of means
+
+ F 
+F
+A B C 
+2 5 8 
+> t2 <- TukeyHSD(a2)
+> attr(t1, "orig.call") <- attr(t2, "orig.call")
+> stopifnot(all.equal(t1, t2))
+> ## functions both failed on a2 in R <= 3.2.2.
+> 
+> 
+> ## deparse() did not add parens before [
+> substitute(a[1], list(a = quote(x * y)))
+(x * y)[1]
+> ## should be (x * y)[1], was x * y[1]
+> # Check all levels of precedence
+> # (Comment out illegal ones)
+> quote(`$`(a :: b, c)) 
+a::b$c
+> # quote(`::`(a $ b, c $ d))
+> quote(`[`(a $ b, c $ d))
+a$b[c$d]
+> quote(`$`(a[b], c))
+(a[b])$c
+> quote(`^`(a[b], c[d]))
+a[b]^c[d]
+> quote(`[`(a ^ b, c ^ d))
+(a^b)[c^d]
+> quote(`-`(a ^ b))
+-a^b
+> quote(`^`(-b, -d))
+(-b)^-d
+> quote(`:`(-b, -d))
+-b:-d
+> quote(`-`(a : b))
+-(a:b)
+> quote(`%in%`(a : b, c : d))
+a:b %in% c:d
+> quote(`:`(a %in% b, c %in% d))
+(a %in% b):(c %in% d)
+> quote(`*`(a %in% b, c %in% d))
+a %in% b * c %in% d
+> quote(`%in%`(a * b, c * d))
+(a * b) %in% (c * d)
+> quote(`+`(a * b, c * d))
+a * b + c * d
+> quote(`*`(a + b, c + d))
+(a + b) * (c + d)
+> quote(`<`(a + b, c + d))
+a + b < c + d
+> quote(`+`(a < b, c < d))
+(a < b) + (c < d)
+> quote(`!`(a < b))
+!a < b
+> quote(`<`(!b, !d))
+(!b) < (!d)
+> quote(`&`(!b, !d))
+!b & !d
+> quote(`!`(a & b))
+!(a & b)
+> quote(`|`(a & b, c & d))
+a & b | c & d
+> quote(`&`(a | b, c | d))
+(a | b) & (c | d)
+> quote(`~`(a | b, c | d))
+a | b ~ c | d
+> quote(`|`(a ~ b, c ~ d))
+(a ~ b) | (c ~ d)
+> quote(`->`(a ~ b, d))
+`->`(a ~ b, d)
+> quote(`~`(a -> b, c -> d))
+(b <- a) ~ (d <- c)
+> quote(`<-`(a, c -> d))
+a <- d <- c
+> quote(`->`(a <- b, c))
+`->`(a <- b, c)
+> quote(`=`(a, c <- d))
+a = c <- d
+> quote(`<-`(a, `=`(c, d)))
+a <- (c = d)
+> quote(`?`(`=`(a, b), `=`(c, d)))
+`?`((a = b), (c = d))
+> quote(`=`(a, c ? d))
+a = `?`(c, d)
+> quote(`?`(a = b))
+`?`(a = b)
+> quote(`=`(b, ?d))
+b = `?`(d)
+> 
+> ## dput() quoted the empty symbol (PR#16686)
+> a <- alist(one = 1, two = )
+> dput(a)
+structure(list(one = 1, two = ), .Names = c("one", "two"))
+> ## deparsed two to quote()
 > 
