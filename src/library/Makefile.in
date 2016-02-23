@@ -109,6 +109,9 @@ PDFLATEX = @PDFLATEX@
 vignettes-lattice:
 	@if test -z "$(PDFLATEX)"; then \
 	  $(ECHO) "'pdflatex' is needed to make vignettes but is missing on your system."; \
+	  for pkg in grid parallel utils; do \
+	    cp "$(srcdir)/$${pkg}/vignettes/"*.Rnw "$(top_builddir)/library/$${pkg}/doc/"; \
+	   done; \
 	else \
 	  for pkg in grid parallel utils; do \
 	    $(ECHO) "building/updating vignettes for package '$${pkg}' ..."; \
@@ -124,6 +127,9 @@ vignettes-no-lattice:
 	@cp $(srcdir)/grid/vignettes/grid.Rnw-nolattice $(srcdir)/grid/vignettes/grid.Rnw
 	@if test -z "$(PDFLATEX)"; then \
 	  $(ECHO) "'pdflatex' is needed to make vignettes but is missing on your system."; \
+	  for pkg in grid parallel utils; do \
+	    cp "$(srcdir)/$${pkg}/vignettes/"*.Rnw "$(top_builddir)/library/$${pkg}/doc/"; \
+	   done; \
 	else \
 	  for pkg in grid parallel utils; do \
 	    $(ECHO) "building/updating vignettes for package '$${pkg}' ..."; \

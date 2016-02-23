@@ -67,8 +67,7 @@ LIBR = @LIBR0@ @LIBR1@
 ## Many of these used to be optional: ICU libs still are.
 ## There may be platform-specific ones, e.g.
 ## -lrt -ldl on Linux, -lnsl -lsocket -lrt -lsunmath -ldl -liconv on Solaris.
-LIBS = @LIBS@
-LIBS = @LIBS@ @LLVM_LDFLAGS@ @LLVM_LIBS@ 
+LIBS = @LIBS@ @LLVM_LIBS@ 
 LIBnn = @LIBnn@
 LIBTOOL = @LIBTOOL@
 ## AFAICS unused
@@ -77,7 +76,7 @@ MAIN_CFLAGS = @MAIN_CFLAGS@
 MAIN_CXXFLAGS =
 MAIN_FFLAGS = @MAIN_FFLAGS@
 MAIN_LD = @MAIN_LD@@BUILD_LTO_TRUE@ $(CFLAGS)
-MAIN_LDFLAGS = @MAIN_LDFLAGS@ $(BOOST_LDFLAGS) @WANT_R_SHLIB_FALSE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
+MAIN_LDFLAGS = @MAIN_LDFLAGS@ @LLVM_LDFLAGS@ $(BOOST_LDFLAGS) @WANT_R_SHLIB_FALSE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
 MAIN_LINK = $(MAIN_LD) $(MAIN_LDFLAGS) $(LIBR0) $(LDFLAGS)
 ## need this for bootstrapping
 MKINSTALLDIRS = @R_SHELL@ $(top_srcdir)/src/scripts/mkinstalldirs.in
