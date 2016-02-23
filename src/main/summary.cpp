@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2014   The R Core Team
+ *  Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,7 +30,10 @@
 
 #include <Defn.h>
 #include <Internal.h>
+#include "duplicate.h"
+
 #include "CXXR/GCStackRoot.hpp"
+#include <R_ext/Itermacros.h>
 
 using namespace CXXR;
 
@@ -411,6 +414,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* updated := 1 , as soon as (i)tmp (do_summary),
 	   or *value ([ir]min / max) is assigned */
 
+    checkArity(op, args);
     if(PRIMVAL(op) == 1) { /* mean */
 	LDOUBLE s = 0., si = 0., t = 0., ti = 0.;
 	R_xlen_t i, n = XLENGTH(CAR(args));
@@ -422,7 +426,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	    for (i = 0; i < n; i++) {
 		if(INTEGER(x)[i] == NA_INTEGER) {
 		    REAL(ans)[0] = R_NaReal;
-		    UNPROTECT(1);
+		    UNPROTECT(1); /* ans */
 		    return ans;
 		}
 		s += INTEGER(x)[i];
@@ -460,7 +464,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(R_MSG_type, type2char(TYPEOF(x)));
 	    ans = R_NilValue; // -Wall on clang 4.2
 	}
-	UNPROTECT(1);
+	UNPROTECT(1); /* ans */
 	return ans;
     }
 
@@ -477,7 +481,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	UNPROTECT(2);
 	return(dispatched.second);
     }
-    UNPROTECT(1);
+    UNPROTECT(1); /* call2 */
 
 #ifdef DEBUG_Summary
     REprintf("C do_summary(op%s, *): did NOT dispatch\n", PRIMNAME(op));
@@ -536,6 +540,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /*-- now loop over all arguments.  Do the 'op' switch INSIDE : */
+    PROTECT(scum);
     while (args != R_NilValue) {
 	a = CAR(args);
 	int_a = 0;/* int_a = 1	<-->	a is INTEGER */
@@ -565,10 +570,15 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		    else	  updated = rmax(REAL(a), XLENGTH(a), &tmp, narm);
 		    break;
 		case STRSXP:
-		    if(!empty && ans_type == INTSXP)
+		    if(!empty && ans_type == INTSXP) {
 			scum = StringFromInteger(icum, &warn);
-		    else if(!empty && ans_type == REALSXP)
+			UNPROTECT(1); /* scum */
+			PROTECT(scum);
+		    } else if(!empty && ans_type == REALSXP) {
 			scum = StringFromReal(zcum.r, &warn);
+			UNPROTECT(1); /* scum */
+			PROTECT(scum);
+		    }
 		    ans_type = STRSXP;
 		    if (iop == 2) updated = smin(a, &stmp, narm);
 		    else updated = smax(a, &stmp, narm);
@@ -603,11 +613,15 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 				stmp = StringFromInteger(itmp, &warn);
 			    if(real_a)
 				stmp = StringFromReal(tmp, &warn);
+			    PROTECT(stmp);
 			    if(stmp == NA_STRING ||
 			       (iop == 2 && stmp != scum && Scollate(stmp, scum) < 0) ||
 			       (iop == 3 && stmp != scum && Scollate(stmp, scum) > 0) )
 				scum = stmp;
+			    UNPROTECT(1); /* stmp */
 			}
+			UNPROTECT(1); /* scum */
+			PROTECT(scum);
 		    }
 		}/*updated*/ else {
 		    /*-- in what cases does this happen here at all?
@@ -714,10 +728,15 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		break;
 	    case STRSXP:
 		if (iop == 2 || iop == 3) {
-		    if(!empty && ans_type == INTSXP)
+		    if(!empty && ans_type == INTSXP) {
 			scum = StringFromInteger(icum, &warn);
-		    else if(!empty && ans_type == REALSXP)
+			UNPROTECT(1); /* scum */
+			PROTECT(scum);
+		    } else if(!empty && ans_type == REALSXP) {
 			scum = StringFromReal(zcum.r, &warn);
+			UNPROTECT(1); /* scum */
+			PROTECT(scum);
+		    }
 		    ans_type = STRSXP;
 		    break;
 		}
@@ -757,7 +776,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     case STRSXP:   SET_STRING_ELT(ans, 0, scum); break;
     default:       break;  // -Wswitch
     }
-    UNPROTECT(1);  /* args */
+    UNPROTECT(2); /* scum, args */
     return ans;
 
 na_answer: /* only sum(INTSXP, ...) case currently used */
@@ -769,7 +788,7 @@ na_answer: /* only sum(INTSXP, ...) case currently used */
     case STRSXP:        SET_STRING_ELT(ans, 0, NA_STRING); break;
     default:            break;  // -Wswitch
     }
-    UNPROTECT(1);  /* args */
+    UNPROTECT(2); /* scum, args */
     return ans;
 
 invalid_type:
@@ -805,38 +824,86 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     return(ans);
 }
 
-/* which.min(x) : The index (starting at 1), of the first min(x) in x */
+// which.min(x) : The index (starting at 1), of the first min(x) in x
+// which.max(x) : The index (starting at 1), of the first max(x) in x
 SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
-    SEXP sx, ans;
-    double s, *r;
-    int i, n, indx;
+    SEXP sx = x_, ans;
+    R_xlen_t i, n, indx = -1;
 
-    PROTECT(sx = coerceVector(x_, REALSXP));
-    if (!isNumeric(sx))
-	error(_("non-numeric argument"));
-    r = REAL(sx);
-    n = LENGTH(sx);
-    indx = NA_INTEGER;
-
-    if(op->variant() == 0) { /* which.min */
-	s = R_PosInf;
-	for (i = 0; i < n; i++)
-	    if ( !ISNAN(r[i]) && (r[i] < s || indx == NA_INTEGER) ) {
-		s = r[i]; indx = i;
-	    }
-    } else { /* which.max */
-	s = R_NegInf;
-	for (i = 0; i < n; i++)
-	    if ( !ISNAN(r[i]) && (r[i] > s || indx == NA_INTEGER) ) {
-		s = r[i]; indx = i;
-	    }
+    if (!isNumeric(sx)) {
+	sx = coerceVector(sx, REALSXP);
     }
+    n = XLENGTH(sx);
+    switch(TYPEOF(sx)) {
+    case LGLSXP: // with only (TRUE, FALSE, NA) -- may be fast
+    {
+	int *r = LOGICAL(sx);
+	if(op->variant() == 0) { /* which.min */
+	    for (i = 0; i < n; i++)
+		if (r[i] == FALSE) {
+		    indx = i; break; // found FALSE: done
+		} else if (indx == -1 && r[i] != NA_LOGICAL) {
+		    indx = i; // first TRUE
+		}
+	} else { /* which.max */
+	    for (i = 0; i < n; i++)
+		if (r[i] == TRUE) {
+		    indx = i; break; // found TRUE: done
+		} else if (indx == -1 && r[i] != NA_LOGICAL) {
+		    indx = i; // first FALSE
+		}
+	}
+    }
+    break;
 
-    i = (indx != NA_INTEGER);
-    PROTECT(ans = allocVector(INTSXP, i ? 1 : 0));
+    case INTSXP:
+    {
+	int s, *r = INTEGER(sx);
+	if(op->variant() == 0) { /* which.min */
+	    s = INT_MAX;
+	    for (i = 0; i < n; i++)
+		if (r[i] != NA_INTEGER && (r[i] < s || indx == -1)) {
+		    s = r[i]; indx = i;
+		}
+	} else { /* which.max */
+	    s = INT_MIN;
+	    for (i = 0; i < n; i++)
+		if (r[i] != NA_INTEGER && (r[i] > s || indx == -1)) {
+		    s = r[i]; indx = i;
+		}
+	}
+    }
+    break;
+
+    case REALSXP:
+    {
+	double s, *r = REAL(sx);
+	if(op->variant() == 0) { /* which.min */
+	    s = R_PosInf;
+	    for (i = 0; i < n; i++)
+		if ( !ISNAN(r[i]) && (r[i] < s || indx == -1) ) {
+		    s = r[i]; indx = i;
+		}
+	} else { /* which.max */
+	    s = R_NegInf;
+	    for (i = 0; i < n; i++)
+		if ( !ISNAN(r[i]) && (r[i] > s || indx == -1) ) {
+		    s = r[i]; indx = i;
+		}
+	}
+    }
+    } // switch()
+
+
+    i = (indx != -1);
+    bool large = (indx + 1) > INT_MAX;
+    PROTECT(ans = allocVector(large ? REALSXP : INTSXP, i ? 1 : 0));
     if (i) {
-	INTEGER(ans)[0] = indx + 1;
+	if(large)
+	    REAL(ans)[0] = (double)indx + 1;
+	else
+	    INTEGER(ans)[0] = (int)indx + 1;
 	if (getAttrib(sx, R_NamesSymbol) != R_NilValue) { /* preserve names */
 	    SEXP ansnam;
 	    PROTECT(ansnam =
@@ -845,7 +912,6 @@ SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR:
 	    UNPROTECT(1);
 	}
     }
-    UNPROTECT(2);
     return ans;
 }
 
@@ -857,29 +923,29 @@ SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     v = x_;
     if (!isLogical(v))
-        error(_("argument to 'which' is not logical"));
+	error(_("argument to 'which' is not logical"));
     len = length(v);
     buf = reinterpret_cast<int *>( R_alloc(len, sizeof(int)));
 
     for (i = 0; i < len; i++) {
-        if (LOGICAL(v)[i] == TRUE) {
-            buf[j] = i + 1;
-            j++;
-        }
+	if (LOGICAL(v)[i] == TRUE) {
+	    buf[j] = i + 1;
+	    j++;
+	}
     }
 
     len = j;
     PROTECT(ans = allocVector(INTSXP, len));
-    memcpy(INTEGER(ans), buf, sizeof(int) * len);
+    if(len) memcpy(INTEGER(ans), buf, sizeof(int) * len);
 
     if ((v_nms = getAttrib(v, R_NamesSymbol)) != R_NilValue) {
-        PROTECT(ans_nms = allocVector(STRSXP, len));
-        for (i = 0; i < len; i++) {
-            SET_STRING_ELT(ans_nms, i,
-                           STRING_ELT(v_nms, INTEGER(ans)[i] - 1));
-        }
-        setAttrib(ans, R_NamesSymbol, ans_nms);
-        UNPROTECT(1);
+	PROTECT(ans_nms = allocVector(STRSXP, len));
+	for (i = 0; i < len; i++) {
+	    SET_STRING_ELT(ans_nms, i,
+			   STRING_ELT(v_nms, INTEGER(ans)[i] - 1));
+	}
+	setAttrib(ans, R_NamesSymbol, ans_nms);
+	UNPROTECT(1);
     }
     UNPROTECT(1);
     return ans;
@@ -892,7 +958,7 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 {
     SEXP a, x, ans;
     int narm;
-    R_xlen_t i, n, len;
+    R_xlen_t i, n, len, i1;
     SEXPTYPE type, anstype;
 
     // Remove narm from the args.
@@ -952,15 +1018,15 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	PROTECT(x = coerceVector(args[0], anstype));
 	r = INTEGER(x);
 	n = XLENGTH(x);
-	for(i = 0; i < len; i++) ra[i] = r[i % n];
+	xcopyIntegerWithRecycle(ra, r, 0, len, n);
 	UNPROTECT(1);
 	for (int arg = 1; arg < num_args; arg++) {
 	    x = args[arg];
 	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
 	    r = INTEGER(x);
-	    for(i = 0; i < len; i++) {
-		tmp = r[i % n];
+	    MOD_ITERATE1(len, n, i, i1, {
+		tmp = r[i1];
 		if(op->variant() == 1) {
 		    if( (narm && ra[i] == NA_INTEGER) ||
 			(ra[i] != NA_INTEGER && tmp != NA_INTEGER
@@ -974,7 +1040,7 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 			(!narm && tmp == NA_INTEGER) )
 			ra[i] = tmp;
 		}
-	    }
+	    });
 	    UNPROTECT(1);
 	}
     }
@@ -985,15 +1051,15 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	PROTECT(x = coerceVector(args[0], anstype));
 	r = REAL(x);
 	n = XLENGTH(x);
-	for(i = 0; i < len; i++) ra[i] = r[i % n];
+	xcopyRealWithRecycle(ra, r, 0, len, n);
 	UNPROTECT(1);
 	for (int arg = 1; arg < num_args; arg++) {
 	    x = args[arg];
 	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
 	    r = REAL(x);
-	    for(i = 0; i < len; i++) {
-		tmp = r[i % n];
+	    MOD_ITERATE1(len, n, i, i1, {
+		tmp = r[i1];
 		if(op->variant() == 1) {
 		    if( (narm && ISNAN(ra[i])) ||
 			(!ISNAN(ra[i]) && !ISNAN(tmp) && tmp > ra[i]) ||
@@ -1005,7 +1071,7 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 			(!narm && ISNAN(tmp)) )
 			ra[i] = tmp;
 		}
-	    }
+	    });
 	    UNPROTECT(1);
 	}
     }
@@ -1014,15 +1080,15 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
     {
 	PROTECT(x = coerceVector(args[0], anstype));
 	n = XLENGTH(x);
-	for(i = 0; i < len; i++) SET_STRING_ELT(ans, i, STRING_ELT(x, i % n));
+	xcopyStringWithRecycle(ans, x, 0, len, n);
 	UNPROTECT(1);
 	for (int arg = 1; arg < num_args; arg++) {
 	    x = args[arg];
 	    SEXP tmp, t2;
 	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
-	    for(i = 0; i < len; i++) {
-		tmp = STRING_ELT(x, i % n);
+	    MOD_ITERATE1(len, n, i, i1, {
+		tmp = STRING_ELT(x, i1);
 		t2 = STRING_ELT(ans, i);
 		if(op->variant() == 1) {
 		    if( (narm && t2 == NA_STRING) ||
@@ -1035,7 +1101,7 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
 			(!narm && tmp == NA_STRING) )
 			SET_STRING_ELT(ans, i, tmp);
 		}
-	    }
+	    });
 	    UNPROTECT(1);
 	}
     }

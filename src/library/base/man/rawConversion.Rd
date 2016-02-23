@@ -1,5 +1,5 @@
 % File src/library/base/man/rawConversion.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 2004-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -30,7 +30,7 @@ packBits(x, type = c("raw", "integer"))
     character string or multiple individual characters?}
   \item{n}{the number of bits to shift.  Positive numbers shift right
     and negative numbers shift left: allowed values are \code{-8 ... 8}.}
-  \item{type}{the result type.}
+  \item{type}{the result type, partially matched.}
 }
 \value{
   \code{charToRaw} converts a length-one character string to raw bytes.

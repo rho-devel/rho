@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -46,7 +46,7 @@ SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR:
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
     nc = LENGTH(STRING_ELT(x, 0));
     ans = allocVector(RAWSXP, nc);
-    memcpy(RAW(ans), CHAR(STRING_ELT(x, 0)), nc);
+    if (nc) memcpy(RAW(ans), CHAR(STRING_ELT(x, 0)), nc);
     return ans;
 }
 
@@ -271,7 +271,6 @@ SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR:
 {
     SEXP ans, x = x_;
     int tmp, used = 0; /* -Wall */
-    const char *s;
     R_xlen_t i, j, nc;
 
     if (!isString(x) || LENGTH(x) == 0)
@@ -279,7 +278,8 @@ SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR:
     if (LENGTH(x) > 1)
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
     if (STRING_ELT(x, 0) == NA_STRING) return ScalarInteger(NA_INTEGER);
-    s = CHAR(STRING_ELT(x, 0));
+    const char *s = CHAR(STRING_ELT(x, 0));
+    if (!utf8Valid(s)) return ScalarInteger(NA_INTEGER);
     nc = XLENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
     int *ians = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
     for (i = 0, j = 0; i < nc; i++) {
@@ -290,7 +290,7 @@ SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR:
     }
     if (used < 0) error(_("invalid UTF-8 string"));
     ans = allocVector(INTSXP, j);
-    memcpy(INTEGER(ans), ians, sizeof(int) * j);
+    if (j) memcpy(INTEGER(ans), ians, sizeof(int) * j);
     return ans;
 }
 

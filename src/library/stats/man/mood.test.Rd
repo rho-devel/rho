@@ -1,5 +1,5 @@
 % File src/library/stats/man/mood.test.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2008 R Core Team
 % Distributed under GPL 2 or later
 
@@ -54,7 +54,7 @@ mood.test(x, \dots)
   \item{statistic}{the value of the test statistic.}
   \item{p.value}{the p-value of the test.}
   \item{alternative}{a character string describing the alternative
-    hypothesis.}
+    hypothesis.   You can specify just the initial letter.}
   \item{method}{the character string \code{"Mood two-sample test of scale"}.}
   \item{data.name}{a character string giving the names of the data.}
 }

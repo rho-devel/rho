@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2014   The R Core Team
+ *  Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /*		Warnings/Errors
@@ -189,14 +189,28 @@ static SEXP EnlargeVector(SEXP x, R_xlen_t newlen)
 /* used instead of coerceVector to embed a non-vector in a list for
    purposes of SubassignTypeFix, for cases in wich coerceVector should
    fail; namely, S4SXP */
-static SEXP embedInVector(SEXP v)
+static SEXP embedInVector(SEXP v, SEXP call)
 {
     SEXP ans;
+    warningcall(call, "implicit list embedding of S4 objects is deprecated");
     PROTECT(ans = allocVector(VECSXP, 1));
     SET_VECTOR_ELT(ans, 0, v);
     UNPROTECT(1);
     return (ans);
 }
+
+static Rboolean dispatch_asvector(SEXP *x, SEXP call, SEXP rho)
+{
+    static SEXP op = R_Primitive("as.vector");
+    SEXP args;
+    Rboolean ans;
+    PROTECT(args = list2(*x, mkString("any")));
+    ans = Rboolean(
+	DispatchOrEval(call, op, args, rho, x, MissingArgHandling::Keep, 1));
+    UNPROTECT(1);
+    return ans;
+}
+
 
 /* Level 1 is used in VectorAssign, ArrayAssign.
    That coerces RHS to a list or expression.
@@ -205,7 +219,7 @@ static SEXP embedInVector(SEXP v)
    This does not coerce when assigning into a list.
 */
 
-static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
+static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call, SEXP rho)
 {
     int which = 100 * TYPEOF(*x) + TYPEOF(*y);
 
@@ -299,7 +313,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
 
 	if (level == 1) {
 	    /* Embed the RHS into a list */
-	    *y = embedInVector(*y);
+	    *y = embedInVector(*y, call);
 	} else {
 	    /* Nothing to do here: duplicate when used (if needed) */
 	}
@@ -346,12 +360,22 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
 
 	if (level == 1) {
 	    /* Embed the RHS into a list */
-	    *y = embedInVector(*y);
+	    *y = embedInVector(*y, call);
 	} else {
 	    /* Nothing to do here: duplicate when used (if needed) */
 	}
 	break;
 
+    case 1025: /* logical   <- S4 */
+    case 1325: /* integer   <- S4 */
+    case 1425: /* real      <- S4 */
+    case 1525: /* complex   <- S4 */
+    case 1625: /* character <- S4 */
+    case 2425: /* raw       <- S4 */
+        if (dispatch_asvector(y, call, rho)) {
+            return SubassignTypeFix(x, y, level, call, rho);
+        }
+        
     default:
 	error(_("incompatible types (from %s to %s) in subassignment type fix"),
 	      type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
@@ -444,7 +468,7 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     return xnew;
 }
 
-static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
+static SEXP VectorAssign(SEXP call, SEXP rho, SEXP xarg, SEXP sarg, SEXP yarg)
 {
     GCStackRoot<> x(xarg);
     GCStackRoot<> s(sarg);
@@ -481,7 +505,7 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
     {
 	SEXP xtmp = x;
 	SEXP ytmp = y;
-	which = SubassignTypeFix(&xtmp, &ytmp, 1, call);
+	which = SubassignTypeFix(&xtmp, &ytmp, 1, call, rho);
 	x = xtmp;
 	y = ytmp;
     }
@@ -578,13 +602,25 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
 	return Subscripting::vectorSubassign(static_cast<RawVector*>(x.get()), s,
 					     static_cast<const RawVector*>(y.get()));
     default:
+	if (xlength(y) == 0) {
+	    if (y != R_NilValue
+		|| (TYPEOF(x) != VECSXP && TYPEOF(x) != EXPRSXP)) {
+		std::size_t num_indices
+		    = Subscripting::canonicalize(s, xlength(x)).second;
+		if (num_indices > 0) {
+		    error(_("replacement has length zero"));
+		}
+	    }
+	}
+
 	warningcall(call, "sub assignment (*[*] <- *) not done; __bug?__");
     }
     return nullptr;  // -Wall
 }
 
 
-static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
+static SEXP ArrayAssign(SEXP call, SEXP rho, SEXP xarg, PairList* subscripts,
+			SEXP yarg)
 {
     GCStackRoot<> x(xarg);
     GCStackRoot<> y(yarg);
@@ -595,7 +631,7 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
     {
 	SEXP xtmp = x;
 	SEXP ytmp = y;
-	which = SubassignTypeFix(&xtmp, &ytmp, 1, call);
+	which = SubassignTypeFix(&xtmp, &ytmp, 1, call, rho);
 	x = xtmp;
 	y = ytmp;
     }
@@ -674,25 +710,26 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
     return nullptr;  // -Wall
 }
 
+
 /* Use for pairlists */
 static SEXP GetOneIndex(SEXP sub, int ind)
 {
     if (ind < 0 || ind+1 > Rf_length(sub))
     	error("internal error: index %d from length %d", ind, Rf_length(sub));
     if (Rf_length(sub) > 1) {
-    	switch (TYPEOF(sub)) {
-    	case INTSXP:
-    	    sub = ScalarInteger(INTEGER(sub)[ind]);
-    	    break;
-    	case REALSXP:
-    	    sub = ScalarReal(REAL(sub)[ind]);
-    	    break;
-    	case STRSXP:
-    	    sub = ScalarString(STRING_ELT(sub, ind));
-    	    break;
-    	default:
-    	    error(_("invalid subscript in list assign"));
-    	}
+	switch (TYPEOF(sub)) {
+	case INTSXP:
+	    sub = ScalarInteger(INTEGER(sub)[ind]);
+	    break;
+	case REALSXP:
+	    sub = ScalarReal(REAL(sub)[ind]);
+	    break;
+	case STRSXP:
+	    sub = ScalarString(STRING_ELT(sub, ind));
+	    break;
+	default:
+	    error(_("invalid subscript in list assign"));
+	}
     }
     return sub;
 }
@@ -712,7 +749,7 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 
     n = Rf_length(indx);
     if (n > 1)
-    	error(_("invalid subscript in list assign"));
+	error(_("invalid subscript in list assign"));
 
     nx = Rf_length(x);
 
@@ -896,13 +933,13 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
 	    size_t nsubs = listLength(subs);
 	    switch (nsubs) {
 	    case 0:
-		x = VectorAssign(call, x, R_MissingArg, y);
+		x = VectorAssign(call, rho, x, R_MissingArg, y);
 		break;
 	    case 1:
-		x = VectorAssign(call, x, subs->car(), y);
+		x = VectorAssign(call, rho, x, subs->car(), y);
 		break;
 	    default:
-		x = ArrayAssign(call, x, subs, y);
+		x = ArrayAssign(call, rho, x, subs, y);
 		break;
 	    }
 	}
@@ -1036,7 +1073,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
 	xOrig = x; /* will be an S4 object */
-        x = R_getS4DataSlot(x, ANYSXP);
+	x = R_getS4DataSlot(x, ANYSXP);
 	if(TYPEOF(x) != ENVSXP)
 	  errorcall(call, _("[[<- defined for objects of type \"S4\" only for subclasses of environment"));
     }
@@ -1114,7 +1151,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    UNPROTECT(1);
 	}
 
-	which = SubassignTypeFix(&x, &y, 2, call);
+	which = SubassignTypeFix(&x, &y, 2, call, rho);
 	if (stretch) {
 	    PROTECT(x);
 	    PROTECT(y);
@@ -1334,6 +1371,11 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     input = allocVector(STRSXP, 1);
 
     nlist = CADR(args);
+    if (TYPEOF(nlist) == PROMSXP) {
+	PROTECT(input);
+	nlist = eval(nlist, env);
+	UNPROTECT(1);
+    }
     iS = isSymbol(nlist);
     if (iS)
 	SET_STRING_ELT(input, 0, PRINTNAME(nlist));
@@ -1441,7 +1483,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	SEXP names;
 	SEXPTYPE type = VECSXP;
 
-	if (isExpression(x)) 
+	if (isExpression(x))
 	    type = EXPRSXP;
 	else if (!isNewList(x)) {
 	    warning(_("Coercing LHS to a list"));

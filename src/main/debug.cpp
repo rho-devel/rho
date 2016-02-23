@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2014   The R Core Team.
+ *  Copyright (C) 1998-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -49,9 +49,10 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     find_char_fun
 
-    if (TYPEOF(CAR(args)) != CLOSXP && TYPEOF(CAR(args)) != SPECIALSXP
-         &&  TYPEOF(CAR(args)) != BUILTINSXP )
-	errorcall(call, _("argument must be a closure"));
+    if (TYPEOF(CAR(args)) != CLOSXP &&
+	TYPEOF(CAR(args)) != SPECIALSXP &&
+	TYPEOF(CAR(args)) != BUILTINSXP)
+	errorcall(call, _("argument must be a function"));
     switch(PRIMVAL(op)) {
     case 0: // debug()
 	SET_RDEBUG(CAR(args), CXXRTRUE);
@@ -62,23 +63,23 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_RDEBUG(CAR(args), CXXRFALSE);
 	break;
     case 2: // isdebugged()
-        ans = ScalarLogical(RDEBUG(CAR(args)));
-        break;
+	ans = ScalarLogical(RDEBUG(CAR(args)));
+	break;
     case 3: // debugonce()
-        SET_RSTEP(CAR(args), 1);
-        break;
+	SET_RSTEP(CAR(args), 1);
+	break;
     }
     return ans;
 }
 
-/* primitives .primTrace and .primUntrace */
+/* primitives .primTrace() and .primUntrace() */
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     find_char_fun
 
     if (TYPEOF(CAR(args)) != CLOSXP &&
-	TYPEOF(CAR(args)) != BUILTINSXP &&
-	TYPEOF(CAR(args)) != SPECIALSXP)
+	TYPEOF(CAR(args)) != SPECIALSXP &&
+	TYPEOF(CAR(args)) != BUILTINSXP)
 	    errorcall(call, _("argument must be a function"));
 
     switch(PRIMVAL(op)) {
@@ -228,7 +229,7 @@ SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
     static SEXP do_retracemem_formals = NULL;
 
     if (do_retracemem_formals == NULL)
-        do_retracemem_formals = allocFormalsList2(install("x"),
+	do_retracemem_formals = allocFormalsList2(install("x"),
 						  R_PreviousSymbol);
 
     PROTECT(argList =  matchArgs(do_retracemem_formals, args, call));

@@ -1,5 +1,5 @@
 % File src/library/tools/man/testInstalledPackage.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -24,7 +24,7 @@ testInstalledPackages(outDir = ".", errorsAreFatal = TRUE,
                       types = c("examples", "tests", "vignettes"),
                       srcdir = NULL, Ropts = "", ...)
 
-testInstalledBasic(scope = c("basic", "devel", "both"))
+testInstalledBasic(scope = c("basic", "devel", "both", "internet"))
 }
 \arguments{
   \item{pkg}{name of an installed package.}
@@ -40,7 +40,7 @@ testInstalledBasic(scope = c("basic", "devel", "both"))
     passed to \command{R CMD BATCH} when running examples or tests.}
   \item{\dots}{additional arguments use when preparing the files to be
     run, e.g.\sspace{}\code{commentDontrun} and \code{commentDonttest}.}
-  \item{scope}{Which set(s) should be tested?}
+  \item{scope}{Which set(s) should be tested?  Can be abbreviated.}
 }
 \details{
   These tests depend on having the package example files installed (which

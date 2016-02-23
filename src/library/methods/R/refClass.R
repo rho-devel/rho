@@ -1,5 +1,5 @@
 #  File src/library/methods/R/refClass.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 
 ## Classes to support OOP-style classes with reference-semantics for fields
@@ -47,14 +47,12 @@ self from reference class thisClass.'
 }
 
 installClassMethod <- function(def, self, me, selfEnv, thisClass) {
-    if(!is(def, "refMethodDef")) {  #should not happen? => need warning
-        warning(sprintf("method %s from class %s was not processed into a class method until being installed.  Possible corruption of the methods in the class.",
-                         me, thisClass@className),
-                domain = NA)
-        def <- makeClassMethod(def, me, thisClass@className, "", names(thisClass@refMethods))
-        .checkFieldsInMethod(def, names(thisClass@fieldClasses))
-        ## cache the analysed method definition
+    if(is(def, "externalMethodDef") || !is(def, "refMethodDef")) {
+        ## Don't process either an external method (not needed),
+        ## or a special object in the class refMethods
+        ## environment (will cause an error).  Assign it unchanged.
         assign(me, def, envir = thisClass@refMethods)
+        return(def)
     }
     depends <- def@mayCall
     environment(def) <- selfEnv # for access to fields and methods
@@ -105,6 +103,15 @@ installClassMethod <- function(def, self, me, selfEnv, thisClass) {
 }
 
 makeClassMethod <- function(def, name, Class, superClassMethod = "", allMethods) {
+    if(identical(formalArgs(def)[[1]], ".self"))
+        def <- externalRefMethod(def)
+    if(is(def, "externalRefMethod")) { # either just created or passed in as argument
+        ## the method just passes .self and its arguments to the actual method function
+        def@name <- name
+        def@refClassName <- Class
+        def@superClassMethod <- superClassMethod
+        return(def)
+    }
     depends <- .getGlobalFuns(def)
     ## find the field methods called ...
     if("usingMethods" %in% depends) { # including those declared
@@ -148,7 +155,14 @@ envRefSetField <- function(object, field,
 .initForEnvRefClass <- function(.Object, ...) {
     Class <- class(.Object)
     classDef <- getClass(Class)
-    selfEnv <- new.env(TRUE, .NamespaceOrPackage(classDef@package))
+    objectParent <- classDef@refMethods$.objectParent
+    if(is.null(objectParent)) {
+        ## This warning would be reasonable if we required re-installing packages for R 3.3.0
+        ## warning(
+        ##     gettextf("Class definition for Class \"%s\" doesn't have a parent environment for objects defined.\n A package  may need to be re-installed", Class))
+        objectParent <- .NamespaceOrPackage(classDef@package)
+    }
+    selfEnv <- new.env(TRUE, objectParent)
     ## the parent environment will be used by field methods, to make
     ## them consistent with functions in this class's package
     .Object@.xData <- selfEnv
@@ -186,7 +200,7 @@ envRefSetField <- function(object, field,
         }
     }
     if(is.function(classDef@refMethods$finalize))
-        reg.finalizer(selfEnv, function(x) x$.self$finalize())
+        reg.finalizer(selfEnv, function(x) x$.self$finalize(), TRUE)
     lockBinding(".self", selfEnv)
     lockBinding(".refClassDef", selfEnv)
     .Object
@@ -284,7 +298,7 @@ Class.  No effect on the object itself.
                  value
              }
              else if(is(classDef, "classRepresentation")) # use standard S4 as()
-                 methods::as(.self, Class)
+                  methods::as(.self, Class)
              else if(is.character(Class) && length(Class) == 1)
                  stop(gettextf("%s is not a defined class in this environment",
                                dQuote(Class)),
@@ -349,12 +363,12 @@ that class itself, but then you could just overrwite the object).
          },
          getRefClass = function(Class = .refClassDef) methods::getRefClass(Class),
          getClass = function(...) if(nargs()) methods::getClass(...) else .refClassDef,
-         field = function(name, value) if(missing(value)) get(name, envir = .self) else {
+         field = function(name, value) if(missing(value)) base::get(name, envir = .self) else {
              if(is.na(match(name, names(.refClassDef@fieldClasses))))
                  stop(gettextf("%s is not a field in this class",
                                sQuote(name)),
                       domain = NA)
-             assign(name, value, envir = .self)
+             base::assign(name, value, envir = .self)
          },
          trace = function(..., classMethod = FALSE) {
              ' Insert trace debugging for the specified method.  The arguments are
@@ -405,6 +419,9 @@ makeEnvRefMethods <- function() {
         methods[[method]] <- makeClassMethod(methods[[method]],
                    method, "envRefClass", "", allMethods)
     }
+    ## some values to bootstrap the parent environment for objects
+    methods$.objectParent <- .methodsNamespace
+    methods$.objectPackage <- "methods"
     methods
 }
 
@@ -441,6 +458,7 @@ makeEnvRefMethods <- function() {
     ## class to mark uninitialized fields
     setClass("uninitializedField",
              representation(field = "character", className = "character"))
+    ## class for (internal) ref. methods, with object as function's environment
     setClass("refMethodDef",
              representation(mayCall = "character", name = "character",
                             refClassName = "character",
@@ -449,6 +467,11 @@ makeEnvRefMethods <- function() {
     ## and make a traceable version of the class
     .makeTraceClass(.traceClassName("refMethodDef"), "refMethodDef", FALSE)
     setIs("refMethodDef", "SuperClassMethod", where = envir)
+    ## external ref. methods with explicit .self argument, standard environment
+    gen <- setClass("externalRefMethod",
+         slots = c(actual = "function"),
+                    contains = "refMethodDef", where = envir)
+    assign("externalRefMethod", gen, envir = envir)
     setClass("envRefClass", contains = c("environment","refClass"), where =envir)
     ## bootstrap envRefClass as a refClass
     def <- new("refClassRepresentation",
@@ -485,6 +508,17 @@ makeEnvRefMethods <- function() {
               function(object) showRefClassDef(object$def, "Generator for class"),
               where = envir)
     setMethod("show", "refMethodDef", showClassMethod, where = envir)
+    setMethod("show", "externalRefMethod", showClassMethod, where = envir)
+    setMethod("initialize", "externalRefMethod",
+              function(.Object, def, ...) {
+                  .Object@.Data <- eval(substitute(
+                      function(...) {
+                          .f <- DEF
+                          .f(.self, ...)
+                      }, list(DEF = def)))
+                  .Object@actual <- def
+                  callNextMethod(.Object, ...)
+              }, where = envir)
     ## Now do "localRefClass"; doesn't need to be precisely here
     ## but this ensures it is not done too early or too late
     setRefClass("localRefClass", methods = .localRefMethods,
@@ -513,16 +547,34 @@ getRefSuperClasses <- function(classes, classDefs) {
     unique(supers)
 }
 
+.getMethodDefs <- function(what, env) {
+    methods <- objects(envir = env, all.names = TRUE)
+    missing <- is.na(match(what, methods))
+    if(any(missing)) {
+        warning(gettextf(
+            "Methods not found: %s", paste(dQuote(methods[missing]), collapse = ", ")))
+        what <- what[!missing]
+    }
+    if(length(what) < 1)
+        return(NULL)
+    else if(length(what) == 1)
+        get(what, envir = env)
+    else
+        lapply(what, function(x) get(x, envir = env))
+}
+
 .GeneratorMethods <- list(methods =  function(...) {
     methodsEnv <- def@refMethods
     if(nargs() == 0)
         return(sort(names(methodsEnv)))
+    methodDefs <- list(...)
+    if(nargs() == 1 && is(methodDefs[[1]], "character"))
+        return(.getMethodDefs(methodDefs[[1]], methodsEnv))
     if(methods:::.classDefIsLocked(def))
         stop(gettextf("the definition of class %s in package %s is locked, methods may not be redefined",
                       dQuote(def@className),
                       sQuote(def@package)),
              domain = NA)
-    methodDefs <- list(...)
     ## allow either name=function, ... or a single list
     if(length(methodDefs) == 1 && is.list(methodDefs[[1]]))
         methodDefs <- methodDefs[[1]]
@@ -653,7 +705,7 @@ accessors = function(...) {
     methods(accessors)
     invisible(accessors)
 }
-)
+)## end{ .GeneratorMethods }
 
 .localRefMethods <-
     list(
@@ -718,6 +770,7 @@ class method modifies a field.
             if(missing(value))
                 dummyFieldName
             else {
+                ## this is not eval()ed in this namespace
                 methods:::.setDummyField(.self, dummyField, dummyClass, thisField, TRUE, value)
                 value
             }
@@ -728,6 +781,7 @@ class method modifies a field.
             if(missing(value))
                 dummyFieldName
             else {
+                ## this is not eval()ed in this namespace
                 methods:::.setDummyField(.self, dummyField, dummyClass, thisField, FALSE, value)
                 value
             }
@@ -749,12 +803,15 @@ class method modifies a field.
     if(is(value, fieldClass))
         value <- as(value, fieldClass, strict = FALSE) # could be more efficient?
     else
-        stop(gettextf("invalid assignment for reference class field %s, should be from class %s or a subclass (was class %s)",
-                       sQuote(fieldName), dQuote(fieldClass), dQuote(class(value))), call. = FALSE)
+        stop(gettextf(
+	"invalid assignment for reference class field %s, should be from class %s or a subclass (was class %s)",
+		      sQuote(fieldName), dQuote(fieldClass), dQuote(class(value))),
+             call. = FALSE)
     selfEnv <- as.environment(self)
     if(onceOnly) {
         if(bindingIsLocked(metaName, selfEnv))
-            stop(gettextf("invalid replacement: reference class field %s is read-only", sQuote(fieldName)),
+            stop(gettextf("invalid replacement: reference class field %s is read-only",
+                          sQuote(fieldName)),
                  call. = FALSE)
         else {
             assign(metaName, value, envir = selfEnv)
@@ -874,19 +931,14 @@ insertClassMethods <- function(methods, Class, value, fieldNames, returnAll) {
     theseMethods <- names(value)
     prevMethods <- names(methods) # catch refs to inherited methods as well
     allMethods <- unique(c(theseMethods, prevMethods))
-    if(returnAll)
-        returnMethods <- methods
-    else
-        returnMethods <- value
+    returnMethods <- if(returnAll) methods else value
     check <- TRUE
     for(method in theseMethods) {
         prevMethod <- methods[[method]] # NULL or superClass method
         if(is.null(prevMethod)) {
             ## kludge because default version of $initialize() breaks bootstrapping of methods package
-            if(identical(method, "initialize"))
-                superClassMethod <- "initFields"
-            else
-                superClassMethod <- ""
+            superClassMethod <- if(identical(method, "initialize"))
+                "initFields" else ""
         }
         else if(identical(prevMethod@refClassName, Class))
             superClassMethod <- prevMethod@superClassMethod
@@ -920,6 +972,7 @@ setRefClass <- function(Class, fields = character(),
                         contains = character(),
                         methods = list(),
                         where = topenv(parent.frame()),
+                        inheritPackage = FALSE,
                         ...) {
     fields <- inferProperties(fields, "field")
 ##    theseMethods <- names(methods) # non-inherited, for processing later
@@ -945,6 +998,8 @@ setRefClass <- function(Class, fields = character(),
                     refMethods = as.environment(refMethods),
                     fieldPrototypes = as.environment(fieldPrototypes),
                     refSuperClasses = refSuperClasses)
+    .setObjectParent(classDef@refMethods,
+          if(inheritPackage) refSuperClasses else NULL, where)
     assignClassDef(Class, classDef, where)
     generator <- new("refGeneratorSlot")
     env <- as.environment(generator)
@@ -1009,7 +1064,10 @@ showClassMethod <- function(object) {
     if(!.identC(cl, "refMethodDef"))
         cat(sprintf(" (class %s)", dQuote(cl)))
     cat(sprintf(" for method %s()\n", object@name))
-    show(as(object, "function"))
+    if(is(object, "externalRefMethod"))
+        show(object@actual)
+    else
+        show(as(object, "function"))
     if(length(object@mayCall))
         .printNames("\nMethods used: ", object@mayCall)
 }
@@ -1056,10 +1114,9 @@ showRefClassDef <- function(object, title = "Reference Class") {
 
 .mergeAssigns <- function(previous, new) {
     for(what in names(new)) {
-        if(is.null(previous[[what]]))
-            previous[[what]] <- new[[what]]
-        else
-            previous[[what]] <- paste(previous[[what]], new[[what]], sep="; ")
+	previous[[what]] <-
+	    if(is.null(previous[[what]])) new[[what]]
+	    else paste(previous[[what]],  new[[what]], sep="; ")
     }
     previous
 }
@@ -1196,6 +1253,41 @@ showRefClassDef <- function(object, title = "Reference Class") {
     }
     .setLockedFieldNames(def, lockedFields)
     invisible(env)
+}
+
+## set ".objectParent" as the parent environment for objects from this ref. class.
+## If there are no ref superclasses from another package, it will be "where", normally
+## the namespace of this package; otherwise it will be the .objectParent from the
+## superclass(es).  These must agree.
+## Also sets .objectPackage with the package name, for infomation purposes
+.setObjectParent <- function(refMethods, refSuperClasses, where) {
+    env <- empty <- emptyenv()
+    for(cl in refSuperClasses) {
+        if(identical(cl, "envRefClass"))
+            break # finished all application classes
+        clRefMethods <- getClass(cl)@refMethods
+        clEnv <- clRefMethods$.objectParent
+        if(identical(env, empty)) { # use this one
+            env <- clEnv
+            pkg <- clRefMethods$.objectPackage
+        }
+        else if(!identical(clEnv, env)) {
+            .nQuote <- function(what) paste0('"', what, '"')
+            stop(gettextf("Reference superclasses must come from the same package for the environment to be defined:  got %s and %s",
+                          .nQuote(clRefMethods$.objectPackage), .nQuote(pkg)))
+        }
+    }
+    if(identical(env, empty)) {
+        pkg <- where$.packageName
+        if(is.null(pkg))
+            pkg <- ".GlobalEnv"
+        refMethods$.objectParent <- where
+        refMethods$.objectPackage <- pkg
+    }
+    else {
+        refMethods$.objectParent <- env
+        refMethods$.objectPackage <- pkg
+    }
 }
 
 ## declare field and method names global to avoid spurious

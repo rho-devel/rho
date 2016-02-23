@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2014   The R Core Team
+ *  Copyright (C) 1998-2015   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file main.cpp
@@ -216,7 +216,7 @@ static RObject* R_ReplFile_impl(FILE *fp, SEXP rho)
     ParseStatus status;
     int count=0;
     std::size_t savestack;
-    
+
     R_InitSrcRefState();
     savestack = ProtectStack::size();
     for(;;) {
@@ -364,7 +364,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 
     ProtectStack::restoreSize(savestack);
     R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &state->status);
-    
+
     switch(state->status) {
 
     case PARSE_NULL:
@@ -392,7 +392,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 		    return 0;
 		}
 	    }
-	    /* PR#15770 We don't want to step into expressions entered at the debug prompt. 
+	    /* PR#15770 We don't want to step into expressions entered at the debug prompt.
 	       The 'S' will be changed back to 's' after the next eval. */
 	    if (R_BrowserLastCommand == 's') R_BrowserLastCommand = 'S';  
 	    R_Visible = FALSE;
@@ -415,6 +415,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 	    state->prompt_type = 1;
 	    return(1);
 	}
+
     case PARSE_ERROR:
 
 	state->prompt_type = 1;
@@ -451,8 +452,11 @@ static RObject* R_ReplConsole_impl(SEXP rho, int savestack)
 	REprintf(" >R_ReplConsole(): before \"for(;;)\" {main.c}\n");
     for(;;) {
 	status = Rf_ReplIteration(rho, savestack, &state);
-	if(status < 0)
+	if(status < 0) {
+	  if (state.status == PARSE_INCOMPLETE)
+	    error(_("unexpected end of input"));
 	  return nullptr;
+	}
     }
 }
 
@@ -848,7 +852,7 @@ void setup_Rmainloop(void)
     /* In case this is a silly limit: 2^32 -3 has been seen and
      * casting to intptr_r relies on this being smaller than 2^31 on a
      * 32-bit platform. */
-    if(R_CStackLimit > 100000000U) 
+    if(R_CStackLimit > 100000000U)
 	R_CStackLimit = (uintptr_t)-1;
     /* make sure we have enough head room to handle errors */
     if(R_CStackLimit != -1)
@@ -864,7 +868,7 @@ void setup_Rmainloop(void)
 	char *p, Rlocale[1000]; /* Windows' locales can be very long */
 	p = getenv("LC_ALL");
 	strncpy(Rlocale, p ? p : "", 1000);
-        Rlocale[1000 - 1] = '\0';
+	Rlocale[1000 - 1] = '\0';
 	if(!(p = getenv("LC_CTYPE"))) p = Rlocale;
 	/* We'd like to use warning, but need to defer.
 	   Also cannot translate. */
@@ -943,7 +947,8 @@ void setup_Rmainloop(void)
     InitGraphics();
     InitTypeTables(); /* must be before InitS3DefaultTypes */
     InitS3DefaultTypes();
-    
+    PrintDefaults();
+
     R_Is_Running = 1;
     R_check_locale();
 
@@ -1092,8 +1097,10 @@ void setup_Rmainloop(void)
 	REprintf(_("During startup - "));
 	PrintWarnings();
     }
+    if(R_Verbose)
+	REprintf(" ending setup_Rmainloop(): R_Interactive = %d {main.c}\n",
+		 R_Interactive);
 
-    /* trying to do this earlier seems to run into bootstrapping issues. */
     R_Is_Running = 2;
 }
 
@@ -1177,11 +1184,11 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	} else if (!strcmp(expr, "f")) {
 	    rval = 1;
 	    RCNTXT *cntxt = R_GlobalContext;
-	    while (cntxt != R_ToplevelContext 
+	    while (cntxt != R_ToplevelContext
 		      && !(cntxt->callflag & (CTXT_RETURN | CTXT_LOOP))) {
 		cntxt = cntxt->nextcontext;
 	    }
-	    cntxt->browserfinish = 1;	    
+	    cntxt->browserfinish = 1;
 	    SET_ENV_DEBUG(rho, CXXRTRUE);
 	    R_BrowserLastCommand = 'f';
 #endif
@@ -1200,7 +1207,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	} else if (!strcmp(expr, "s")) {
 	    rval = 1;
 	    SET_ENV_DEBUG(rho, CXXRTRUE);
-	    R_BrowserLastCommand = 's';	    
+	    R_BrowserLastCommand = 's';
 	} else if (!strcmp(expr, "where")) {
 	    rval = 2;
 	    printwhere();
@@ -1211,6 +1218,16 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
     return rval;
 }
 
+/* There's another copy of this in eval.c */
+static void PrintCall(SEXP call, SEXP rho)
+{
+    int old_bl = R_BrowseLines,
+	blines = asInteger(GetOption1(install("deparse.max.lines")));
+    if(blines != NA_INTEGER && blines > 0)
+	R_BrowseLines = blines;
+    PrintValueRec(call, rho);
+    R_BrowseLines = old_bl;
+}
 
 /* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L)
  * ------- but also called from ./eval.c */
@@ -1220,6 +1237,9 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> topExp(R_CurrentExpr);
     SEXP ap;
     RObject* ans = nullptr;
+
+    /* Cannot call checkArity(op, args), because "op" may be a closure  */
+    /* or a primitive other than "browser".  */
 
     /* argument matching */
     GCStackRoot<> argList; 
@@ -1235,15 +1255,15 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SETCAR(argList, mkString(""));
     if(CADR(argList) == R_MissingArg)
 	SETCAR(CDR(argList), R_NilValue);
-    if(CADDR(argList) == R_MissingArg) 
+    if(CADDR(argList) == R_MissingArg)
 	SETCAR(CDDR(argList), ScalarLogical(1));
-    if(CADDDR(argList) == R_MissingArg) 
+    if(CADDDR(argList) == R_MissingArg)
 	SETCAR(CDDDR(argList), ScalarInteger(0));
 
 
     /* return if 'expr' is not TRUE */
     if( !asLogical(CADDR(argList)) ) {
-        return R_NilValue;
+	return R_NilValue;
     }
 
     Browser browser(CAR(argList), CADR(argList));
@@ -1256,15 +1276,11 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!ENV_DEBUG(rho)) {
 	ClosureContext* cptr = ClosureContext::innermost();
 	Rprintf("Called from: ");
-
-	int tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
-	if(tmp != R_NaInt && tmp > 0) R_BrowseLines = tmp;
-        if( cptr ) {
-	    PrintValueRec(CXXRCCAST(Expression*, cptr->call()),rho);
+	if( cptr ) {
+	    PrintCall(const_cast<Expression*>(cptr->call()), rho);
  	    SET_ENV_DEBUG(cptr->workingEnvironment(), TRUE);
-	}
-        else
-            Rprintf("top level \n");
+	} else
+	    Rprintf("top level \n");
 
 	R_BrowseLines = 0;
     }
@@ -1704,7 +1720,7 @@ void attribute_hidden dummy12345(void)
 
 /* Used in unix/system.c, avoid inlining by using an extern there.
 
-   This is intended to return a local address.  
+   This is intended to return a local address.
    Use -Wno-return-local-addr when compiling.
  */
 extern "C"

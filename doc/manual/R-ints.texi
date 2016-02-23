@@ -1114,8 +1114,8 @@ functions are defined and also in file @file{size.c} which needs access
 to the sizes of the internal structures.)
 
 For background papers see
-@uref{http://www.stat.uiowa.edu/~luke/R/barrier.html} and
-@uref{http://www.stat.uiowa.edu/~luke/R/gengcnotes.html}.
+@uref{http://homepage.stat.uiowa.edu/~luke/R/barrier.html} and
+@uref{http://homepage.stat.uiowa.edu/~luke/R/gengcnotes.html}.
 
 @node Serialization Formats, Encodings for CHARSXPs, The write barrier, R Internal Structures
 @section Serialization Formats
@@ -1479,7 +1479,7 @@ only the visible methods will be cached.
 @subsection Mechanics of S4 dispatch
 
 This subsection does not discuss how S4 methods are chosen: see
-@uref{http://@/developer.@/r-project.org/howMethodsWork.pdf}.
+@uref{https://@/developer.@/r-project.org/howMethodsWork.pdf}.
 
 For all but primitive functions, setting a method on an existing
 function that is not itself S4 generic creates a new object in the
@@ -2442,7 +2442,7 @@ top-level @file{po} directory.
 @section OS X GUI
 
 This is handled separately: see
-@uref{http://developer.r-project.org/Translations.html}.
+@uref{https://developer.r-project.org/Translations30.html}.
 
 
 @node Updating,  , OS X GUI, Internationalization in the R sources
@@ -2567,7 +2567,7 @@ File @file{data.rds} records a two-column character matrix with columns
 of dataset names and titles from the corresponding help file.  File
 @file{demo.rds} has the same structure for package demos.
 
-File @file{vignette.rds} records a dataframe with one row for each
+File @file{vignette.rds} records a data frame with one row for each
 `vignette' (@file{.[RS]nw} file in @file{inst/doc}) and with columns
 @samp{File} (the full file path in the sources), @samp{Title},
 @samp{PDF} (the pathless file name of the installed PDF version, if
@@ -2699,8 +2699,8 @@ that in S and whose @R{} code@footnote{The C code is in files
 @pkg{graphics}) and one implemented in package @pkg{grid}.
 
 Some notes on the historical changes can be found at
-@uref{http://www.stat.auckland.ac.nz/@/~paul/@/R/basegraph.html} and
-@uref{http://www.stat.auckland.ac.nz/@/~paul/R/@/graphicsChanges.html}.
+@uref{https://www.stat.auckland.ac.nz/@/~paul/@/R/basegraph.html} and
+@uref{https://www.stat.auckland.ac.nz/@/~paul/R/@/graphicsChanges.html}.
 
 At the lowest level is a graphics device, which manages a plotting
 surface (a screen window or a representation to be written to a file).
@@ -3251,7 +3251,7 @@ returned.  C functions @code{doMouseEvent} and @code{doKeybd} are
 provided to call the R event handlers @code{onMouseDown},
 @code{onMouseMove}, @code{onMouseUp}, and @code{onKeybd} and set
 @code{eventEnv$result} during this step.  Finally, @code{initEvent} is
-called again with @code{init=false} to inform the the devices that the
+called again with @code{init=false} to inform the devices that the
 loop is done, and the result is returned to the user.
 
 @node Specific devices,  , Graphics events, Graphics devices
@@ -3810,8 +3810,8 @@ interactively.
 Default: true.
 @item _R_CHECK_VIGNETTES_NLINES_
 Maximum number of lines to show at the bottom of the output when reporting
-errors in running vignettes.
-Default: 10.
+errors in running or re-building vignettes.
+Default: 10 for running, 25 for re-building.
 @item _R_CHECK_CODOC_S4_METHODS_
 Control whether @code{codoc()} testing is also performed on S4 methods.
 Default: true.
@@ -3919,17 +3919,19 @@ to a valid program, or @command{gs} (or on Windows,
 Default: false (but true for CRAN submission checks).
 @item _R_CHECK_ALWAYS_LOG_VIGNETTE_OUTPUT_
 By default the output from running the @R{} code in the vignettes is
-kept only if there is an error.
+kept only if there is an error.  As from @R{} 3.3.0 this also applies to
+the @file{build_vignettes.log} log from the re-building of vignettes.
 Default: false.
 @item _R_CHECK_CLEAN_VIGN_TEST_
-Should the @file{vign_test} directory be removed if the test is successful?
+Should the @file{vign_test} directory be removed if the test is
+successful?
 Default: true.
 @item _R_CHECK_REPLACING_IMPORTS_
 Should warnings about replacing imports be reported?  These sometimes come
 from auto-generated @file{NAMESPACE} files in other packages, but most
 often from importing the whole of a namespace rather than using
 @code{importFrom}.
-Default: false (but true for CRAN submission checks).
+Default: true.
 @item _R_CHECK_UNSAFE_CALLS_
 Check for calls that appear to tamper with (or allow tampering with)
 already loaded code not from the current package: such calls may well
@@ -4068,6 +4070,11 @@ If set, check code usage (via @CRANpkg{codetools}) directly on the
 package namespace without loading and attaching the package and its
 suggests and enhances.
 Default: true (and true for CRAN submission checks).
+
+@item _R_CHECK_CODE_USAGE_WITH_ONLY_BASE_ATTACHED_
+If set, check code usage (via @CRANpkg{codetools}) with only the base
+package attached.
+Default: true.
 
 @item _R_CHECK_EXIT_ON_FIRST_ERROR_
 If set to a true value, the check will exit on the first error.
@@ -4448,7 +4455,7 @@ introduce `long' versions @code{xlength} and @code{XLENGTH} which return
 @code{R_xlen_t} values.
 
 
-See also @uref{http://www.cs.uiowa.edu/~luke/talks/useR10.pdf}.
+See also @uref{http://homepage.cs.uiowa.edu/~luke/talks/useR10.pdf}.
 
 @node Large matrices,  , 64-bit types, Current and future directions
 @section Large matrices

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009-12 The R Core Team.
+ *  Copyright (C) 2009-2015 The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This is a small HTTP server that serves requests by evaluating
@@ -64,12 +64,10 @@
 # ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 # endif
-# ifdef HAVE_BSD_NETWORKING
-#  include <netdb.h>
-#  include <sys/socket.h>
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-# endif
+# include <netdb.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
 # include <errno.h>
 
 # define sockerrno errno
@@ -539,7 +537,9 @@ static SEXP handler_for_path(const char *path) {
 	    /* we cache custom_handlers_env so in case it has not been loaded yet, fetch it */
 	    if (!custom_handlers_env) {
 		if (!R_HandlersName) R_HandlersName = install(".httpd.handlers.env");
-		custom_handlers_env = eval(R_HandlersName, R_FindNamespace(mkString("tools")));
+		SEXP toolsNS = PROTECT(R_FindNamespace(mkString("tools")));
+		custom_handlers_env = eval(R_HandlersName, toolsNS);
+		UNPROTECT(1); /* toolsNS */
 	    }
 	    /* we only proceed if .httpd.handlers.env really exists */
 	    if (TYPEOF(custom_handlers_env) == ENVSXP) {
@@ -584,7 +584,10 @@ static void process_request_(void *ptr)
 	DBG(Rprintf("eval(try(httpd('%s'),silent=TRUE))\n", c->url));
 	
 	/* evaluate the above in the tools namespace */
-	x = PROTECT(eval(x, R_FindNamespace(mkString("tools"))));
+	SEXP toolsNS = PROTECT(R_FindNamespace(mkString("tools")));
+	x = eval(x, toolsNS);
+	UNPROTECT(1); /* toolsNS */
+	PROTECT(x);
 
 	/* the result is expected to have one of the following forms:
 
@@ -681,6 +684,7 @@ static void process_request_(void *ptr)
 				    free(fbuf);
 				    UNPROTECT(7);
 				    c->attr |= CONNECTION_CLOSE;
+				    fclose(f);
 				    return;
 				}
 				send_response(c->sock, fbuf, rd);
@@ -690,6 +694,7 @@ static void process_request_(void *ptr)
 			} else { /* allocation error - get out */
 			    UNPROTECT(7);
 			    c->attr |= CONNECTION_CLOSE;
+			    fclose(f);
 			    return;
 			}
 		    }
@@ -951,7 +956,11 @@ static void worker_input_handler(void *data) {
 			    }
 			    if (!strcmp(bol, "content-type")) {
 				char *l = k;
-				while (*l) { if (*l >= 'A' && *l <= 'Z') *l |= 0x20; l++; }
+				/* convert content-type to lowercase to facilitate comparison
+				   since MIME types are case-insensitive.
+				   However, we have to stop at ; since parameters
+				   may be case-sensitive (see PR 16541) */
+				while (*l && *l != ';') { if (*l >= 'A' && *l <= 'Z') *l |= 0x20; l++; }
 				c->attr |= CONTENT_TYPE;
 				if (c->content_type) free(c->content_type);
 				c->content_type = strdup(k);

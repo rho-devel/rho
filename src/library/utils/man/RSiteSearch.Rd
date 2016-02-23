@@ -1,5 +1,5 @@
 % File src/library/utils/man/RSiteSearch.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2010 R Core Team
 % Distributed under GPL 2 or later
 
@@ -28,6 +28,7 @@ RSiteSearch(string,
     search.  If the words are to be searched as one entity, enclose all
     words in braces (see the first example).}
   \item{restrict}{a character vector, typically of length greater than one.
+    Values can be abbreviated.
     Possible areas to search in:
     \code{functions} for help pages,
     \code{views} for task views and

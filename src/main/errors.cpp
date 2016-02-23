@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file errors.cpp
@@ -985,7 +985,7 @@ SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::B
 SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* msg1_, CXXR::RObject* msg2_, CXXR::RObject* domain_)
 {
 #ifdef ENABLE_NLS
-    const char *domain = "";
+    const char *domain = "", *cfn;;
     char *buf;
     SEXP ans, sdom = domain_;
 #endif
@@ -1000,18 +1000,26 @@ SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::
 
 #ifdef ENABLE_NLS
     if(isNull(sdom)) {
-	ClosureContext *cptr;
-	SEXP rho = R_BaseEnv;
-	cptr = ClosureContext::innermost(Evaluator::Context::innermost()->nextOut());
-	if (cptr)
-	    rho = cptr->workingEnvironment();
+	Environment* rho;
+
+	for(ClosureContext *cptr = ClosureContext::innermost(
+		Evaluator::Context::innermost()->nextOut());
+	    cptr != NULL;
+	    cptr = ClosureContext::innermost(cptr->nextOut()))
+	{
+	    /* stop() etc have internal call to .makeMessage */
+	    cfn = CHAR(STRING_ELT(deparse1s(cptr->call()->car()), 0));
+		if(streql(cfn, "stop") || streql(cfn, "warning")
+		   || streql(cfn, "message")) continue;
+		rho = cptr->workingEnvironment();
+	}
 	while(rho != R_EmptyEnv) {
 	    if (rho == R_GlobalEnv) break;
 	    else if (R_IsNamespaceEnv(rho)) {
 		domain = translateChar(STRING_ELT(R_NamespaceEnvSpec(rho), 0));
 		break;
 	    }
-	    rho = ENCLOS(rho);
+	    rho = rho->enclosingEnvironment();
 	}
 	if(strlen(domain)) {
 	    size_t len = strlen(domain)+3;
@@ -1073,6 +1081,7 @@ SEXP attribute_hidden NORET do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 /* error(.) : really doesn't return anything; but all do_foo() must be SEXP */
     SEXP c_call;
+    checkArity(op, args);
 
     if(asLogical(CAR(args))) /* find context -> "Error in ..:" */
 	c_call = findCall();
@@ -1095,6 +1104,7 @@ SEXP attribute_hidden NORET do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_warning(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP c_call;
+    checkArity(op, args);
 
     if(asLogical(CAR(args))) /* find context -> "... in: ..:" */
 	c_call = findCall();
@@ -1274,12 +1284,12 @@ SEXP R_GetTraceback(int skip)
 SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
 {
     int skip;
-    
+
     skip = asInteger(x_);
-    
+
     if (skip == NA_INTEGER || skip < 0 )
-    	error(_("invalid '%s' value"), "skip");
-    	
+	error(_("invalid '%s' value"), "skip");
+
     return R_GetTraceback(skip);
 }
 
@@ -1841,7 +1851,7 @@ do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
     return R_NilValue;
 }
 
-/* These functions are to be used in error messages, and available for others to use in the API 
+/* These functions are to be used in error messages, and available for others to use in the API
    GetCurrentSrcref returns the first non-NULL srcref after skipping skip of them.  If it
    doesn't find one it returns NULL. */
 
@@ -1851,15 +1861,15 @@ R_GetCurrentSrcref(int skip)
     FunctionContext* c = FunctionContext::innermost();
     SEXP srcref = R_Srcref;
     if (skip < 0) { /* to count up from the bottom, we need to count them all first */
-    	while (c) {
-    	    if (srcref && srcref != R_NilValue) 
+	while (c) {
+	    if (srcref && srcref != R_NilValue)
 		skip++;
 	    srcref = c->sourceLocation();
 	    c = FunctionContext::innermost(c->nextOut());
-    	};
-    	if (skip < 0) return R_NilValue; /* not enough there */
+	};
+	if (skip < 0) return R_NilValue; /* not enough there */
 	c = FunctionContext::innermost();
-    	srcref = R_Srcref;
+	srcref = R_Srcref;
     }
     while (c && (skip || !srcref)) {
     	if (srcref) 
@@ -1868,20 +1878,20 @@ R_GetCurrentSrcref(int skip)
 	c = FunctionContext::innermost(c->nextOut());
     }
     if (skip || !srcref)
-    	srcref = R_NilValue;
+	srcref = R_NilValue;
     return srcref;
 }
 
 /* Return the filename corresponding to a srcref, or "" if none is found */
 
-SEXP 
+SEXP
 R_GetSrcFilename(SEXP srcref)
 {
     SEXP srcfile = getAttrib(srcref, R_SrcfileSymbol);
-    if (TYPEOF(srcfile) != ENVSXP) 
-    	return ScalarString(mkChar(""));
-    srcfile = findVar(install("filename"), srcfile);	
+    if (TYPEOF(srcfile) != ENVSXP)
+	return ScalarString(mkChar(""));
+    srcfile = findVar(install("filename"), srcfile);
     if (TYPEOF(srcfile) != STRSXP)
-        return ScalarString(mkChar(""));
+	return ScalarString(mkChar(""));
     return srcfile;
 }

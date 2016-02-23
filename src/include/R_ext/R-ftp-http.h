@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-2014 The R Core Team.
+ *  Copyright (C) 2001-2016 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* Advertized entry points, for that part of libxml included in
@@ -34,7 +34,13 @@
   allow for 'large' files (>= 2GB) on 32-bit systems, where supported.
 */
 /* required by C99/C11 */
-#include <stdint.h>
+#ifndef NO_C_HEADERS
+# ifdef __cplusplus
+#  include <cstdint>
+# else
+#  include <stdint.h>
+# endif
+#endif
 typedef int_fast64_t DLsize_t; // used for download lengths and sizes
 
 #ifdef __cplusplus

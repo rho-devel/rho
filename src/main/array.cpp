@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2014   The R Core Team
- *  Copyright (C) 2002-2008   The R Foundation
+ *  Copyright (C) 1998-2015   The R Core Team
+ *  Copyright (C) 2002-2015   The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -34,7 +34,9 @@
 #include <Rmath.h>
 #include <R_ext/RS.h>     /* for Calloc/Free */
 #include <R_ext/Applic.h> /* for dgemm */
+#include <R_ext/Itermacros.h>
 
+#include "duplicate.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/Subscripting.hpp"
@@ -75,6 +77,7 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
     R_xlen_t lendat;
 
+    op->checkNumArgs(num_args, call);
     vals = args[0]; args = (args + 1);
     switch(TYPEOF(vals)) {
 	case LGLSXP:
@@ -193,14 +196,14 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    }
 	    break;
 	case RAWSXP:
-	    memset(RAW(ans), 0, N);
+	    if (N) memset(RAW(ans), 0, N);
 	    break;
 	default:
 	    /* don't fill with anything */
 	    ;
 	}
     }
-    if(!isNull(dimnames)&& length(dimnames) > 0)
+    if(!isNull(dimnames) && length(dimnames) > 0)
 	ans = dimnamesgets(ans, dimnames);
     UNPROTECT(1);
     return ans;
@@ -339,7 +342,7 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	}
 	return(ans);
     }
-    
+
 
 #ifdef LONG_VECTOR_SUPPORT
     // or use IS_LONG_VEC
@@ -349,31 +352,48 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ScalarInteger(length(x));
 }
 
-static R_xlen_t getElementLength(SEXP x, R_xlen_t i, Expression* call,
-				 Environment* rho) {
-    return get_object_length(VECTOR_ELT(x, i), rho);
-}
-
-R_xlen_t get_object_length(RObject* object, Environment* rho)
+R_xlen_t get_object_length(RObject* x, Environment* rho)
 {
     static BuiltInFunction* length_op
 	= BuiltInFunction::obtainPrimitive("length");
+    // Create a call to length(x)
+    static Symbol* length = Symbol::obtain("length");
+    static Symbol* x_sym = Symbol::obtain("x");
+    static GCRoot<Expression> call = new Expression(length, new PairList(x_sym));
 
-    if (isObject(object))
+    if (isObject(x))
     {
-	// Create a call to length(x)
-	static Symbol* length = Symbol::obtain("length");
-	static Symbol* x = Symbol::obtain("x");
-	static Expression* call = new Expression(length, new PairList(x));
 	auto dispatched = length_op->InternalDispatch(
-	    call, rho, 1, &object, call->getArgs());
+	    call, rho, 1, &x, call->getArgs());
 	if (dispatched.first) {
 	    RObject* len = dispatched.second;
 	    return (R_xlen_t)
 		(TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
 	}
     }
-    return(xlength(object));
+    return(xlength(x));
+}
+
+static SEXP dispatch_subset2(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
+    static SEXP bracket_op = NULL;
+    SEXP args, x_elt;
+    if (isObject(x)) {
+        if (bracket_op == NULL)
+            bracket_op = R_Primitive("[[");
+        PROTECT(args = list2(x, ScalarReal(i + 1)));
+        x_elt = do_subset2(call, bracket_op, args, rho);
+        UNPROTECT(1);
+    } else {
+        x_elt = VECTOR_ELT(x, i);
+    }
+    return(x_elt);
+}
+
+// auxiliary for do_lengths_*(), i.e., R's lengths()
+static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call,
+				 Environment* rho) {
+    SEXP x_elt = dispatch_subset2(x, i, call, rho);
+    return(get_object_length(x_elt, rho));
 }
 
 static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
@@ -381,8 +401,8 @@ static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
     SEXP ans;
     R_xlen_t x_len, i;
     double *ans_elt;
-    
-    x_len = xlength(x);
+
+    x_len = get_object_length(x, rho);
     PROTECT(ans = allocVector(REALSXP, x_len));
     for (i = 0, ans_elt = REAL(ans); i < x_len; i++, ans_elt++) {
         *ans_elt = getElementLength(x, i, call, rho);
@@ -396,28 +416,47 @@ SEXP attribute_hidden do_lengths(/*const*/ CXXR::Expression* call, const CXXR::B
     SEXP x = args[0], ans;
     R_xlen_t x_len, i;
     int *ans_elt;
-
-    if (!isVectorList(x)) {
-        error(_("'x' must be a list"));
+    int useNames = asLogical(args[1]);
+    if (useNames == NA_LOGICAL)
+	error(_("invalid '%s' value"), "USE.NAMES");
+    bool isList = isVectorList(x) || isS4(x);
+    if(!isList) switch(TYPEOF(x)) {
+	case NILSXP:
+	case CHARSXP:
+	case LGLSXP:
+	case INTSXP:
+	case REALSXP:
+	case CPLXSXP:
+	case STRSXP:
+	case RAWSXP:
+	    break;
+	default:
+	    error(_("'%s' must be a list or atomic vector"), "x");
     }
-    
-    x_len = xlength(x);
+    x_len = get_object_length(x, rho);
     PROTECT(ans = allocVector(INTSXP, x_len));
-    for (i = 0, ans_elt = INTEGER(ans); i < x_len; i++, ans_elt++) {
-        R_xlen_t x_elt_len = getElementLength(x, i, call, rho);
+    if(isList) {
+	for (i = 0, ans_elt = INTEGER(ans); i < x_len; i++, ans_elt++) {
+	    R_xlen_t x_elt_len = getElementLength(x, i, call, rho);
 #ifdef LONG_VECTOR_SUPPORT
-        if (x_elt_len > INT_MAX) {
-            ans = do_lengths_long(x, call, rho);
-            break;
-        }
+	    if (x_elt_len > INT_MAX) {
+		ans = do_lengths_long(x, call, rho);
+		UNPROTECT(1);
+		PROTECT(ans);
+		break;
+	    }
 #endif
-        *ans_elt = (int)x_elt_len;
+	    *ans_elt = (int)x_elt_len;
+	}
+    } else { // atomic: every element has length 1
+	for (i = 0, ans_elt = INTEGER(ans); i < x_len; i++, ans_elt++)
+	    *ans_elt = 1;
+    }
+    if(useNames) {
+	SEXP names = getAttrib(x, R_NamesSymbol);
+	if(!isNull(names)) setAttrib(ans, R_NamesSymbol, names);
     }
     UNPROTECT(1);
-
-    SEXP names = getAttrib(x, R_NamesSymbol);
-    if(!isNull(names)) setAttrib(ans, R_NamesSymbol, names);
-    
     return ans;
 }
 
@@ -1220,10 +1259,21 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
     /* handle the resize */
     int resize = asLogical(resize_);
     if (resize == NA_LOGICAL) error(_("'resize' must be TRUE or FALSE"));
-    setAttrib(r, R_DimSymbol, resize ? dimsr : dimsa);
 
-    /* and handle the dimnames, if any */
+    /* and handle names(dim(.)) and the dimnames if any */
     if (resize) {
+	SEXP nmdm = getAttrib(dimsa, R_NamesSymbol);
+	if(nmdm != R_NilValue) { // dimsr needs correctly permuted names()
+	    PROTECT(nmdm);
+	    SEXP nm_dr = PROTECT(allocVector(STRSXP, n));
+	    for (i = 0; i < n; i++) {
+		SET_STRING_ELT(nm_dr, i, STRING_ELT(nmdm, pp[i]));
+	    }
+	    setAttrib(dimsr, R_NamesSymbol, nm_dr);
+	    UNPROTECT(2);
+	}
+	setAttrib(r, R_DimSymbol, dimsr);
+
 	PROTECT(dna = getAttrib(a, R_DimNamesSymbol));
 	if (dna != R_NilValue) {
 	    SEXP dnna, dnr, dnnr;
@@ -1247,6 +1297,8 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	}
 	UNPROTECT(1);
     }
+    else // !resize
+	setAttrib(r, R_DimSymbol, dimsa);
 
     UNPROTECT(3); /* dimsa, r, dimsr */
     return r;
@@ -1270,15 +1322,17 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
     keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
 
-    int OP = op->variant();
     switch (type = TYPEOF(x)) {
-    case LGLSXP: break;
-    case INTSXP: break;
+    case LGLSXP:
+    case INTSXP:
     case REALSXP: break;
     default:
 	error(_("'x' must be numeric"));
     }
+    if (n * (double)p > XLENGTH(x))
+    	error(_("'x' is too short")); /* PR#16367 */
 
+    int OP = op->variant();
     if (OP == 0 || OP == 1) { /* columns */
 	PROTECT(ans = allocVector(REALSXP, p));
 #ifdef _OPENMP
@@ -1461,28 +1515,28 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     switch(TYPEOF(vals)) {
     case LGLSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++)
-		LOGICAL(ans)[i] = LOGICAL(vals)[i % lendat];
+	    xcopyLogicalWithRecycle(LOGICAL(ans), LOGICAL(vals), 0, nans,
+				    lendat);
 	else
 	    for (i = 0; i < nans; i++) LOGICAL(ans)[i] = NA_LOGICAL;
 	break;
     case INTSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++)
-		INTEGER(ans)[i] = INTEGER(vals)[i % lendat];
+	    xcopyIntegerWithRecycle(INTEGER(ans), INTEGER(vals), 0, nans,
+				    lendat);
 	else
 	    for (i = 0; i < nans; i++) INTEGER(ans)[i] = NA_INTEGER;
 	break;
     case REALSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++) REAL(ans)[i] = REAL(vals)[i % lendat];
+	    xcopyRealWithRecycle(REAL(ans), REAL(vals), 0, nans, lendat);
 	else
 	    for (i = 0; i < nans; i++) REAL(ans)[i] = NA_REAL;
 	break;
     case CPLXSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++)
-		COMPLEX(ans)[i] = COMPLEX(vals)[i % lendat];
+	    xcopyComplexWithRecycle(COMPLEX(ans), COMPLEX(vals), 0, nans,
+				    lendat);
 	else {
 	    Rcomplex na_cmplx;
 	    na_cmplx.r = NA_REAL;
@@ -1492,22 +1546,20 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	break;
     case RAWSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++) RAW(ans)[i] = RAW(vals)[i % lendat];
+	    xcopyRawWithRecycle(RAW(ans), RAW(vals), 0, nans, lendat);
 	else
 	    for (i = 0; i < nans; i++) RAW(ans)[i] = 0;
 	break;
     /* Rest are already initialized */
     case STRSXP:
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++)
-		SET_STRING_ELT(ans, i, STRING_ELT(vals, i % lendat));
+	    xcopyStringWithRecycle(ans, vals, 0, nans, lendat);
 	break;
     case VECSXP:
     case EXPRSXP:
 #ifdef SWITCH_TO_REFCNT
 	if (nans && lendat)
-	    for (i = 0; i < nans; i++)
-		SET_VECTOR_ELT(ans, i, VECTOR_ELT(vals, i % lendat));
+	    xcopyVectorWithRecycle(ans, vals, 0, nans, lendat);
 #else
 	if (nans && lendat) {
 	    /* Need to guard against possible sharing of values under
@@ -1530,11 +1582,8 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     }
 
     ans = dimgets(ans, dims);
-    if (TYPEOF(dimnames) == VECSXP && LENGTH(dimnames)) {
-	PROTECT(ans);
+    if(!isNull(dimnames) && length(dimnames) > 0)
 	ans = dimnamesgets(ans, dimnames);
-	UNPROTECT(1);
-    }
 
     UNPROTECT(2);
     return ans;
@@ -1574,7 +1623,10 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
        Rcomplex *rx = COMPLEX(x), *ra = COMPLEX(ans), zero;
        zero.r = zero.i = 0.0;
        for (R_xlen_t i = 0; i < NR*nc; i++) ra[i] = zero;
-       for (int j = 0; j < mn; j++) ra[j * (NR+1)] = rx[j % nx];
+       R_xlen_t i, i1;
+       MOD_ITERATE1(mn, nx, i, i1, {
+	   ra[i * (NR+1)] = rx[i1];
+       });
   } else {
        if(TYPEOF(x) != REALSXP) {
 	   PROTECT(x = coerceVector(x, REALSXP));
@@ -1585,7 +1637,10 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
        R_xlen_t NR = nr;
        double *rx = REAL(x), *ra = REAL(ans);
        for (R_xlen_t i = 0; i < NR*nc; i++) ra[i] = 0.0;
-       for (int j = 0; j < mn; j++) ra[j * (NR+1)] = rx[j % nx];
+       R_xlen_t i, i1;
+       MOD_ITERATE1(mn, nx, i, i1, {
+	   ra[i * (NR+1)] = rx[i1];
+       });
    }
    UNPROTECT(nprotect);
    return ans;

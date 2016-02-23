@@ -63,7 +63,7 @@ namespace CXXR {
 	     */
 	    static void copyAttributes(VectorBase* to, const VectorBase* from)
 	    {
-		to->copyAttributes(from, true);
+		to->copyAttributes(from, RObject::Duplicate::DEEP);
 	    }
 	};
 

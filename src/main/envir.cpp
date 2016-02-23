@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *
@@ -517,7 +517,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 
 
 /*
-   ddVal:
+   ddVal ("dot-dot-value"):
    a function to take a name and determine if it is of the form
    ..x where x is an integer; if so x is returned otherwise 0 is returned
 */
@@ -1359,6 +1359,7 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
     }
 }
 
+// .Internal(ls(envir, all.names, sorted)) :
 SEXP attribute_hidden do_ls(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* envir_, CXXR::RObject* all_names_, CXXR::RObject* sorted_)
 {
     RObject* env = envir_;
@@ -1372,7 +1373,7 @@ SEXP attribute_hidden do_ls(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
     return R_lsInternal3(env, Rboolean(all), Rboolean(sort_nms));
 }
 
-/* takes a *list* of environments, a boolean indicating whether to get all
+/* takes an environment, a boolean indicating whether to get all
    names and a boolean if sorted is desired */
 SEXP R_lsInternal3(SEXP env, Rboolean all, Rboolean sorted)
 {
@@ -1474,16 +1475,24 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     k2 = 0;
     FrameValues(framelist, all, tmp2, &k2);
 
+    static Symbol* Xsym = Symbol::obtain("X");
+    static Symbol* isym = Symbol::obtain("i");
+
     PROTECT(ind = allocVector(INTSXP, 1));
     /* tmp :=  `[`(<elist>, i) */
     PROTECT(tmp = LCONS(R_Bracket2Symbol,
-			CONS(tmp2, CONS(ind, R_NilValue))));
+			CONS(Xsym, CONS(ind, R_NilValue))));
     /* fcall :=  <FUN>( tmp, ... ) */
     PROTECT(R_fcall = LCONS(FUN, CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
+    defineVar(Xsym, tmp2, rho);
+    SET_NAMED(tmp2, 1);
+    defineVar(isym, ind, rho);
+    SET_NAMED(ind, 1);
+
     for(i = 0; i < k2; i++) {
 	INTEGER(ind)[0] = i+1;
-	SEXP tmp = eval(R_fcall, rho);
+	SEXP tmp = R_forceAndCall(R_fcall, 1, rho);
 	if (MAYBE_REFERENCED(tmp))
 	    tmp = lazy_duplicate(tmp);
 	SET_VECTOR_ELT(ans, i, tmp);
@@ -1502,10 +1511,10 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 
-int envlength(SEXP rho)
+R_xlen_t Rf_envxlength(SEXP rho)
 {
     const Environment* env = SEXP_downcast<Environment*>(rho);
-    return int(env->frame()->size());
+    return env->frame()->size();
 }
 
 /*----------------------------------------------------------------------
@@ -2048,7 +2057,7 @@ SEXP attribute_hidden do_importIntoEnv(/*const*/ CXXR::Expression* call, const C
 
     if (TYPEOF(impenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(impenv) != ENVSXP && 
+    if (TYPEOF(impenv) != ENVSXP &&
 	TYPEOF((impenv = simple_as_environment(impenv))) != ENVSXP)
 	error(_("bad import environment argument"));
     if (TYPEOF(expenv) == NILSXP)
@@ -2107,11 +2116,11 @@ SEXP attribute_hidden do_envprofile(/*const*/ CXXR::Expression* call, const CXXR
 }
 
 // topenv
-
 SEXP topenv(SEXP target, SEXP envir) {
     SEXP env = envir;
     while (env != R_EmptyEnv) {
-	if (env == target || env == R_GlobalEnv || env == R_BaseNamespace ||
+	if (env == target || env == R_GlobalEnv ||
+	    env == R_BaseEnv || env == R_BaseNamespace ||
 	    R_IsPackageEnv(env) || R_IsNamespaceEnv(env) ||
 	    findVarLocInFrame(envir, R_dot_packageName, nullptr) != R_NilValue)
 	{
@@ -2131,8 +2140,21 @@ SEXP topenv(SEXP target, SEXP envir) {
  */
 SEXP attribute_hidden do_topenv(SEXP call, SEXP op, SEXP args, SEXP rho) {
     SEXP envir = CAR(args);
-    SEXP target = CADR(args); // = matchThisEnv
-    if (TYPEOF(envir) != ENVSXP) envir = rho; // target = parent.frame()
+    SEXP target = CADR(args); // = matchThisEnv, typically NULL (R_NilValue)
+    if (TYPEOF(envir) != ENVSXP) envir = rho; // envir = parent.frame()
     if (target != R_NilValue && TYPEOF(target) != ENVSXP)  target = R_NilValue;
     return topenv(target, envir);
+}
+
+Rboolean attribute_hidden isUnmodifiedSpecSym(SEXP sym, SEXP rho) {
+    Symbol* symbol = SEXP_downcast<Symbol*>(sym);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+
+    if (!symbol->isSpecialSymbol())
+ 	return FALSE;
+    for(;env != R_EmptyEnv; env = env->enclosingEnvironment())
+ 	if (env != R_BaseEnv && env != R_BaseNamespace
+	    && env->frame()->binding(symbol))
+ 	    return FALSE;
+    return TRUE;
 }

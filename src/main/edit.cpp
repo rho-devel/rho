@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2014   The R Core Team
+ *  Copyright (C) 1998-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* <UTF8> char here is handled as a whole string, but note that
@@ -124,9 +124,10 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if((fp=R_fopen(R_ExpandFileName(filename), "w")) == nullptr)
 	    errorcall(call, _("unable to open file"));
 	if (LENGTH(STRING_ELT(fn, 0)) == 0) EdFileUsed++;
-	    src = deparse1(x, CXXRFALSE, FORSOURCING); /* deparse for sourcing, not for display */
+	PROTECT(src = deparse1(x, CXXRFALSE, FORSOURCING)); /* deparse for sourcing, not for display */
 	for (i = 0; i < LENGTH(src); i++)
 	    fprintf(fp, "%s\n", translateChar(STRING_ELT(src, i)));
+	UNPROTECT(1); /* src */
 	fclose(fp);
     }
 #ifdef Win32
@@ -183,9 +184,9 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	srcfile = eval(srcfile, R_BaseEnv);
 	UNPROTECT(5);
     } else
-    	srcfile = R_NilValue;
+	srcfile = R_NilValue;
     PROTECT(srcfile);
-    
+
     /* <FIXME> setup a context to close the file, and parse and eval
        line by line */
     if((fp = R_fopen(R_ExpandFileName(filename), "r")) == nullptr)

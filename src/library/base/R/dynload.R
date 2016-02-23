@@ -1,5 +1,5 @@
 #  File src/library/base/R/dynload.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 if(.Platform$OS.type == "windows") {
     dyn.load <- function(x, local = TRUE, now = TRUE, ...) {
@@ -141,7 +141,7 @@ function(x, ...)
     ## of routines in any category. Then fill the column with ""
     ## and then the actual entries.
 
-    n <- vapply(x, length, 1L)
+    n <- lengths(x)
     x <- x[n > 0]
     n <- max(n)
     d <- list()

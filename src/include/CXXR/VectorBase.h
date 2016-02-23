@@ -32,6 +32,7 @@
 #define VECTORBASE_H
 
 #include "CXXR/RObject.h"
+#include <stddef.h>
 
 /* types for length of vectors etc */
 typedef int R_len_t;

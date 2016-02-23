@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998-2012    The R Core Team
+ *  Copyright (C) 1998-2016    The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  * Generally useful  UTILITIES  *NOT* relying on R internals (from Defn.h)
@@ -33,7 +33,14 @@
 
 #include <R_ext/Boolean.h>
 #include <R_ext/Complex.h>
-#include <stddef.h>
+
+#ifndef NO_C_HEADERS
+# if defined(__cplusplus) && !defined(DO_NOT_USE_CXX_HEADERS)
+#  include <cstddef>
+# else
+#  include <stddef.h>
+# endif
+#endif
 
 #define revsort       Rf_revsort
 #define iPsort        Rf_iPsort
@@ -97,6 +104,9 @@ void R_CheckStack2(size_t);
 int findInterval(double *xt, int n, double x,
 		 Rboolean rightmost_closed,  Rboolean all_inside, int ilo,
 		 int *mflag);
+int findInterval2(double *xt, int n, double x,
+		  Rboolean rightmost_closed,  Rboolean all_inside, Rboolean left_open,
+		  int ilo, int *mflag);
 #ifdef R_RS_H
 int F77_SUB(interv)(double *xt, int *n, double *x,
 		    Rboolean *rightmost_closed, Rboolean *all_inside,

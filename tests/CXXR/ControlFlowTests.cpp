@@ -159,10 +159,12 @@ TEST_P(ControlFlowTest, While)
 	    { "while('foo') 1",
 		    Error("argument is not interpretable as logical") },
 
-	    { "`while`()", Error("argument is of length zero") },
-	    // As of R 3.1.1, these aren't errors.
-	    // { "`while`(TRUE)", Error("1 arguments passed to 'while'") },
-	    // { "`while`(TRUE, 1, 2)", Error("3 arguments passed to 'while'") },
+	    { "`while`()",
+		    Error("0 arguments passed to 'while' which requires 2") },
+	    { "`while`(TRUE)",
+		    Error("1 argument passed to 'while' which requires 2") },
+	    { "`while`(TRUE, 1, 2)",
+		    Error("3 arguments passed to 'while' which requires 2") },
 	});
 }
 
@@ -171,10 +173,10 @@ TEST_P(ControlFlowTest, Repeat)
     runEvaluatorTests({
 	    { "repeat { break }", "NULL" },
 	    { "{ i <- 0; repeat { if (i > 3) break; i <- i + 1 }; i }", "4" },
-
-	    // As of R 3.1.1, these aren't errors.
-	    // { "`repeat`()", Error("0 arguments passed to 'repeat'") },
-	    // { "`repeat`(1, 2)", Error("2 arguments passed to 'repeat'") },
+	    { "`repeat`()",
+		Error("0 arguments passed to 'repeat' which requires 1") },
+	    { "`repeat`(1, 2)",
+		Error("2 arguments passed to 'repeat' which requires 1") },
 	});
 }
 

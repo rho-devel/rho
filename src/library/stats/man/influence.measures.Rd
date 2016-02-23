@@ -1,5 +1,5 @@
 % File src/library/stats/man/influence.measures.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -86,7 +86,8 @@ hat(x, intercept = TRUE)
   \item{dispersion}{dispersion (for \code{\link{glm}} objects) to use,
     see default.}
   \item{hat}{hat values \eqn{H_{ii}}{H[i,i]}, see default.}
-  \item{type}{type of residuals for \code{glm} method for \code{rstandard.}}
+  \item{type}{type of residuals for \code{glm} method for \code{rstandard}.
+    Can be abbreviated.}
 
   \item{x}{the \eqn{X} or design matrix.}
   \item{intercept}{should an intercept column be prepended to \code{x}?}
@@ -163,7 +164,7 @@ hat(x, intercept = TRUE)
   Fox, J. and Weisberg, S. (2011)
   \emph{An R Companion to Applied Regression}, second edition.
   Sage Publ;
-  \url{http://socserv.mcmaster.ca/jfox/Books/Companion/index.html}.
+  \url{https://socserv.mcmaster.ca/jfox/Books/Companion/index.html}.
 }
 \seealso{
   \code{\link{influence}} (containing \code{\link{lm.influence}}).

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2015   The R Core Team.
+ *  Copyright (C) 2002-2016   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,15 +14,15 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
 
-/* do this first to get the right options for math.h */
-#include <R_ext/Arith.h>
+#include <stdlib.h> // for abs
+#include <string.h>
 
 #include <R.h>
 #include "ts.h"
@@ -1034,7 +1034,8 @@ SEXP getQ0(SEXP sPhi, SEXP sTheta)
     double *P = REAL(res);
 
     if (r == 1) {
-	P[0] = 1.0 / (1.0 - phi[0] * phi[0]);
+	if (p == 0) P[0] = 1.0; // PR#16419
+	else P[0] = 1.0 / (1.0 - phi[0] * phi[0]);
 	UNPROTECT(1);
 	return res;
     }

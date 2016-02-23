@@ -1,5 +1,5 @@
 % File src/library/base/man/Bessel.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
@@ -50,7 +50,7 @@ besselY(x, nu)
   \code{besselK} which is symmetric in \code{nu}.
 
   The current algorithms will give warnings about accuracy loss for
-  large arguments.  In some cases, these warnings are exagerated, and
+  large arguments.  In some cases, these warnings are exaggerated, and
   the precision is perfect.  For large \code{nu}, say in the order of
   millions, the current algorithms are rarely useful.
 }

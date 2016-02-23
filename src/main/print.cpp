@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
- *  Copyright (C) 2000-2015	The R Core Team.
+ *  Copyright (C) 2000-2016	The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *  print.default()  ->	 do_printdefault (with call tree below)
@@ -72,7 +72,7 @@
 #include "Print.h"
 #include "Fileio.h"
 #include "Rconnections.h"
-#include <S.h>
+#include <R_ext/RS.h>
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
@@ -87,7 +87,7 @@ static void PrintLanguageEtc(SEXP, Rboolean, Rboolean);
 
 #define TAGBUFLEN 256
 #define TAGBUFLEN0 TAGBUFLEN + 6
-static char tagbuf[TAGBUFLEN0];
+static char tagbuf[TAGBUFLEN0 * 2]; /* over-allocate to allow overflow check */
 
 RObject* getNaStringNoQuote() {
     static GCRoot<> na_string_noquote(mkChar("<NA>"));
@@ -170,6 +170,7 @@ SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::
 /* .Internal( print.function(f, useSource, ...)) */
 SEXP attribute_hidden do_printfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
+    op->checkNumArgs(num_args, call);
     SEXP s = args[0];
     switch (TYPEOF(s)) {
     case CLOSXP:
@@ -196,9 +197,9 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
     if (!isInteger(t) || !useSource)
 	t = deparse1w(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
     else {
-        PROTECT(t = lang2(install("as.character"), t));
-        t = eval(t, R_BaseEnv);
-        UNPROTECT(1);
+	PROTECT(t = lang2(install("as.character"), t));
+	t = eval(t, R_BaseEnv);
+	UNPROTECT(1);
     }
     PROTECT(t);
     for (i = 0; i < LENGTH(t); i++)
@@ -459,7 +460,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		    */
 		    const char *ss = EncodeChar(STRING_ELT(names, i));
 		    if (taglen + strlen(ss) > TAGBUFLEN) {
-		    	if (taglen <= TAGBUFLEN)
+			if (taglen <= TAGBUFLEN)
 			    sprintf(ptag, "$...");
 		    } else {
 			/* we need to distinguish character NA from "NA", which
@@ -475,7 +476,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		}
 		else {
 		    if (taglen + IndexWidth(i) > TAGBUFLEN) {
-		    	if (taglen <= TAGBUFLEN)
+			if (taglen <= TAGBUFLEN)
 			    sprintf(ptag, "$...");
 		    } else
 			sprintf(ptag, "[[%d]]", i+1);
@@ -745,8 +746,8 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	Rprintf("<CHARSXP: ");
 	Rprintf("%s", EncodeString(s, 0, '"', Rprt_adj_left));
 	Rprintf(">\n");
-        return; /* skip attribute printing for CHARSXP; they are used */
-                /* in managing the CHARSXP cache. */
+	return; /* skip attribute printing for CHARSXP; they are used */
+		/* in managing the CHARSXP cache. */
     case EXPRSXP:
 	PrintExpression(s);
 	break;
@@ -855,6 +856,9 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
     a = ATTRIB(s);
     if (a != R_NilValue) {
+	/* guard against cycles through attributes on environments */
+	if (strlen(tagbuf) > TAGBUFLEN0)
+	    error(_("print buffer overflow"));
 	strcpy(save, tagbuf);
 	/* remove the tag if it looks like a list not an attribute */
 	if (strlen(tagbuf) > 0 &&
@@ -979,39 +983,37 @@ void attribute_hidden PrintValueEnv(SEXP s, SEXP env)
 	  print(), so S4 methods for show() have precedence over those for
 	  print() to conform with the "green book", p. 332
 	*/
-	SEXP call, showS;
+	SEXP call, prinfun;
+	SEXP xsym = install("x");
 	if(isMethodsDispatchOn() && IS_S4_OBJECT(s)) {
 	    /*
-	      Note that we cannot assume that show() is visible from
-	      'env', but we can assume there is a loaded "methods"
+	      Note that can assume there is a loaded "methods"
 	      namespace.  It is tempting to cache the value of show in
 	      the namespace, but the latter could be unloaded and
 	      reloaded in a session.
 	    */
-	    showS = findVar(install("show"), env);
-	    if(showS == R_UnboundValue) {
-		SEXP methodsNS = R_FindNamespace(mkString("methods"));
-		if(methodsNS == R_UnboundValue)
-		    error("missing methods namespace: this should not happen");
-		PROTECT(methodsNS);
-		showS = findVarInFrame3(methodsNS, install("show"), TRUE);
-		UNPROTECT(1);
-		if(showS == R_UnboundValue)
-		    error("missing show() in methods namespace: this should not happen");
-	    }
-	    PROTECT(call = lang2(showS, s));
+	    SEXP methodsNS = R_FindNamespace(mkString("methods"));
+	    if(methodsNS == R_UnboundValue)
+		error("missing methods namespace: this should not happen");
+	    PROTECT(methodsNS);
+	    prinfun = findVarInFrame3(methodsNS, install("show"), TRUE);
+	    UNPROTECT(1);
+	    if(prinfun == R_UnboundValue)
+		error("missing show() in methods namespace: this should not happen");
 	}
 	else /* S3 */
-	    PROTECT(call = lang2(install("print"), s));
+	    prinfun = findVar(install("print"), R_BaseNamespace);
 
-	if (TYPEOF(s) == SYMSXP || TYPEOF(s) == LANGSXP)
-	    /* If s is not self-evaluating wrap it in a promise. Doing
-	       this unconditionally seems to create problems in the S4
-	       case. */
-	    SETCADR(call, R_mkEVPROMISE(s, s));
-
+	/* Bind value to a variable in a local environment, similar to
+	   a local({ x <- <value>; print(x) }) call. This avoids
+	   problems in previous approaches with value duplication and
+	   evaluating the value, which might be a call object. */
+	PROTECT(call = lang2(prinfun, xsym));
+	PROTECT(env = NewEnvironment(R_NilValue, R_NilValue, env));
+	defineVar(xsym, s, env);
 	eval(call, env);
-	UNPROTECT(1);
+	defineVar(xsym, R_NilValue, env); /* to eliminate reference to s */
+	UNPROTECT(2);
     } else PrintValueRec(s, env);
     UNPROTECT(1);
 }

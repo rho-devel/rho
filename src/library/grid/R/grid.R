@@ -1,5 +1,5 @@
 #  File src/library/grid/R/grid.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 
 # FIXME:  all grid functions should check that .grid.started is TRUE
@@ -479,7 +479,7 @@ grid.Call.graphics <- function(fnname, ...) {
   engineDLon <- grid.Call(L_getEngineDLon)
   if (engineDLon) {
     # NOTE that we need a .Call.graphics("L_gridDirty") so that
-    # the the first thing on the engine display list is a dirty
+    # the first thing on the engine display list is a dirty
     # operation;  this is necessary in case the display list is
     # played on another device (e.g., via replayPlot() or dev.copy())
     .Call.graphics(L_gridDirty)

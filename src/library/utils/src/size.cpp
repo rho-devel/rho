@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -72,6 +72,7 @@ static R_size_t objectsize(SEXP s)
 	/* no charge for the environment */
 	break;
     case ENVSXP:
+	R_CheckStack(); /* in case attributes might lead to a cycle */
     case PROMSXP:
     case SPECIALSXP:
     case BUILTINSXP:

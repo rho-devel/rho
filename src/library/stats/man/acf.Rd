@@ -1,5 +1,5 @@
 % File src/library/stats/man/acf.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
@@ -43,7 +43,7 @@ ccf(x, y, lag.max = NULL, type = c("correlation", "covariance"),
   \item{type}{character string giving the type of acf to be computed.
     Allowed values are
     \code{"correlation"} (the default), \code{"covariance"} or
-    \code{"partial"}.}
+    \code{"partial"}.  Will be partially matched.}
   \item{plot}{logical. If \code{TRUE} (the default) the acf is plotted.}
   \item{na.action}{function to be called to handle missing
     values. \code{na.pass} can be used.}

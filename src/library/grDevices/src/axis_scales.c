@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -32,13 +32,15 @@ SEXP R_CreateAtVector(SEXP axp, SEXP usr, SEXP nint, SEXP is_log)
     int nint_v = asInteger(nint);
     Rboolean logflag = asLogical(is_log);
 
-    axp = coerceVector(axp, REALSXP);
-    usr = coerceVector(usr, REALSXP);
+    PROTECT(axp = coerceVector(axp, REALSXP));
+    PROTECT(usr = coerceVector(usr, REALSXP));
     if(LENGTH(axp) != 3) error(_("'%s' must be numeric of length %d"), "axp", 3);
     if(LENGTH(usr) != 2) error(_("'%s' must be numeric of length %d"), "usr", 2);
 
-    return CreateAtVector(REAL(axp), REAL(usr), nint_v, logflag);
+    SEXP res = CreateAtVector(REAL(axp), REAL(usr), nint_v, logflag);
     // -> ../../../main/plot.c
+    UNPROTECT(2);
+    return res;
 }
 
 SEXP R_GAxisPars(SEXP usr, SEXP is_log, SEXP nintLog)

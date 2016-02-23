@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /*  This module contains support for S-style generic */
@@ -210,6 +210,9 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     FunctionBase* op;
     {
 	RObject* opcar = cptr->call()->car();
+	if (opcar->sexptype() == PROMSXP) {
+	    opcar = static_cast<Promise*>(opcar)->force();
+	}
 	if (opcar->sexptype() == LANGSXP)
 	    opcar = Evaluator::evaluate(opcar, cptr->callEnvironment());
 	switch (opcar->sexptype()) {
@@ -435,6 +438,24 @@ static Environment* lookupEnvironmentValueFromBinding(
     }
     return value_if_not_found;
 }
+
+static FunctionBase* getPrimitive(Symbol* symbol)
+ {
+     Frame::Binding* binding = Environment::base()->frame()->binding(symbol);
+     if (!binding)
+	 return R_NilValue;
+     RObject* value = binding->forcedValue();
+     if (TYPEOF(value) == BUILTINSXP || TYPEOF(value) == SPECIALSXP)
+         return SEXP_downcast<BuiltInFunction*>(value);
+
+     if (TYPEOF(value) == CLOSXP) {
+ 	/* probably means a package redefined the base function so
+ 	   try to get the real thing from the internal table of
+ 	   primitives */
+	 return BuiltInFunction::obtainPrimitive(symbol);
+     } else
+	 return R_NilValue;
+ }
 
 /* If NextMethod has any arguments the first must be the generic */
 /* the second the object and any remaining are matched with the */
@@ -720,8 +741,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (!nfval)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);
-	    if (nextfun && nextfun->sexptype() == CLOSXP)
+	    if (nextfun && nextfun->sexptype() == CLOSXP) {
 		nextfun = BuiltInFunction::obtainInternal(genericsym);
+		if (!nextfun) {
+		    nextfun = getPrimitive(genericsym);
+		}
+	    }
 	    if (!nextfun)
 		Rf_error(_("no method to invoke"));
 	}
@@ -1158,6 +1183,15 @@ SEXP R_set_prim_method(SEXP fname, SEXP op, SEXP code_vec, SEXP fundef,
 	}
 	return value;
     }
+    if (!Rf_isPrimitive(op)) {
+        SEXP internal = R_do_slot(op, Rf_install("internal"));
+        op = INTERNAL(Rf_install(CHAR(Rf_asChar(internal))));
+        if (op == R_NilValue) {
+	    Rf_error("'internal' slot does not name an internal function: %s",
+		     CHAR(Rf_asChar(internal)));
+        }
+    }
+
     do_set_prim_method(op, code_string, fundef, mlist);
     vmaxset(vmax);
     return fname;
@@ -1420,6 +1454,9 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(Rf_isPrimitive(value))
 	    return std::pair<bool, SEXP>(false, nullptr);
 	if(Rf_isFunction(value)) {
+            if (Rf_inherits(value, "internalDispatchMethod")) {
+                return std::pair<bool, SEXP>(false, nullptr);
+	    }
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
 	    value = callx->invokeClosure(func, callenv, &arglist);

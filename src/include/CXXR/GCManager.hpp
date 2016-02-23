@@ -96,8 +96,8 @@ namespace CXXR {
 	static void gc(bool force_full_collection = true);
 
 	static void maybeGC() {
-	    if (s_inhibitor_count == 0
-		&& (MemoryBank::bytesAllocated() >
+	    if (s_gc_pending
+		|| MemoryBank::bytesAllocated() >
 #ifdef AGGRESSIVE_GC
 		    0
 #elif defined(RARE_GC)
@@ -105,8 +105,9 @@ namespace CXXR {
 #else
 		    s_gclite_threshold
 #endif
-		    ))
+		) {
 		gc(false);
+	    }
 	};
 
 	static bool gcIsRunning() {
@@ -224,6 +225,7 @@ namespace CXXR {
 	  // level.
 
 	static bool s_gc_is_running;
+	static bool s_gc_pending;
 
 	static size_t s_max_bytes;
 	static size_t s_max_nodes;

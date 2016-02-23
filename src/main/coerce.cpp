@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995,1996  Robert Gentleman, Ross Ihaka
- *  Copyright (C) 1997-2014  The R Core Team
- *  Copyright (C) 2003-2009 The R Foundation
+ *  Copyright (C) 1997-2015  The R Core Team
+ *  Copyright (C) 2003-2015  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -22,7 +22,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file coerce.cpp
@@ -58,7 +58,7 @@ using namespace CXXR;
 
 /* Coercion warnings will be OR'ed : */
 #define WARN_NA	   1
-#define WARN_INACC 2
+#define WARN_INT_NA 2
 #define WARN_IMAG  4
 #define WARN_RAW  8
 
@@ -69,7 +69,7 @@ using namespace CXXR;
 namespace {
     inline void cDUPLICATE_ATTRIB(SEXP to, SEXP from)
     {
-	if (ATTRIB(from)) DUPLICATE_ATTRIB(to, from);
+	if (ATTRIB(from)) SHALLOW_DUPLICATE_ATTRIB(to, from);
     }
 
     inline void CLEAR_ATTRIB(SEXP x)
@@ -89,8 +89,8 @@ void attribute_hidden Rf_CoercionWarning(int warn)
 */
     if (warn & WARN_NA)
 	Rf_warning(_("NAs introduced by coercion"));
-    if (warn & WARN_INACC)
-	Rf_warning(_("inaccurate integer conversion in coercion"));
+    if (warn & WARN_INT_NA)
+	Rf_warning(_("NAs introduced by coercion to integer range"));
     if (warn & WARN_IMAG)
 	Rf_warning(_("imaginary parts discarded in coercion"));
     if (warn & WARN_RAW)
@@ -140,8 +140,8 @@ Rf_IntegerFromReal(double x, int *warn)
 {
     if (ISNAN(x))
 	return NA_INTEGER;
-    else if (x > INT_MAX || x <= INT_MIN ) {
-	*warn |= WARN_NA;
+    else if (x >= INT_MAX+1. || x <= INT_MIN ) {
+	*warn |= WARN_INT_NA;
 	return NA_INTEGER;
     }
     return int( x);
@@ -152,8 +152,8 @@ Rf_IntegerFromComplex(Rcomplex x, int *warn)
 {
     if (ISNAN(x.r) || ISNAN(x.i))
 	return NA_INTEGER;
-    else if (x.r > INT_MAX || x.r <= INT_MIN ) {
-	*warn |= WARN_NA;
+    else if (x.r > INT_MAX+1. || x.r <= INT_MIN ) {
+	*warn |= WARN_INT_NA;
 	return NA_INTEGER;;
     }
     if (x.i != 0)
@@ -170,14 +170,22 @@ Rf_IntegerFromString(SEXP x, int *warn)
     if (x != R_NaString && !Rf_isBlankString(CHAR(x))) { /* ASCII */
 	xdouble = R_strtod(CHAR(x), &endp); /* ASCII */
 	if (isBlankString(endp)) {
+#ifdef _R_pre_Version_3_3_0
 	    if (xdouble > INT_MAX) {
-		*warn |= WARN_INACC;
+		*warn |= WARN_INT_NA;
 		return INT_MAX;
 	    }
 	    else if(xdouble < INT_MIN+1) {
-		*warn |= WARN_INACC;
-		return INT_MIN;
+		*warn |= WARN_INT_NA;
+		return INT_MIN;// <- "wrong" as INT_MIN == NA_INTEGER currently; should have used INT_MIN+1
 	    }
+#else
+	    // behave the same as IntegerFromReal() etc:
+	    if (xdouble >= INT_MAX+1. || xdouble <= INT_MIN ) {
+		*warn |= WARN_INT_NA;
+		return NA_INTEGER;
+	    }
+#endif
 	    else
 		return int( xdouble);
 	}
@@ -207,6 +215,8 @@ RealFromComplex(Rcomplex x, int *warn)
 {
     if (ISNAN(x.r) || ISNAN(x.i))
 	return NA_REAL;
+    if (ISNAN(x.r)) return x.r;
+    if (ISNAN(x.i)) return NA_REAL;
     if (x.i != 0)
 	*warn |= WARN_IMAG;
     return x.r;
@@ -261,14 +271,18 @@ Rcomplex attribute_hidden
 ComplexFromReal(double x, int *warn)
 {
     Rcomplex z;
+#ifdef PRE_R_3_3_0
     if (ISNAN(x)) {
 	z.r = NA_REAL;
 	z.i = NA_REAL;
     }
     else {
+#endif
 	z.r = x;
 	z.i = 0;
+#ifdef PRE_R_3_3_0
     }
+#endif
     return z;
 }
 
@@ -322,7 +336,8 @@ SEXP attribute_hidden Rf_StringFromComplex(Rcomplex x, int *warn)
 {
     int wr, dr, er, wi, di, ei;
     formatComplex(&x, 1, &wr, &dr, &er, &wi, &di, &ei, 0);
-    if (ISNA(x.r) || ISNA(x.i)) return NA_STRING;
+    if (ISNA(x.r) || ISNA(x.i)) // "NA" if Re or Im is (but not if they're just NaN)
+	return NA_STRING;
     else /* EncodeComplex has its own anti-trailing-0 care :*/
 	return Rf_mkChar(EncodeComplex(x, wr, dr, er, wi, di, ei, OutDec));
 }
@@ -480,7 +495,7 @@ static SEXP coerceToInteger(SEXP v)
     R_xlen_t i, n;
     PROTECT(ans = Rf_allocVector(INTSXP, n = XLENGTH(v)));
     ans->maybeTraceMemory(v);
-    DUPLICATE_ATTRIB(ans, v);
+    SHALLOW_DUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++) {
@@ -1152,7 +1167,7 @@ SEXP Rf_coerceVector(SEXP v, SEXPTYPE type)
 	    /* Can this actually happen? */
 	    UNPROTECT(1);
 	    break;
-        }
+	}
 	i = 0;
 	op = CAR(v);
 	/* The case of practical relevance is "lhs ~ rhs", which
@@ -1285,15 +1300,8 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     }
     else if (Rf_isVector(u) || Rf_isList(u) || Rf_isLanguage(u)
 	     || (Rf_isSymbol(u) && type == EXPRSXP)) {
-	v = u;
-	/* this duplication may appear not to be needed in all cases,
-	   but beware that other code relies on it.
-	   (E.g  we clear attributes in do_asvector and do_asatomic.)
-
-	   Generally coerceVector will copy over attributes.
-	*/
 	if (type != ANYSXP && TYPEOF(u) != type) v = Rf_coerceVector(u, type);
-	else if (MAYBE_REFERENCED(u)) v = Rf_duplicate(u);
+	else v = u;
 
 	/* drop attributes() and class() in some cases for as.pairlist:
 	   But why?  (And who actually coerces to pairlists?)
@@ -1301,6 +1309,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
 	if ((type == LISTSXP) &&
 	    !(TYPEOF(u) == LANGSXP || TYPEOF(u) == LISTSXP ||
 	      TYPEOF(u) == EXPRSXP || TYPEOF(u) == VECSXP)) {
+      if (MAYBE_REFERENCED(v)) v = Rf_shallow_duplicate(v);
 	    CLEAR_ATTRIB(v);
 	}
 	return v;
@@ -1319,6 +1328,14 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
+SEXP attribute_hidden do_asCharacterFactor(SEXP call, SEXP op, SEXP args,
+                                           SEXP rho)
+{
+    SEXP x;
+    x = CAR(args);
+    return Rf_asCharacterFactor(x);
+}
+
 /* used in attrib.c, eval.c and unique.c */
 SEXP Rf_asCharacterFactor(SEXP x)
 {
@@ -1329,12 +1346,18 @@ SEXP Rf_asCharacterFactor(SEXP x)
 
     R_xlen_t i, n = XLENGTH(x);
     SEXP labels = Rf_getAttrib(x, R_LevelsSymbol);
+    if (TYPEOF(labels) != STRSXP)
+	Rf_error(_("malformed factor"));
+    int nl = LENGTH(labels);
     PROTECT(ans = Rf_allocVector(STRSXP, n));
     for(i = 0; i < n; i++) {
       int ii = INTEGER(x)[i];
-      SET_STRING_ELT(ans, i,
-		   (ii == NA_INTEGER) ? NA_STRING
-		   : STRING_ELT(labels, ii - 1));
+      if (ii == NA_INTEGER)
+	  SET_STRING_ELT(ans, i, NA_STRING);
+      else if (ii >= 1 && ii <= nl)
+	  SET_STRING_ELT(ans, i, STRING_ELT(labels, ii - 1));
+      else
+	  Rf_error(_("malformed factor"));
     }
     UNPROTECT(1);
     return ans;
@@ -1857,6 +1880,7 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
  * It seems to make more sense to check for a dim attribute.
  */
 
+// is.vector(x, mode) :
 SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* mode_)
 {
     SEXP ans, a, x;
@@ -2078,8 +2102,8 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
     case LISTSXP:
     {
 	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_duplicate(args));
-	call2 = PROTECT(Rf_duplicate(call));
+	args2 = PROTECT(Rf_shallow_duplicate(args));
+	call2 = PROTECT(Rf_shallow_duplicate(call));
 	for (i = 0; i < n; i++, x = CDR(x)) {
 	    SETCAR(args2, CAR(x)); SETCADR(call2, CAR(x));
 	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
@@ -2095,8 +2119,8 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
     case VECSXP:
     {
 	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_duplicate(args));
-	call2 = PROTECT(Rf_duplicate(call));
+	args2 = PROTECT(Rf_shallow_duplicate(args));
+	call2 = PROTECT(Rf_shallow_duplicate(call));
 	for (i = 0; i < n; i++) {
 	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
 	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
@@ -2187,7 +2211,8 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
 			       R_IsNaN(COMPLEX(x)[i].i));
 	break;
     default:
-	Rf_errorcall(call, _("default method not implemented for type '%s'"), Rf_type2char(TYPEOF(x)));
+	Rf_errorcall(call, _("default method not implemented for type '%s'"),
+		     Rf_type2char(TYPEOF(x)));
     }
     if (dims != R_NilValue)
 	Rf_setAttrib(ans, R_DimSymbol, dims);
@@ -2245,7 +2270,8 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
 	    LOGICAL(ans)[i] = (R_FINITE(COMPLEX(x)[i].r) && R_FINITE(COMPLEX(x)[i].i));
 	break;
     default:
-	Rf_errorcall(call, _("default method not implemented for type '%s'"), Rf_type2char(TYPEOF(x)));
+	Rf_errorcall(call, _("default method not implemented for type '%s'"),
+		     Rf_type2char(TYPEOF(x)));
     }
     if (dims != R_NilValue)
 	Rf_setAttrib(ans, R_DimSymbol, dims);
@@ -2308,7 +2334,8 @@ SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR
 	}
 	break;
     default:
-	Rf_errorcall(call, _("default method not implemented for type '%s'"), Rf_type2char(TYPEOF(x)));
+	Rf_errorcall(call, _("default method not implemented for type '%s'"),
+		     Rf_type2char(TYPEOF(x)));
     }
     if (!Rf_isNull(dims))
 	Rf_setAttrib(ans, R_DimSymbol, dims);
@@ -2335,12 +2362,11 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     const char *str = Rf_translateChar(STRING_ELT(rfun, 0));
     if (streql(str, ".Internal")) Rf_error("illegal usage");
     PROTECT(rfun = Rf_install(str));
-    PROTECT(evargs = Rf_duplicate(CDR(args)));
+    PROTECT(evargs = Rf_shallow_duplicate(CDR(args)));
     for (rest = evargs; rest != R_NilValue; rest = CDR(rest)) {
 	PROTECT(tmp = Rf_eval(CAR(rest), rho));
-	if (MAYBE_REFERENCED(tmp)) tmp = Rf_duplicate(tmp);
+	if (NAMED(tmp)) MARK_NOT_MUTABLE(tmp);
 	SETCAR(rest, tmp);
-	UNPROTECT(1);
     }
     rfun = LCONS(rfun, evargs);
     UNPROTECT(3);
@@ -2360,15 +2386,15 @@ SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::Bu
        zero-length string check used to be here but Rf_install gives
        better error message.
      */
-    if( !(Rf_isString(fun) && length(fun) == 1) && !Rf_isFunction(fun) )
-	Rf_error(_("'what' must be a character string or a function"));
+    if(!(Rf_isFunction(fun) || (Rf_isString(fun) && length(fun) == 1)))
+	Rf_error(_("'what' must be a function or character string"));
 
 #ifdef __maybe_in_the_future__
     if (!isNull(args) && !isVectorList(args))
 	error(_("'args' must be a list or expression"));
 #else
     if (!Rf_isNull(args) && !Rf_isNewList(args))
-	Rf_error(_("'args' must be a list"));
+        Rf_error(_("'%s' must be a list"), "args");
 #endif
 
     if (!Rf_isEnvironment(envir))
@@ -2720,7 +2746,7 @@ SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CX
     if(Rf_isFactor(obj))
 	Rf_error(_("invalid to change the storage mode of a factor"));
     PROTECT(ans = Rf_coerceVector(obj, type));
-    DUPLICATE_ATTRIB(ans, obj);
+    SHALLOW_DUPLICATE_ATTRIB(ans, obj);
     UNPROTECT(1);
     return ans;
 }

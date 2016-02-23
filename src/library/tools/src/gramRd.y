@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #ifdef HAVE_CONFIG_H
@@ -211,8 +211,8 @@ VerbatimArg1 VerbatimArg2 IfDefTarget ArgItems Option
 
 %%
 
-Init:		STARTFILE RdFile END_OF_INPUT		{ xxsavevalue($2, &@$); UNPROTECT_PTR($1); return 0; }
-	|	STARTFRAGMENT RdFragment END_OF_INPUT	{ xxsavevalue($2, &@$); UNPROTECT_PTR($1); return 0; }
+Init:		STARTFILE RdFile END_OF_INPUT		{ xxsavevalue($2, &@$); UNPROTECT_PTR($1); YYACCEPT; }
+	|	STARTFRAGMENT RdFragment END_OF_INPUT	{ xxsavevalue($2, &@$); UNPROTECT_PTR($1); YYACCEPT; }
 	|	error					{ PROTECT(parseState.Value = R_NilValue);  YYABORT; }
 	;
 

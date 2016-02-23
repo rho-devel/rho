@@ -1,12 +1,16 @@
 useDynLib(methods, .registration = TRUE, .fixes = "C_")
 
-importFrom(utils, find)
+## The methods namespace is loaded very early in the startup sequence
+## (if in R_DEFAULT_PACKAGES), so adding other namespaces here has the
+## undesirable effect of loading them early too (e.g. onLoad hooks are
+## likely to be not yet set).
 
 
 exportPattern("^\\.__C__")
 exportPattern("^\\.__M__")
 exportPattern("^\\.__T__")
 
+export(.S4methods)
 export(.TraceWithMethods)
 export(.untracedFunction)
 export(.doTracePrint)
@@ -70,6 +74,7 @@ export(evalSource)
 export(existsFunction)
 export(existsMethod)
 export(extends)
+export(externalRefMethod)
 export(finalDefaultMethod)
 export(findClass)
 export(findFunction)

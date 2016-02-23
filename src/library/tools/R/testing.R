@@ -1,7 +1,7 @@
 #  File src/library/tools/R/testing.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2016 The R Core Team
 #
 # NB: also copyright date in Usage.
 #
@@ -16,7 +16,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## functions principally for testing R and packages
 
@@ -44,7 +44,7 @@ massageExamples <-
     lines <- c(paste0('pkgname <- "', pkg, '"'),
                'source(file.path(R.home("share"), "R", "examples-header.R"))',
                if (use_gct) {
-                   gct_n <- as.integer(Sys.getenv("_R_CHECK_GCT_N_", 0))
+                   gct_n <- as.integer(Sys.getenv("_R_CHECK_GCT_N_", "0"))
                    if(!is.na(gct_n) && gct_n > 0L)
                        sprintf("gctorture2(%s)", gct_n)
                    else "gctorture(TRUE)"
@@ -158,7 +158,7 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
         if(length(ll)) txt <- txt[seq_len(max(ll) - 1L)]
         ## remove BATCH footer
         nl <- length(txt)
-        if(nl > 3L && grepl("^> proc.time\\(\\)", txt[nl-2L])) txt <- txt[1:(nl-3L)]
+        if(nl > 3L && startsWith(txt[nl-2L], "> proc.time()")) txt <- txt[1:(nl-3L)]
         if (nullPointers)
         ## remove pointer addresses from listings
             txt <- gsub("<(environment|bytecode|pointer|promise): [x[:xdigit:]]+>", "<\\1: 0>", txt)
@@ -235,7 +235,8 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
             list(status = status, out = c(out, readLines(tf)))
         } else system(paste("diff -bw", shQuote(a), shQuote(b)))
     }
-}
+} ## {Rdiff}
+
 
 testInstalledPackages <-
     function(outDir = ".", errorsAreFatal = TRUE,
@@ -253,7 +254,7 @@ testInstalledPackages <-
         pkgs <- known_packages$base
     if (scope %in% c("both", "recommended"))
         pkgs <- c(pkgs, known_packages$recommended)
-    mc.cores <- as.integer(Sys.getenv("TEST_MC_CORES", 1L))
+    mc.cores <- as.integer(Sys.getenv("TEST_MC_CORES", "1"))
     if (.Platform$OS.type != "windows" &&
         !is.na(mc.cores) && mc.cores > 1L) {
         do_one <- function(pkg) {
@@ -299,7 +300,7 @@ testInstalledPackage <-
     pkgdir <- find.package(pkg, lib.loc)
     owd <- setwd(outDir)
     on.exit(setwd(owd))
-    strict <- as.logical(Sys.getenv("R_STRICT_PACKAGE_CHECK", FALSE))
+    strict <- as.logical(Sys.getenv("R_STRICT_PACKAGE_CHECK", "FALSE"))
 
     if ("examples" %in% types) {
         message(gettextf("Testing examples for package %s", sQuote(pkg)),
@@ -547,7 +548,7 @@ testInstalledPackage <-
     invisible(Rfile)
 }
 
-testInstalledBasic <- function(scope = c("basic", "devel", "both"))
+testInstalledBasic <- function(scope = c("basic", "devel", "both", "internet"))
 {
     scope <- match.arg(scope)
 
@@ -556,10 +557,12 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
     tests1 <- c("eval-etc", "simple-true", "arith-true", "lm-tests",
                 "ok-errors", "method-dispatch", "array-subset",
                 "any-all", "d-p-q-r-tests")
-    tests2 <- c("complex", "print-tests", "lapack", "datasets", "iec60559")
+    tests2 <- c("complex", "print-tests", "lapack", "datasets", "datetime",
+                "iec60559")
     tests3 <- c("reg-tests-1a", "reg-tests-1b", "reg-tests-1c", "reg-tests-2",
                 "reg-examples1", "reg-examples2", "reg-packages",
-                "reg-IO", "reg-IO2", "reg-S4", "reg-plot", "reg-BLAS")
+                "p-qbeta-strict-tst",
+                "reg-IO", "reg-IO2", "reg-plot", "reg-S4", "reg-BLAS")
 
     runone <- function(f, diffOK = FALSE, inC = TRUE)
     {
@@ -568,12 +571,12 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
             if (!file.exists(fin <- paste0(f, "in")))
                 stop("file ", sQuote(f), " not found", domain = NA)
             message("creating ", sQuote(f), domain = NA)
-            ## FIXME: this creates an extra trailing space compared to
-            ## the .Rin.R rule
             cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                          "--vanilla --slave -f", fin)
             if (system(cmd))
                 stop("creation of ", sQuote(f), " failed", domain = NA)
+            ## This needs an extra trailing space to match the .Rin.R rule
+            cat("\n", file = f, append = TRUE)
             on.exit(unlink(f))
         }
         message("  running code in ", sQuote(f), domain = NA)
@@ -627,6 +630,7 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
             }
         }
         runone("reg-tests-3", TRUE)
+        runone("reg-examples3", TRUE)
         message("running tests of plotting Latin-1", domain = NA)
         message("  expect failure or some differences if not in a Latin or UTF-8 locale", domain = NA)
 
@@ -638,16 +642,28 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
     }
 
     if (scope %in% c("devel", "both")) {
+        message("running tests of date-time printing\n expect platform-specific differences", domain = NA)
+        runone("datetime2")
         message("running tests of consistency of as/is.*", domain = NA)
         runone("isas-tests")
         message("running tests of random deviate generation -- fails occasionally")
         runone("p-r-random-tests", TRUE)
+        message("running tests demos from base and stats", domain = NA)
+        if (runone("demos")) return(invisible(1L))
+        if (runone("demos2")) return(invisible(1L))
         message("running tests of primitives", domain = NA)
         if (runone("primitives")) return(invisible(1L))
         message("running regexp regression tests", domain = NA)
         if (runone("utf8-regex", inC = FALSE)) return(invisible(1L))
         message("running tests to possibly trigger segfaults", domain = NA)
         if (runone("no-segfault")) return(invisible(1L))
+    }
+    if (scope %in% "internet") {
+        message("running tests of Internet functions - expect some differences", domain = NA)
+        runone("internet")
+        message("running more Internet and socket tests", domain = NA)
+        runone("internet2")
+        runone("libcurl")
     }
 
     invisible(0L)
@@ -667,7 +683,7 @@ detachPackages <- function(pkgs, verbose = TRUE)
 
     ## The items need not all be packages
     ## and non-packages can be on the list multiple times.
-    isPkg <- grepl("^package:", pkgs)
+    isPkg <- startsWith(pkgs,"package:")
     for(item in pkgs[!isPkg]) {
         pos <- match(item, search())
         if(!is.na(pos)) .detach(pos)
@@ -688,7 +704,7 @@ detachPackages <- function(pkgs, verbose = TRUE)
         unl <- unlist(deps)
         for(i in seq_along(deps)) {
             this <- names(deps)[i]
-            if(sub("^package:", "", this) %in% unl) next else break
+	    if(.rmpkg(this) %in% unl) next else break
         }
         ## hopefully force = TRUE is never needed, but it does ensure
         ## that progress gets made
@@ -735,7 +751,7 @@ detachPackages <- function(pkgs, verbose = TRUE)
                 R.version[["major"]], ".",  R.version[["minor"]],
                 " (r", R.version[["svn rev"]], ")\n", sep = "")
             cat("",
-                "Copyright (C) 2000-2013 The R Core Team.",
+                "Copyright (C) 2000-2015 The R Core Team.",
                 "This is free software; see the GNU General Public License version 2",
                 "or later for copying conditions.  There is NO warranty.",
                 sep = "\n")

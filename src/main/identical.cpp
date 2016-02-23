@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 
@@ -81,7 +81,7 @@ SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR:
     return ScalarLogical(R_compute_identical(x, y, flags));
 }
 
-#define NUM_EQ 		(!(flags & 1))
+#define NUM_EQ		(!(flags & 1))
 #define SINGLE_NA       (!(flags & 2))
 #define ATTR_AS_SET     (!(flags & 4))
 #define IGNORE_BYTECODE (!(flags & 8))
@@ -277,7 +277,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	/*#define PREXPR(x)	((x)->u.promsxp.expr)
 	  #define PRENV(x)	((x)->u.promsxp.env)
 	  return(R_compute_identical(subsititute(PREXPR(x), PRENV(x),
-	                             flags),
+				     flags),
 	  subsititute(PREXPR(y), PRENV(y))));*/
     case S4SXP:
 	/* attributes already tested, so all slots identical */

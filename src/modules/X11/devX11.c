@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* The version for R 2.1.0 is partly based on patches by
@@ -1021,6 +1021,8 @@ static void *RLoadFont(pX11Desc xd, char* family, int face, int size)
 	   If we can't find a "fixed" font then something is seriously
 	   wrong */
 	if ( ADOBE_SIZE(pixelsize) ) {
+	    if(tmp)
+		R_XFreeFont(display, tmp);
 	    if(mbcslocale)
 		tmp = (void*) R_XLoadQueryFontSet(display,
 		   "-*-fixed-medium-r-*--13-*-*-*-*-*-*-*");
@@ -1485,7 +1487,7 @@ X11_Open(pDevDesc dd, pX11Desc xd, const char *dsp,
     attributes.border_pixel = blackpixel;
     attributes.backing_store = Always;
     attributes.event_mask = ButtonPressMask 
-      | ButtonMotionMask 
+      | PointerMotionMask 
       | PointerMotionHintMask
       | ButtonReleaseMask
       | ExposureMask
@@ -1612,7 +1614,7 @@ X11_Open(pDevDesc dd, pX11Desc xd, const char *dsp,
                             XInternAtom(display, "_NET_WM_ICON", False),
                             XInternAtom(display, "CARDINAL", False), 32,
                             PropModeReplace,
-                            (const unsigned char*) rlogo_icon, 2 + 48*48);
+                            (const unsigned char*) rlogo_icon, 2 + 99*77);
 
 	    /* set up protocols so that window manager sends */
 	    /* me an event when user "destroys" window */
@@ -1699,15 +1701,15 @@ X11_Open(pDevDesc dd, pX11Desc xd, const char *dsp,
 	if(alreadyCreated == 0) {
 	    XSelectInput(display, xd->window,
 			 ExposureMask | ButtonPressMask | StructureNotifyMask 
-			 | ButtonReleaseMask | ButtonMotionMask  
+			 | ButtonReleaseMask | PointerMotionMask  
                          | PointerMotionHintMask | KeyPressMask);
 	    XMapWindow(display, xd->window);
 	    XSync(display, 0);
 
-	    /* Gobble expose events */
+	    /* Gobble MapNotify events */
 
 	    while ( XPeekEvent(display, &event),
-		    !XCheckTypedEvent(display, Expose, &event))
+		    !XCheckTypedEvent(display, MapNotify, &event))
 		;
 	    /* XNextEvent(display, &event);
 	       if (event.xany.type == Expose) {
@@ -2604,14 +2606,18 @@ static void X11_eventHelper(pDevDesc dd, int code)
     	R_ProcessX11Events((void*)NULL);	/* discard pending events */
     	if (isEnvironment(dd->eventEnv)) {
     	    SEXP prompt = findVar(install("prompt"), dd->eventEnv);
-    	    if (length(prompt) == 1) {
+    	    if (isString(prompt) && length(prompt) == 1) {
+    		 PROTECT(prompt);
     		 XStoreName(display, xd->window, CHAR(asChar(prompt)));
-    	    }
+    		 UNPROTECT(1);
+    	    } else 
+    	    	XStoreName(display, xd->window, "");
     	}
     	XSync(display, 1);
     } else if (code == 2) {
 	XNextEvent(display, &event);
 	if (event.type == ButtonRelease || event.type == ButtonPress || event.type == MotionNotify) {
+	    int RButtons;
 	    XFindContext(display, event.xbutton.window,
 			 devPtrContext, &temp);
 	    ddEvent = (pDevDesc) temp;
@@ -2628,11 +2634,13 @@ static void X11_eventHelper(pDevDesc dd, int code)
 			event.xbutton.x = winX;
 			event.xbutton.y = winY;
 		    }
-		}
+		    RButtons = mask >> 8;  /* See PR#16700 */
+		} else
+		    RButtons = 1 << (event.xbutton.button - 1);
 		if (!done) {
         	    doMouseEvent(dd, event.type == ButtonRelease ? meMouseUp :
         	                 event.type == ButtonPress ? meMouseDown : meMouseMove, 
-        	                 event.xbutton.button, event.xbutton.x, event.xbutton.y);
+        	                 RButtons, event.xbutton.x, event.xbutton.y);
                     XSync(display, 0);
                     done = 1;
 		}

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2014   The R Core Team.
+ *  Copyright (C) 1998-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* <UTF8>
@@ -366,7 +366,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    buffer->data[m++] = char( scanchar2(d));
 	    }
 	    if (c == R_EOF)
-	    	warning(_("EOF within quoted string"));
+		warning(_("EOF within quoted string"));
 	    c = scanchar(FALSE, d);
 	    mm = m;
 	}
@@ -416,7 +416,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			    buffer->data[m++] = char( scanchar2(d));
 		    }
 		    if (c == R_EOF)
-		    	warning(_("EOF within quoted string"));
+			warning(_("EOF within quoted string"));
 		    c = scanchar(TRUE, d); /* only peek at lead byte
 					      unless ASCII */
 		    if (c == quote) {
@@ -458,7 +458,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     }
     *bufp = '\0';
     /* Remove UTF-8 BOM */
-    if(d->atStart && utf8locale && 
+    if(d->atStart && utf8locale &&
        !memcmp(buffer->data, "\xef\xbb\xbf", 3))
 	memmove(buffer->data, buffer->data+3, strlen(buffer->data) + 1);
     d->atStart = FALSE;
@@ -701,7 +701,10 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 
     if (d->ttyflag) sprintf(ConsolePrompt, "1: ");
 
-    strip = asLogical(stripwhite);
+    // we checked its type in do_scan
+    int *lstrip = LOGICAL(stripwhite);
+    Rboolean vec_strip = Rboolean(length(stripwhite) == length(what));
+    strip = lstrip[0];
 
     for (;;) {
 	if(linesread % 1000 == 999) R_CheckUserInterrupt();
@@ -746,6 +749,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 	    }
 	}
 
+	if (vec_strip) strip = lstrip[colsread];
 	buffer = fillBuffer(TYPEOF(VECTOR_ELT(ans, ii)), strip, &bch, d, &buf);
 	if (colsread == 0 &&
 	    strlen(buffer) == 0 &&
@@ -757,8 +761,6 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 	    extractItem(buffer, VECTOR_ELT(ans, ii), n, d);
 	    ii++;
 	    colsread++;
-	    if (length(stripwhite) == length(what))
-		strip = LOGICAL(stripwhite)[colsread];
 	    /* increment n and reset i after filling a row */
 	    if (colsread == nc) {
 		n++;
@@ -768,8 +770,6 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 		    while ((c = scanchar(FALSE, d)) != '\n' && c != R_EOF);
 		    bch = c;
 		}
-		if (length(stripwhite) == length(what))
-		    strip = LOGICAL(stripwhite)[0];
 	    }
 	}
     }
@@ -827,7 +827,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* what_, CXXR::RObject* nmax_, CXXR::RObject* sep_, CXXR::RObject* dec_, CXXR::RObject* quote_, CXXR::RObject* skip_, CXXR::RObject* nlines_, CXXR::RObject* na_strings_, CXXR::RObject* flush_, CXXR::RObject* fill_, CXXR::RObject* strip_white_, CXXR::RObject* quiet_, CXXR::RObject* blank_lines_skip_, CXXR::RObject* multi_line_, CXXR::RObject* comment_char_, CXXR::RObject* allowEscapes_, CXXR::RObject* encoding_, CXXR::RObject* skipNul_)
 {
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
-    int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, 
+    int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline,
 	escapes, skipNul;
     const char *p, *encoding;
     LocalData data = {nullptr, 0, 0, '.', nullptr, NO_COMCHAR, 0, nullptr, FALSE,
@@ -938,7 +938,7 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
 		error(_("cannot read from this connection"));
 	    }
 	} else {
-	    if(!data.con->canread) 
+	    if(!data.con->canread)
 		error(_("cannot read from this connection"));
 	}
 	for (i = 0; i < nskip; i++) /* MBCS-safe */
@@ -986,7 +986,7 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
     if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
-    if (!skipNul && data.embedWarn) 
+    if (!skipNul && data.embedWarn)
 	warning(_("embedded nul(s) found in input"));
     ProvenanceTracker::flagXenogenesis();
     return ans;
@@ -1007,8 +1007,8 @@ SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	if(length(prompt) > 0) {
 	    strncpy(ConsolePrompt, translateChar(STRING_ELT(prompt, 0)),
 		    CONSOLE_PROMPT_SIZE - 1);
-            ConsolePrompt[CONSOLE_PROMPT_SIZE - 1] = '\0';
-        }
+	    ConsolePrompt[CONSOLE_PROMPT_SIZE - 1] = '\0';
+	}
     }
 
     if(R_Interactive) {

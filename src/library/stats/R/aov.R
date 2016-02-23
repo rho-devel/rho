@@ -1,7 +1,7 @@
 #  File src/library/stats/R/aov.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #  Copyright (C) 1998 B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
                 contrasts = NULL, ...)
@@ -31,6 +31,7 @@ aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
                               "there are %d Error terms: only 1 is allowed"),
                      length(indError)), domain = NA)
     lmcall <- Call <- match.call()
+    ## need stats:: for non-standard evaluation
     lmcall[[1L]] <- quote(stats::lm)
     lmcall$singular.ok <- TRUE
     if(projections) qr <- lmcall$qr <- TRUE
@@ -350,7 +351,7 @@ summary.aov <- function(object, intercept = FALSE, split,
                 nmi <- nmeffect[1 + uasgn[i]]
                 nmrows <- c(nmrows, nmi)
                 if(!missing(split) && !is.na(int <- match(nmi, ns))) {
-                    df <- c(df, unlist(lapply(split[[int]], length)))
+		    df <- c(df, lengths(split[[int]]))
                     if(is.null(nms <- names(split[[int]])))
                         nms <- paste0("C", seq_along(split[[int]]))
                     ss <- c(ss, unlist(lapply(split[[int]],
@@ -406,6 +407,12 @@ coef.aov <- function(object, ...)
     z <- object$coefficients
     z[!is.na(z)]
 }
+
+# For maov objects, the coefficients are a matrix and
+# NAs can't sensibly be removed (PR#16380)
+
+coef.maov <- function(object, ...)
+    object$coefficients
 
 alias <- function(object, ...) UseMethod("alias")
 

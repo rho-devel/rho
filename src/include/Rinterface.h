@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2006  The R Core Team.
+ *  Copyright (C) 1998--2016  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /* This header file is to provide hooks for alternative front-ends,
@@ -35,17 +35,25 @@
 #ifndef RINTERFACE_H_
 #define RINTERFACE_H_
 
+// Support for NO_C_HEADERS added in R 3.3.0
 #ifdef __cplusplus
-#include <cstdio>
+# ifndef NO_C_HEADERS
+#  include <cstdio>
+#  ifdef __SUNPRO_CC
+using std::FILE;
+#  endif
+# endif
 extern "C" {
 #else
-#include <stdio.h>
+# ifndef NO_C_HEADERS
+#  include <stdio.h>
+#endif
 #endif
 
 #if defined(__GNUC__) && __GNUC__ >= 3
-#define NORET __attribute__((noreturn))
+# define NORET __attribute__((noreturn))
 #else
-#define NORET
+# define NORET
 #endif
 
 #include <R_ext/Boolean.h>
@@ -88,12 +96,12 @@ extern FILE * R_Consolefile;
 extern FILE * R_Outputfile;
 
 
-/* in unix/sys-unix.c */
+/* in ../unix/sys-unix.c */
 void R_setStartTime(void);
 void fpu_setup(Rboolean);
 
-/* in unix/system.c */
-extern int R_running_as_main_program; 
+/* in ../unix/system.c */
+extern int R_running_as_main_program;
 
 #ifdef CSTACK_DEFNS
 /* duplicating Defn.h */

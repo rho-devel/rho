@@ -1,5 +1,5 @@
 #  File src/library/graphics/R/stripchart.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## Dotplots a la Box, Hunter and Hunter
 
@@ -114,6 +114,7 @@ stripchart.formula <-
     m$formula <- m$x
     m$x <- NULL
     m$na.action <- na.action # force use of default for this method
+    ## need stats:: for non-standard evaluation
     m[[1L]] <- quote(stats::model.frame)
     mf <- eval(m, parent.frame())
     response <- attr(attr(mf, "terms"), "response")

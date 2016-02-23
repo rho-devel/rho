@@ -1,7 +1,7 @@
 #  File src/library/tools/R/build.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2015 The R Core Team
+#  Copyright (C) 1995-2016 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 #### R based engine for R CMD build
 
@@ -61,7 +61,7 @@ get_exclude_patterns <- function()
       "^inst/doc/00Index\\.dcf$",
       ## Autoconf
       "^config\\.(cache|log|status)$",
-      "^autom4te\\.cache$",
+      "(^|/)autom4te\\.cache$", # ncdf4 had this in subdirectory 'tools'
       ## Windows dependency files
       "^src/.*\\.d$", "^src/Makedeps$",
       ## IRIX, of some vintage
@@ -209,7 +209,7 @@ get_exclude_patterns <- function()
             resultLog(Log, "ERROR")
             messageLog(Log, "running '.check_package_description' failed")
         } else {
-            if (any(sapply(res, length))) {
+            if (any(lengths(res))) {
                 resultLog(Log, "ERROR")
                 print(res) # FIXME print to Log?
                 do_exit(1L)
@@ -664,16 +664,18 @@ get_exclude_patterns <- function()
     resave_data_others <- function(pkgname, resave_data)
     {
         if (resave_data == "no") return()
-        ddir <- file.path(pkgname, "data")
+        ddir <- normalizePath(file.path(pkgname, "data"))
         dataFiles <- grep("\\.(rda|RData)$",
                           list_files_with_type(ddir, "data"),
                           invert = TRUE, value = TRUE)
         if (!length(dataFiles)) return()
+        resaved <- character()
+        on.exit(unlink(resaved))
         Rs <- grep("\\.[Rr]$", dataFiles, value = TRUE)
         if (length(Rs)) { # these might use .txt etc
             messageLog(Log, "re-saving .R files as .rda")
             ## ensure utils is visible
-            library("utils")
+            ##   library("utils")
             lapply(Rs, function(x){
                 envir <- new.env(hash = TRUE)
                 sys.source(x, chdir = TRUE, envir = envir)
@@ -681,7 +683,7 @@ get_exclude_patterns <- function()
                      file = sub("\\.[Rr]$", ".rda", x),
                      compress = TRUE, compression_level = 9,
                      envir = envir)
-                unlink(x)
+                resaved <<- c(resaved, x)
             })
             printLog(Log,
                      "  NB: *.R converted to .rda: other files may need to be removed\n")
@@ -696,7 +698,7 @@ get_exclude_patterns <- function()
                     con <- gzfile(paste(nm, "gz", sep = "."), "wb")
                     writeLines(x, con)
                     close(con)
-                    unlink(nm)
+                    resaved <<- c(resaved, nm)
                 })
             } else {
                 OK <- TRUE
@@ -709,7 +711,7 @@ get_exclude_patterns <- function()
                     sizes <- file.size(nm3) * c(0.9, 1, 1)
                     ind <- which.min(sizes)
                     if(ind > 1) OK <<- FALSE
-                    unlink(c(nm, nm3[-ind]))
+                    resaved <<- c(resaved, nm, nm3[-ind])
                 })
                 if (!OK) fixup_R_dep(pkgname, "2.10")
             }
@@ -725,7 +727,7 @@ get_exclude_patterns <- function()
     options(showErrorCalls = FALSE, warn = 1)
 
     ## Read in build environment file.
-    Renv <- Sys.getenv("R_BUILD_ENVIRON", unset = NA)
+    Renv <- Sys.getenv("R_BUILD_ENVIRON", unset = NA_character_)
     if(!is.na(Renv)) {
         ## Do not read any build environment file if R_BUILD_ENVIRON is
         ## set to empty of something non-existent.
@@ -916,22 +918,24 @@ get_exclude_patterns <- function()
         ## FIXME: GNU make uses GNUmakefile (note capitalization)
         exclude <- exclude | bases %in% c("Read-and-delete-me", "GNUMakefile")
         ## Mac resource forks
-        exclude <- exclude | grepl("^\\._", bases)
+        exclude <- exclude | startsWith(bases, "._")
         exclude <- exclude | (isdir & grepl("^src.*/[.]deps$", allfiles))
 	## Windows DLL resource file
         exclude <- exclude | (allfiles == paste0("src/", pkgname, "_res.rc"))
         ## inst/doc/.Rinstignore is a mistake
-        exclude <- exclude | grepl("inst/doc/[.](Rinstignore|build[.]timestamp)$", allfiles)
-        exclude <- exclude | grepl("vignettes/[.]Rinstignore$", allfiles)
+        exclude <- exclude | endsWith(allfiles, "inst/doc/.Rinstignore") |
+            endsWith(allfiles, "inst/doc/.build.timestamp") |
+            endsWith(allfiles, "vignettes/.Rinstignore")
         ## leftovers
         exclude <- exclude | grepl("^.Rbuildindex[.]", allfiles)
+        ## or simply?  exclude <- exclude | startsWith(allfiles, ".Rbuildindex.")
         exclude <- exclude | (bases %in% .hidden_file_exclusions)
         unlink(allfiles[exclude], recursive = TRUE, force = TRUE)
         setwd(owd)
 
         ## Fix up man, R, demo inst/doc directories
         res <- .check_package_subdirs(pkgname, TRUE)
-        if (any(sapply(res, length))) {
+        if (any(lengths(res))) {
             messageLog(Log, "excluding invalid files")
             print(res) # FIXME print to Log?
         }

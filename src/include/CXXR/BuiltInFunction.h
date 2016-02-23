@@ -96,8 +96,8 @@ namespace CXXR {
 	 */
 	enum Precedence {
 	    PREC_FN	 = 0,
-	    PREC_LEFT    = 1,
-	    PREC_EQ	 = 2,
+	    PREC_EQ	 = 1,
+	    PREC_LEFT    = 2,
 	    PREC_RIGHT	 = 3,
 	    PREC_TILDE	 = 4,
 	    PREC_OR	 = 5,
@@ -110,9 +110,9 @@ namespace CXXR {
 	    PREC_COLON	 = 12,
 	    PREC_SIGN	 = 13,
 	    PREC_POWER	 = 14,
-	    PREC_DOLLAR  = 15,
-	    PREC_NS	 = 16,
-	    PREC_SUBSET	 = 17
+	    PREC_SUBSET	 = 15,
+	    PREC_DOLLAR  = 16,
+	    PREC_NS	 = 17
 	};
 
 	/** @brief 'Arity' of the function.

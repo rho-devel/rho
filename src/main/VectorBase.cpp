@@ -19,7 +19,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file VectorBase.cpp
@@ -89,7 +89,9 @@ PairList* VectorBase::resizeAttributes(const PairList* attributes,
     }
     return ans->tail();
 }
-	
+
+// TODO(kmillar): Ensure that names(dims(x)) and names(dimnames(x)) always match
+//   when dims(x) and dimnames(x) are both defined.
 void VectorBase::setDimensionNames(ListVector* names)
 {
     setAttribute(DimNamesSymbol, names);

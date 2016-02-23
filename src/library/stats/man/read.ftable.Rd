@@ -1,5 +1,5 @@
 % File src/library/stats/man/read.ftable.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2014 R Core Team
 % Copyright 2002-2013 The R Foundation
 % Distributed under GPL 2 or later
@@ -50,7 +50,7 @@ write.ftable(x, file = "", quote = TRUE, append = FALSE,
     use for (the cell entries of) \code{x}.}
   \item{method}{string specifying how the \code{"ftable"} object is formatted
     (and printed if used as in \code{write.ftable()} or the \code{print}
-    method).  Available methods are (see the examples):
+    method).  Can be abbreviated.  Available methods are (see the examples):
     \describe{
       \item{"non.compact"}{the default representation of an
         \code{"ftable"} object.}

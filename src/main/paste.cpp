@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *  See ./printutils.c	 for general remarks on Printing
@@ -373,7 +373,7 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 /* format.default(x, trim, digits, nsmall, width, justify, na.encode,
-		  scientific) */
+		  scientific, decimal.mark) */
 SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP l, x, y, swd;
@@ -437,6 +437,26 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
     } else
 	error(_("invalid '%s' argument"), "scientific");
     if(sci != NA_INTEGER) R_print.scipen = sci;
+    args = (args + 1);
+    // copy/paste from "OutDec" part of ./options.c
+    if (TYPEOF(args[0]) != STRSXP || LENGTH(args[0]) != 1)
+	error(_("invalid '%s' argument"), "decimal.mark");
+    char *my_OutDec;
+    if(STRING_ELT(args[0], 0) == NA_STRING)
+	my_OutDec = OutDec; // default
+    else {
+	static char sdec[11];
+// not warning here by default for now
+#ifdef _WARN_decimal_mark_non_1
+	if(R_nchar(STRING_ELT(args[0], 0), Chars,
+		   /* allowNA = */ FALSE, /* keepNA = */ FALSE,
+		   "decimal.mark") != 1) // will become an error
+	    warning(_("'decimal.mark' must be a string of one character"));
+#endif
+	strncpy(sdec, CHAR(STRING_ELT(args[0], 0)), 10);
+	sdec[10] = '\0';
+	my_OutDec = sdec;
+    }
 
     if ((n = XLENGTH(x)) <= 0) {
 	PROTECT(y = allocVector(STRSXP, 0));
@@ -470,7 +490,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    w = imax2(w, wd);
 	    PROTECT(y = allocVector(STRSXP, n));
 	    for (i = 0; i < n; i++) {
-		strp = EncodeReal0(REAL(x)[i], w, d, e, OutDec);
+		strp = EncodeReal0(REAL(x)[i], w, d, e, my_OutDec);
 		SET_STRING_ELT(y, i, mkChar(strp));
 	    }
 	    break;
@@ -481,7 +501,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    w = imax2(w, wd); wi = imax2(wi, wd);
 	    PROTECT(y = allocVector(STRSXP, n));
 	    for (i = 0; i < n; i++) {
-		strp = EncodeComplex(COMPLEX(x)[i], w, d, e, wi, di, ei, OutDec);
+		strp = EncodeComplex(COMPLEX(x)[i], w, d, e, wi, di, ei, my_OutDec);
 		SET_STRING_ELT(y, i, mkChar(strp));
 	    }
 	    break;
@@ -530,7 +550,8 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
 		if (STRING_ELT(xx, i) != NA_STRING) {
 		    il = Rstrlen(STRING_ELT(xx, i), 0);
 		    cnt = imax2(cnt, LENGTH(STRING_ELT(xx, i)) + imax2(0, w-il));
-		} else if (na) cnt  = imax2(cnt, R_print.na_width + imax2(0, w-R_print.na_width));
+		} else if (na)
+		    cnt = imax2(cnt, R_print.na_width + imax2(0, w-R_print.na_width));
 	    R_CheckStack2(cnt+1);
 	    vector<char> buffv(cnt+1);
 	    char* buff = &buffv[0];
@@ -558,7 +579,8 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
 		}
 	    }
 	}
-	UNPROTECT(1);
+	UNPROTECT(2); /* xx , y */
+	PROTECT(y);
 	break;
 	default:
 	    error(_("Impossible mode ( x )")); y = R_NilValue;/* -Wall */
@@ -574,7 +596,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
     /* In case something else forgets to set PrintDefaults(), PR#14477 */
     R_print.scipen = scikeep;
 
-    UNPROTECT(1);
+    UNPROTECT(1); /* y */
     return y;
 }
 
@@ -596,7 +618,6 @@ SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR
     R_xlen_t n = XLENGTH(x);
     PrintDefaults();
 
-    digits = asInteger(digits_);
     if (!isNull(digits_)) {
 	digits = asInteger(digits_);
 	if (digits == NA_INTEGER || digits < R_MIN_DIGITS_OPT

@@ -1,7 +1,7 @@
 #  File src/library/utils/R/summRprof.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2014 The R Core Team
+#  Copyright (C) 1995-2016 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 # The profile file always starts with a single header line followed by stack lines
 #   If the header contains "memory profiling", the stack lines have memory info
@@ -95,9 +95,11 @@ summaryRprof <-
            if (memory == "both") {
                memstuff <- substr(chunk, 2L, memprefix-1L)
                memcounts <- pmax(apply(sapply(strsplit(memstuff, ":"), as.numeric), 1, diff), 0)
+	       if (!is.matrix(memcounts)) # Need a matrix result (PR#16395)
+	           memcounts <- matrix(memcounts, nrow = 1)
                ##  memcounts <- c(0, rowSums(memcounts[, 1L:3L]))
                ## convert to bytes.
-               memcounts <- c(0, rowSums(cbind(memcounts[, 1L:2L] * 8, memcounts[, 3L])))
+               memcounts <- c(0, rowSums(cbind(memcounts[, 1L:2L, drop = FALSE] * 8, memcounts[, 3L, drop = FALSE])))
                rm(memstuff)
            }
            chunk <- substr(chunk, memprefix+1L, nchar(chunk,  "c"))
@@ -110,7 +112,7 @@ summaryRprof <-
        chunk <- strsplit(chunk, " ")
        if (line.profiling)
            chunk <- lapply(chunk, function(x) {
-           	locations <- !grepl("^\"", x)
+           	locations <- !startsWith(x, '"')
            	if (lines != "hide") {
            	    fnum <- sub("#.*", "", x[locations])
            	    lnum <- sub(".*#", "", x[locations])
@@ -124,7 +126,7 @@ summaryRprof <-
        	     })
        newfirsts <- sapply(chunk,  "[[",  1L)
        newuniques <- lapply(chunk,  unique)
-       ulen <- sapply(newuniques, length)
+       ulen <- lengths(newuniques)
        newuniques <- unlist(newuniques)
 
        new.utable <- table(newuniques)

@@ -1,5 +1,5 @@
 % File src/library/utils/man/windows/winDialog.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2009 R Core Team
 % Distributed under GPL 2 or later
 
@@ -19,7 +19,7 @@ tk_messageBox(type = c("ok", "okcancel", "yesno", "yesnocancel",
 }
 \arguments{
   \item{type}{character. The type of dialog box. It will have the
-    buttons implied by its name.}
+    buttons implied by its name.  Can be abbreviated.}
   \item{message}{character. The information field of the dialog box.}
   \item{caption}{the caption on the widget displayed.}
   \item{default}{character. The name of the button to be used as the

@@ -1,5 +1,5 @@
 #  File src/library/graphics/R/cdplot.R
-#  Part of the R package, http://www.R-project.org
+#  Part of the R package, https://www.R-project.org
 #
 #  Copyright (C) 1995-2015 The R Core Team
 #
@@ -14,7 +14,7 @@
 #  GNU General Public License for more details.
 #
 #  A copy of the GNU General Public License is available at
-#  http://www.r-project.org/Licenses/
+#  https://www.R-project.org/Licenses/
 
 ## CD plots contributed by Achim Zeileis
 
@@ -33,6 +33,7 @@ function(formula, data = list(),
     ## extract x, y from formula
     m <- match.call(expand.dots = FALSE)
     m <- m[c(1L, match(c("formula", "data", "subset"), names(m), 0L))]
+    ## need stats:: for non-standard evaluation
     m[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(m)
     if(NCOL(mf) != 2L)

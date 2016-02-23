@@ -1,5 +1,5 @@
 % File src/library/base/man/kappa.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2015 R Core Team
 % Copyright 2008-2010 The R Foundation
 % Distributed under GPL 2 or later
@@ -33,8 +33,8 @@ rcond(x, norm = c("O","I","1"), triangular = FALSE, \dots)
     \code{\link{norm}}.  For \code{rcond}, the default is \code{"O"},
     meaning the \bold{O}ne- or 1-norm.  The (currently only) other
     possible value is \code{"I"} for the infinity norm.}
-  \item{method}{character string, specifying the method to be used;
-    \code{"qr"} is default for back-compatibility, mainly.}
+  \item{method}{a partially matched character string specifying the method to be used;
+    \code{"qr"} is the default for back-compatibility, mainly.}
   \item{triangular}{logical.  If true, the matrix used is just the lower
     triangular part of \code{z}.}
   \item{LINPACK}{logical.  If true and \code{z} is not complex, the

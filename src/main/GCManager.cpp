@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file GCManager.cpp
@@ -49,6 +49,7 @@ size_t GCManager::s_min_threshold = s_threshold;
 const size_t GCManager::s_gclite_margin = 10000;
 size_t GCManager::s_gclite_threshold = s_gclite_margin;
 bool GCManager::s_gc_is_running = false;
+bool GCManager::s_gc_pending = false;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
 
@@ -79,6 +80,12 @@ namespace {
 
 void GCManager::gc(bool force_full_collection)
 {
+    if (s_inhibitor_count > 0) {
+	s_gc_pending = true;
+	return;
+    }
+    s_gc_pending = false;
+
     // Prevent recursion:
     if (s_gc_is_running)
 	return;

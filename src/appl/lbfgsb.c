@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2014 The R Core Team
+ *  Copyright (C) 2000-2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 /* l-bfgs-b.f -- translated by f2c (version 19991025).
 
@@ -327,7 +327,7 @@ void setulb(int n, int m, double *x, double *l, double *u, int *nbd,
 
     /* make sure csave is initialized */
     csave[0] = '\0';
-    
+
     /* Parameter adjustments */
     --wa;
 
@@ -571,7 +571,7 @@ static void mainlb(int n, int m, double *x,
     static int nintol, iback, nskip, head, col, itail, iter, iupdat,
 	nint, nfgv, info, ifun, iword, nfree, nact, ileave, nenter;
     // formerly dsave
-    static double theta, fold, tol, dnorm, epsmch, gd, stpmx, sbgnrm, 
+    static double theta, fold, tol, dnorm, epsmch, gd, stpmx, sbgnrm,
 	stp, gdold, dtd;
 
     /* Function Body */
@@ -741,7 +741,7 @@ L333:
     }
 /*	  compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) */
 /*						     from 'cauchy'). */
-    cmprlb(n, m, &x[1], &g[1], &ws[ws_offset], &wy[wy_offset], 
+    cmprlb(n, m, &x[1], &g[1], &ws[ws_offset], &wy[wy_offset],
 	   &sy[sy_offset], &wt[wt_offset], &z[1], &r[1], &wa[1], &indx[1],
 	   &theta, &col, &head, &nfree, &cnstnd, &info);
     if (info != 0)
@@ -921,7 +921,7 @@ L1000:
 //    isave[18-1] = nact;
 //    isave[19-1] = ileave;
 //    isave[20-1] = nenter;
-  
+
     prn3lb(n, x+1, f, task, iprint, info, iter, nfgv, nintol, nskip, nact,
 	   sbgnrm, nint, word, iback, stp, xstep, k);
     return;
@@ -1297,7 +1297,7 @@ static void cauchy(int n, double *x, double *l, double *u, int *nbd,
        info is an integer variable.
 	 On entry info is 0.
 	 On exit info = 0	for normal return,
-		      = nonzero for abnormal return when the the system
+		      = nonzero for abnormal return when the system
 				used in routine bmv is singular.
 
        Subprograms called:
@@ -2290,7 +2290,7 @@ static void freev(int n, int *nfree, int *indx,
 		    Rprintf("Variable %d enters the set of free variables\n",
 			    k);
 	    }
-         if (iprint >= 100)
+	 if (iprint >= 100)
 	     Rprintf("%d variables leave; %d variables enter\n",
 		     n + 1 - *ileave, *nenter);
 	}
@@ -3307,7 +3307,7 @@ static void dcstep(double *stx, double *fx, double *dx,
 	  On exit fp is unchanged.
 
 	dp is a double precision variable.
-	  On entry dp is the the derivative of the function at stp.
+	  On entry dp is the derivative of the function at stp.
 	  On exit dp is unchanged.
 
 	brackt is an logical variable.
@@ -3573,4 +3573,3 @@ static void prn3lb(int n, double *x, double *f, char *task, int iprint,
 	}
     }
 }
-

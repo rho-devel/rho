@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2013 The R Core Team.
+ *  Copyright (C) 1999-2016 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -20,8 +20,15 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
+
+/* From 'Writing R Extensions:
+
+   'these are not kept up to date and are not recommended for new projects.'
+
+   As from R 3.3.0 they have been adjusted to work when R_NO_REMAP is defined.
+*/
 
 #ifndef R_DEFINES_H
 #define R_DEFINES_H
@@ -58,21 +65,30 @@ extern "C" {
 
 #define NULL_USER_OBJECT	R_NilValue
 
-#define AS_LOGICAL(x)		coerceVector(x,LGLSXP)
-#define AS_INTEGER(x)		coerceVector(x,INTSXP)
-#define AS_NUMERIC(x)		coerceVector(x,REALSXP)
-#define AS_CHARACTER(x)		coerceVector(x,STRSXP)
-#define AS_COMPLEX(x)		coerceVector(x,CPLXSXP)
-#define AS_VECTOR(x)		coerceVector(x,VECSXP)
-#define AS_LIST(x)		coerceVector(x,VECSXP)
-#define AS_RAW(x)		coerceVector(x,RAWSXP)
+#define AS_LOGICAL(x)		Rf_coerceVector(x,LGLSXP)
+#define AS_INTEGER(x)		Rf_coerceVector(x,INTSXP)
+#define AS_NUMERIC(x)		Rf_coerceVector(x,REALSXP)
+#define AS_CHARACTER(x)		Rf_coerceVector(x,STRSXP)
+#define AS_COMPLEX(x)		Rf_coerceVector(x,CPLXSXP)
+#define AS_VECTOR(x)		Rf_coerceVector(x,VECSXP)
+#define AS_LIST(x)		Rf_coerceVector(x,VECSXP)
+#define AS_RAW(x)		Rf_coerceVector(x,RAWSXP)
 
-#define IS_LOGICAL(x)		Rf_isLogical(x)
-#define IS_INTEGER(x)		Rf_isInteger(x)
-#define IS_NUMERIC(x)		Rf_isReal(x)
-#define IS_CHARACTER(x)		Rf_isString(x)
-#define IS_COMPLEX(x)		Rf_isComplex(x)
-/* NB: is this right? It means atomic or VECSXP or EXPRSXP */
+#ifdef USE_RINTERNALS
+// This is not documented to be supported, and may not be in future
+# define IS_LOGICAL(x)		isLogical(x)
+# define IS_INTEGER(x)		isInteger(x)
+# define IS_NUMERIC(x)		isReal(x)
+# define IS_CHARACTER(x)	isString(x)
+# define IS_COMPLEX(x)		isComplex(x)
+#else
+# define IS_LOGICAL(x)		Rf_isLogical(x)
+# define IS_INTEGER(x)		Rf_isInteger(x)
+# define IS_NUMERIC(x)		Rf_isReal(x)
+# define IS_CHARACTER(x)	Rf_isString(x)
+# define IS_COMPLEX(x)		Rf_isComplex(x)
+#endif
+/* NB: is this right?  It means atomic or VECSXP or EXPRSXP */
 #define IS_VECTOR(x)		Rf_isVector(x)
 /* And this cannot be right: isVectorList(x)? */
 #define IS_LIST(x)		IS_VECTOR(x)
@@ -107,33 +123,33 @@ extern "C" {
 #define NUMERIC_DATA(x)		(REAL(x))
 #define COMPLEX_DATA(x)		(COMPLEX(x))
 
-#define LOGICAL_VALUE(x)	asLogical(x)
-#define INTEGER_VALUE(x)	asInteger(x)
-#define NUMERIC_VALUE(x)	asReal(x)
-#define CHARACTER_VALUE(x)	CHAR(asChar(x))
-#define STRING_VALUE(x)		CHAR(asChar(x))
-#define LIST_VALUE(x)		error("the 'value' of a list object is not defined")
-#define RAW_VALUE(x)		error("the 'value' of a raw object is not defined")
+#define LOGICAL_VALUE(x)	Rf_asLogical(x)
+#define INTEGER_VALUE(x)	Rf_asInteger(x)
+#define NUMERIC_VALUE(x)	Rf_asReal(x)
+#define CHARACTER_VALUE(x)	CHAR(Rf_asChar(x))
+#define STRING_VALUE(x)		CHAR(Rf_asChar(x))
+#define LIST_VALUE(x)		Rf_error("the 'value' of a list object is not defined")
+#define RAW_VALUE(x)		Rf_error("the 'value' of a raw object is not defined")
 
 #define SET_ELEMENT(x, i, val)	SET_VECTOR_ELT(x, i, val)
-#define GET_ATTR(x,what)       	getAttrib(x, what)
-#define GET_CLASS(x)       	getAttrib(x, R_ClassSymbol)
-#define GET_DIM(x)       	getAttrib(x, R_DimSymbol)
-#define GET_DIMNAMES(x)       	getAttrib(x, R_DimNamesSymbol)
-#define GET_COLNAMES(x)       	GetColNames(x)
-#define GET_ROWNAMES(x)       	GetRowNames(x)
-#define GET_LEVELS(x)       	getAttrib(x, R_LevelsSymbol)
-#define GET_TSP(x)       	getAttrib(x, R_TspSymbol)
-#define GET_NAMES(x)		getAttrib(x, R_NamesSymbol)
-#define SET_ATTR(x, what, n)     	setAttrib(x, what, n)
-#define SET_CLASS(x, n)     	setAttrib(x, R_ClassSymbol, n)
-#define SET_DIM(x, n)     	setAttrib(x, R_DimSymbol, n)
-#define SET_DIMNAMES(x, n)     	setAttrib(x, R_DimNamesSymbol, n)
-#define SET_LEVELS(x, l)       	setAttrib(x, R_LevelsSymbol, l)
-#define SET_NAMES(x, n)		setAttrib(x, R_NamesSymbol, n)
+#define GET_ATTR(x,what)       	Rf_getAttrib(x, what)
+#define GET_CLASS(x)       	Rf_getAttrib(x, R_ClassSymbol)
+#define GET_DIM(x)       	Rf_getAttrib(x, R_DimSymbol)
+#define GET_DIMNAMES(x)       	Rf_getAttrib(x, R_DimNamesSymbol)
+#define GET_COLNAMES(x)       	Rf_GetColNames(x)
+#define GET_ROWNAMES(x)       	Rf_GetRowNames(x)
+#define GET_LEVELS(x)       	Rf_getAttrib(x, R_LevelsSymbol)
+#define GET_TSP(x)       	Rf_getAttrib(x, R_TspSymbol)
+#define GET_NAMES(x)		Rf_getAttrib(x, R_NamesSymbol)
+#define SET_ATTR(x, what, n)    Rf_setAttrib(x, what, n)
+#define SET_CLASS(x, n)     	Rf_setAttrib(x, R_ClassSymbol, n)
+#define SET_DIM(x, n)     	Rf_setAttrib(x, R_DimSymbol, n)
+#define SET_DIMNAMES(x, n)     	Rf_setAttrib(x, R_DimNamesSymbol, n)
+#define SET_LEVELS(x, l)       	Rf_setAttrib(x, R_LevelsSymbol, l)
+#define SET_NAMES(x, n)		Rf_setAttrib(x, R_NamesSymbol, n)
 /* These do not support long vectors */
-#define GET_LENGTH(x)		length(x)
-#define SET_LENGTH(x, n)	(x = lengthgets(x, n))
+#define GET_LENGTH(x)		Rf_length(x)
+#define SET_LENGTH(x, n)	(x = Rf_lengthgets(x, n))
 
 #define GET_SLOT(x, what)       R_do_slot(x, what)
 #define SET_SLOT(x, what, value)  R_do_slot_assign(x, what, value)

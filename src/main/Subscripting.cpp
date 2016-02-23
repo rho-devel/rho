@@ -19,7 +19,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /** @file Subscripting.cpp
@@ -414,10 +414,17 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	// Set up new dimensions attribute:
 	{
 	    GCStackRoot<IntVector> newdims(IntVector::create(ngooddims));
+	    StringVector* names = nullptr;
+	    if (dims->names()) {
+		names = StringVector::create(ngooddims);
+		newdims->setNames(names);
+	    }
 	    std::size_t dout = 0;
 	    for (std::size_t din = 0; din < ndims; ++din) {
 		std::size_t dsize = std::size_t((*dims)[din]);
 		if (dsize != 1) {
+		    if (names)
+			(*names)[dout] = (*dims->names())[din];
 		    (*newdims)[dout++] = int(dsize);
 		    if (dimnames && (*dimnames)[din])
 			havenames = true;
@@ -489,6 +496,8 @@ void Subscripting::setArrayAttributes(VectorBase* subset,
 	GCStackRoot<IntVector> newdims(IntVector::create(ndims));
 	for (std::size_t d = 0; d < ndims; ++d)
 	    (*newdims)[d] = int(indicesvec[d].size());
+	newdims->setNames(const_cast<StringVector*>(
+			      source->dimensions()->names()));
 	subset->setDimensions(newdims);
     }
     // Dimnames:

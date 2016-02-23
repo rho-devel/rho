@@ -1,5 +1,5 @@
 % File src/library/base/man/formatDL.Rd
-% Part of the R package, http://www.R-project.org
+% Part of the R package, https://www.R-project.org
 % Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
@@ -21,7 +21,8 @@ formatDL(x, y, style = c("table", "list"),
     corresponding descriptions.  Only used if \code{x} does not already
     give the descriptions.}
   \item{style}{a character string specifying the rendering style of the
-    description information.  If \code{"table"}, a two-column table with
+    description information.  Can be abbreviated.
+    If \code{"table"}, a two-column table with
     items and descriptions as columns is produced (similar to Texinfo's
     \verb{@table} environment.  If \code{"list"}, a LaTeX-style tagged
     description list is obtained.}
