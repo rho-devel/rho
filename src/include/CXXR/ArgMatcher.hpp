@@ -310,6 +310,8 @@ namespace CXXR {
 	struct Comparator {
 	    bool operator()(const String* l, const String* r) const
 	    {
+		assert(l);
+		assert(r);
 		return l->stdstring() < r->stdstring();
 	    }
 	};

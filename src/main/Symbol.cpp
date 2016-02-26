@@ -180,6 +180,8 @@ Symbol* Symbol::obtain(const std::string& name)
 Symbol* Symbol::obtainS3Signature(const char *methodName,
 				  const char *className)
 {
+    assert(methodName != nullptr);
+    assert(className != nullptr);
     std::string signature = methodName;
     signature.push_back('.');
     signature.append(className);

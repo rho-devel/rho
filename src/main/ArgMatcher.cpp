@@ -204,7 +204,7 @@ public:
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args)  {
+		    const ArgList* all_args) override {
 	if (arg_indices.empty()) {
 	    m_target_env->frame()->obtainBinding(DotsSymbol);
 	    return;
@@ -246,7 +246,7 @@ public:
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args) {
+		    const ArgList* all_args) override {
 	m_matching->m_values.insert(m_matching->m_values.end(),
 				    arg_indices.begin(), arg_indices.end());
     }

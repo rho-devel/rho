@@ -912,6 +912,7 @@ const char *translateChar(SEXP x)
 	error(_("'%s' must be called on a CHARSXP"), "translateChar");
     nttype_t t = needsTranslation(x);
     const char *ans = CHAR(x);
+    assert(ans != nullptr);
     if (t == NT_NONE) return ans;
 
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
@@ -921,6 +922,7 @@ const char *translateChar(SEXP x)
     char *p = R_alloc(res, 1);
     memcpy(p, cbuff.data, res);
     R_FreeStringBuffer(&cbuff);
+    assert(p != nullptr);
     return p;
 }
 

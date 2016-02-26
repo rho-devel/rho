@@ -1928,6 +1928,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
     PairList* callargs = SEXP_downcast<PairList*>(args);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
+    assert(group != nullptr);
 
     if (!callargs)
 	return 0;

@@ -202,6 +202,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment* callenv = SEXP_downcast<Environment*>(callrho);
     Environment* defenv = SEXP_downcast<Environment*>(defrho);
+    assert(generic != nullptr);
 
     // Get the ClosureContext which UseMethod was called from.
     ClosureContext* cptr = ClosureContext::innermost();

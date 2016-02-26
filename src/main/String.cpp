@@ -65,11 +65,10 @@ String::String(char* character_storage,
       m_symbol(nullptr),
       m_ascii(isAscii)
 {
-    if (character_storage) {
-	memcpy(character_storage, text.data(), text.size());
-	character_storage[text.size()] = '\0';  // Null terminated.
-    }
+    memcpy(character_storage, text.data(), text.size());
+    character_storage[text.size()] = '\0';  // Null terminated.
     m_data = character_storage;
+    assert(m_data);
 
     switch(m_encoding) {
     case CE_NATIVE:
@@ -215,6 +214,9 @@ const char* String::typeName() const
 
 SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
 {
+    if (!text)
+	text = "";
+
     switch(encoding) {
     case CE_NATIVE:
     case CE_UTF8:
