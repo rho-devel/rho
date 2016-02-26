@@ -56,7 +56,7 @@ namespace CXXR {
 SEXP do_abbrev(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* these_, CXXR::RObject* minlength_, CXXR::RObject* use_classes_);
 SEXP do_abs(SEXP, SEXP, SEXP, SEXP); // calls do_cmathfuns
 CXXR::quick_builtin do_addCondHands;
-SEXP do_address(SEXP, SEXP, SEXP, SEXP);
+SEXP do_address(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
 SEXP do_addRestart(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* restart_);
 SEXP do_adist(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* y_, CXXR::RObject* costs_, CXXR::RObject* counts_, CXXR::RObject* fixed_, CXXR::RObject* partial_, CXXR::RObject* ignore_case_, CXXR::RObject* useBytes_);
 CXXR::quick_builtin do_agrep;
@@ -75,7 +75,7 @@ CXXR::quick_builtin do_asatomic;
 SEXP do_asfunction(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_);
 SEXP do_assign(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* envir_, CXXR::RObject* inherits_);
 CXXR::quick_builtin do_asvector;
-SEXP do_asCharacterFactor(SEXP, SEXP, SEXP, SEXP);
+SEXP do_asCharacterFactor(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
 SEXP do_AT(SEXP call, SEXP op, SEXP args, SEXP env);  // Special
 SEXP do_attach(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* pos_, CXXR::RObject* name_);
 SEXP do_attr(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
@@ -315,7 +315,7 @@ SEXP do_readLines(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR:
 SEXP do_readln(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* prompt_);
 SEXP do_recall(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_recordGraphics(SEXP, SEXP, SEXP, SEXP);
-SEXP do_refcnt(SEXP, SEXP, SEXP, SEXP);
+SEXP do_refcnt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
 SEXP do_regexec(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_);
 SEXP do_regexpr(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_);
 SEXP do_regFinaliz(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* e_, CXXR::RObject* f_, CXXR::RObject* onexit_);
@@ -365,10 +365,10 @@ SEXP do_sort(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObj
 SEXP do_split(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* f_);
 CXXR::quick_builtin do_sprintf;
 CXXR::quick_builtin do_standardGeneric;
-SEXP do_startsWith(SEXP, SEXP, SEXP, SEXP);
+SEXP do_startsWith(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* prefix);
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP) NORET;
 SEXP do_storage_mode(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* obj, CXXR::RObject* value);
-SEXP do_strrep(SEXP, SEXP, SEXP, SEXP);
+SEXP do_strrep(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* n);
 SEXP do_strsplit(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* split_, CXXR::RObject* fixed_, CXXR::RObject* perl_, CXXR::RObject* useBytes_);
 SEXP do_strptime(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* tz_);
 SEXP do_strtrim(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_);
@@ -413,8 +413,8 @@ SEXP do_unserializeFromConn(CXXR::Expression* call, const CXXR::BuiltInFunction*
 SEXP do_unsetenv(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
 SEXP do_usemethod(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_utf8ToInt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_);
-SEXP do_validEnc(SEXP, SEXP, SEXP, SEXP);
-SEXP do_validUTF8(SEXP, SEXP, SEXP, SEXP);
+SEXP do_validEnc(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
+SEXP do_validUTF8(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x);
 SEXP do_vapply(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_version(CXXR::Expression* call, const CXXR::BuiltInFunction* op);
 SEXP do_warning(SEXP, SEXP, SEXP, SEXP);

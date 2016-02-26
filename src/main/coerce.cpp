@@ -1330,11 +1330,8 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
-SEXP attribute_hidden do_asCharacterFactor(SEXP call, SEXP op, SEXP args,
-                                           SEXP rho)
+SEXP attribute_hidden do_asCharacterFactor(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    SEXP x;
-    x = CAR(args);
     return Rf_asCharacterFactor(x);
 }
 
