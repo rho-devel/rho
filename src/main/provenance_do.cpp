@@ -324,11 +324,3 @@ do_provenance_graph(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunctio
     return ans;
 #endif  // PROVENANCE_TRACKING
 }
-
-namespace {
-    // Import Bindings (and their provenance) from one Frame into another.
-    void import(Frame* to, const Frame& from)
-    {
-	to->importBindings(&from, TRUE);
-    }
-}

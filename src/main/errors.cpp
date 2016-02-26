@@ -1457,11 +1457,6 @@ namespace {
 	return SEXP_downcast<HandlerEntry*>(e)->m_class;
     }
 
-    Environment* ENTRY_CALLING_ENVIR(SEXP e)
-    {
-	return SEXP_downcast<HandlerEntry*>(e)->m_parent_environment;
-    }
-
     RObject* ENTRY_HANDLER(SEXP e)
     {
 	return SEXP_downcast<HandlerEntry*>(e)->m_handler;

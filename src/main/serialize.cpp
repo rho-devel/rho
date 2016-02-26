@@ -1198,36 +1198,6 @@ bool CircleFinder::add(RObject* item)
     return count != 1;
 }
 
-static void ScanForCircles1(SEXP s, CircleFinder* cf)
-{
-    switch (TYPEOF(s)) {
-    case LANGSXP:
-    case LISTSXP:
-	if (!cf->add(s)) {
-	    ScanForCircles1(CAR(s), cf);
-	    ScanForCircles1(CDR(s), cf);
-	}
-	break;
-    default:
-	break;
-    }
-}
-
-static SEXP ScanForCircles(SEXP s)
-{
-    CircleFinder cf;
-    ScanForCircles1(s, &cf);
-    return cf.duplicates();
-}
-
-static SEXP findrep(SEXP x, SEXP reps)
-{
-    for (; reps != R_NilValue; reps = CDR(reps))
-	if (x == CAR(reps))
-	    return reps;
-    return R_NilValue;
-}
-
 void R_Serialize(SEXP s, R_outpstream_t stream)
 {
     SEXP ref_table;

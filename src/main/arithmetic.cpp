@@ -1494,14 +1494,6 @@ SEXP attribute_hidden do_math3(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	if      (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)) y = NA_REAL;\
 	else if (ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)) y = R_NaN;
 
-static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
-		  double (*f)(double, double, double, double), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
-    double ai, bi, ci, di, *a, *b, *c, *d, *y;
-    int naflag;
-
 #define SETUP_Math4							\
     if(!isNumeric(sa)|| !isNumeric(sb)|| !isNumeric(sc)|| !isNumeric(sd))\
 	errorcall(lcall, R_MSG_NONNUM_MATH);				\
@@ -1528,21 +1520,6 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     y = REAL(sy);							\
     naflag = 0
 
-    SETUP_Math4;
-
-    MOD_ITERATE4 (n, na, nb, nc, nd, i, ia, ib, ic, id, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	di = d[id];
-	if_NA_Math4_set(y[i], ai,bi,ci,di)
-	else {
-	    y[i] = f(ai, bi, ci, di);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-
 #define FINISH_Math4					\
     if(naflag) warning(R_MSG_NA);			\
 							\
@@ -1551,11 +1528,6 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     else if (n == nc) SHALLOW_DUPLICATE_ATTRIB(sy, sc);	\
     else if (n == nd) SHALLOW_DUPLICATE_ATTRIB(sy, sd);	\
     UNPROTECT(5)
-
-    FINISH_Math4;
-
-    return sy;
-} /* math4() */
 
 static SEXP math4_1(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, double (*f)(double, double, double, double, int), SEXP lcall)
 {
