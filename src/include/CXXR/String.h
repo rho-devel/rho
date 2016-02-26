@@ -226,6 +226,7 @@ namespace CXXR {
 	 */
 	std::string stdstring() const
 	{
+	    assert(m_data);
             return std::string(m_data, size());
 	}
 
@@ -239,6 +240,7 @@ namespace CXXR {
           if (this == NA()) {
             return false;
           }
+	  assert(m_data);
           return strcmp(m_data, text) == 0;
         }
 
