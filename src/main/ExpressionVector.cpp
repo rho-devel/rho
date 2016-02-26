@@ -38,6 +38,11 @@ namespace CXXR {
 	Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
 	SEXP (*XVECTOR_ELTp)(const SEXP x, R_xlen_t i) = XVECTOR_ELT;
     }
+
+    template<>
+    const char* ExpressionVector::staticTypeName() {
+	return "expression";
+    }
 }
 
 // ***** C interface *****

@@ -113,7 +113,10 @@
 
 #include "RBufferUtils.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Promise.h"
+#include "CXXR/StringVector.h"
 
 using namespace std;
 using namespace CXXR;

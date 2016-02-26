@@ -41,4 +41,9 @@ namespace CXXR {
 	Rboolean (*isLogicalptr)(SEXP s) = Rf_isLogical;
 	int* (*LOGICALp)(SEXP) = LOGICAL;
     }
+
+    template <>
+    const char* LogicalVector::staticTypeName() {
+	return "logical";
+    }
 }

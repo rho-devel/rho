@@ -637,8 +637,6 @@ stringPositionTr(SEXP string, const char *translatedElement) {
     return -1; /* not found */
 }
 
-Rboolean R_cycle_detected(SEXP, SEXP); // TODO: where is this supposed to be declared?
-
 /* duplicate RHS value of complex assignment if necessary to prevent cycles */
 INLINE_FUN SEXP R_FixupRHS(SEXP x, SEXP y)
 {

@@ -45,13 +45,6 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
-    template <>
-    inline const char* FixedVector<RHandle<>, EXPRSXP>::staticTypeName()
-    {
-	return "expression";
-    }
-
     /** @brief Expression vector.
      *
      * The vector contains smart pointers of type

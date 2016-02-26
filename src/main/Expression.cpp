@@ -26,6 +26,7 @@
  *
  * @brief Class CXXR::Expression and associated C interface.
  */
+#define R_NO_REMAP
 
 #include "CXXR/Expression.h"
 
@@ -35,6 +36,9 @@
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/ArgList.hpp"
+#include "CXXR/ArgMatcher.hpp"
+#include "CXXR/BuiltInFunction.h"
+#include "CXXR/Closure.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
@@ -43,6 +47,7 @@
 #include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PlainContext.hpp"
+#include "CXXR/ProtectStack.h"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/StackChecker.hpp"
 #include "CXXR/Symbol.h"
@@ -74,13 +79,13 @@ FunctionBase* Expression::getFunction(Environment* env) const
 	Symbol* symbol = static_cast<Symbol*>(head);
 	FunctionBase* func = findFunction(symbol, env);
 	if (!func)
-	    error(_("could not find function \"%s\""),
+	    Rf_error(_("could not find function \"%s\""),
 		  symbol->name()->c_str());
 	return func;
     } else {
 	RObject* val = Evaluator::evaluate(head, env);
 	if (!FunctionBase::isA(val))
-	    error(_("attempt to apply non-function"));
+	    Rf_error(_("attempt to apply non-function"));
 	return static_cast<FunctionBase*>(val);
     }
 }
@@ -195,7 +200,7 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 #undef CASE_STATEMENT
 
     default:
-	errorcall(const_cast<Expression*>(this),
+	Rf_errorcall(const_cast<Expression*>(this),
 		  _("too many arguments, sorry"));
     }
 }

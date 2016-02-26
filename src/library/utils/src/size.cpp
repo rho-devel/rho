@@ -32,6 +32,7 @@
 #endif
 
 #include <Defn.h>
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;

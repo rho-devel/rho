@@ -29,6 +29,8 @@
  * Class RObject and associated C interface functions.
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/RObject.h"
 
 #include <cstdlib>
@@ -39,8 +41,6 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
-
-#undef cons
 
 using namespace std;
 using namespace CXXR;

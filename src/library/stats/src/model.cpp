@@ -40,6 +40,7 @@
 #endif
 
 #include <vector>
+#include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace std;

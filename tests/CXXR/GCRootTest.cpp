@@ -24,7 +24,9 @@
 #include "gtest/gtest.h"
 
 #include "TestHelpers.hpp"
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/GCRoot.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/RObject.h"
 

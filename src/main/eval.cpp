@@ -49,12 +49,15 @@
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/BailoutContext.hpp"
+#include "CXXR/Closure.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
+#include "CXXR/Promise.h"
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
@@ -1268,7 +1271,8 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
   nonlocal.
 */
 
-static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
+static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,
+			 Frame::Binding* tmploc)
 {
     GCStackRoot<> exprrt(expr);
     if (Rf_isNull(expr))
@@ -1286,9 +1290,10 @@ static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc
     else if (Rf_isLanguage(expr)) {
 	Expression* exprn = static_cast<Expression*>(expr);
 	GCStackRoot<PairList> val(evalseq(exprn->tail()->car(), rho, forcelocal, tmploc));
-	R_SetVarLocValue(tmploc, val->car());
-	GCStackRoot<PairList> nexprargs(PairList::cons(R_GetVarLocSymbol(tmploc),
-						       exprn->tail()->tail()));
+	tmploc->assign(val->car());
+	GCStackRoot<PairList> nexprargs(
+	    PairList::cons(const_cast<Symbol*>(tmploc->symbol()),
+			   exprn->tail()->tail()));
 	GCStackRoot<Expression> nexpr(new Expression(exprn->car(), nexprargs));
 	GCStackRoot<> nval(Rf_eval(nexpr, rho));
 	return PairList::cons(nval, val);
@@ -1302,22 +1307,21 @@ static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc
 
 static const char * const asym[] = {":=", "<-", "<<-", "="};
 
-/* This macro stores the current assignment target in the saved
+/* This function stores the current assignment target in the saved
    binding location. It duplicates if necessary to make sure
    replacement functions are always called with a target with NAMED ==
    1. The SET_CAR is intended to protect against possible GC in
    R_SetVarLocValue; this might occur it the binding is an active
    binding. */
-#define SET_TEMPVARLOC_FROM_CAR(loc, lhs) do { \
-	SEXP __lhs__ = (lhs); \
-	SEXP __v__ = CAR(__lhs__); \
-	if (NAMED(__v__) == 2) { \
-	    __v__ = Rf_duplicate(__v__); \
-	    SET_NAMED(__v__, 1); \
-	    SETCAR(__lhs__, __v__); \
-	} \
-	R_SetVarLocValue(loc, __v__); \
-    } while(0)
+static void SET_TEMPVARLOC_FROM_CAR(Frame::Binding* loc, PairList* lhs) {
+    SEXP v = lhs->car();
+    if (NAMED(v) == 2) {
+	v = Rf_duplicate(v);
+	SET_NAMED(v, 1);
+	lhs->setCar(v);
+    }
+    loc->assign(v);
+}
 
 /* This macro makes sure the RHS NAMED value is 0 or 2. This is
    necessary to make sure the RHS value returned by the assignment
@@ -1421,14 +1425,16 @@ SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (rho == R_BaseEnv)
 	Rf_errorcall(call, _("cannot do complex assignments in base environment"));
     Rf_defineVar(R_TmpvalSymbol, R_NilValue, rho);
-    R_varloc_t tmploc = R_findVarLocInFrame(rho, R_TmpvalSymbol);
+    Frame::Binding* tmploc
+	= SEXP_downcast<Environment*>(rho)->frame()->binding(TmpvalSymbol);
     /* Now use try-catch to remove it when we are done, even in the
      * case of an error.  This all helps Rf_error() provide a better call.
      */
     try {
 	/*  Do a partial evaluation down through the LHS. */
-	GCStackRoot<> lhs(evalseq(CADR(expr), rho,
-				  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc));
+	GCStackRoot<PairList> lhs(
+	    evalseq(CADR(expr), rho,
+		    PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc));
 
 	GCStackRoot<> rhsprom(Promise::createEvaluatedPromise(CADR(args), rhs));
 
@@ -1462,7 +1468,7 @@ SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_PRVALUE(rhsprom, rhs);
 	    // Try doing without this in CXXR:
 	    // SET_PRCODE(rhsprom, rhs); /* not good but is what we have been doing */
-	    lhs = CDR(lhs);
+	    lhs = lhs->tail();
 	    expr = firstarg;
 	    functor = CAR(expr);
 	    firstarg = CADR(expr);

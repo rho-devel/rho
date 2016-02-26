@@ -37,4 +37,9 @@ namespace CXXR {
     namespace ForceNonInline {
 	Rbyte* (*RAWp)(SEXP) = RAW;
     }
+
+    template <>
+    const char* RawVector::staticTypeName() {
+	return "raw";
+    }
 }

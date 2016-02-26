@@ -48,6 +48,11 @@ namespace CXXR {
 	na = String::NA();
 	return na;
     }
+
+    template<>
+    const char* StringVector::staticTypeName() {
+	return "character";
+    }
 }
 
 namespace {

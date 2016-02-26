@@ -37,6 +37,7 @@
 #include "Print.h"
 #include "Fileio.h"
 #include "Parse.h"
+#include "CXXR/ExpressionVector.h"
 
 #include <stdio.h>
 #ifdef Win32

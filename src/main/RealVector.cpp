@@ -38,4 +38,9 @@ namespace CXXR {
 	Rboolean (*isRealptr)(SEXP s) = Rf_isReal;
 	double* (*REALp)(SEXP) = REAL;
     }
+
+    template<>
+    const char* RealVector::staticTypeName() {
+	return "numeric";
+    }
 }

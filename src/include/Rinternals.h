@@ -31,21 +31,6 @@
 
 /** @file Rinternals.h
  * @brief (As described in 'Writing R Extensions'.)
- *
- * As CXXR development proceeds, the type definitions, function
- * prototypes etc. defined in this header file will be progressively
- * factored out into individual class-related header files, which will
- * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
- * code should use the class-related header files directly, as required,
- * rather than <tt>\#include</tt>ing this file.
- *
- * In most cases, function prototypes and extern declarations that
- * have been factored out into CXXR's own header files are
- * nevertheless also retained in this file.  This is so that any
- * changes to these declarations that appear in a new release of CR
- * are picked up automatically during the 'svn merge' process.  The
- * compiler will then detect any inconsistencies between the new
- * declaration in this file and the 'factored-out' declaration.
  */
 
 #ifndef R_INTERNALS_H_
@@ -79,28 +64,11 @@ using std::FILE;
 
 #include <R_ext/libextern.h>
 
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Closure.h"
-#include "CXXR/ComplexVector.h"
-#include "CXXR/DotInternal.h"
-#include "CXXR/GCRoot.h"
-#include "CXXR/Environment.h"
-#include "CXXR/Expression.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/ExternalPointer.h"
-#include "CXXR/IntVector.h"
-#include "CXXR/ListVector.h"
-#include "CXXR/LogicalVector.h"
-#include "CXXR/PairList.h"
-#include "CXXR/Promise.h"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/RealVector.h"
-#include "CXXR/S4Object.h"
-#include "CXXR/String.h"
-#include "CXXR/StringVector.h"
-#include "CXXR/Symbol.h"
-#include "CXXR/WeakRef.h"
+typedef unsigned char Rbyte;
+
+/* type for length of (standard, not long) vectors etc */
+typedef int R_len_t;
+#define R_LEN_T_MAX INT_MAX
 
 /* both config.h and Rconfig.h set SIZEOF_SIZE_T, but Rconfig.h is
    skipped if config.h has already been included. */
@@ -108,42 +76,137 @@ using std::FILE;
 # include <Rconfig.h>
 #endif
 
-#if ( SIZEOF_SIZE_T > 4 )
-# define LONG_VECTOR_SUPPORT
-#endif
-
-#ifdef LONG_VECTOR_SUPPORT
-# define R_XLEN_T_MAX 4503599627370496
-# define R_SHORT_LEN_MAX 2147483647
-#else
-# define R_XLEN_T_MAX R_LEN_T_MAX
-#endif
+typedef ptrdiff_t R_xlen_t;
+#define R_XLEN_T_MAX PTRDIFF_MAX
 
 #ifdef __cplusplus
+namespace CXXR {
+    class RObject;
+}
+typedef CXXR::RObject* SEXP;
+
 extern "C" {
+#else
+typedef struct SEXPREC* SEXP;
 #endif
 
-// Commentings out done during CXXR 3.0.2 upgrade.  FIXME delete altogether
+    /* Comment from CR code:
+     * Fundamental Data Types:  These are largely Lisp
+     * influenced structures, with the exception of LGLSXP,
+     * INTSXP, REALSXP, CPLXSXP and STRSXP which are the
+     * element types for S-like data objects.
+
+     * Note that the gap of 11 and 12 below is because of
+     * the withdrawal of native "factor" and "ordered" types.
+     *
+     *			--> TypeTable[] in ../main/util.c for  typeof()
+     */
+
+    /*  These exact numeric values are seldom used, but they are, e.g., in
+     *  ../main/subassign.c
+     */
+
+    /** @enum SEXPTYPE
+     *
+     * @brief CR's object type identification.
+     *
+     * This enumeration is used within CR to identify different types
+     * of R object.  In CXXR the same purpose could be (and sometimes
+     * is) achieved by C++ run-time type information (RTTI), virtual
+     * function despatch etc.  However, a ::SEXPTYPE field is retained
+     * within each CXXR::RObject for backwards compatibility, and indeed
+     * efficiency.
+     */
+    typedef enum {
+	NILSXP	    = 0,    /**< NULL. In CXXR no CXXR::RObject has
+			     * this type, but for backward
+			     * compatibility TYPEOF will return ::NILSXP
+			     * if passed a null pointer.
+			     */
+	SYMSXP	    = 1,    /**< symbols, implemented in class
+			       CXXR::Symbol. */
+	LISTSXP	    = 2,    /**< lists of dotted pairs, implemented in
+			       class CXXR::PairList. */
+	CLOSXP	    = 3,    /**< closures, implemented in class
+			       CXXR::Closure. */
+	ENVSXP	    = 4,    /**< environments, implemented in class
+			       CXXR::Environment. */
+	PROMSXP	    = 5,    /**< promises: [un]evaluated closure
+			       arguments, implemented in class
+			       CXXR::Promise. */
+	LANGSXP	    = 6,    /**< language constructs (special lists),
+			       implemented in class CXXR::Expression. */
+	SPECIALSXP  = 7,    /**< special forms, implemented in class
+			       CXXR::BuiltInFunction. */
+	BUILTINSXP  = 8,    /**< builtin non-special forms, also
+			       implemented in class
+			       CXXR::BuiltInFunction. */
+	CHARSXP	    = 9,    /**< "scalar" string type (internal only),
+			       implemented in class CXXR::String. */
+	LGLSXP	    = 10,   /**< logical vectors, implemented in class
+			       CXXR::LogicalVector. */
+	INTSXP	    = 13,   /**< integer vectors, implemented in class
+			       CXXR::IntVector. */
+	REALSXP	    = 14,   /**< real variables, implemented in class
+			       CXXR::RealVector. */
+	CPLXSXP	    = 15,   /**< complex variables, implemented in
+			       class CXXR::ComplexVector. */
+	STRSXP	    = 16,   /**< string vectors, implemented in class
+			       CXXR::StringVector. */
+	DOTSXP	    = 17,   /**< dot-dot-dot objects, implemented in
+			       class CXXR::DottedArgs. */
+	ANYSXP	    = 18,   /**< Used to make "any" args work.  No
+			       CXXR::RObject has this type. */
+	VECSXP	    = 19,   /**< generic vectors, implemented in class
+			       CXXR::ListVector. */
+	EXPRSXP	    = 20,   /**< expression vectors, implemented in
+			       class CXXR::ExpressionVector. */
+	BCODESXP    = 21,   /**< byte code.  Unused in CXXR. */
+	EXTPTRSXP   = 22,   /**< external pointers, implemented in
+			       class CXXR::ExternalPointer. */
+	WEAKREFSXP  = 23,   /**< weak references, implemented in class
+			       CXXR::WeakRef. */
+	RAWSXP      = 24,   /**< raw bytes, implemented in class
+			       CXXR::RawVector. */
+	S4SXP       = 25,   /**< S4 object not inheriting from another
+			     *   ::SEXPTYPE, implemented in class
+			     *   CXXR::S4Object.
+			     */
+
+	CXXSXP      = 43,   /**< object types specific to CXXR.*/
+	                    /* (43 = ASCII +) */
+
+	BAILSXP     = 44,   /**< Object used to implement indirect flow of
+			     *   control in R without using a C++ exception.
+			     */
+
+	FUNSXP	    = 99    /**< Closure or Builtin.  No CXXR::RObject has
+			       this type. */
+    } SEXPTYPE;
+
+/* These are also used with the write barrier on, in attrib.c and util.c */
+#define TYPE_BITS 5
+#define MAX_NUM_SEXPTYPE (1<<TYPE_BITS)
+
 /* Vector Access Macros */
-#ifdef LONG_VECTOR_SUPPORT
-    R_len_t R_BadLongVector(SEXP, const char *, int);
-# define IS_LONG_VEC(x) (XLENGTH(x) > R_SHORT_LEN_MAX)
+#if (R_XLEN_T_MAX > R_LEN_T_MAX)
+# define LONG_VECTOR_SUPPORT
+# define R_SHORT_LEN_MAX R_LEN_T_MAX
+R_len_t NORET R_BadLongVector(SEXP, const char *, int);
+# define IS_LONG_VEC(x) (XLENGTH(x) > R_LEN_T_MAX)
 # define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XLENGTH(x))
 # define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XTRUELENGTH(x))
-# define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
-# define IS_SCALAR(x, type) (TYPEOF(x) == (type) && XLENGTH(x) == 1)
 #else
-# define IS_LONG_VEC(x) 0
 # define LENGTH(x) XLENGTH(x)
 # define TRUELENGTH(x) XTRUELENGTH(x)
-# define SET_TRUELENGTH SET_XTRUELENGTH
-# define IS_SCALAR(x, type) (TYPEOF(x) == (type) && LENGTH(x) == 1)
+# define IS_LONG_VEC(x) 0
 #endif
+
+#define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
 
 #define CHAR(x)		R_CHAR(x)
 const char *(R_CHAR)(SEXP x);
 
-/* Various tests with macro versions in the USE_RINTERNALS section */
 Rboolean (Rf_isNull)(SEXP s);
 Rboolean (Rf_isSymbol)(SEXP s);
 Rboolean (Rf_isLogical)(SEXP s);
@@ -154,17 +217,7 @@ Rboolean (Rf_isEnvironment)(SEXP s);
 Rboolean (Rf_isString)(SEXP s);
 Rboolean (Rf_isObject)(SEXP s);
 
-#define SET_REFCNT(x,v) do {} while(0)
-#define SET_TRACKREFS(x,v) do {} while(0)
-#define DECREMENT_REFCNT(x) do {} while(0)
-#define INCREMENT_REFCNT(x) do {} while(0)
-#define ENABLE_REFCNT(x) SET_TRACKREFS(x, TRUE)
-#define DISABLE_REFCNT(x) SET_TRACKREFS(x, FALSE)
-#define MAYBE_SHARED(x) (NAMED(x) > 1)
-#define NO_REFERENCES(x) (NAMED(x) == 0)
-#define MARK_NOT_MUTABLE(x) SET_NAMED(x, NAMEDMAX)
-#define MAYBE_REFERENCED(x) (! NO_REFERENCES(x))
-#define NOT_SHARED(x) (! MAYBE_SHARED(x))
+#define IS_SCALAR(x, type) (TYPEOF(x) == (type) && XLENGTH(x) == 1)
 
 #define IS_SIMPLE_SCALAR(x, type) \
     (IS_SCALAR(x, type) && ATTRIB(x) == R_NilValue)
@@ -264,6 +317,9 @@ SEXP (VECTOR_ELT)(SEXP x, R_xlen_t i);
 void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
+// Extract an item from an Expression (EXPRSXP, CXXR::ExpressionVector)
+SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
+
 /* List Access Functions */
 /* These also work for ... objects */
 #define CONS(a, b)	Rf_cons((a), (b))	/* data lists */
@@ -334,7 +390,8 @@ int  (HASHVALUE)(SEXP x);
 #define EXTPTR_PROT(x)  R_ExternalPtrProtected(x)
 #define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
-#define isByteCode(x)	(TYPEOF(x)==BCODESXP)
+/* Bytecode access macros */
+#define isByteCode(x) (0)
 
 /* Pointer Protection and Unprotection */
 #ifdef DISABLE_PROTECT_MACROS
@@ -566,9 +623,11 @@ void Rf_unprotect(int);
 #endif
 void Rf_unprotect_ptr(SEXP);
 
-void NORET R_signal_protect_error(void);
-void NORET R_signal_unprotect_error(void);
-void NORET R_signal_reprotect_error(PROTECT_INDEX i);
+typedef size_t PROTECT_INDEX;
+
+// void NORET R_signal_protect_error(void);
+// void NORET R_signal_unprotect_error(void);
+// void NORET R_signal_reprotect_error(PROTECT_INDEX i);
 
 #ifndef INLINE_PROTECT
 void R_ProtectWithIndex(SEXP, PROTECT_INDEX *);
@@ -582,6 +641,17 @@ Rboolean Rf_isS4(SEXP);
 SEXP Rf_asS4(SEXP, Rboolean, int);
 SEXP Rf_S3Class(SEXP);
 int Rf_isBasicClass(const char *);
+
+Rboolean R_cycle_detected(SEXP, SEXP);
+
+typedef enum {
+    CE_NATIVE = 0,
+    CE_UTF8   = 1,
+    CE_LATIN1 = 2,
+    CE_BYTES  = 3,
+    CE_SYMBOL = 5,
+    CE_ANY    =99
+} cetype_t;
 
 cetype_t Rf_getCharCE(SEXP);
 SEXP Rf_mkCharCE(const char *, cetype_t);
@@ -611,6 +681,7 @@ void R_SetExternalPtrTag(SEXP s, SEXP tag);
 void R_SetExternalPtrProtected(SEXP s, SEXP p);
 
 /* Finalization interface */
+typedef void (*R_CFinalizer_t)(SEXP);
 void R_RegisterFinalizer(SEXP s, SEXP fun);
 void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
@@ -973,6 +1044,20 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define xlengthgets		Rf_xlengthgets
 #endif /* R_NO_REMAP */
 
+/** @brief Create a CXXR::Expression with a specified car and tail.
+ *
+ * This function protects its arguments from the garbage collector.
+ *
+ * @param cr Pointer to the 'car' of the element to be created.
+ *
+ * @param tl Pointer to the 'tail' of the element to be created,
+ *          which must be of a CXXR::PairList type (checked).
+ *
+ * @return Pointer to the constructed list.
+ */
+SEXP	 Rf_lcons(SEXP cr, SEXP tl);
+Rboolean Rf_isVector(SEXP);
+
 #if defined(CALLED_FROM_DEFN_H) && !defined(__MAIN__) && (defined(COMPILING_R) || ( __GNUC__ && !defined(__INTEL_COMPILER) ))
 #include "Rinlinedfuns.h"
 #else
@@ -1004,7 +1089,6 @@ Rboolean Rf_isTs(SEXP);
 Rboolean Rf_isUserBinop(SEXP);
 Rboolean Rf_isValidString(SEXP);
 Rboolean Rf_isValidStringF(SEXP);
-Rboolean Rf_isVector(SEXP);
 Rboolean Rf_isVectorAtomic(SEXP);
 Rboolean Rf_isVectorList(SEXP);
 Rboolean Rf_isVectorizable(SEXP);
@@ -1015,7 +1099,7 @@ SEXP	 Rf_lang4(SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_lang5(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_lang6(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_lastElt(SEXP);
-SEXP	 Rf_lcons(SEXP, SEXP);
+
 R_len_t  Rf_length(SEXP);
 SEXP	 Rf_list1(SEXP);
 SEXP	 Rf_list2(SEXP, SEXP);

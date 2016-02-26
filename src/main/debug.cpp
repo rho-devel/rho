@@ -31,6 +31,7 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
+#include "CXXR/Closure.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/FunctionContext.hpp"
 

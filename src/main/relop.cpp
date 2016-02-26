@@ -39,7 +39,11 @@
 
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ComplexVector.h"
+#include "CXXR/IntVector.h"
 #include "CXXR/LogicalVector.h"
+#include "CXXR/RawVector.h"
+#include "CXXR/RealVector.h"
 
 using namespace CXXR;
 using namespace VectorOps;

@@ -25,6 +25,7 @@
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/LoopBailout.hpp"

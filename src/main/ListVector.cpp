@@ -41,6 +41,11 @@ namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*VECTOR_ELTp)(const SEXP x, R_xlen_t i) = VECTOR_ELT;
     }
+
+    template <>
+    const char* ListVector::staticTypeName() {
+	return "list";
+    }
 }
 
 // ***** C interface *****

@@ -34,6 +34,7 @@
 #include <cstdarg>
 #include "R_ext/Print.h"
 #include "Rinternals.h"  // For Rf_PrintValue
+#include "CXXR/Expression.h"
 
 using namespace CXXR;
 

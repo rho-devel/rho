@@ -103,8 +103,11 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "CXXR/ClosureContext.hpp"
+#include "CXXR/ListVector.h"
+#include "CXXR/Promise.h"
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/StdFrame.hpp"
+#include "CXXR/StringVector.h"
 
 using namespace CXXR;
 
@@ -300,29 +303,17 @@ static R_varloc_t findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean * /*canCache
     return env->frame()->binding(sym);
 }
 
-
 /*
   External version and accessor functions. Returned value is cast as
-  an opaque pointer to insure it is only used by routines in this
+  an opaque pointer to ensure it is only used by routines in this
   group.  This allows the implementation to be changed without needing
   to change other files.
 */
 
+/* used in methods */
 R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 {
     return findVarLocInFrame(rho, symbol, nullptr);
-}
-
-attribute_hidden
-SEXP R_GetVarLocValue(R_varloc_t vl)
-{
-    return vl->unforcedValue();
-}
-
-attribute_hidden
-SEXP R_GetVarLocSymbol(R_varloc_t vl)
-{
-    return const_cast<Symbol*>(vl->symbol());
 }
 
 /* used in methods */
@@ -330,13 +321,6 @@ Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
     return Rboolean(vl->origin());
 }
-
-attribute_hidden
-void R_SetVarLocValue(R_varloc_t vl, SEXP value)
-{
-    vl->assign(value);
-}
-
 
 /*----------------------------------------------------------------------
 

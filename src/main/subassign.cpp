@@ -93,7 +93,11 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/RS.h> /* for test of S4 objects */
+#include "CXXR/ComplexVector.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Promise.h"
+#include "CXXR/RawVector.h"
 #include "CXXR/Subscripting.hpp"
 
 using namespace CXXR;

@@ -414,9 +414,9 @@ void GetRNGstate()
 	GetRNGkind(seeds);
 	len_seed = RNG_Table[RNG_kind].n_seed;
 	/* Not sure whether this test is needed: wrong for USER_UNIF */
-	if(LENGTH(seeds) > 1 && LENGTH(seeds) < len_seed + 1)
+	if(XLENGTH(seeds) > 1 && XLENGTH(seeds) < len_seed + 1)
 	    error(_("'.Random.seed' has wrong length"));
-	if(LENGTH(seeds) == 1 && RNG_kind != USER_UNIF)
+	if(XLENGTH(seeds) == 1 && RNG_kind != USER_UNIF)
 	    Randomize(RNG_kind);
 	else {
 	    int j, *is = INTEGER(seeds);

@@ -39,4 +39,9 @@ namespace CXXR {
     namespace ForceNonInline {
 	int* (*INTEGERp)(SEXP) = INTEGER;
     }
+
+    template <>
+    const char* IntVector::staticTypeName() {
+	return "integer";
+    }
 }

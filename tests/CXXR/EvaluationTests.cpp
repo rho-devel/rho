@@ -27,6 +27,7 @@
 #include "CXXR/Closure.h"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Evaluator.h"
+#include "CXXR/ListVector.h"
 #include "CXXR/StdFrame.hpp"
 #include "Defn.h"
 #include "Parse.h"

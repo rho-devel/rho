@@ -38,9 +38,15 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/ComplexVector.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/GCManager.hpp"
+#include "CXXR/IntVector.h"
+#include "CXXR/LogicalVector.h"
 #include "CXXR/MemoryBank.hpp"
+#include "CXXR/RealVector.h"
+#include "CXXR/RawVector.h"
 #include "CXXR/StdFrame.hpp"
 
 #include <Defn.h>

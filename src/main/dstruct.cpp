@@ -21,7 +21,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  https://www.R-project.org/Licenses/
+ *  http://www.r-project.org/Licenses/
  */
 
 
@@ -30,6 +30,8 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/Closure.h"
+#include "CXXR/Environment.h"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
@@ -53,7 +55,7 @@ R_len_t Rf_length(SEXP s)
 	    return i;
 	}
     case ENVSXP:
-	return Rf_envxlength(s);
+	return (static_cast<Environment*>(s))->frame()->size();
     default:
 	return 1;
     }
@@ -87,7 +89,7 @@ R_xlen_t Rf_xlength(SEXP s)
 	return i;
     }
     case ENVSXP:
-	return Rf_envxlength(s);
+	return (static_cast<Environment*>(s))->frame()->size();
     default:
 	return 1;
     }

@@ -41,13 +41,6 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
-    template <>
-    inline const char* FixedVector<Logical, LGLSXP>::staticTypeName()
-    {
-	return "logical";
-    }
-
     /** @brief Vector of truth values.
      */
     typedef CXXR::FixedVector<Logical, LGLSXP> LogicalVector;

@@ -39,4 +39,10 @@ namespace CXXR {
 	Rboolean (*isComplexptr)(SEXP s) = Rf_isComplex;
 	Rcomplex* (*COMPLEXp)(SEXP) = COMPLEX;
     }
+
+    template <>
+    const char* ComplexVector::staticTypeName()
+    {
+	return "complex";
+    }
 }

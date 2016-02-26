@@ -27,6 +27,7 @@
 
 #include "gtest/gtest.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/RObject.h"
 #include "TestHelpers.hpp"
 
