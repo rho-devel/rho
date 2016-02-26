@@ -47,7 +47,11 @@
 #include <stdexcept>
 #include <Defn.h>
 #include <Internal.h>
+#include "CXXR/ComplexVector.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Promise.h"
+#include "CXXR/RawVector.h"
 #include "CXXR/Subscripting.hpp"
 
 using namespace std;

@@ -57,11 +57,6 @@
 
 #include <Rmath.h>
 
-#ifndef isnan
-// Needed for example with MacOS 10.5.7 + Xcode 3.1.3:
-#define isnan std::isnan
-#endif
-
 #include "arithmetic.h"
 
 #include <errno.h>
@@ -69,8 +64,11 @@
 
 #include "R_ext/Itermacros.h"
 #include "CXXR/BinaryFunction.hpp"
+#include "CXXR/LogicalVector.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/IntVector.h"
 #include "CXXR/RAllocStack.h"
+#include "CXXR/RealVector.h"
 #include "CXXR/UnaryFunction.hpp"
 
 using namespace CXXR;

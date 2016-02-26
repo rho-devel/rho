@@ -35,6 +35,8 @@
 
 #include "CXXR/RObject.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/StringVector.h"
 #include <Internal.h>
 
 #include <fstream>

@@ -32,6 +32,7 @@
 #include <Internal.h>
 #include "duplicate.h"
 
+#include "CXXR/Closure.h"
 #include "CXXR/GCStackRoot.hpp"
 #include <R_ext/Itermacros.h>
 

@@ -42,13 +42,6 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-
-    template <>
-    inline const char* FixedVector<Complex, CPLXSXP>::staticTypeName()
-    {
-	return "complex";
-    }
-
     /** @brief Vector of complex numbers.
      */
     typedef CXXR::FixedVector<Complex, CPLXSXP> ComplexVector;

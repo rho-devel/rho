@@ -31,17 +31,10 @@
 #ifndef INTVECTOR_H
 #define INTVECTOR_H
 
-#include "CXXR/VectorBase.h"
-
 #ifdef __cplusplus
 
 #include "R_ext/Arith.h"
-#include "CXXR/FixedVector.hpp"
-#include "CXXR/SEXP_downcast.hpp"
-
-#ifndef USE_TYPE_CHECKING_STRICT
-#include "CXXR/LogicalVector.h"
-#endif
+#include "CXXR/ElementTraits.hpp"
 
 namespace CXXR {
     // Template specializations:
@@ -59,13 +52,17 @@ namespace CXXR {
 	template<>
 	struct MustDestruct<int> : boost::mpl::false_ {};
     }
+}
 
-    template <>
-    inline const char* FixedVector<int, INTSXP>::staticTypeName()
-    {
-	return "integer";
-    }
+#include "CXXR/VectorBase.h"
+#include "CXXR/FixedVector.hpp"
+#include "CXXR/SEXP_downcast.hpp"
 
+#ifndef USE_TYPE_CHECKING_STRICT
+#include "CXXR/LogicalVector.h"
+#endif
+
+namespace CXXR {
     /** @brief Vector of integer values.
      */
     typedef FixedVector<int, INTSXP> IntVector;

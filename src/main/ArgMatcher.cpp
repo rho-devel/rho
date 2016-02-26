@@ -27,6 +27,8 @@
  * Implementation of class ArgMatcher.
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/ArgMatcher.hpp"
 
 #include "CXXR/ArgList.hpp"

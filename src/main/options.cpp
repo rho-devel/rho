@@ -33,6 +33,7 @@
 #include "Print.h"
 #include <Rinternals.h>
 
+#include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/StackChecker.hpp"
 

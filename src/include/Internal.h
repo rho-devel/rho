@@ -34,16 +34,15 @@
 #define R_INTERNAL_H
 
 #include "R_ext/Error.h"
+#include "CXXR/BuiltInFunction.h"
+#include "CXXR/RObject.h"
+#include "CXXR/Expression.h"
+#include "CXXR/Environment.h"
+#include "CXXR/PairList.h"
 
 #ifdef __cplusplus
 
 namespace CXXR {
-  class BuiltInFunction;
-  class RObject;
-  class Expression;
-  class Environment;
-  class PairList;
-
   typedef RObject*(quick_builtin)(Expression*,
                                   const BuiltInFunction*,
                                   Environment* env,

@@ -33,15 +33,7 @@
 
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
-
-typedef enum {
-    CE_NATIVE = 0,
-    CE_UTF8   = 1,
-    CE_LATIN1 = 2,
-    CE_BYTES  = 3,
-    CE_SYMBOL = 5,
-    CE_ANY    =99
-} cetype_t;
+#include "Rinternals.h"
 
 #ifdef __cplusplus
 
@@ -49,6 +41,7 @@ typedef enum {
 #include <string>
 
 #include "CXXR/Allocator.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 extern "C" void Rf_InitNames();
@@ -324,6 +317,43 @@ namespace CXXR {
 
     // Designed for use with std::accumulate():
     unsigned int stringWidthQuote(unsigned int minwidth, const String* string);
+
+    // Since Strings are uniqued, coping them is almost zero-cost.
+    // So allow implicit copies for RHandle<String>.
+    template<>
+    inline RHandle<String>::RHandle(const RHandle<String>&) = default;
+    template<>
+    inline RHandle<String>& RHandle<String>::operator=(const RHandle<String>&)
+      = default;
+
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<RHandle<String> > {
+	    static RHandle<String> makeNA();
+
+	    inline const RHandle<String>& operator()() const
+	    {
+		static RHandle<String> na = makeNA();
+		return na;
+	    }
+	};
+
+	template <>
+        inline bool IsNA<RHandle<String>>::operator()(const RHandle<String>& t)
+	    const
+	{
+	    typedef RHandle<String> T;
+	    return t == NA<T>();
+	}
+    }
+
+    // Make the default handle for a String point to a blank string:
+    template <>
+    inline RHandle<String>::RHandle()
+    {
+	operator=(String::blank());
+    }
 }  // namespace CXXR
 
 extern "C" {

@@ -39,6 +39,8 @@
 
 #include "duplicate.h"
 #include "RBufferUtils.h"
+#include "CXXR/Closure.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace std;

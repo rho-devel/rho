@@ -41,13 +41,6 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specializations:
-    template <>
-    inline const char* FixedVector<RHandle<>, VECSXP>::staticTypeName()
-    {
-	return "list";
-    }
-
     /** @brief General vector of RHandle<RObject>.
      */
     typedef FixedVector<RHandle<>, VECSXP> ListVector;

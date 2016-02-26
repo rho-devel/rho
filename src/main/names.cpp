@@ -34,6 +34,7 @@
 #include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/LogicalVector.h"
 
 #include <Defn.h>
 #include <Internal.h>

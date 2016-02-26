@@ -22,6 +22,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "CXXR/GCManager.hpp"
 #include "CXXR/IntVector.h"
 #include "CXXR/NodeStack.hpp"
 #include "CXXR/RObject.h"

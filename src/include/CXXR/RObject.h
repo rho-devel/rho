@@ -617,26 +617,7 @@ namespace CXXR {
     }  // namespace ElementTraits
 }  // namespace CXXR
 
-// ***** Implementation of non-inlined templated members *****
-
-/** @brief Pointer to an RObject.
- *
- * In CR, almost all interpreter code could access R objects only \e
- * via the opaque pointer SEXP.  In CXXR, C code continues to see SEXP
- * as an opaque pointer, but C++ code sees SEXP defined as 'pointer to
- * RObject'.
- *
- * @note This typedef is provided for compatibility with code
- * inherited from CR.  New CXXR code should write RObject*
- * explicitly.
- */
-typedef CXXR::RObject *SEXP;
-
 extern "C" {
-#else /* if not __cplusplus */
-    // Opaque pointer (SEXPREC doesn't exist in CXXR):
-    typedef struct SEXPREC *SEXP;
-
 #endif /* __cplusplus */
 
     /** @brief Get the attributes of a CXXR::RObject.

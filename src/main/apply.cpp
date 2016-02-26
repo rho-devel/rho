@@ -29,6 +29,7 @@
 
 #include <Defn.h>
 #include <Internal.h>
+#include "CXXR/ExpressionVector.h"
 
 /* .Internal(lapply(X, FUN)) */
 

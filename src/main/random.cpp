@@ -36,6 +36,7 @@
 #include <Rmath.h>		/* for rxxx functions */
 #include "basedecl.h"
 #include <errno.h>
+#include "Internal.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
 

@@ -62,8 +62,7 @@ namespace CXXR {
     inline PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
 	if (!s && !allow_null) {
-	    PtrOut exemplar = 0;
-	    SEXP_downcast_error("NULL", exemplar->staticTypeName());
+	    SEXP_downcast_error("NULL", PtrOut::staticTypeName());
 	}
 	return static_cast<PtrOut>(s);
     }

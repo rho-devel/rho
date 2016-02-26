@@ -43,6 +43,7 @@
 
 #include <stdlib.h> /* for div() */
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/StringVector.h"
 
 using namespace std;
 using namespace CXXR;

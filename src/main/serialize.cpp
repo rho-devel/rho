@@ -42,7 +42,10 @@
 
 #include <cstdarg>
 #include <vector>
+#include "CXXR/Closure.h"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/ExpressionVector.h"
+#include "CXXR/ExternalPointer.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/WeakRef.h"

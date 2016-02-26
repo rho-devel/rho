@@ -35,6 +35,7 @@
 #include "CXXR/IntVector.h"
 #include "CXXR/ListVector.h"
 #include "CXXR/PairList.h"
+#include "CXXR/RealVector.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 

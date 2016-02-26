@@ -25,6 +25,7 @@
 
 #include "TestHelpers.hpp"
 #include "CXXR/GCStackFrameBoundary.hpp"
+#include "CXXR/GCManager.hpp"
 #include "CXXR/RealVector.h"
 #include "CXXR/RObject.h"
 

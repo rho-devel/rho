@@ -60,6 +60,8 @@
 #include "CXXR/Browser.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
+#include "CXXR/ListVector.h"
+#include "CXXR/ProtectStack.h"
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/GCStackFrameBoundary.hpp"

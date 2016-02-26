@@ -34,12 +34,6 @@
 #include "CXXR/RObject.h"
 #include <stddef.h>
 
-/* types for length of vectors etc */
-typedef int R_len_t;
-typedef ptrdiff_t R_xlen_t;
-
-#define R_LEN_T_MAX INT_MAX
-
 #ifdef __cplusplus
 
 #include "CXXR/GCStackRoot.hpp"

@@ -82,17 +82,6 @@ stamp-R:
 	@touch $@
 $(TIMESTAMPS): stamp-R
 
-install: installdirs
-	@for f in $(CXXR_HEADERS); do \
-	  $(INSTALL_DATA) $(srcdir)/$${f} "$(DESTDIR)$(rincludedir)/CXXR"; \
-	done
-installdirs:
-	@$(MKINSTALLDIRS) "$(DESTDIR)$(rincludedir)/CXXR"
-install-strip:
-	$(MAKE) INSTALL_PROGRAM="${INSTALL_PROGRAM} -s" install
-uninstall:
-	@rm -rf "$(DESTDIR)$(rincludedir)/CXXR"
-
 mostlyclean: clean
 clean:
 	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
@@ -100,7 +89,7 @@ distclean: clean
 	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 maintainer-clean: distclean
 
-TAGS info dvi check:
+TAGS info dvi check install installdirs install-strip uninstall:
 
 distdir: $(DISTFILES)
 	@for f in $(DISTFILES); do \

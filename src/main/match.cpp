@@ -54,6 +54,7 @@
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/FunctionContext.hpp"
+#include "CXXR/StringVector.h"
 
 using namespace CXXR;
 

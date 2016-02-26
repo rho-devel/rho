@@ -39,6 +39,7 @@
 
 #include <cstdarg>
 #include "Print.h"
+#include "CXXR/StringVector.h"
 
 #include <numeric>
 

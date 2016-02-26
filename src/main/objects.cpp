@@ -39,10 +39,12 @@
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
 #include "CXXR/ArgList.hpp"
+#include "CXXR/Closure.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
+#include "CXXR/Promise.h"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/S3Launcher.hpp"
 

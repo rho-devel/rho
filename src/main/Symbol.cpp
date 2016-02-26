@@ -28,6 +28,8 @@
  * interface.
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/Symbol.h"
 
 #include <sstream>
@@ -223,4 +225,3 @@ namespace CXXR {
 #undef PREDEFINED_SYMBOL
 
 // Rf_install() is currently defined in main.cpp
-

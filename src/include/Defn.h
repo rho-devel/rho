@@ -69,7 +69,7 @@
 
 #ifdef __cplusplus
 #include "CXXR/ArgList.hpp"
-
+#include "CXXR/Frame.hpp"
 extern "C" {
 #endif
 
@@ -692,11 +692,13 @@ Rboolean R_HiddenFile(const char *);
 double	R_FileMtime(const char *);
 
 /* environment cell access */
+// Used only by src/library/methods/src/methods_list_dispatch.c
+#ifndef __cplusplus
+/* In C code, R_varloc_t is an opaque pointer: */
+typedef struct R_varloc_st *R_varloc_t;
+#endif
 R_varloc_t R_findVarLocInFrame(SEXP, SEXP);
-SEXP R_GetVarLocValue(R_varloc_t);
-SEXP R_GetVarLocSymbol(R_varloc_t);
 Rboolean R_GetVarLocMISSING(R_varloc_t);
-void R_SetVarLocValue(R_varloc_t, SEXP);
 
 /* deparse option bits: change do_dump if more are added */
 

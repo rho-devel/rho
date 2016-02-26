@@ -39,6 +39,7 @@
 #include <R_ext/Itermacros.h>
 
 #include "RBufferUtils.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;

@@ -40,52 +40,10 @@
 #include <iostream>
 
 #include "CXXR/FixedVector.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Since Strings are uniqued, coping them is almost zero-cost.
-    // So allow implicit copies for RHandle<String>.
-    template<>
-    inline RHandle<String>::RHandle(const RHandle<String>&) = default;
-    template<>
-    inline RHandle<String>& RHandle<String>::operator=(const RHandle<String>&)
-      = default;
-
-    // Template specializations:
-    namespace ElementTraits {
-	template <>
-	struct NAFunc<RHandle<String> > {
-	    static RHandle<String> makeNA();
-
-	    inline const RHandle<String>& operator()() const
-	    {
-		static RHandle<String> na = makeNA();
-		return na;
-	    }
-	};
-
-	template <>
-        inline bool IsNA<RHandle<String>>::operator()(const RHandle<String>& t)
-	    const
-	{
-	    typedef RHandle<String> T;
-	    return t == NA<T>();
-	}
-    }
-
-    // Make the default handle for a String point to a blank string:
-    template <>
-    inline RHandle<String>::RHandle()
-    {
-	operator=(String::blank());
-    }
-
-    template <>
-    inline const char* FixedVector<RHandle<String>, STRSXP>::staticTypeName()
-    {
-	return "character";
-    }
-
     /** @brief Vector of strings.
      *
      * Note that the <tt>StringVector(size_type)</tt> constructor will

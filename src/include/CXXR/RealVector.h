@@ -68,12 +68,6 @@ namespace CXXR {
 	}
     }
 
-    template <>
-    inline const char* FixedVector<double, REALSXP>::staticTypeName()
-    {
-	return "numeric";
-    }
-
     /** @brief Vector of real numbers.
      */
     typedef CXXR::FixedVector<double, REALSXP> RealVector;

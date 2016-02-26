@@ -214,38 +214,21 @@ namespace CXXR {
 
 /** @brief Pointer to expression currently being evaluated.
  */
-    extern CXXR::GCRoot<> R_CurrentExpr;
+extern CXXR::GCRoot<> R_CurrentExpr;
 
-extern "C" {
-#endif
+/** @brief Expression currently being evaluated.
+ *
+ * @return Pointer to the Expression currently being evaluated.
+ */
+SEXP Rf_currentExpression();
 
-    /** @brief Expression currently being evaluated.
-     *
-     * @return Pointer to the Expression currently being evaluated.
-     */
-    SEXP Rf_currentExpression();
+/** @brief Designate the Expression currently being evaluated.
+ *
+ * @param e Pointer to the Expression now to be evaluated.  (Not
+ *          currently checked in any way.)
+ */
+void Rf_setCurrentExpression(SEXP e);
 
-    /** @brief Create a CXXR::Expression with a specified car and tail.
-     *
-     * This function protects its arguments from the garbage collector.
-     *
-     * @param cr Pointer to the 'car' of the element to be created.
-     *
-     * @param tl Pointer to the 'tail' of the element to be created,
-     *          which must be of a CXXR::PairList type (checked).
-     *
-     * @return Pointer to the constructed list.
-     */
-    SEXP Rf_lcons(SEXP cr, SEXP tl);
-
-    /** @brief Designate the Expression currently being evaluated.
-     *
-     * @param e Pointer to the Expression now to be evaluated.  (Not
-     *          currently checked in any way.)
-     */
-    void Rf_setCurrentExpression(SEXP e);
-#ifdef __cplusplus
-}
-#endif
+#endif  // __cplusplus
 
 #endif /* EXPRESSION_H */

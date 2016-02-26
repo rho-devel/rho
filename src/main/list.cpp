@@ -38,6 +38,7 @@
 
 #include <Defn.h>
 #include <Internal.h>
+#include "CXXR/ExpressionVector.h"
 
 /* Utility functions moved to Rinlinedfuns.h */
 

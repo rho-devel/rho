@@ -50,6 +50,7 @@
 
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
+#include "CXXR/ListVector.h"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/StackChecker.hpp"
 

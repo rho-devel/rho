@@ -873,7 +873,7 @@ namespace CXXR {
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a
-// definition (in Environment.h) as an opaque pointer.
+// definition (in Defn.h) as an opaque pointer.
 typedef CXXR::Frame::Binding* R_varloc_t;
 
 #endif // RFRAME_HPP

@@ -33,6 +33,7 @@
 
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/LogicalVector.h"
 #include "CXXR/RawVector.h"
 #include "CXXR/UnaryFunction.hpp"
 

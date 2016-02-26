@@ -34,7 +34,9 @@
 #include <Rmath.h>
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
+#include "CXXR/Closure.h"
 #include "CXXR/RAllocStack.h"
+#include "CXXR/StringVector.h"
 
 // 'using namespace std' causes ambiguity of 'greater'
 using namespace CXXR;

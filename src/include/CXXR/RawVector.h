@@ -63,12 +63,6 @@ namespace CXXR {
 	}
     }
 
-    template <>
-    inline const char* FixedVector<Rbyte, RAWSXP>::staticTypeName()
-    {
-	return "raw";
-    }
-
     /** @brief Vector of 'raw bytes'.
      */
     typedef CXXR::FixedVector<Rbyte, RAWSXP> RawVector;

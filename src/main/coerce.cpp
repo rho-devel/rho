@@ -47,7 +47,9 @@
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Promise.h"
 
 using namespace std;
 using namespace CXXR;

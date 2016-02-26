@@ -662,12 +662,7 @@ namespace CXXR {
 }  // namespace CXXR
 
 extern "C" {
-#else /* if not __cplusplus */
-
-    /* In C code, R_varloc_t is an opaque pointer: */
-    typedef struct R_varloc_st *R_varloc_t;
-
-#endif
+#endif  // __cplusplus
 
     /* C-visible names for predefined environments */
     extern SEXP R_EmptyEnv;
