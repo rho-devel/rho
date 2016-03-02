@@ -2701,11 +2701,8 @@ static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
     Rboolean force;
     int i, len;
 
-    if (TYPEOF(env) == NILSXP) {
-	Rf_error(_("use of NULL environment is defunct"));
-	env = R_BaseEnv;
-    } else
-    if (TYPEOF(env) != ENVSXP)
+    env = downcast_to_env(env);
+    if (!env)
 	Rf_error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
 	Rf_error(_("bad variable names"));

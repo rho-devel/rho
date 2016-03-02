@@ -350,6 +350,10 @@ void Environment::visitReferents(const_visitor* v) const
 	(*v)(frame);
 }
 
+void Environment::nullEnvironmentError() {
+    Rf_error(_("use of NULL environment is defunct"));
+}
+
 // ***** Free-standing functions *****
 
 namespace {

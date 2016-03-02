@@ -464,6 +464,12 @@ namespace CXXR {
 
 	// Virtual functions of GCNode:
 	void visitReferents(const_visitor* v) const override;
+
+	/** @brief Not for general use.
+	 *
+	 * (Used by downcast_to_env to report use of NULL environment.)
+	 */
+	static void NORET nullEnvironmentError();
     protected:
 	// Virtual function of GCNode:
 	void detachReferents() override;
@@ -659,6 +665,16 @@ namespace CXXR {
 	} while (inherits && env);
 	return nullptr;
     }
+
+    template<typename PtrIn>
+    Environment* downcast_to_env(PtrIn s, bool allow_null = false)
+    {
+	if (!s && !allow_null) {
+	    Environment::nullEnvironmentError();
+	}
+	return SEXP_downcast<Environment*>(s);
+    }
+
 }  // namespace CXXR
 
 extern "C" {

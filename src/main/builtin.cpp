@@ -77,28 +77,17 @@ R_xlen_t asVecSize(SEXP x)
 
 SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* eval_env_, CXXR::RObject* assign_env_)
 {
-    SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
-
     if (!isString(x_) || length(x_) == 0)
 	error(_("invalid first argument"));
-    else
-	name = installTrChar(STRING_ELT(x_, 0));
-    expr = value_;
+    SEXP name = installTrChar(STRING_ELT(x_, 0));
+    SEXP expr = value_;
 
-    eenv = eval_env_;
-    if (isNull(eenv)) {
-	error(_("use of NULL environment is defunct"));
-	eenv = R_BaseEnv;
-    } else
-    if (!isEnvironment(eenv))
+    Environment* eenv = downcast_to_env(eval_env_);
+    if (!eenv)
 	errorcall(call, _("invalid '%s' argument"), "eval.env");
 
-    aenv = assign_env_;
-    if (isNull(aenv)) {
-	error(_("use of NULL environment is defunct"));
-	aenv = R_BaseEnv;
-    } else
-    if (!isEnvironment(aenv))
+    Environment* aenv = downcast_to_env(assign_env_);
+    if (!aenv)
 	errorcall(call, _("invalid '%s' argument"), "assign.env");
 
     defineVar(name, mkPROMISE(expr, eenv), aenv);
@@ -249,9 +238,10 @@ SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else return R_NilValue;
 }
 
-/* get environment from a subclass if possible; else return NULL */
-#define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
-
+namespace CXXR {
+    // In envir.cpp
+    Environment* simple_as_environment(RObject* arg, bool allow_null = false);
+}
 
 SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
 {
@@ -264,22 +254,16 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
 SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* s, CXXR::RObject* env)
 {
-    if (TYPEOF(s) == CLOSXP
-	&& (isEnvironment(env) ||
-	    isEnvironment(env = simple_as_environment(env)) ||
-	    isNull(env))) {
-	if (isNull(env))
-	    error(_("use of NULL environment is defunct"));
+    if (TYPEOF(s) == CLOSXP && (env = simple_as_environment(env)) != nullptr) {
 	if(MAYBE_SHARED(s))
 	    /* this copies but does not duplicate args or code */
 	    s = duplicate(s);
 	SET_CLOENV(s, env);
-    }
-    else if (isNull(env) || isEnvironment(env) ||
-	isEnvironment(env = simple_as_environment(env)))
+    } else {
+	if (env && (env = simple_as_environment(env)) == nullptr)
+	    error(_("replacement object is not an environment"));
 	setAttrib(s, R_DotEnvSymbol, env);
-    else
-	error(_("replacement object is not an environment"));
+    }
     return s;
 }
 
@@ -290,17 +274,12 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
  */
 SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* hash_, CXXR::RObject* parent_, CXXR::RObject* size_)
 {
-    SEXP enclos, size, ans;
+    SEXP size, ans;
     int hash;
 
     hash = asInteger(hash_);
-    enclos = parent_;
-    if (isNull(enclos)) {
-	error(_("use of NULL environment is defunct"));
-	enclos = R_BaseEnv;
-    } else
-    if( !isEnvironment(enclos)   &&
-	!isEnvironment((enclos = simple_as_environment(enclos))))
+    Environment* enclos = simple_as_environment(parent_);
+    if (!enclos)
 	error(_("'enclos' must be an environment"));
 
     if( hash ) {
@@ -316,10 +295,8 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
 {
-    SEXP arg = env_;
-
-    if( !isEnvironment(arg)  &&
-	!isEnvironment((arg = simple_as_environment(arg))))
+    Environment* arg = simple_as_environment(env_);
+    if (!arg)
 	error( _("argument is not an environment"));
     if( arg == R_EmptyEnv )
 	error(_("the empty environment has no parent"));
@@ -346,15 +323,8 @@ static Rboolean R_IsImportsEnv(SEXP env)
 
 SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* value_)
 {
-    SEXP env, parent;
-
-    env = env_;
-    if (isNull(env)) {
-	error(_("use of NULL environment is defunct"));
-	env = R_BaseEnv;
-    } else
-    if( !isEnvironment(env) &&
-	!isEnvironment((env = simple_as_environment(env))))
+    Environment* env = simple_as_environment(env_);
+    if (!env)
 	error(_("argument is not an environment"));
     if( env == R_EmptyEnv )
 	error(_("can not set parent of the empty environment"));
@@ -362,27 +332,25 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
 	error(_("can not set the parent environment of a namespace"));
     if (R_EnvironmentIsLocked(env) && R_IsImportsEnv(env))
 	error(_("can not set the parent environment of package imports"));
-    parent = value_;
-    if (isNull(parent)) {
-	error(_("use of NULL environment is defunct"));
-	parent = R_BaseEnv;
-    } else
-    if( !isEnvironment(parent) &&
-	!isEnvironment((parent = simple_as_environment(parent))))
+
+    Environment* parent = simple_as_environment(value_);
+    if (!parent)
 	error(_("'parent' is not an environment"));
 
-    Environment* parenv = static_cast<Environment*>(parent);
-    static_cast<Environment*>(env)->setEnclosingEnvironment(parenv);
-
+    env->setEnclosingEnvironment(parent);
     return(env);
 }
 
 SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
 {
-    SEXP env = env_, ans=mkString(""), res;
+    SEXP ans=mkString(""), res;
 
-    if (TYPEOF(env) == ENVSXP ||
-	TYPEOF((env = simple_as_environment(env))) == ENVSXP) {
+    if (!env_) {
+	return ans;
+    }
+
+    Environment* env = simple_as_environment(env_);
+    if (env) {
 	if (env == R_GlobalEnv) ans = mkString("R_GlobalEnv");
 	else if (env == R_BaseEnv) ans = mkString("base");
 	else if (env == R_EmptyEnv) ans = mkString("R_EmptyEnv");

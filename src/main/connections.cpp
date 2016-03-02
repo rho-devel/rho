@@ -3082,10 +3082,8 @@ SEXP attribute_hidden do_textconnection(/*const*/ CXXR::Expression* call, const 
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    venv = env_;
-    if (isNull(venv))
-	error(_("use of NULL environment is defunct"));
-    if (!isEnvironment(venv))
+    venv = downcast_to_env(env_);
+    if (!venv)
 	error(_("invalid '%s' argument"), "environment");
     type = asInteger(type_);
     if (type == NA_INTEGER)
