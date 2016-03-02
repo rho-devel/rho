@@ -61,12 +61,12 @@ SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::B
     return obj;
 }
 
-SEXP attribute_hidden do_address(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_address(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    return R_MakeExternalPtr((void *) CAR(args), R_NilValue, R_NilValue);
+    return R_MakeExternalPtr((void *) x, R_NilValue, R_NilValue);
 }
 
-SEXP attribute_hidden do_refcnt(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_refcnt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
     // return ScalarInteger(REFCNT(CAR(args)));
     return ScalarInteger(NA_INTEGER); // Not currently implemented in CXXR

@@ -2076,10 +2076,8 @@ SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::Buil
     /* GRW 1/26/99 GRW : added environment parameter so that */
     /* the loaded objects can be placed where desired  */
 
-    aenv = envir_;
-    if (TYPEOF(aenv) == NILSXP)
-	error(_("use of NULL environment is defunct"));
-    else if (TYPEOF(aenv) != ENVSXP)
+    aenv = downcast_to_env(envir_);
+    if (!aenv)
 	error(_("invalid '%s' argument"), "envir");
 
     /* Process the saved file to obtain a list of saved objects. */
@@ -2350,10 +2348,8 @@ SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const C
 	if(!con->canread) error(_("connection not open for reading"));
 	if(con->text) error(_("can only load() from a binary connection"));
 
-	aenv = envir_;
-	if (TYPEOF(aenv) == NILSXP)
-	    error(_("use of NULL environment is defunct"));
-	else if (TYPEOF(aenv) != ENVSXP)
+	aenv = downcast_to_env(envir_);
+	if (!aenv)
 	    error(_("invalid '%s' argument"), "envir");
 
 	/* check magic */

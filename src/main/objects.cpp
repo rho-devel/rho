@@ -147,18 +147,13 @@ void R_warn_S3_for_S4(SEXP method) {
 attribute_hidden
 SEXP R_LookupMethod(SEXP method, SEXP rho, SEXP callrho, SEXP defrho)
 {
-    if (TYPEOF(callrho) == NILSXP) {
-	Rf_error(_("use of NULL environment is defunct"));
-	callrho = R_BaseEnv;
-    } else
-	if (TYPEOF(callrho) != ENVSXP)
-	    Rf_error(_("bad generic call environment"));
-    if (TYPEOF(defrho) == NILSXP) {
-	    Rf_error(_("use of NULL environment is defunct"));
-	    defrho = R_BaseEnv;
-    } else
-	if (TYPEOF(defrho) != ENVSXP)
-	    Rf_error(_("bad generic definition environment"));
+    callrho = downcast_to_env(callrho);
+    if (!callrho)
+	Rf_error(_("bad generic call environment"));
+
+    defrho = downcast_to_env(defrho);
+    if (!defrho)
+	Rf_error(_("bad generic definition environment"));
     if (defrho == R_BaseEnv)
 	defrho = R_BaseNamespace;
 

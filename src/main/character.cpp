@@ -358,11 +358,10 @@ SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::Bu
 // .Internal( startsWith(x, prefix) )  and
 // .Internal( endsWith  (x, suffix) )
 SEXP attribute_hidden
-do_startsWith(SEXP call, SEXP op, SEXP args, SEXP env)
+do_startsWith(CXXR::Expression* call, const CXXR::BuiltInFunction* op,
+	      CXXR::RObject* x,
+	      CXXR::RObject* Xfix /* 'prefix' or 'suffix' */)
 {
-    checkArity(op, args);
-
-    SEXP x = CAR(args), Xfix = CADR(args); // 'prefix' or 'suffix'
     if (!isString(x) || !isString(Xfix))
 	error(_("non-character object(s)"));
     R_xlen_t
@@ -391,7 +390,7 @@ do_startsWith(SEXP call, SEXP op, SEXP args, SEXP env)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		} else {
 		    cp x0 = need_translate ? translateCharUTF8(el) : CHAR(el);
-		    if(PRIMVAL(op) == 0) { // startsWith
+		    if(op->variant() == 0) { // startsWith
 			LOGICAL(ans)[i] = strncmp(x0, y0, ylen) == 0;
 		    } else { // endsWith
 			int off = (int)strlen(x0) - ylen;
@@ -430,7 +429,7 @@ do_startsWith(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
 	R_xlen_t i, i1, i2;
-	if(PRIMVAL(op) == 0) { // 0 = startsWith, 1 = endsWith
+	if(op->variant() == 0) { // 0 = startsWith, 1 = endsWith
 	    MOD_ITERATE2(n, n1, n2, i, i1, i2, {
 		    if (x1[i1] < 0 || y1[i2] < 0)
 			LOGICAL(ans)[i] = NA_LOGICAL;
@@ -1634,20 +1633,15 @@ SEXP attribute_hidden stringSuffix(SEXP string, int fromIndex) {
     return res;
 }
 
-SEXP attribute_hidden do_strrep(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_strrep(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* n)
 {
-    SEXP d, s, x, n;
+    SEXP d, s;
     R_xlen_t is, ix, in, ns, nx, nn;
     const char *xi;
     int j, ni, nc;
     const char *cbuf;
     char *buf;
     const void *vmax;
-
-    checkArity(op, args);
-
-    x = CAR(args); args = CDR(args);
-    n = CAR(args);
 
     nx = XLENGTH(x);
     nn = XLENGTH(n);

@@ -1330,11 +1330,8 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
-SEXP attribute_hidden do_asCharacterFactor(SEXP call, SEXP op, SEXP args,
-                                           SEXP rho)
+SEXP attribute_hidden do_asCharacterFactor(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    SEXP x;
-    x = CAR(args);
     return Rf_asCharacterFactor(x);
 }
 
@@ -1491,12 +1488,8 @@ SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR
     if (!Rf_isNewList(arglist))
 	Rf_errorcall(call, _("list argument expected"));
 
-    envir = envir_;
-    if (Rf_isNull(envir)) {
-	Rf_error(_("use of NULL environment is defunct"));
-	envir = R_BaseEnv;
-    } else
-    if (!Rf_isEnvironment(envir))
+    envir = downcast_to_env(envir_);
+    if (!envir)
 	Rf_errorcall(call, _("invalid environment"));
 
     n = length(arglist);

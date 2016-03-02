@@ -2302,52 +2302,7 @@ additional sub-architecture.  There is also @command{R CMD INSTALL
 --merge-multiarch} to build and merge the two architectures, starting
 with a source tarball.
 
-<<<<<<< HEAD
 @node External software,  , Multiple sub-architectures, Installing packages
-||||||| merged common ancestors
-@node Byte-compilation, External software, Multiple sub-architectures, Installing packages
-@subsection Byte-compilation
-
-The base and recommended packages are byte-compiled by default.  Other
-packages can be byte-compiled on installation by using @command{R CMD
-INSTALL} with option @option{--byte-compile} or by
-@code{install.packages(type = "source", INSTALL_opts =
-"--byte-compile")}.
-
-Not all contributed packages work correctly when byte-compiled (for
-example because they interfere with the sealing of namespaces).  For
-most packages (especially those which make extensive use of compiled
-code) the speed-up is small.  Unless a package is used frequently the
-time spent in byte-compilation can outweigh the time saved in execution:
-also byte-compilation can add substantially to the installed size of the
-package.
-
-Byte-compilation can be controlled on a per-package basis by the
-@samp{ByteCompile} field in the @file{DESCRIPTION} file.
-
-@node External software,  , Byte-compilation, Installing packages
-=======
-@node Byte-compilation, External software, Multiple sub-architectures, Installing packages
-@subsection Byte-compilation
-
-The base and recommended packages are byte-compiled by default.  Other
-packages can be byte-compiled on installation by using @command{R CMD
-INSTALL} with option @option{--byte-compile} or by
-@code{install.packages(type = "source", INSTALL_opts =
-"--byte-compile")}.
-
-Not all contributed packages work correctly when byte-compiled.  For
-most packages (especially those which make extensive use of compiled
-code) the speed-up is small.  Unless a package is used frequently the
-time spent in byte-compilation can outweigh the time saved in execution:
-also byte-compilation can add substantially to the installed size of the
-package.
-
-Byte-compilation can be controlled on a per-package basis by the
-@samp{ByteCompile} field in the @file{DESCRIPTION} file.
-
-@node External software,  , Byte-compilation, Installing packages
->>>>>>> 21d488fb296ea25436143371ce9ddc03fa1c8379
 @subsection External software
 
 Some @R{} packages contain compiled code which links to external

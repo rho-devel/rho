@@ -1198,36 +1198,6 @@ bool CircleFinder::add(RObject* item)
     return count != 1;
 }
 
-static void ScanForCircles1(SEXP s, CircleFinder* cf)
-{
-    switch (TYPEOF(s)) {
-    case LANGSXP:
-    case LISTSXP:
-	if (!cf->add(s)) {
-	    ScanForCircles1(CAR(s), cf);
-	    ScanForCircles1(CDR(s), cf);
-	}
-	break;
-    default:
-	break;
-    }
-}
-
-static SEXP ScanForCircles(SEXP s)
-{
-    CircleFinder cf;
-    ScanForCircles1(s, &cf);
-    return cf.duplicates();
-}
-
-static SEXP findrep(SEXP x, SEXP reps)
-{
-    for (; reps != R_NilValue; reps = CDR(reps))
-	if (x == CAR(reps))
-	    return reps;
-    return R_NilValue;
-}
-
 void R_Serialize(SEXP s, R_outpstream_t stream)
 {
     SEXP ref_table;
@@ -2731,11 +2701,8 @@ static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
     Rboolean force;
     int i, len;
 
-    if (TYPEOF(env) == NILSXP) {
-	Rf_error(_("use of NULL environment is defunct"));
-	env = R_BaseEnv;
-    } else
-    if (TYPEOF(env) != ENVSXP)
+    env = downcast_to_env(env);
+    if (!env)
 	Rf_error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
 	Rf_error(_("bad variable names"));

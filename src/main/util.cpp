@@ -1362,10 +1362,8 @@ Rboolean utf8Valid(const char *str)
     return  CXXRCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
 }
 
-SEXP attribute_hidden do_validUTF8(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_validUTF8(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    checkArity(op, args);
-    SEXP x = CAR(args);
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
     R_xlen_t n = XLENGTH(x);
@@ -1376,10 +1374,8 @@ SEXP attribute_hidden do_validUTF8(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_validEnc(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_validEnc(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
 {
-    checkArity(op, args);
-    SEXP x = CAR(args);
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
     R_xlen_t n = XLENGTH(x);
