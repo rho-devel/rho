@@ -106,7 +106,19 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
 
-    // TODO: add optimization passes and re-verify.
+    // Run some optimization passes and re-verify.
+    // TODO(arunchauhan): Use make_unique when we move to C++-14.
+    std::unique_ptr<llvm::FunctionPassManager> pass_manager(
+        new llvm::FunctionPassManager(module));
+    // Provide basic AliasAnalysis support for GVN.
+    pass_manager->add(llvm::createBasicAliasAnalysisPass());
+    pass_manager->add(llvm::createInstructionCombiningPass());
+    pass_manager->add(llvm::createReassociatePass());
+    pass_manager->add(llvm::createGVNPass());
+    pass_manager->add(llvm::createCFGSimplificationPass());
+    pass_manager->run(*function);
+    llvm::verifyFunction(*function);
+    // function->dump(); // So we can see what's going on while developing.
 
     m_engine->finalizeObject();
     auto ptr = m_engine->getFunctionAddress(function->getName());

@@ -27,6 +27,8 @@
 
 #include "llvm/ADT/ArrayRef.h"
 
+#include "llvm/PassManager.h"
+
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/SourceMgr.h"
