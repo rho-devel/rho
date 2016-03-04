@@ -16,6 +16,7 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IRReader/IRReader.h"
 
