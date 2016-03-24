@@ -37,6 +37,7 @@
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/StringVector.h"
+#include "CXXR/RealVector.h" /* EJP */
 #include <Internal.h>
 
 #include <fstream>
@@ -190,7 +191,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
-SEXP attribute_hidden do_provCommand (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_provCommand (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* /* const* */ args, int num_args, const CXXR::PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -217,17 +218,18 @@ do_provenance_graph(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunctio
     Rf_error(_("provenance tracking not implemented in this build"));
     return nullptr;
 #else
-    int nargs = length(args);
+    int nargs = num_args;
     if (nargs != 1)
 	Rf_error(_("%d arguments passed to 'provenance.graph' which requires 1"),
 		 nargs);
-    SEXP arg1 = CAR(args);
+    // SEXP arg1 = CAR((CXXR::RObject*) args);
+    const RObject* arg1 = args[0];
     if (!arg1 || arg1->sexptype() != STRSXP)
 	    Rf_error(_("invalid 'names' argument"));
 
     Environment* env = static_cast<Environment*>(rho);
     Provenance::Set provs;
-    StringVector* sv = static_cast<StringVector*>(arg1);
+    const StringVector* sv = static_cast<const StringVector*>(arg1);
     for (size_t i = 0; i < sv->size(); i++) {
 	const char* name = (*sv)[i]->c_str();
 	Symbol* sym = Symbol::obtain(name);

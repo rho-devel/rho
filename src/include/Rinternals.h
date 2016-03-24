@@ -530,7 +530,6 @@ SEXP Rf_allocMatrix(SEXPTYPE, int, int);
 SEXP Rf_allocList(unsigned int);
 SEXP Rf_allocS4Object(void);
 SEXP Rf_allocSExp(SEXPTYPE);
-SEXP Rf_allocVector(SEXPTYPE, R_xlen_t);
 SEXP Rf_allocVector3(SEXPTYPE, R_xlen_t, void*);
 R_xlen_t Rf_any_duplicated(SEXP x, Rboolean from_last);
 R_xlen_t Rf_any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last);
