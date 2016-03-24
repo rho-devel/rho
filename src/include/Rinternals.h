@@ -530,7 +530,6 @@ SEXP Rf_allocMatrix(SEXPTYPE, int, int);
 SEXP Rf_allocList(unsigned int);
 SEXP Rf_allocS4Object(void);
 SEXP Rf_allocSExp(SEXPTYPE);
-/* SEXP Rf_allocVector(SEXPTYPE, R_xlen_t); -- EJP */
 SEXP Rf_allocVector3(SEXPTYPE, R_xlen_t, void*);
 R_xlen_t Rf_any_duplicated(SEXP x, Rboolean from_last);
 R_xlen_t Rf_any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last);
@@ -1068,7 +1067,7 @@ Rboolean Rf_isVector(SEXP);
    It is *essential* that these do not appear in any other header file,
    with or without the Rf_ prefix.
 */
-/* SEXP     Rf_allocVector(SEXPTYPE, R_xlen_t); -- EJP */
+SEXP     Rf_allocVector(SEXPTYPE, R_xlen_t);
 Rboolean Rf_conformable(SEXP, SEXP);
 SEXP	 Rf_elt(SEXP, int);
 Rboolean Rf_inherits(SEXP, const char *);
