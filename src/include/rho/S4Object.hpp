@@ -35,9 +35,6 @@
 #define S4OBJECT_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {
@@ -91,16 +88,11 @@ namespace rho {
 } // namespace rho
 
 extern "C" {
-#endif  /* __cplusplus */
-
     /** @brief Create an S4 object.
      *
      * @return Pointer to the created object.
      */
     SEXP Rf_allocS4Object();
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* S4OBJECT_H */

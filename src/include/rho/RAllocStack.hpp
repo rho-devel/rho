@@ -33,9 +33,6 @@
 #define RALLOCSTACK_H 1
 
 #include <stddef.h>
-
-#ifdef __cplusplus
-
 #include <stack>
 #include <vector>
 #include "rho/config.hpp"
@@ -142,8 +139,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /* ***** C interface ***** */
 
     /** @brief Allocate a block of memory.
@@ -167,7 +162,6 @@ extern "C" {
      */
     char* R_alloc(size_t num_elts, int elt_size);
 
-#ifdef __cplusplus
     /** @brief Allocate a block of memory.
      *
      * This is a wrapper round R_alloc() for the use of former CR code
@@ -193,7 +187,6 @@ extern "C" {
     {
 	return static_cast<void*>(R_alloc(num_elts, elt_size));
     }
-#endif
 
     /** @brief Allocate a block of memory, and initialize it to zero.
      *
@@ -242,14 +235,10 @@ extern "C" {
      * rho::RAllocStack::Scope class instead.  It is possible that in
      * the future this function will always return a null pointer.
      */
-#ifndef __cplusplus
-    void* vmaxget(void);
-#else
     inline void* vmaxget(void)
     {
 	return static_cast<char*>(nullptr) + rho::RAllocStack::size();
     }
-#endif
 
     /** @brief Reclaims memory blocks.
      *
@@ -263,19 +252,12 @@ extern "C" {
      * use the rho::RAllocStack::Scope class instead.  It is possible
      * that in the future this function will become a no-op.
      */
-#ifndef __cplusplus
-    void vmaxset(const void* stack_sizep);
-#else
     inline void vmaxset(const void* stack_sizep)
     {
 	size_t stack_size = size_t(static_cast<const char*>(stack_sizep)
 				   - static_cast<const char*>(nullptr));
 	rho::RAllocStack::restoreSize(stack_size);
     }
-#endif
-
-#ifdef __cplusplus
 }  /* extern "C" */
-#endif
 
 #endif  // RALLOCSTACK_H

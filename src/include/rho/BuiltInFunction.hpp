@@ -31,27 +31,20 @@
 #ifndef BUILTINFUNCTION_H
 #define BUILTINFUNCTION_H
 
-#include "rho/FunctionBase.hpp"
-
-#ifdef __cplusplus
-
 #include <map>
 #include <vector>
 
 #include "rho/ArgList.hpp"
 #include "rho/Environment.hpp"
 #include "rho/Expression.hpp"
+#include "rho/FunctionBase.hpp"
 
 extern "C" {
-#endif
-
     /** @brief The type of the do_xxxx functions.
      *
      * These are the built-in R functions.
      */
     typedef SEXP (*CCODE)(SEXP, SEXP, SEXP, SEXP);
-
-#ifdef __cplusplus
 }  // extern "C"
 
 namespace rho {
@@ -641,18 +634,12 @@ namespace rho {
 // Old-style accessor functions.  Get rid of these in due course.
 
 extern "C" {
-#endif
-
-#ifndef __cplusplus
-    const char* PRIMNAME(SEXP x);
-#else
 inline const char* PRIMNAME(SEXP x)
 {
     using namespace rho;
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.name();
 }
-#endif
   
     /** @brief Get offset of a rho::BuiltInFunction.
      *
@@ -660,30 +647,20 @@ inline const char* PRIMNAME(SEXP x)
      *
      * @return The offset of this function within the function table.
      */
-#ifndef __cplusplus
-    int PRIMOFFSET(SEXP x);
-#else
     inline int PRIMOFFSET(SEXP x)
     {
 	using namespace rho;
 	BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
 	return int(bif.offset());
     }
-#endif
 
-#ifndef __cplusplus
-    unsigned int PRIMVAL(SEXP x);
-#else
 inline unsigned int PRIMVAL(SEXP x)
 {
     using namespace rho;
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.variant();
 }
-#endif
   
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* BUILTINFUNCTION_H */

@@ -33,8 +33,6 @@
 
 #include "rho/RObject.hpp"
 
-#ifdef __cplusplus
-
 extern "C"
 void Rf_InitGlobalEnv();
 
@@ -678,8 +676,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif  // __cplusplus
-
     /* C-visible names for predefined environments */
     extern SEXP R_EmptyEnv;
     extern SEXP R_BaseEnv;
@@ -692,14 +688,10 @@ extern "C" {
      *
      * @return TRUE iff the RObject pointed to by s is an environment.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isEnvironment(SEXP s);
-#else
     inline Rboolean Rf_isEnvironment(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == ENVSXP);
     }
-#endif
 
     /** @brief Access enclosing environment.
      *
@@ -707,16 +699,12 @@ extern "C" {
      *
      * @return Pointer to the enclosing environment of \a x .
      */
-#ifndef __cplusplus
-    SEXP ENCLOS(SEXP x);
-#else
     inline SEXP ENCLOS(SEXP x)
     {
 	using namespace rho;
 	const Environment& env = *SEXP_downcast<Environment*>(x);
 	return env.enclosingEnvironment();
     }
-#endif
 
     /** @brief Should the debugger single-step?
      *
@@ -725,16 +713,12 @@ extern "C" {
      * @return \c true if single-stepping is set, i.e. the debugger
      * should single-step within this environment.
      */
-#ifndef __cplusplus
-    Rboolean ENV_DEBUG(SEXP x);
-#else
     inline Rboolean ENV_DEBUG(SEXP x)
     {
 	using namespace rho;
 	const Environment& env = *SEXP_downcast<const Environment*>(x);
 	return Rboolean(env.singleStepping());
     }
-#endif
 
     /** @brief Access an environment's Frame, represented as a PairList.
      *
@@ -749,16 +733,12 @@ extern "C" {
      * accessor function, its return value will need protection from
      * garbage collection.
      */
-#ifndef __cplusplus
-    SEXP FRAME(SEXP x);
-#else
     inline SEXP FRAME(SEXP x)
     {
 	using namespace rho;
 	Environment* env = SEXP_downcast<Environment*>(x);
 	return env->frame()->asPairList();
     }
-#endif
 
     /** @brief Enable/disable single-stepping of the debugger.
      *
@@ -766,16 +746,12 @@ extern "C" {
      *
      * @param v The new single-stepping state (true = enabled).
      */
-#ifndef __cplusplus
-    void SET_ENV_DEBUG(SEXP x, Rboolean v);
-#else
     inline void SET_ENV_DEBUG(SEXP x, Rboolean v)
     {
 	using namespace rho;
 	Environment& env = *SEXP_downcast<Environment*>(x);
 	env.setSingleStepping(v);
     }
-#endif
 
     /** @brief Set symbol's value in the base environment.
      *
@@ -787,16 +763,12 @@ extern "C" {
      *
      * @todo No binding to R_UnboundValue ought to be created.
      */
-#ifndef __cplusplus
-    void SET_SYMVALUE(SEXP x, SEXP val);
-#else
     inline void SET_SYMVALUE(SEXP x, SEXP val)
     {
 	using namespace rho;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
 	Environment::base()->frame()->obtainBinding(sym)->setValue(val);
     }
-#endif
 
     /** @brief Symbol's value in the base environment.
      *
@@ -806,9 +778,6 @@ extern "C" {
      *         Returns R_UnboundValue if no value is currently
      *         associated with the Symbol.
      */
-#ifndef __cplusplus
-    SEXP SYMVALUE(SEXP x);
-#else
     inline SEXP SYMVALUE(SEXP x)
     {
 	using namespace rho;
@@ -816,10 +785,6 @@ extern "C" {
 	Frame::Binding* bdg = Environment::base()->frame()->binding(sym);
 	return bdg ? bdg->unforcedValue() : Symbol::unboundValue();
     }
-#endif
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RENVIRONMENT_H */

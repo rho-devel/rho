@@ -31,18 +31,14 @@
 #ifndef RHO_STRING_H
 #define RHO_STRING_H
 
-#include "rho/GCRoot.hpp"
-#include "rho/VectorBase.hpp"
 #include "Rinternals.h"
-
-#ifdef __cplusplus
-
-#include <unordered_map>
-#include <string>
-
 #include "rho/Allocator.hpp"
+#include "rho/GCRoot.hpp"
 #include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
+#include "rho/VectorBase.hpp"
+#include <string>
+#include <unordered_map>
 
 extern "C" void Rf_InitNames();
 
@@ -360,8 +356,6 @@ namespace rho {
 
 extern "C" {
 
-#endif /* __cplusplus */
-
     extern SEXP R_NaString;
     extern SEXP R_BlankString;
 
@@ -372,9 +366,6 @@ extern "C" {
      * @return a non-zero value iff \a x is marked as having either
      * LATIN1 encoding or UTF8 encoding.
      */
-#ifndef __cplusplus
-    int ENC_KNOWN(SEXP x);
-#else
     inline int ENC_KNOWN(SEXP x)
     {
 	// Use explicit namespace qualification to prevent ambiguities:
@@ -382,7 +373,6 @@ extern "C" {
 	cetype_t enc = str.encoding();
 	return enc == CE_LATIN1 || enc == CE_UTF8;
     }
-#endif
 
     /** @brief Is a rho::String pure ASCII?
      *
@@ -390,16 +380,12 @@ extern "C" {
      *
      * @return true iff \a x contains only ASCII characters..
      */
-#ifndef __cplusplus
-    int IS_ASCII(SEXP x);
-#else
     inline int IS_ASCII(SEXP x)
     {
 	// Use explicit namespace qualification to prevent ambiguities:
 	const rho::String& str = *rho::SEXP_downcast<const rho::String*>(x);
 	return Rboolean(str.isASCII());
     }
-#endif
 
     /** @brief Does a rho::String have bytecode encoding?
      *
@@ -407,16 +393,12 @@ extern "C" {
      *
      * @return true iff \a x is marked as having BYTES encoding.
      */
-#ifndef __cplusplus
-    int IS_BYTES(SEXP x);
-#else
     inline int IS_BYTES(SEXP x)
     {
 	// Use explicit namespace qualification to prevent ambiguities:
 	const rho::String& str = *rho::SEXP_downcast<const rho::String*>(x);
 	return Rboolean(str.encoding() == CE_BYTES);
     }
-#endif
 
     /** @brief Does a rho::String have LATIN1 encoding?
      *
@@ -424,16 +406,12 @@ extern "C" {
      *
      * @return true iff \a x is marked as having LATIN1 encoding.
      */
-#ifndef __cplusplus
-    Rboolean IS_LATIN1(SEXP x);
-#else
     inline Rboolean IS_LATIN1(SEXP x)
     {
 	// Use explicit namespace qualification to prevent ambiguities:
 	const rho::String& str = *rho::SEXP_downcast<const rho::String*>(x);
 	return Rboolean(str.encoding() == CE_LATIN1);
     }
-#endif
 
     /** @brief Does a rho::String have UTF8 encoding?
      *
@@ -441,16 +419,12 @@ extern "C" {
      *
      * @return true iff \a x is marked as having UTF8 encoding.
      */
-#ifndef __cplusplus
-    Rboolean IS_UTF8(SEXP x);
-#else
     inline Rboolean IS_UTF8(SEXP x)
     {
 	// Use explicit namespace qualification to prevent ambiguities:
 	const rho::String& str = *rho::SEXP_downcast<const rho::String*>(x);
 	return Rboolean(str.encoding() == CE_UTF8);
     }
-#endif
 
     /** @brief Access the content of rho::String as a C-style string.
      *
@@ -458,15 +432,11 @@ extern "C" {
      *
      * @return \c const pointer to character 0 of \a x .
      */
-#ifndef __cplusplus
-    const char *R_CHAR(SEXP x);
-#else
     inline const char *R_CHAR(SEXP x)
     {
 	using namespace rho;
 	return SEXP_downcast<String*>(x, false)->c_str();
     }
-#endif
 
     /** @brief Get a pointer to a rho::String object.
      *
@@ -480,14 +450,10 @@ extern "C" {
      * @return Pointer to a string object representing the specified
      *         text.
      */
-#ifndef __cplusplus
-    SEXP Rf_mkChar(const char* str);
-#else
     inline SEXP Rf_mkChar(const char* str)
     {
 	return rho::String::obtain(str);
     }
-#endif
     
     /** @brief Get a pointer to a rho::String object.
      *
@@ -504,14 +470,10 @@ extern "C" {
      * @return Pointer to a string object representing the specified
      *         text in the specified encoding.
      */
-#ifndef __cplusplus
-    SEXP Rf_mkCharCE(const char* str, cetype_t encoding);
-#else
     inline SEXP Rf_mkCharCE(const char* str, cetype_t encoding)
     {
 	return rho::String::obtain(str, encoding);
     }
-#endif
 
     /** @brief Create a rho::String object for specified text and
      * encoding.
@@ -553,14 +515,10 @@ extern "C" {
      *
      * @return Pointer to the created string.
      */
-#ifndef __cplusplus
-    SEXP Rf_mkCharLen(const char* text, int length);
-#else
     inline SEXP Rf_mkCharLen(const char* text, int length)
     {
 	return Rf_mkCharLenCE(text, length, CE_NATIVE);
     }
-#endif
 
     /** @brief Convert contents of a rho::String to UTF8.
      *
@@ -573,9 +531,6 @@ extern "C" {
      * due course.
      */
     const char* Rf_translateCharUTF8(SEXP x);
-
-#ifdef __cplusplus
 }  // extern "C"
-#endif
 
 #endif /* RHO_STRING_H */

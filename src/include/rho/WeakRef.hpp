@@ -31,8 +31,6 @@
 #ifndef WEAKREF_HPP
 #define WEAKREF_HPP
 
-#ifdef __cplusplus
-
 #include <list>
 #include "rho/Allocator.hpp"
 #include "rho/FunctionBase.hpp"
@@ -225,7 +223,5 @@ namespace rho {
 	friend class GCNode;
     };
 }  // namespace rho
-
-#endif /* __cplusplus */
 
 #endif /* WEAKREF_HPP */

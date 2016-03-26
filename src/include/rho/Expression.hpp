@@ -34,8 +34,6 @@
 #include "rho/FunctionBase.hpp"
 #include "rho/PairList.hpp"
 
-#ifdef __cplusplus
-
 namespace rho {
     class ArgList;
     class ArgMatchInfo;
@@ -228,7 +226,5 @@ SEXP Rf_currentExpression();
  *          currently checked in any way.)
  */
 void Rf_setCurrentExpression(SEXP e);
-
-#endif  // __cplusplus
 
 #endif /* EXPRESSION_H */

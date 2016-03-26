@@ -33,7 +33,7 @@
 #ifndef STRINGVECTOR_H
 #define STRINGVECTOR_H
 
-#include "rho/String.hpp"
+#include "Rinternals.h"
 
 #ifdef __cplusplus
 
@@ -42,6 +42,7 @@
 #include "rho/FixedVector.hpp"
 #include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
+#include "rho/String.hpp"
 
 namespace rho {
     /** @brief Vector of strings.

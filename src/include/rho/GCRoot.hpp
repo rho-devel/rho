@@ -32,9 +32,6 @@
 #define GCROOT_H 1
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/GCNode.hpp"
 
 namespace rho {
@@ -254,8 +251,6 @@ namespace std {
 }
 
 extern "C" {
-#endif /* __cplusplus */
-
     /* ***** C interface ***** */
 
     /** @brief Protect object against garbage collection.
@@ -277,9 +272,6 @@ extern "C" {
      *          R_ReleaseObject() has no effect.
      */
     void R_ReleaseObject(SEXP object);
-
-#ifdef __cplusplus
 }  /* extern "C" */
-#endif
 
 #endif  // GCROOT_H

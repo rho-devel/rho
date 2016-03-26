@@ -38,9 +38,6 @@
 #define EXPRESSIONVECTOR_H
 
 #include "rho/VectorBase.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/FixedVector.hpp"
 #include "rho/SEXP_downcast.hpp"
 
@@ -58,20 +55,14 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /**
      * @param s Pointer to a rho::RObject.
      * @return TRUE iff the rho::RObject pointed to by \a s is an expression.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isExpression(SEXP s);
-#else
     inline Rboolean Rf_isExpression(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == EXPRSXP);
     }
-#endif
 
 /** @brief Set element of rho::ExpressionVector.
  * 
@@ -95,19 +86,13 @@ SEXP SET_XVECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
  *
  * @return Pointer to extracted \a i 'th element.
  */
-#ifndef __cplusplus
-SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
-#else
 inline SEXP XVECTOR_ELT(SEXP x, R_xlen_t i)
 {
     using namespace rho;
     ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
     return (*ev)[VectorBase::size_type(i)];
 }
-#endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* EXPRESSIONVECTOR_H */

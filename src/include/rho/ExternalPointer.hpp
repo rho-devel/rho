@@ -32,9 +32,6 @@
 #define EXTERNALPOINTER_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {
@@ -193,8 +190,6 @@ namespace rho {
 } // namespace rho
 
 extern "C" {
-#endif  /* __cplusplus */
-
     /** @brief Create a rho::ExternalPointer object.
      *
      * @param p The pointer that the rho::ExternalPointer object is
@@ -214,16 +209,12 @@ extern "C" {
      *
      * @return the external pointer encapsulated by \a s.
      */
-#ifndef __cplusplus
-    void *R_ExternalPtrAddr(SEXP s);
-#else
     inline void *R_ExternalPtrAddr(SEXP s)
     {
 	rho::ExternalPointer& ep
 	    = *rho::SEXP_downcast<rho::ExternalPointer*>(s);
 	return ep.ptr();
     }
-#endif
 
     /** @brief Get pointer to tag object.
      *
@@ -231,16 +222,12 @@ extern "C" {
      *
      * @return a pointer to the tag object of \a s.
      */
-#ifndef __cplusplus  
-SEXP R_ExternalPtrTag(SEXP s);
-#else
 inline SEXP R_ExternalPtrTag(SEXP s)
     {
 	rho::ExternalPointer& ep
 	    = *rho::SEXP_downcast<rho::ExternalPointer*>(s);
 	return ep.tag();
     }
-#endif
 
     /** @brief Get pointer to protege object.
      *
@@ -248,16 +235,12 @@ inline SEXP R_ExternalPtrTag(SEXP s)
      *
      * @return a pointer to the protege object of \a s.
      */
-#ifndef __cplusplus
-    SEXP R_ExternalPtrProtected(SEXP s);
-#else
     inline SEXP R_ExternalPtrProtected(SEXP s)
     {
 	rho::ExternalPointer& ep
 	    = *rho::SEXP_downcast<rho::ExternalPointer*>(s);
 	return ep.protege();
     }
-#endif
 
     /** @brief Set the value of the encapsulated pointer
      *
@@ -271,14 +254,10 @@ inline SEXP R_ExternalPtrTag(SEXP s)
      *
      * @param s Pointer to a rho::ExternalPointer (checked).
      */
-#ifndef __cplusplus
-    void R_ClearExternalPtr(SEXP s);
-#else
     inline void R_ClearExternalPtr(SEXP s)
     {
 	R_SetExternalPtrAddr(s, nullptr);
     }
-#endif
 
     /** @brief Designate the tag object.
      *
@@ -297,9 +276,6 @@ inline SEXP R_ExternalPtrTag(SEXP s)
      *          pointer).
      */
     void R_SetExternalPtrProtected(SEXP s, SEXP p);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* EXTERNALPOINTER_H */

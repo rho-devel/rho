@@ -32,9 +32,6 @@
 #define REALVECTOR_H
 
 #include "rho/VectorBase.hpp"
-
-#ifdef __cplusplus
-
 #include "R_ext/Arith.h"
 #include "rho/FixedVector.hpp"
 #include "rho/SEXP_downcast.hpp"
@@ -80,20 +77,14 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /**
      * @param s Pointer to an RObject.
      * @return TRUE iff the RObject pointed to by \a s is a real vector.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isReal(SEXP s);
-#else
     inline Rboolean Rf_isReal(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == REALSXP);
     }
-#endif
 
 /**
  * @param x Pointer to an \c RealVector (i.e. an R numeric vector).
@@ -101,18 +92,12 @@ extern "C" {
  *          RealVector .
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-double *REAL(SEXP x);
-#else
 inline double *REAL(SEXP x)
 {
     using namespace rho;
     return &(*SEXP_downcast<RealVector*>(x, false))[0];
 }
-#endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* REALVECTOR_H */

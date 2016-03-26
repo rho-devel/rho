@@ -37,9 +37,6 @@
 #define PROTECTSTACK_H 1
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/NodeStack.hpp"
 
 namespace rho {
@@ -189,8 +186,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /* ***** C interface ***** */
 
     typedef size_t PROTECT_INDEX;
@@ -207,14 +202,10 @@ extern "C" {
      * @param iptr Pointer to a location in which the stack cell index
      *          is to be stored.
      */
-#ifndef __cplusplus
-    void R_ProtectWithIndex(SEXP node, PROTECT_INDEX *iptr);
-#else
     inline void R_ProtectWithIndex(SEXP node, PROTECT_INDEX *iptr)
     {
 	*iptr = rho::ProtectStack::protect(node);
     }
-#endif
 
     /** @brief Retarget a cell in the C pointer protection stack.
      *
@@ -233,14 +224,10 @@ extern "C" {
      *          than the current size of the C pointer protection
      *          stack.
      */
-#ifndef __cplusplus
-    void R_Reprotect(SEXP node, PROTECT_INDEX index);
-#else
     inline void R_Reprotect(SEXP node, PROTECT_INDEX index)
     {
 	rho::ProtectStack::reprotect(node, index);
     }
-#endif
 
     /** @brief Restore C pointer protection stack to a previous size.
      *
@@ -274,15 +261,11 @@ extern "C" {
      *          garbage collector.
      * @return a copy of \a node .
      */
-#ifndef __cplusplus
-    SEXP Rf_protect(SEXP node);
-#else
     inline SEXP Rf_protect(SEXP node)
     {
 	rho::ProtectStack::protect(node);
 	return node;
     }
-#endif
 
     /** @brief Pop cells from the C pointer protection stack.
      *
@@ -294,14 +277,10 @@ extern "C" {
      *          larger than the current size of the C pointer
      *          protection stack.
      */
-#ifndef __cplusplus
-    void Rf_unprotect(int count);
-#else
     inline void Rf_unprotect(int count)
     {
 	rho::ProtectStack::unprotect(static_cast<unsigned int>(count));
     }
-#endif	
 
     /** @brief Remove entry from pointer protection stack.
      *
@@ -314,17 +293,10 @@ extern "C" {
      *
      * @deprecated Utterly.
      */
-#ifndef __cplusplus
-    void Rf_unprotect_ptr(SEXP node);
-#else
     inline void Rf_unprotect_ptr(SEXP node)
     {
 	rho::ProtectStack::unprotectPtr(node);
     }
-#endif
-
-#ifdef __cplusplus
 }  /* extern "C" */
-#endif
 
 #endif  // PROTECTSTACK_H

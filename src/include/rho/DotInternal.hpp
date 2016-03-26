@@ -33,14 +33,10 @@
 #define DOTINTERNAL_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/BuiltInFunction.hpp"
 #include "rho/SEXP_downcast.hpp"
 
 extern "C" {
-#endif
 
     /** @brief Get function accessed via <tt>.Internal()</tt>.
      *
@@ -50,16 +46,12 @@ extern "C" {
      * via <tt>.Internal()</tt>, then a pointer to the appropriate
      * rho::BuiltInFunction, otherwise a null pointer.
      */
-#ifndef __cplusplus
-    SEXP INTERNAL(SEXP x);
-#else
     inline SEXP INTERNAL(SEXP x)
     {
 	using namespace rho;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
 	return BuiltInFunction::obtainInternal(sym);
     }
-#endif
 
     /** @brief Associate a Symbol with a <tt>.Internal()</tt> function.
      *
@@ -71,9 +63,6 @@ extern "C" {
      * function is to be removed from the table.
      */
     void SET_INTERNAL(SEXP x, SEXP v);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* DOTINTERNAL_H */

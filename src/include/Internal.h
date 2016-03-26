@@ -34,13 +34,14 @@
 #define R_INTERNAL_H
 
 #include "R_ext/Error.h"
+
+#ifdef __cplusplus
+
 #include "rho/BuiltInFunction.hpp"
 #include "rho/RObject.hpp"
 #include "rho/Expression.hpp"
 #include "rho/Environment.hpp"
 #include "rho/PairList.hpp"
-
-#ifdef __cplusplus
 
 namespace rho {
   typedef RObject*(quick_builtin)(Expression*,

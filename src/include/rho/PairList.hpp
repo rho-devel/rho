@@ -41,8 +41,6 @@
 
 #include "rho/ConsCell.hpp"
 
-#ifdef __cplusplus
-
 extern "C" {
     // Used in matching formal and actual arguments (within match.cpp
     // and unique.cpp).
@@ -62,8 +60,6 @@ extern "C" {
 	  = static_cast<unsigned int>(v & 3);
     }
 
-#endif  /* __cplusplus */
-
     /** @brief Is a Binding locked?
      *
      * @param b Pointer to a PairList object (checked) representing a
@@ -72,16 +68,12 @@ extern "C" {
      *
      * @return true iff this Binding is locked.
      */
-#ifndef __cplusplus
-    Rboolean BINDING_IS_LOCKED(SEXP b);
-#else
     inline Rboolean BINDING_IS_LOCKED(SEXP b)
     {
 	using namespace rho;
 	const PairList* pl = SEXP_downcast<PairList*>(b);
 	return Rboolean(pl->m_binding_locked);
     }
-#endif
 
     /** @brief Get tail of rho::ConsCell.
      *
@@ -89,102 +81,70 @@ extern "C" {
      * @return Pointer to the tail of the list, or 0 if \a e is
      * a null pointer.
      */
-#ifndef __cplusplus
-    SEXP CDR(SEXP e);
-#else
     inline SEXP CDR(SEXP e)
     {
 	using namespace rho;
 	return tail0(SEXP_downcast<ConsCell*>(e));
     }
-#endif
 
     /**
      * @brief Equivalent to CDR(CAR(e)).
      */
-#ifndef __cplusplus
-    SEXP CDAR(SEXP e);
-#else
     inline SEXP CDAR(SEXP e) {return CDR(CAR(e));}
-#endif
 
     /**
      * @brief Equivalent to CAR(CDR(e)).
      */
-#ifndef __cplusplus
-    SEXP CADR(SEXP e);
-#else
     inline SEXP CADR(SEXP e)
     {
 	using namespace rho;
 	return car0(tail0(SEXP_downcast<ConsCell*>(e)));
     }
-#endif
 
     /**
      * @brief Equivalent to CDR(CDR(e)).
      */
-#ifndef __cplusplus
-    SEXP CDDR(SEXP e);
-#else
     inline SEXP CDDR(SEXP e)
     {
 	using namespace rho;
 	return tail0(tail0(SEXP_downcast<ConsCell*>(e)));
     }
-#endif
 
     /**
      * @brief Equivalent to CAR(CDR(CDR(e))).
      */
-#ifndef __cplusplus
-    SEXP CADDR(SEXP e);
-#else
     inline SEXP CADDR(SEXP e)
     {
 	using namespace rho;
 	return car0(tail0(tail0(SEXP_downcast<ConsCell*>(e))));
     }
-#endif
 
     /**
      * @brief Equivalent to CDR(CDR(CDR(e))).
      */
-#ifndef __cplusplus
-    SEXP CDDDR(SEXP e);
-#else
     inline SEXP CDDDR(SEXP e)
     {
 	using namespace rho;
 	return tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e))));
     }
-#endif
 
     /**
      * @brief Equivalent to CAR(CDR(CDR(CDR(e)))).
      */
-#ifndef __cplusplus
-    SEXP CADDDR(SEXP e);
-#else
     inline SEXP CADDDR(SEXP e)
     {
 	using namespace rho;
 	return car0(tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e)))));
     }
-#endif
 
     /**
      * @brief Equivalent to CAR(CDR(CDR(CDR(CDR(e))))).
      */
-#ifndef __cplusplus
-    SEXP CAD4R(SEXP e);
-#else
     inline SEXP CAD4R(SEXP e)
     {
 	using namespace rho;
 	return car0(tail0(tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e))))));
     }
-#endif
 
     /** @brief Is a Binding active?
      *
@@ -205,15 +165,11 @@ extern "C" {
      *          Frame::Binding (e.g. because it was produced using
      *          Frame::asPairList() ).
      */
-#ifndef __cplusplus
-    void LOCK_BINDING(SEXP b);
-#else
     inline void LOCK_BINDING(SEXP b)
     {
 	using namespace rho;
 	PairList* pl = SEXP_downcast<PairList*>(b);
 	pl->m_binding_locked = true;}
-#endif
 
     /** @brief Designate as active the binding represented by a
      * PairList object.
@@ -222,16 +178,12 @@ extern "C" {
      *          Frame::Binding (e.g. because it was produced using
      *          Frame::asPairList() ).
      */
-#ifndef __cplusplus
-    void SET_ACTIVE_BINDING_BIT(SEXP b);
-#else
     inline void SET_ACTIVE_BINDING_BIT(SEXP b)
     {
 	using namespace rho;
 	PairList* pl = SEXP_downcast<PairList*>(b);
 	pl->m_active_binding = true;
     }
-#endif
 
     /**
      * @brief Replace the tail of a rho::ConsCell.
@@ -292,16 +244,12 @@ extern "C" {
      *          Frame::Binding (e.g. because it was produced using
      *          Frame::asPairList() ).
      */
-#ifndef __cplusplus
-    void UNLOCK_BINDING(SEXP b);
-#else
     inline void UNLOCK_BINDING(SEXP b)
     {
 	using namespace rho;
 	PairList* pl = SEXP_downcast<PairList*>(b);
 	pl->m_binding_locked = false;
     }
-#endif
 
     /** @brief Create a rho::PairList of a specified length.
      *
@@ -327,9 +275,6 @@ extern "C" {
      * @return Pointer to the constructed list.
      */
     SEXP Rf_cons(SEXP cr, SEXP tl);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RPAIRLIST_H */

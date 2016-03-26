@@ -34,9 +34,6 @@
 #define LISTVECTOR_H
 
 #include "rho/VectorBase.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/FixedVector.hpp"
 #include "rho/SEXP_downcast.hpp"
 
@@ -47,7 +44,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
 
 /** @brief Set element of rho::ListVector.
  *
@@ -72,9 +68,6 @@ extern SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
  *
  * @return The value of the \a i 'th element.
  */
-#ifndef __cplusplus
-SEXP VECTOR_ELT(SEXP x, R_xlen_t i);
-#else
 inline SEXP VECTOR_ELT(SEXP x, R_xlen_t i)
 {
     using namespace rho;
@@ -88,10 +81,7 @@ inline SEXP VECTOR_ELT(SEXP x, R_xlen_t i)
 		 "VECTOR_ELT", "list", Rf_type2char(TYPEOF(x)));
     }
 }
-#endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* LISTVECTOR_H */

@@ -31,8 +31,6 @@
 #ifndef INTVECTOR_H
 #define INTVECTOR_H
 
-#ifdef __cplusplus
-
 #include "R_ext/Arith.h"
 #include "rho/ElementTraits.hpp"
 
@@ -75,7 +73,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
 
 /**
  * @param x Pointer to an \c IntVector or a \c LogicalVector (i.e. an
@@ -85,9 +82,6 @@ extern "C" {
  *
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-int *INTEGER(SEXP x);
-#else
 inline int* INTEGER(SEXP x)
 {
     using namespace rho;
@@ -100,10 +94,7 @@ inline int* INTEGER(SEXP x)
 #endif
     return &(*SEXP_downcast<IntVector*>(x, false))[0];
 }
-#endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* INTVECTOR_H */

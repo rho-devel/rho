@@ -37,12 +37,9 @@
 // Move this to ByteCode.hpp in due course:
 #define BYTECODE
 
-#ifdef __cplusplus
 #include <utility>
 
 extern "C" {
-#endif
-
     /** @brief Print expression value?
      *
      * If R_Visible is TRUE when the evaluation of a top-level R
@@ -80,8 +77,6 @@ extern "C" {
      * surprisingly complicated.
      */
     int R_isMissing(SEXP symbol, SEXP rho);
-
-#ifdef __cplusplus
 } // extern "C"
 
 namespace rho {
@@ -263,8 +258,6 @@ namespace rho {
 }
 
 extern "C" {
-#endif /* __cplusplus */
-
     /** @brief Evaluate an object in a specified Environment.
      *
      * @param e Pointer (possibly null) to the object to be evaluated.
@@ -274,9 +267,6 @@ extern "C" {
      * @return Pointer to the result of evaluating \a e in \a rho, or
      * a null pointer if \a e is null.
      */
-#ifndef __cplusplus
-    SEXP Rf_eval(SEXP e, SEXP rho);
-#else
     inline SEXP Rf_eval(SEXP e, SEXP rho)
     {
 	using namespace rho;
@@ -285,10 +275,6 @@ extern "C" {
 	    env = SEXP_downcast<Environment*>(rho);	
 	return evaluate(e, env);
     }
-#endif
- 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* EVALUATOR_H */

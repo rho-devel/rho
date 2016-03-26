@@ -32,9 +32,6 @@
 #define RSYMBOL_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/GCRoot.hpp"
 #include "rho/SEXP_downcast.hpp"
 #include "rho/String.hpp"
@@ -354,7 +351,6 @@ namespace rho {
 
 
 extern "C" {
-#endif /* __cplusplus */
 
     /* Pseudo-objects */
     extern SEXP R_MissingArg;
@@ -373,16 +369,12 @@ extern "C" {
      * @return \c TRUE iff this symbol denotes an element of a
      *         <tt>...</tt> expression.
      */
-#ifndef __cplusplus
-    Rboolean DDVAL(SEXP x);
-#else
     inline Rboolean DDVAL(SEXP x)
     {
 	using namespace rho;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
 	return Rboolean(sym.isDotDotSymbol());
     }
-#endif
 
     /** Find value of a <tt>..<em>n</em></tt> Symbol.
      *
@@ -411,14 +403,10 @@ extern "C" {
      * @return Pointer to a Symbol (preexisting or newly created) with
      * the required name.
      */
-#ifndef __cplusplus
-    SEXP Rf_install(const char *name);
-#else
     inline SEXP Rf_install(const char *name)
     {
 	return rho::Symbol::obtain(name);
     }
-#endif
 
     /** @brief Test if SYMSXP.
      *
@@ -427,14 +415,10 @@ extern "C" {
      * @return TRUE iff s points to a rho::RObject with ::SEXPTYPE
      *         SYMSXP. 
      */
-#ifndef __cplusplus
-    Rboolean Rf_isSymbol(SEXP s);
-#else
     inline Rboolean Rf_isSymbol(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == SYMSXP);
     }
-#endif
 
     /** @brief Symbol name.
      *
@@ -442,19 +426,12 @@ extern "C" {
      *
      * @return Pointer to a rho::String representing \a x's name.
      */
-#ifndef __cplusplus
-    SEXP PRINTNAME(SEXP x);
-#else
     inline SEXP PRINTNAME(SEXP x)
     {
 	using namespace rho;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
 	return const_cast<String*>(sym.name());
     }
-#endif
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RSYMBOL_H */

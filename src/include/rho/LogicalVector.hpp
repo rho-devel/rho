@@ -31,11 +31,8 @@
 #ifndef LOGICALVECTOR_H
 #define LOGICALVECTOR_H
 
-#include "rho/VectorBase.hpp"
-
-#ifdef __cplusplus
-
 #include "R_ext/Arith.h"
+#include "rho/VectorBase.hpp"
 #include "rho/FixedVector.hpp"
 #include "rho/Logical.hpp"
 #include "rho/SEXP_downcast.hpp"
@@ -52,37 +49,27 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /**
      * @param s Pointer to a rho::RObject.
      * @return TRUE iff the rho::RObject pointed to by \a s is a
      *         logical vector.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isLogical(SEXP s);
-#else
     inline Rboolean Rf_isLogical(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == LGLSXP);
     }
-#endif
 
 /**
  * @param x Pointer to a rho::LogicalVector (checked).
  *
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-int* LOGICAL(SEXP x);
-#else
 inline int* LOGICAL(SEXP x)
 {
     using namespace rho;
     return reinterpret_cast<int*>
       (&(*SEXP_downcast<LogicalVector*>(x, false))[0]);
 }
-#endif
 
     /** @brief Create a unit-length LogicalVector containing FALSE.
      *
@@ -95,9 +82,6 @@ inline int* LOGICAL(SEXP x)
      * @return a unit-length LogicalVector containing TRUE.
      */
     SEXP Rf_mkTrue();
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* LOGICALVECTOR_H */

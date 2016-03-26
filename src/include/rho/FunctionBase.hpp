@@ -33,9 +33,6 @@
 #define FUNCTIONBASE_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {
@@ -149,8 +146,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /** @brief Get function tracing status.
      *
      * @param x Pointer to a rho::FunctionBase (checked), or a null
@@ -159,9 +154,6 @@ extern "C" {
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
      */
-#ifndef __cplusplus
-    int RTRACE(SEXP x);
-#else
     inline int RTRACE(SEXP x)
     {
 	using namespace rho;
@@ -169,7 +161,6 @@ extern "C" {
 	const FunctionBase& f = *SEXP_downcast<const FunctionBase*>(x);
 	return f.traced();
     }
-#endif
 
     /** @brief Set function tracing status.
      *
@@ -179,19 +170,12 @@ extern "C" {
      * @param v The desired tracing status: non-zero if tracing is
      * required.
      */
-#ifndef __cplusplus
-    void SET_RTRACE(SEXP x, int v);
-#else
     inline void SET_RTRACE(SEXP x, int v)
     {
 	using namespace rho;
 	FunctionBase* f = SEXP_downcast<FunctionBase*>(x);
 	f->setTracing(v != 0);
     }
-#endif
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* FUNCTIONBASE_H */

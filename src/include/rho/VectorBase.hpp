@@ -32,13 +32,10 @@
 #define VECTORBASE_H
 
 #include "rho/RObject.hpp"
-#include <stddef.h>
-
-#ifdef __cplusplus
-
 #include "rho/GCStackRoot.hpp"
 #include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
+#include <stddef.h>
 
 namespace rho {
     class String;
@@ -326,9 +323,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-
-#endif /* __cplusplus */
-
     /* Accessor functions */
 
     /* Vector Access Functions */
@@ -340,9 +334,6 @@ extern "C" {
      *         the case of certain hash tables, this means the 'capacity'
      *         of \a x , not all of which may be used.)
      */
-#ifndef __cplusplus
-    R_xlen_t XLENGTH(SEXP x);
-#else
     inline R_xlen_t XLENGTH(SEXP x)
     {
 	using namespace rho;
@@ -351,7 +342,6 @@ extern "C" {
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
 	return vb.size();
     }
-#endif
 
     /**
      * @param x Pointer to a rho::VectorBase .
@@ -363,16 +353,12 @@ extern "C" {
      *
      * @deprecated May be withdrawn in the future.
      */
-#ifndef __cplusplus
-    R_xlen_t XTRUELENGTH(SEXP x);
-#else
     inline R_xlen_t XTRUELENGTH(SEXP x)
     {
 	using namespace rho;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
 	return vb.m_xtruelength;
     }
-#endif
 
     /**
      * Set length of vector.
@@ -396,16 +382,12 @@ extern "C" {
      *
      * @deprecated May be withdrawn in the future.
      */
-#ifndef __cplusplus
-    void SET_XTRUELENGTH(SEXP x, R_xlen_t v);
-#else
     inline void SET_XTRUELENGTH(SEXP x, R_xlen_t v)
     {
 	using namespace rho;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
 	vb.m_xtruelength = v;
     }
-#endif
 
     /**
      * @brief Create a vector object.
@@ -433,9 +415,6 @@ extern "C" {
      * @return TRUE iff \a s points to a vector object.
      */
     Rboolean Rf_isVector(SEXP s);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* VECTORBASE_H */

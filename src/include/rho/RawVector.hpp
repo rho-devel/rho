@@ -31,14 +31,11 @@
 #ifndef RAWVECTOR_H
 #define RAWVECTOR_H
 
+#include "rho/FixedVector.hpp"
+#include "rho/SEXP_downcast.hpp"
 #include "rho/VectorBase.hpp"
 
 typedef unsigned char Rbyte;
-
-#ifdef __cplusplus
-
-#include "rho/FixedVector.hpp"
-#include "rho/SEXP_downcast.hpp"
 
 namespace rho {
     // Template specializations:
@@ -74,8 +71,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
 /**
  * @param x Pointer to a rho::RawVector (i.e. a RAWSXP).  An error is
  *          generated if \a x is not a non-null pointer to a
@@ -83,18 +78,12 @@ extern "C" {
  *
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-Rbyte *RAW(SEXP x);
-#else
 inline Rbyte *RAW(SEXP x)
 {
     using namespace rho;
     return &(*SEXP_downcast<RawVector*>(x, false))[0];
 }
-#endif
 
-#ifdef __cplusplus
-}
-#endif
+}  // extern "C"
 
 #endif /* RAWVECTOR_H */

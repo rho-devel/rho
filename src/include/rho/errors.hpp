@@ -37,19 +37,13 @@
 #include "localization.h"
 #include "rho/RObject.hpp"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
     void R_CheckStack(void);
     void Rf_errorcall(SEXP, const char *, ...);
     void Rf_warningcall(SEXP, const char *, ...);
 
     /* Find a better home for the following in due course! */
     void R_CheckUserInterrupt(void);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RHO_ERRORS_H */

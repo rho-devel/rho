@@ -40,9 +40,6 @@
 #define CONSCELL_H
 
 #include "rho/RObject.hpp"
-
-#ifdef __cplusplus
-
 #include <stdexcept>
 
 #include "rho/GCManager.hpp"
@@ -597,24 +594,16 @@ extern "C" {
      * @return Pointer to the value of the list car, or 0 if \a e is
      * a null pointer.
      */
-#ifndef __cplusplus
-    SEXP CAR(SEXP e);
-#else
     inline SEXP CAR(SEXP e)
     {
 	using namespace rho;
 	return car0(SEXP_downcast<ConsCell*>(e));
     }
-#endif
 
     /**
      * @brief Equivalent to CAR(CAR(e)).
      */
-#ifndef __cplusplus
-    SEXP CAAR(SEXP e);
-#else
     inline SEXP CAAR(SEXP e) {return CAR(CAR(e));}
-#endif
 
     // Used in argument handling (within envir.cpp, eval.cpp and
     // match.cpp).  Note comments in the 'R Internals' document.
@@ -643,7 +632,6 @@ extern "C" {
 	SEXP_downcast<ConsCell*>(x)->m_missing
 	  = static_cast<unsigned int>(v & 3);
     }
-#endif  /* __cplusplus */
 
     /** @brief Get tag of rho::ConsCell.
      *
@@ -651,9 +639,6 @@ extern "C" {
      * @return Pointer to the tag of the list element, or 0 if \a e is
      * a null pointer.
      */
-#ifndef __cplusplus
-    SEXP TAG(SEXP e);
-#else
     inline SEXP TAG(SEXP e)
     {
 	using namespace rho;
@@ -661,7 +646,6 @@ extern "C" {
 	ConsCell& cc = *SEXP_downcast<ConsCell*>(e);
 	return const_cast<RObject*>(cc.tag());
     }
-#endif
 
     /**
      * @brief Set the tag of a rho::ConsCell.
@@ -682,9 +666,6 @@ extern "C" {
      * @return Pointer to the created object.
      */
     SEXP Rf_allocSExp(SEXPTYPE t);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* CONSCELL_H */

@@ -34,9 +34,6 @@
 
 #include "R_ext/Boolean.h"
 #include "rho/SEXPTYPE.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/GCEdge.hpp"
 #include "rho/unrho.hpp"
 
@@ -618,8 +615,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /** @brief Get the attributes of a rho::RObject.
      *
      * @param x Pointer to the rho::RObject whose attributes are required.
@@ -646,20 +641,14 @@ extern "C" {
      * @return true iff \a x is an S4 object.  Returns false if \a x
      * is 0.
      */
-#ifndef __cplusplus
-    Rboolean IS_S4_OBJECT(SEXP x);
-#else
     inline Rboolean IS_S4_OBJECT(SEXP x)
     {
 	return Rboolean(x && x->isS4Object());
     }
-#endif
 
     /** @brief (For use only in serialization.)
      */
-#ifdef __cplusplus
     inline int LEVELS(SEXP x) {return int(x->packGPBits());}
-#endif
 
     /** @brief Get object copying status.
      *
@@ -668,11 +657,7 @@ extern "C" {
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
      */
-#ifndef __cplusplus
-    int NAMED(SEXP x);
-#else
     inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
-#endif
 
     /** @brief Does an object have a class attribute?
      *
@@ -681,24 +666,18 @@ extern "C" {
      * @return true iff \a x has a class attribute.  Returns false if \a x
      * is 0.
      */
-#ifndef __cplusplus
-    Rboolean OBJECT(SEXP x);
-#else
     inline Rboolean OBJECT(SEXP x)
     {
 	return Rboolean(x && x->hasClass());
     }
-#endif
 
     /** @brief (For use only in deserialization.)
      */
-#ifdef __cplusplus
     inline int SETLEVELS(SEXP x, int v)
     {
 	x->unpackGPBits(static_cast<unsigned int>(v));
 	return v;
     }
-#endif
 
     /** @brief Replace an object's attributes.
      *
@@ -729,24 +708,16 @@ extern "C" {
      *
      * @deprecated Ought to be private.
      */
-#ifndef __cplusplus
-    void SET_NAMED(SEXP x, int v);
-#else
     inline void SET_NAMED(SEXP x, int v)
     {
 	if (!x) return;
 	x->m_named = static_cast<unsigned char>(v);
     }
-#endif
 
     /**
      * @deprecated Ought to be private.
      */
-#ifndef __cplusplus
-    void SET_S4_OBJECT(SEXP x);
-#else
     inline void SET_S4_OBJECT(SEXP x)  {x->setS4Object(true);}
-#endif
 
     /** @brief Get object's ::SEXPTYPE.
      *
@@ -754,20 +725,12 @@ extern "C" {
      *
      * @return ::SEXPTYPE of \a x, or ::NILSXP if x is a null pointer.
      */
-#ifndef __cplusplus
-    SEXPTYPE TYPEOF(SEXP x);
-#else
     inline SEXPTYPE TYPEOF(SEXP x)  {return x ? x->sexptype() : NILSXP;}
-#endif
 
     /**
      * @deprecated Ought to be private.
      */
-#ifndef __cplusplus
-    void UNSET_S4_OBJECT(SEXP x);
-#else
     inline void UNSET_S4_OBJECT(SEXP x)  {x->setS4Object(false);}
-#endif
 
     /** @brief Copy attributes, with some exceptions.
      *
@@ -815,14 +778,10 @@ extern "C" {
      * pointer (i.e. <tt>== R_NilValue</tt> in rho), or is a rho::RObject
      * with ::SEXPTYPE ::NILSXP (should not happen in rho).
      */
-#ifndef __cplusplus
-    Rboolean Rf_isNull(SEXP s);
-#else
     inline Rboolean Rf_isNull(SEXP s)
     {
 	return Rboolean(!s || TYPEOF(s) == NILSXP);
     }
-#endif
 
     /** @brief Does an object have a class attribute?
      *
@@ -831,14 +790,10 @@ extern "C" {
      * @return TRUE iff the rho::RObject pointed to by \a s has a
      * class attribute.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isObject(SEXP s);
-#else
     inline Rboolean Rf_isObject(SEXP s)
     {
 	return OBJECT(s);
     }
-#endif
 
     /** @brief Set or remove a named attribute.
      *
@@ -898,9 +853,6 @@ extern "C" {
      * @return The ::SEXPTYPE's name within R.
      */
     const char* Rf_type2char(SEXPTYPE st);
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* ROBJECT_H */

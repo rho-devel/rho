@@ -33,9 +33,6 @@
 
 #include "rho/VectorBase.hpp"
 #include "R_ext/Complex.h"
-
-#ifdef __cplusplus
-
 #include "R_ext/Arith.h"
 #include "rho/Complex.hpp"
 #include "rho/FixedVector.hpp"
@@ -48,20 +45,14 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif /* __cplusplus */
-
     /**
      * @param s Pointer to an RObject.
      * @return TRUE iff the RObject pointed to by \a s is a complex vector.
      */
-#ifndef __cplusplus
-    Rboolean Rf_isComplex(SEXP s);
-#else
     inline Rboolean Rf_isComplex(SEXP s)
     {
 	return Rboolean(s && TYPEOF(s) == CPLXSXP);
     }
-#endif
 
 /**
  * @param x Pointer to a rho::ComplexVector (i.e. an R complex vector).
@@ -70,18 +61,12 @@ extern "C" {
  *
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-Rcomplex *COMPLEX(SEXP x);
-#else
 inline Rcomplex *COMPLEX(SEXP x)
 {
     using namespace rho;
     return &(*SEXP_downcast<ComplexVector*>(x, false))[0];
 }
-#endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* COMPLEXVECTOR_H */

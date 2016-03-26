@@ -34,9 +34,6 @@
 #include "rho/RObject.hpp"
 // Just to pick up define of BYTECODE:
 #include "rho/Evaluator.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/Environment.hpp"
 #include "rho/Expression.hpp"
 #include "rho/Symbol.hpp"
@@ -219,8 +216,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif
-
     /** @brief Create a rho::Promise object.
      *
      * @param expr Expression to be evaluated to provide the value
@@ -246,16 +241,12 @@ extern "C" {
      * @return Pointer to the expression to be evaluated by the
      *         rho::Promise. 
      */
-#ifndef __cplusplus
-    SEXP PRCODE(SEXP x);
-#else
     inline SEXP PRCODE(SEXP x)
     {
 	using namespace rho;
 	const Promise& prom = *SEXP_downcast<Promise*>(x);
 	return const_cast<RObject*>(prom.valueGenerator());
     }
-#endif
 
     /** @brief Access the environment of a rho::Promise.
      *
@@ -265,16 +256,12 @@ extern "C" {
      *         is to be  evaluated.  Set to a null pointer when the
      *         rho::Promise has been evaluated.
      */
-#ifndef __cplusplus
-    SEXP PRENV(SEXP x);
-#else
     inline SEXP PRENV(SEXP x)
     {
 	using namespace rho;
 	const Promise& prom = *SEXP_downcast<Promise*>(x);
 	return prom.environment();
     }
-#endif
 
     /** @brief Access the value of a rho::Promise.
      *
@@ -283,16 +270,12 @@ extern "C" {
      * @return Pointer to the value of the rho::Promise, or to
      *         R_UnboundValue if it has not yet been evaluated..
      */
-#ifndef __cplusplus
-    SEXP PRVALUE(SEXP x);
-#else
     inline SEXP PRVALUE(SEXP x)
     {
 	using namespace rho;
 	Promise& prom = *SEXP_downcast<Promise*>(x);
 	return prom.value();
     }
-#endif
 
     /** @brief Set the value of a rho::Promise.
      *
@@ -318,8 +301,6 @@ extern "C" {
 #define PREXPR(e) PRCODE(e)
 #endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RPROMISE_H */

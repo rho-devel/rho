@@ -31,8 +31,6 @@
 #ifndef PROVENANCETRACKER_H
 #define PROVENANCETRACKER_H
 
-#ifdef __cplusplus
-
 #include "rho/Frame.hpp"
 
 namespace rho {
@@ -177,8 +175,6 @@ namespace rho {
 } // namespace rho
 
 extern "C" {
-#endif // __cplusplus
-
     /** @brief Flag up xenogenesis.
      *
      * This function is called to indicate to the provenance tracker
@@ -190,9 +186,6 @@ extern "C" {
      * xenogenous provenance.
      */
     void flagXenogenesis();
-
-#ifdef __cplusplus
 }  // extern "C"
-#endif
 
 #endif // PROVENANCETRACKER_H

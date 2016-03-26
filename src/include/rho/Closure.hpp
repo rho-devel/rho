@@ -32,9 +32,6 @@
 #define RCLOSURE_H
 
 #include "rho/FunctionBase.hpp"
-
-#ifdef __cplusplus
-
 #include "rho/ArgMatcher.hpp"
 #include "rho/Environment.hpp"
 #include "rho/PairList.hpp"
@@ -280,8 +277,6 @@ namespace rho {
 }  // namespace rho
 
 extern "C" {
-#endif  /* __cplusplus */
-
     /** @brief Create a rho::Closure object.
      *
      * @param formal_args Pointer to a rho::PairList (checked) of
@@ -305,16 +300,12 @@ extern "C" {
      *
      * @return Pointer to the body of \a x.
      */
-#ifndef __cplusplus
-    SEXP BODY(SEXP x);
-#else
     inline SEXP BODY(SEXP x)
     {
 	using namespace rho;
 	const Closure& clo = *SEXP_downcast<Closure*>(x);
 	return const_cast<RObject*>(clo.body());
     }
-#endif
 
     /** @brief Access the environment of a rho::Closure.
      *
@@ -322,16 +313,12 @@ extern "C" {
      *
      * @return Pointer to the environment of x.
      */
-#ifndef __cplusplus
-    SEXP CLOENV(SEXP x);
-#else
     inline SEXP CLOENV(SEXP x)
     {
 	using namespace rho;
 	Closure& clo = *SEXP_downcast<Closure*>(x);
 	return clo.environment();
     }
-#endif
 
     /** @brief Access formal arguments of a rho::Closure.
      *
@@ -339,16 +326,12 @@ extern "C" {
      *
      * @return Pointer to the formal argument list of \a x.
      */
-#ifndef __cplusplus
-    SEXP FORMALS(SEXP x);
-#else
     inline SEXP FORMALS(SEXP x)
     {
 	using namespace rho;
 	const Closure* clos = SEXP_downcast<Closure*>(x);
 	return const_cast<PairList*>(clos->matcher()->formalArgs());
     }
-#endif
 
     /** @brief Query debugging status.
      *
@@ -361,25 +344,17 @@ extern "C" {
      * ENV_DEBUG() to query the debugging (single-stepping) state
      * for environments.
      */
-#ifndef __cplusplus
-    Rboolean RDEBUG(SEXP x);
-#else
     inline Rboolean RDEBUG(SEXP x)
     {
 	using namespace rho;
 	const Closure& clos = *SEXP_downcast<const Closure*>(x);
 	return Rboolean(clos.debugging());
     }
-#endif
 
-#ifndef __cplusplus
-    int RSTEP(SEXP x);
-#else
     inline int RSTEP(SEXP x)
     {
 	return 0;
     }
-#endif
 
     /** @brief Replace the environment of a closure.
      *
@@ -389,9 +364,6 @@ extern "C" {
      *          considered as the environment of this rho::Closure.  A
      *          null pointer is not permissible (not checked).
      */
-#ifndef __cplusplus
-    void SET_CLOENV(SEXP x, SEXP v);
-#else
     inline void SET_CLOENV(SEXP x, SEXP v)
     {
 	using namespace rho;
@@ -399,7 +371,6 @@ extern "C" {
 	Environment* env = SEXP_downcast<Environment*>(v);
 	clos.setEnvironment(env);
     }
-#endif
 
     /**
      * Set the debugging state of a rho::Closure object.
@@ -412,27 +383,16 @@ extern "C" {
      * SET_ENV_DEBUG() to set the debugging (single-stepping) state
      * for environments.
      */
-#ifndef __cplusplus
-    void SET_RDEBUG(SEXP x, Rboolean v);
-#else
     inline void SET_RDEBUG(SEXP x, Rboolean v)
     {
 	using namespace rho;
 	Closure& clos = *SEXP_downcast<Closure*>(x);
 	clos.setDebugging(v);
     }
-#endif
 
-#ifndef __cplusplus
-    void SET_RSTEP(SEXP x, int v);
-#else
     inline void SET_RSTEP(SEXP x, int v)
     {
     }
-#endif
-
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* RCLOSURE_H */
