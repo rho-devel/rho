@@ -3,11 +3,11 @@
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
  *  Copyright (C) 2000-2016	The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,9 +73,9 @@
 #include "Fileio.h"
 #include "Rconnections.h"
 #include <R_ext/RS.h>
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/GCStackRoot.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* Global print parameter struct: */
 R_print_par_t R_print;
@@ -117,7 +117,7 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_invisible(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     switch (num_args) {
     case 0:
@@ -132,7 +132,7 @@ SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* This is *only* called via outdated R_level prmatrix() : */
-SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* rowlab_, CXXR::RObject* collab_, CXXR::RObject* quote_, CXXR::RObject* right_, CXXR::RObject* na_print_)
+SEXP attribute_hidden do_prmatrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* rowlab_, rho::RObject* collab_, rho::RObject* quote_, rho::RObject* right_, rho::RObject* na_print_)
 {
     int quote;
     SEXP a, x, rowlab, collab, naprint;
@@ -168,13 +168,13 @@ SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::
 }/* do_prmatrix */
 
 /* .Internal( print.function(f, useSource, ...)) */
-SEXP attribute_hidden do_printfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_printfunction(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP s = args[0];
     switch (TYPEOF(s)) {
     case CLOSXP:
-	PrintLanguageEtc(s, CXXRCONSTRUCT(Rboolean, asLogical(args[1])), /*is closure = */ TRUE);
+	PrintLanguageEtc(s, RHOCONSTRUCT(Rboolean, asLogical(args[1])), /*is closure = */ TRUE);
 	printAttributes(s, rho, FALSE);
 	break;
     case BUILTINSXP:
@@ -195,7 +195,7 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
     int i;
     SEXP t = getAttrib(s, R_SrcrefSymbol);
     if (!isInteger(t) || !useSource)
-	t = deparse1w(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
+	t = deparse1w(s, RHO_FALSE, useSource | DEFAULTDEPARSE);
     else {
 	PROTECT(t = lang2(install("as.character"), t));
 	t = eval(t, R_BaseEnv);
@@ -227,7 +227,7 @@ void PrintLanguage(SEXP s, Rboolean useSource)
 
 /* .Internal(print.default(x, digits, quote, na.print, print.gap,
 			   right, max, useS4)) */
-SEXP attribute_hidden do_printdefault(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_printdefault(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, naprint;
     int tryS4;
@@ -660,7 +660,7 @@ static void PrintExpression(SEXP s)
     SEXP u;
     int i, n;
 
-    u = deparse1w(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
+    u = deparse1w(s, RHO_FALSE, R_print.useSource | DEFAULTDEPARSE);
     n = LENGTH(u);
     for (i = 0; i < n; i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
@@ -669,7 +669,7 @@ static void PrintExpression(SEXP s)
 static void PrintSpecial(SEXP s)
 {
     /* This is OK as .Internals are not visible to be printed */
-    CXXRCONST char *nm = PRIMNAME(s);
+    RHOCONST char *nm = PRIMNAME(s);
     SEXP env, s2;
     PROTECT_INDEX xp;
     PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
@@ -688,7 +688,7 @@ static void PrintSpecial(SEXP s)
     if(s2 != R_UnboundValue) {
 	SEXP t;
 	PROTECT(s2);
-	t = deparse1(s2, CXXRFALSE, DEFAULTDEPARSE);
+	t = deparse1(s2, RHO_FALSE, DEFAULTDEPARSE);
 	Rprintf("%s ", CHAR(STRING_ELT(t, 0))); /* translated */
 	Rprintf(".Primitive(\"%s\")\n", PRIMNAME(s));
 	UNPROTECT(1);
@@ -735,7 +735,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	break;
     case SYMSXP: /* Use deparse here to handle backtick quotification
 		  * of "weird names" */
-	t = deparse1(s, CXXRFALSE, SIMPLEDEPARSE);
+	t = deparse1(s, RHO_FALSE, SIMPLEDEPARSE);
 	Rprintf("%s\n", CHAR(STRING_ELT(t, 0))); /* translated */
 	break;
     case SPECIALSXP:
@@ -938,7 +938,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    digits = R_print.digits, gap = R_print.gap,
 		    na_width = R_print.na_width,
 		    na_width_noquote = R_print.na_width_noquote;
-		Rprt_adj right = CXXRCONSTRUCT(Rprt_adj, R_print.right);
+		Rprt_adj right = RHOCONSTRUCT(Rprt_adj, R_print.right);
 
 		{
 		    GCStackRoot<PairList> tl(PairList::make(2));

@@ -50,11 +50,11 @@ env.profile(env)
     \code{NULL}, which is the default.}
   \item{value}{an environment to associate with the function}
   \item{x}{an arbitrary \R object.}
-  \item{hash}{a logical, ignored in CXXR.}
+  \item{hash}{a logical, ignored in rho.}
   \item{parent}{an environment to be used as the enclosure of the
     environment created.}
   \item{env}{an environment}
-  \item{size}{an integer giving a hint to CXXR regarding the initial capacity
+  \item{size}{an integer giving a hint to rho regarding the initial capacity
     of the environment.  An internal default value will be used if \code{size}
     is \code{NA} or zero.}
 }
@@ -81,7 +81,7 @@ env.profile(env)
   \code{environmentName} returns a character string, that given when
   the environment is printed or \code{""} if it is not a named environment.
 
-  \code{env.profile} Always returns \code{NULL} in CXXR.
+  \code{env.profile} Always returns \code{NULL} in rho.
 }
 
 \details{
@@ -163,7 +163,7 @@ exists("a", envir = e2, inherits = FALSE)
 exists("+", envir = e2)   # this succeeds by inheritance
 
 eh <- new.env(hash = TRUE, size = NA)
-# env.profile always returns NULL in CXXR, so foll. not applicable
+# env.profile always returns NULL in rho, so foll. not applicable
 #with(env.profile(eh), stopifnot(size == length(counts)))
 }
 \keyword{data}

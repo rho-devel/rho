@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,20 +24,20 @@
 
 /** @file ExternalPointer.cpp
  *
- * @brief Class CXXR::ExternalPointer and associated C interface.
+ * @brief Class rho::ExternalPointer and associated C interface.
  */
 
-#include "CXXR/ExternalPointer.h"
+#include "rho/ExternalPointer.hpp"
 
 #include "localization.h"
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/GCStackRoot.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions in the C
 // interface:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	void* (*R_ExternalPtrAddrp)(SEXP) = R_ExternalPtrAddr;
 	RObject* (*R_ExternalPtrTagp)(SEXP) = R_ExternalPtrTag;
@@ -78,21 +78,21 @@ SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 
 void R_SetExternalPtrAddr(SEXP s, void *p)
 {
-    CXXR::ExternalPointer& ep
-	= *CXXR::SEXP_downcast<CXXR::ExternalPointer*>(s);
+    rho::ExternalPointer& ep
+	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
     ep.setPtr(p);
 }
 
 void R_SetExternalPtrTag(SEXP s, SEXP tag)
 {
-    CXXR::ExternalPointer& ep
-	= *CXXR::SEXP_downcast<CXXR::ExternalPointer*>(s);
+    rho::ExternalPointer& ep
+	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
     ep.setTag(tag);
 }
 
 void R_SetExternalPtrProtected(SEXP s, SEXP p)
 {
-    CXXR::ExternalPointer& ep
-	= *CXXR::SEXP_downcast<CXXR::ExternalPointer*>(s);
+    rho::ExternalPointer& ep
+	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
     ep.setProtege(p);
 }

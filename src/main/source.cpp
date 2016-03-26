@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 2001-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,7 +190,7 @@ void NORET parseError(SEXP call, int linenum)
  .Internal( parse(file, n, text, prompt, srcfile, encoding) )
  If there is text then that is read and the other arguments are ignored.
 */
-SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* n_, CXXR::RObject* text_, CXXR::RObject* prompt_, CXXR::RObject* srcfile_, CXXR::RObject* encoding_)
+SEXP attribute_hidden do_parse(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* n_, rho::RObject* text_, rho::RObject* prompt_, rho::RObject* srcfile_, rho::RObject* encoding_)
 {
     SEXP text, prompt, s, source;
     Rconnection con;

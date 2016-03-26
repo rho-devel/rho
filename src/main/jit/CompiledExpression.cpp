@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,27 +20,27 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-#include "CXXR/jit/llvm.hpp"
+#include "rho/jit/llvm.hpp"
 
 #define R_NO_REMAP
-#include "CXXR/jit/CompiledExpression.hpp"
+#include "rho/jit/CompiledExpression.hpp"
 
-#include "CXXR/jit/CompiledFrame.hpp"
-#include "CXXR/jit/Compiler.hpp"
-#include "CXXR/jit/CompilerContext.hpp"
-#include "CXXR/jit/Globals.hpp"
-#include "CXXR/jit/MCJITMemoryManager.hpp"
-#include "CXXR/jit/Runtime.hpp"
-#include "CXXR/jit/TypeBuilder.hpp"
+#include "rho/jit/CompiledFrame.hpp"
+#include "rho/jit/Compiler.hpp"
+#include "rho/jit/CompilerContext.hpp"
+#include "rho/jit/Globals.hpp"
+#include "rho/jit/MCJITMemoryManager.hpp"
+#include "rho/jit/Runtime.hpp"
+#include "rho/jit/TypeBuilder.hpp"
 
-#include "CXXR/Closure.h"
-#include "CXXR/Environment.h"
-#include "CXXR/RObject.h"
+#include "rho/Closure.hpp"
+#include "rho/Environment.hpp"
+#include "rho/RObject.hpp"
 
 using llvm::Module;
 using llvm::Value;
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 CompiledExpression*
@@ -144,4 +144,4 @@ bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const
 }
 
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

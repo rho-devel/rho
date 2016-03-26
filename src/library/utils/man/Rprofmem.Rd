@@ -7,7 +7,7 @@
 \alias{Rprofmem}
 \title{Enable Profiling of R's Memory Use}
 \description{
- Enable or disable reporting of memory allocation in R.  (Adapted for CXXR.)
+ Enable or disable reporting of memory allocation in R.  (Adapted for rho.)
 }
 \usage{
 Rprofmem(filename = "Rprofmem.out", append = FALSE, threshold = 0)
@@ -16,7 +16,7 @@ Rprofmem(filename = "Rprofmem.out", append = FALSE, threshold = 0)
   \item{filename}{The file to be used for recording the memory
     allocations. Set to \code{NULL} or \code{""} to disable reporting. }
   \item{append}{logical: should the file be over-written or appended to? }
-  \item{threshold}{numeric: allocations from CXXR's internal heap at least as
+  \item{threshold}{numeric: allocations from rho's internal heap at least as
     great as this number of bytes will be reported.
   }
 }
@@ -25,7 +25,7 @@ Rprofmem(filename = "Rprofmem.out", append = FALSE, threshold = 0)
   another or the same file.
 
   Profiling writes the call stack to the specified file every time an
-  allocation from \code{CXXR::Heap} is at least as great as the specified
+  allocation from \code{rho::Heap} is at least as great as the specified
   threshold number of bytes.  Allocations may well be to previously
   used memory and will not increase the total memory use of R. 
 }

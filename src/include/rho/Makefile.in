@@ -1,0 +1,99 @@
+# $Id$
+# 
+# This file is part of Rho, a project to refactor the R interpreter
+# into C++.  It may consist in whole or in part of program code and
+# documentation taken from the R project itself, incorporated into
+# Rho (and possibly MODIFIED) under the terms of the GNU General Public
+# Licence.
+# 
+# Rho is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+# copyrights and copyright restrictions as may be stated below.
+# 
+# Rho is not part of the R project, and bugs and other issues should
+# not be reported via r-bugs or other R project channels; instead refer
+# to the Rho website.
+
+#
+# ${R_HOME}/src/include/rho/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../../..
+subdir = src/include/rho
+
+include $(top_builddir)/Makeconf
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+RHO_HS = \
+  AddressSanitizer.h \
+  BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
+  DotInternal.h \
+  Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
+  FunctionBase.h GCRoot.h IntVector.h \
+  ListVector.h LogicalVector.h \
+  PairList.h PredefinedSymbols.h Promise.h ProtectStack.h ProvenanceTracker.h \
+  RAllocStack.h RObject.h RawVector.h RealVector.h \
+  S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
+  VectorBase.h WeakRef.h errors.h unrho.h
+
+RHO_HPPS = \
+  Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
+  CellPool.hpp CommandChronicle.hpp Complex.hpp \
+  ElementTraits.hpp Evaluator_Context.hpp \
+  FixedVector.hpp Frame.hpp GCEdge.hpp GCManager.hpp \
+  GCNode.hpp \
+  GCStackRoot.hpp \
+  Logical.hpp \
+  MemoryBank.hpp NodeStack.hpp \
+  Provenance.hpp RHandle.hpp \
+  SEXP_downcast.hpp StdFrame.hpp Subscripting.hpp \
+  UnaryFunction.hpp config.hpp
+
+RHO_HEADERS = $(RHO_HS) $(RHO_HPPS)
+
+DISTFILES = Makefile.in $(RHO_HS) $(RHO_HPPS)
+TIMESTAMPS = $(RHO_HS:.h=.ts) $(RHO_HPPS:.hpp=.ts)
+
+CLEANFILES = stamp-R $(TIMESTAMPS)
+DISTCLEANFILES = Makefile config.hpp
+
+.SUFFIXES:
+.SUFFIXES: .h .hpp .ts
+
+.h.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/rho/`basename $<`
+	@touch $@
+
+.hpp.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/rho/`basename $<`
+	@touch $@
+
+all: Makefile R config.hpp
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+R: Makefile stamp-R $(TIMESTAMPS)
+stamp-R: 
+	@$(MKINSTALLDIRS) $(top_builddir)/include/rho
+	@touch $@
+$(TIMESTAMPS): stamp-R
+
+mostlyclean: clean
+clean:
+	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+distclean: clean
+	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+maintainer-clean: distclean
+
+TAGS info dvi check install installdirs install-strip uninstall:
+
+distdir: $(DISTFILES)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done

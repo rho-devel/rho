@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,21 +24,21 @@
 
 /** @file Frame.cpp
  *
- * @brief Implementation of class CXXR:Frame and CXXR::Frame::Binding.
+ * @brief Implementation of class rho::Frame and rho::Frame::Binding.
  */
 
-#include "CXXR/Frame.hpp"
+#include "rho/Frame.hpp"
 
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
+#include "rho/Evaluator.hpp"
+#include "rho/FunctionBase.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.hpp"
 #include <algorithm>
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 Frame::monitor Frame::s_read_monitor = nullptr;
 Frame::monitor Frame::s_write_monitor = nullptr;
@@ -261,7 +261,7 @@ void Frame::visitReferents(const_visitor* v) const
 	});
 }
 
-namespace CXXR {
+namespace rho {
     void frameReadPairList(Frame* frame, PairList* bindings)
     {
 	for (PairList* pl = bindings; pl != nullptr; pl = pl->tail()) {
@@ -279,7 +279,7 @@ namespace CXXR {
 	RObject* rawval;
 	if (sym->isDotDotSymbol()) {
 	    unsigned int ddv = sym->dotDotIndex();
-	    Frame::Binding* bdg = frame->binding(CXXR::DotsSymbol);
+	    Frame::Binding* bdg = frame->binding(rho::DotsSymbol);
 	    if (!bdg)
 		return false;  // This is what CR does.  Is it really right?
 	    ConsCell* cc = SEXP_downcast<ConsCell*>(bdg->rawValue());

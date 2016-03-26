@@ -1,18 +1,18 @@
-/*CXXR $Id$
- *CXXR
- *CXXR This file is part of CXXR, a project to refactor the R interpreter
- *CXXR into C++.  It may consist in whole or in part of program code and
- *CXXR documentation taken from the R project itself, incorporated into
- *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
- *CXXR Licence.
- *CXXR 
- *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
- *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
- *CXXR CXXR is not part of the R project, and bugs and other issues should
- *CXXR not be reported via r-bugs or other R project channels; instead refer
- *CXXR to the CXXR website.
- *CXXR */
+/* $Id$
+ *
+ * This file is part of Rho, a project to refactor the R interpreter
+ * into C++.  It may consist in whole or in part of program code and
+ * documentation taken from the R project itself, incorporated into
+ * Rho (and possibly MODIFIED) under the terms of the GNU General Public
+ * Licence.
+ * 
+ * Rho is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ * copyrights and copyright restrictions as may be stated below.
+ * 
+ * Rho is not part of the R project, and bugs and other issues should
+ * not be reported via r-bugs or other R project channels; instead refer
+ * to the Rho website.
+ * */
 
 /*
  *  R : A Computer Langage for Statistical Data Analysis
@@ -42,7 +42,7 @@
 #include <Internal.h>
 #include <R_ext/Itermacros.h>
 
-SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* f_)
+SEXP attribute_hidden do_split(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* f_)
 {
     SEXP x, f, counts, vec, nm, nmj;
     Rboolean have_names;
@@ -61,7 +61,7 @@ SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::Bui
     if (nfac > 0 && (nobs % nfac) != 0)
 	warning(_("data length is not a multiple of split variable"));
     nm = getAttrib(x, R_NamesSymbol);
-    have_names = CXXRCONSTRUCT(Rboolean, nm != nullptr);
+    have_names = RHOCONSTRUCT(Rboolean, nm != nullptr);
     PROTECT(counts = allocVector(INTSXP, nlevs));
     for (int i = 0; i < nlevs; i++) INTEGER(counts)[i] = 0;
     R_xlen_t i, i1;

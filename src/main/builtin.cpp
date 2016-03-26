@@ -3,11 +3,11 @@
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,12 +34,12 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/ExpressionVector.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/ExpressionVector.hpp"
 
 #include <R_ext/RS.h> /* for Memzero */
 
-using namespace CXXR;
+using namespace rho;
 
 attribute_hidden
 R_xlen_t asVecSize(SEXP x)
@@ -75,7 +75,7 @@ R_xlen_t asVecSize(SEXP x)
     return -999;  /* which gives error in the caller */
 }
 
-SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_, CXXR::RObject* eval_env_, CXXR::RObject* assign_env_)
+SEXP attribute_hidden do_delayed(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_, rho::RObject* eval_env_, rho::RObject* assign_env_)
 {
     if (!isString(x_) || length(x_) == 0)
 	error(_("invalid first argument"));
@@ -95,7 +95,7 @@ SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* makeLazy(names, values, expr, eenv, aenv) */
-SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vars_, CXXR::RObject* vals_, CXXR::RObject* expr_, CXXR::RObject* db_, CXXR::RObject* envir_)
+SEXP attribute_hidden do_makelazy(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* vals_, rho::RObject* expr_, rho::RObject* db_, rho::RObject* envir_)
 {
     SEXP names, values, val, expr, eenv, aenv, expr0;
     R_xlen_t i;
@@ -192,7 +192,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (TYPEOF(CAR(args)) == BUILTINSXP || TYPEOF(CAR(args)) == SPECIALSXP) {
-	CXXRCONST char *nm = PRIMNAME(CAR(args));
+	RHOCONST char *nm = PRIMNAME(CAR(args));
 	SEXP env, s2;
 	PROTECT_INDEX xp;
 
@@ -223,7 +223,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
+SEXP attribute_hidden do_formals(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return duplicate(FORMALS(fun_));
@@ -231,19 +231,19 @@ SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::B
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
+SEXP attribute_hidden do_body(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return duplicate(BODY(fun_));
     else return R_NilValue;
 }
 
-namespace CXXR {
+namespace rho {
     // In envir.cpp
     Environment* simple_as_environment(RObject* arg, bool allow_null = false);
 }
 
-SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* fun_)
+SEXP attribute_hidden do_envir(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return CLOENV(fun_);
@@ -252,7 +252,7 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
     else return getAttrib(fun_, R_DotEnvSymbol);
 }
 
-SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* s, CXXR::RObject* env)
+SEXP attribute_hidden do_envirgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* s, rho::RObject* env)
 {
     if (TYPEOF(s) == CLOSXP && (env = simple_as_environment(env)) != nullptr) {
 	if(MAYBE_SHARED(s))
@@ -272,7 +272,7 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
  *
  * @return a newly created environment()
  */
-SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* hash_, CXXR::RObject* parent_, CXXR::RObject* size_)
+SEXP attribute_hidden do_newenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* hash_, rho::RObject* parent_, rho::RObject* size_)
 {
     SEXP size, ans;
     int hash;
@@ -293,7 +293,7 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
+SEXP attribute_hidden do_parentenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
 {
     Environment* arg = simple_as_environment(env_);
     if (!arg)
@@ -321,7 +321,7 @@ static Rboolean R_IsImportsEnv(SEXP env)
 	return FALSE;
 }
 
-SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_, CXXR::RObject* value_)
+SEXP attribute_hidden do_parentenvgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_, rho::RObject* value_)
 {
     Environment* env = simple_as_environment(env_);
     if (!env)
@@ -341,7 +341,7 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
     return(env);
 }
 
-SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* env_)
+SEXP attribute_hidden do_envirName(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
 {
     SEXP ans=mkString(""), res;
 
@@ -453,7 +453,7 @@ static void cat_cleanup(cat_info* pci)
 #endif
 }
 
-SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* file_, CXXR::RObject* sep_, CXXR::RObject* fill_, CXXR::RObject* labels_, CXXR::RObject* append_)
+SEXP attribute_hidden do_cat(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* file_, rho::RObject* sep_, rho::RObject* fill_, rho::RObject* labels_, rho::RObject* append_)
 {
     cat_info ci;
     SEXP objs, file, fill, sepr, labs, s;
@@ -567,7 +567,7 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 		/* FIXME : cat(...) should handle ANYTHING */
 		size_t w = strlen(p);
 		cat_sepwidth(sepr, &sepw, ntot);
-		if ((iobj > 0) && (width + w + sepw > CXXRCONSTRUCT(size_t, pwidth))) {
+		if ((iobj > 0) && (width + w + sepw > RHOCONSTRUCT(size_t, pwidth))) {
 		    cat_newline(labs, &width, lablen, nlines);
 		    nlines++;
 		}
@@ -587,7 +587,7 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 			cat_sepwidth(sepr, &sepw, ntot);
 			/* This is inconsistent with the version above.
 			   As from R 2.3.0, fill <= 0 is ignored. */
-			if ((width + w + sepw > CXXRCONSTRUCT(size_t, pwidth)) && pwidth) {
+			if ((width + w + sepw > RHOCONSTRUCT(size_t, pwidth)) && pwidth) {
 			    cat_newline(labs, &width, lablen, nlines);
 			    nlines++;
 			}
@@ -678,7 +678,7 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* vector(mode="logical", length=0) */
-SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_, CXXR::RObject* length_)
+SEXP attribute_hidden do_makevector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* mode_, rho::RObject* length_)
 {
     R_xlen_t len;
     SEXP s;
@@ -689,7 +689,7 @@ SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR
     s = coerceVector(mode_, STRSXP);
     if (length(s) != 1) error(_("invalid '%s' argument"), "mode");
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
-    if (CXXRCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
+    if (RHOCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
     switch (mode) {
     case LGLSXP:
@@ -827,7 +827,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
 }
 
 
-SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_lengthgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, ans;
 
@@ -939,7 +939,7 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (isString(x)) {
 	    for (y = w; y != R_NilValue; y = CDR(y)) {
 		if (TAG(y) != R_NilValue) {
-		    if (pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE /* exact */)) {
+		    if (pmatch(STRING_ELT(x, 0), TAG(y), RHO_TRUE /* exact */)) {
 			/* Find the next non-missing argument.
 			   (If there is none, return NULL.) */
 			while (CAR(y) == R_MissingArg) {

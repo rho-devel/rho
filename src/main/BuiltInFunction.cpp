@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,28 +24,28 @@
 
 /** @file BuiltInFunction.cpp
  *
- * Implementation of class CXXR::BuiltInFunction and associated
+ * Implementation of class rho::BuiltInFunction and associated
  * C interface.
  */
 
-#include "CXXR/BuiltInFunction.h"
+#include "rho/BuiltInFunction.hpp"
 
 #include <cstdarg>
 #include "Internal.h"
-#include "CXXR/ArgList.hpp"
-#include "CXXR/FunctionContext.hpp"
-#include "CXXR/PlainContext.hpp"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/Symbol.h"
-#include "CXXR/errors.h"
+#include "rho/ArgList.hpp"
+#include "rho/FunctionContext.hpp"
+#include "rho/PlainContext.hpp"
+#include "rho/ProtectStack.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/Symbol.hpp"
+#include "rho/errors.hpp"
 #include "R_ext/Print.h"
 #include "Defn.h"
 
-using namespace CXXR;
+using namespace rho;
 
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	const char* (*PRIMNAMEp)(SEXP x) = PRIMNAME;
 	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
@@ -66,7 +66,7 @@ unsigned int BuiltInFunction::TableEntry::s_next_offset = 0;
 // it seems clear that such functions should be 'transparent'.  One
 // approach would be to leave it at that, so that errors within
 // internal functions would be attributed to the surrounding call of
-// .Internal.  However, CXXR (currently at least) goes further than
+// .Internal.  However, rho (currently at least) goes further than
 // this, with a view to attributing an error arising within an
 // internal function to the documented R function which it implements.
 // To this end do_internal itself and various 'syntactical' functions

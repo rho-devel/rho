@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Note that NA_STRING is not handled separately here.  This is
    deliberate -- see ?paste -- and implicitly coerces it to "NA"
 */
-SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_paste(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, collapse, sep, x;
     int sepw, u_sepw;
@@ -286,7 +286,7 @@ SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, sep, x;
     int i, j, k, ln, maxlen, nx, nzero, pwidth, sepw;
@@ -374,7 +374,7 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
 
 /* format.default(x, trim, digits, nsmall, width, justify, na.encode,
 		  scientific, decimal.mark) */
-SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_format(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP l, x, y, swd;
     int il, digits, trim = 0, nsmall = 0, wd = 0, adj = -1, na, sci = 0;
@@ -609,7 +609,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
  * for complex : 2 x 3 integers for (Re, Im)
  */
 
-SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* digits_, CXXR::RObject* nsmall_)
+SEXP attribute_hidden do_formatinfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* digits_, rho::RObject* nsmall_)
 {
     SEXP x;
     int digits, nsmall, no = 1, w, d, e, wi, di, ei;

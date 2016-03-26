@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,10 +49,10 @@
 #include <Fileio.h>
 #include <Rconnections.h>
 #include <errno.h>
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ProvenanceTracker.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/ProvenanceTracker.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 #include <rlocale.h> /* for btowc */
 
@@ -78,7 +78,7 @@ typedef struct {
     int quiet;
     int sepchar; /*  = 0 */      /* This gets compared to ints */
     char decchar; /* = '.' */    /* This only gets compared to chars */
-    CXXRCONST char *quoteset; /* = NULL */
+    RHOCONST char *quoteset; /* = NULL */
     int comchar; /* = NO_COMCHAR */
     int ttyflag; /* = 0 */
     Rconnection con; /* = NULL */
@@ -142,7 +142,7 @@ static int ConsoleGetcharWithPushBack(Rconnection con)
     if(con->nPushBack > 0) {
 	curLine = con->PushBack[con->nPushBack-1];
 	c = curLine[con->posPushBack++];
-	if(con->posPushBack >= CXXRCONSTRUCT(int, strlen(curLine))) {
+	if(con->posPushBack >= RHOCONSTRUCT(int, strlen(curLine))) {
 	    /* last character on a line, so pop the line */
 	    free(curLine);
 	    con->nPushBack--;
@@ -335,7 +335,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 */
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m, mm = 0;
-    Rboolean dbcslocale = CXXRCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
+    Rboolean dbcslocale = RHOCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
 
     m = 0;
     filled = 1;
@@ -824,7 +824,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
     return ans;
 }
 
-SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* what_, CXXR::RObject* nmax_, CXXR::RObject* sep_, CXXR::RObject* dec_, CXXR::RObject* quote_, CXXR::RObject* skip_, CXXR::RObject* nlines_, CXXR::RObject* na_strings_, CXXR::RObject* flush_, CXXR::RObject* fill_, CXXR::RObject* strip_white_, CXXR::RObject* quiet_, CXXR::RObject* blank_lines_skip_, CXXR::RObject* multi_line_, CXXR::RObject* comment_char_, CXXR::RObject* allowEscapes_, CXXR::RObject* encoding_, CXXR::RObject* skipNul_)
+SEXP attribute_hidden do_scan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* what_, rho::RObject* nmax_, rho::RObject* sep_, rho::RObject* dec_, rho::RObject* quote_, rho::RObject* skip_, rho::RObject* nlines_, rho::RObject* na_strings_, rho::RObject* flush_, rho::RObject* fill_, rho::RObject* strip_white_, rho::RObject* quiet_, rho::RObject* blank_lines_skip_, rho::RObject* multi_line_, rho::RObject* comment_char_, rho::RObject* allowEscapes_, rho::RObject* encoding_, rho::RObject* skipNul_)
 {
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline,
@@ -914,7 +914,7 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "allowEscapes");
-    data.escapes = CXXRCONSTRUCT(Rboolean, escapes != 0);
+    data.escapes = RHOCONSTRUCT(Rboolean, escapes != 0);
     if(skipNul == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "skipNul");
     data.skipNul = Rboolean(skipNul != 0);
@@ -925,7 +925,7 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	data.atStart = FALSE;
 	data.ttyflag = 1;
     } else {
-	data.atStart = CXXRCONSTRUCT(Rboolean, (nskip == 0));
+	data.atStart = RHOCONSTRUCT(Rboolean, (nskip == 0));
 	data.ttyflag = 0;
 	data.wasopen = data.con->isopen;
 	if(!data.wasopen) {
@@ -972,7 +972,7 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     }
     catch (...) {
 	if(!data.ttyflag && !data.wasopen) data.con->close(data.con);
-	if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+	if (data.quoteset[0]) free(RHOCONSTRUCT(const_cast<char*>, data.quoteset));
 	throw;
     }
 
@@ -985,14 +985,14 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     }
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
-    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+    if (data.quoteset[0]) free(RHOCONSTRUCT(const_cast<char*>, data.quoteset));
     if (!skipNul && data.embedWarn)
 	warning(_("embedded nul(s) found in input"));
     ProvenanceTracker::flagXenogenesis();
     return ans;
 }
 
-SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* prompt_)
+SEXP attribute_hidden do_readln(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* prompt_)
 {
     int c;
     char buffer[MAXELTSIZE], *bufp = buffer;

@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,13 +27,13 @@
  * Implementation of class MemoryBank
  */
 
-#include "CXXR/MemoryBank.hpp"
+#include "rho/MemoryBank.hpp"
 
 #include <iostream>
 #include <limits>
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // If NO_CELLPOOLS is defined, all memory blocks are allocated
 // directly via ::operator new.  Combined with address sanitizer

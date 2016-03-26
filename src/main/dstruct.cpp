@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 2001-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,11 +30,11 @@
 #endif
 
 #include "Defn.h"
-#include "CXXR/Closure.h"
-#include "CXXR/Environment.h"
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/Closure.hpp"
+#include "rho/Environment.hpp"
+#include "rho/GCStackRoot.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 R_len_t Rf_length(SEXP s)
 {

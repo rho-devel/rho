@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #endif
 #include <Defn.h>
 #include <Internal.h>
-#include "CXXR/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 /* -> Rinternals.h which exports R_compute_identical() */
 
 /* Implementation of identical(x, y) */
@@ -48,7 +48,7 @@ static Rboolean neWithNaN(double x, double y, ne_strictness_type str);
 
 
 /* .Internal(identical(..)) */
-SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_identical(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int num_eq = 1, single_NA = 1, attr_as_set = 1, ignore_bytecode = 1,
 	ignore_env = 0, nargs = num_args, flags;
@@ -106,7 +106,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     if(TYPEOF(x) == CHARSXP)
     {
 	/* This matches NAs */
-	return CXXRCONSTRUCT(Rboolean, Seql(x, y));
+	return RHOCONSTRUCT(Rboolean, Seql(x, y));
     }
 
     ax = ATTRIB(x); ay = ATTRIB(y);
@@ -160,12 +160,12 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     case LGLSXP:
 	if (xlength(x) != xlength(y)) return FALSE;
 	/* Use memcmp (which is ISO C90) to speed up the comparison */
-	return memcmp(CXXRNOCAST(void *)LOGICAL(x), CXXRNOCAST(void *)LOGICAL(y),
+	return memcmp(RHO_NO_CAST(void *)LOGICAL(x), RHO_NO_CAST(void *)LOGICAL(y),
 		      xlength(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case INTSXP:
 	if (xlength(x) != xlength(y)) return FALSE;
 	/* Use memcmp (which is ISO C90) to speed up the comparison */
-	return memcmp(CXXRNOCAST(void *)INTEGER(x), CXXRNOCAST(void *)INTEGER(y),
+	return memcmp(RHO_NO_CAST(void *)INTEGER(x), RHO_NO_CAST(void *)INTEGER(y),
 		      xlength(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case REALSXP:
     {
@@ -175,7 +175,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	    double *xp = REAL(x), *yp = REAL(y);
 	    int ne_strict = NUM_EQ | (SINGLE_NA << 1);
 	    for(R_xlen_t i = 0; i < n; i++)
-		if(neWithNaN(xp[i], yp[i], CXXRCONSTRUCT(ne_strictness_type, ne_strict))) return FALSE;
+		if(neWithNaN(xp[i], yp[i], RHOCONSTRUCT(ne_strictness_type, ne_strict))) return FALSE;
 	}
 	return TRUE;
     }
@@ -187,8 +187,8 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	    Rcomplex *xp = COMPLEX(x), *yp = COMPLEX(y);
 	    int ne_strict = NUM_EQ | (SINGLE_NA << 1);
 	    for(R_xlen_t i = 0; i < n; i++)
-		if(neWithNaN(xp[i].r, yp[i].r, CXXRCONSTRUCT(ne_strictness_type, ne_strict)) ||
-		   neWithNaN(xp[i].i, yp[i].i, CXXRCONSTRUCT(ne_strictness_type, ne_strict)))
+		if(neWithNaN(xp[i].r, yp[i].r, RHOCONSTRUCT(ne_strictness_type, ne_strict)) ||
+		   neWithNaN(xp[i].i, yp[i].i, RHOCONSTRUCT(ne_strictness_type, ne_strict)))
 		    return FALSE;
 	}
 	return TRUE;
@@ -199,8 +199,8 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	if(n != xlength(y)) return FALSE;
 	for(i = 0; i < n; i++) {
 	    /* This special-casing for NAs is not needed */
-	    Rboolean na1 = (CXXRCONSTRUCT(Rboolean, STRING_ELT(x, i) == NA_STRING)),
-		na2 = (CXXRCONSTRUCT(Rboolean, STRING_ELT(y, i) == NA_STRING));
+	    Rboolean na1 = (RHOCONSTRUCT(Rboolean, STRING_ELT(x, i) == NA_STRING)),
+		na2 = (RHOCONSTRUCT(Rboolean, STRING_ELT(y, i) == NA_STRING));
 	    if(na1 ^ na2) return FALSE;
 	    if(na1 && na2) continue;
 	    if (! Seql(STRING_ELT(x, i), STRING_ELT(y, i))) return FALSE;
@@ -210,7 +210,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     case CHARSXP: /* Probably unreachable, but better safe than sorry... */
     {
 	/* This matches NAs */
-	return CXXRCONSTRUCT(Rboolean, Seql(x, y));
+	return RHOCONSTRUCT(Rboolean, Seql(x, y));
     }
     case VECSXP:
     {
@@ -250,7 +250,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	    x = CDR(x);
 	    y = CDR(y);
 	}
-	return(CXXRCONSTRUCT(Rboolean, y == nullptr));
+	return(RHOCONSTRUCT(Rboolean, y == nullptr));
     }
     case CLOSXP:
 	return Rboolean(R_compute_identical(FORMALS(x), FORMALS(y), flags) &&
@@ -269,7 +269,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     case RAWSXP:
 	if (xlength(x) != xlength(y)) return FALSE;
 	/* Use memcmp (which is ISO C90) to speed up the comparison */
-	return memcmp(CXXRNOCAST(void *)RAW(x), CXXRNOCAST(void *)RAW(y),
+	return memcmp(RHO_NO_CAST(void *)RAW(x), RHO_NO_CAST(void *)RAW(y),
 		      xlength(x) * sizeof(Rbyte)) == 0 ? TRUE : FALSE;
 
 /*  case PROMSXP: args are evaluated, so will not be seen */
@@ -328,17 +328,17 @@ static Rboolean neWithNaN(double x, double y, ne_strictness_type str)
 
     switch (str) {
     case single_NA__num_eq:
-	return(CXXRCONSTRUCT(Rboolean, x != y));
+	return(RHOCONSTRUCT(Rboolean, x != y));
     case bit_NA__num_eq:
 	if(!ISNAN(x) && !ISNAN(y))
-	    return(CXXRCONSTRUCT(Rboolean, x != y));
+	    return(RHOCONSTRUCT(Rboolean, x != y));
 	else /* bitwise check for NA/NaN's */
-	    return memcmp(CXXRNOCAST(const void *) &x,
-			  CXXRNOCAST(const void *) &y, sizeof(double)) ? TRUE : FALSE;
+	    return memcmp(RHO_NO_CAST(const void *) &x,
+			  RHO_NO_CAST(const void *) &y, sizeof(double)) ? TRUE : FALSE;
     case bit_NA__num_bit:
     case single_NA__num_bit:
-	return memcmp(CXXRNOCAST(const void *) &x,
-		      CXXRNOCAST(const void *) &y, sizeof(double)) ? TRUE : FALSE;
+	return memcmp(RHO_NO_CAST(const void *) &x,
+		      RHO_NO_CAST(const void *) &y, sizeof(double)) ? TRUE : FALSE;
     default: /* Wall */
 	return FALSE;
     }

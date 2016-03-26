@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,14 +43,14 @@
 #include <GraphicsBase.h>
 #include <R_ext/GraphicsEngine.h>
 
-using namespace CXXR;
+using namespace rho;
 
 int baseRegisterIndex = -1;
 
 GPar* dpptr(pGEDevDesc dd) {
     if (baseRegisterIndex == -1)
 	error(_("the base graphics system is not registered"));
-    baseSystemState *bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
+    baseSystemState *bss = RHO_S_CAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dp);
 }
 
@@ -115,7 +115,7 @@ static int R_NumDevices = 1;
 static pGEDevDesc R_Devices[R_MaxDevices];
 static Rboolean active[R_MaxDevices];
 
-/* The following are used in CXXR to protect the displayList and
+/* The following are used in rho to protect the displayList and
  * savedSnapshot fields of a device from garbage collection.
  * Functions setDisplayList() and saveSnapshot() update them in
  * parallel with the fields concerned.
@@ -551,7 +551,7 @@ void NewFrameConfirm(pDevDesc dd)
     }
 }
 
-// CXXR mutator functions:
+// rho mutator functions:
 
 void setDisplayList(pGEDevDesc dev, SEXP newDisplayList)
 {

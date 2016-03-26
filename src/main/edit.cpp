@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 #include "Print.h"
 #include "Fileio.h"
 #include "Parse.h"
-#include "CXXR/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 
 #include <stdio.h>
 #ifdef Win32
@@ -125,7 +125,7 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if((fp=R_fopen(R_ExpandFileName(filename), "w")) == nullptr)
 	    errorcall(call, _("unable to open file"));
 	if (LENGTH(STRING_ELT(fn, 0)) == 0) EdFileUsed++;
-	PROTECT(src = deparse1(x, CXXRFALSE, FORSOURCING)); /* deparse for sourcing, not for display */
+	PROTECT(src = deparse1(x, RHO_FALSE, FORSOURCING)); /* deparse for sourcing, not for display */
 	for (i = 0; i < LENGTH(src); i++)
 	    fprintf(fp, "%s\n", translateChar(STRING_ELT(src, i)));
 	UNPROTECT(1); /* src */

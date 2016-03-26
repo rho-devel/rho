@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2016  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,14 +112,14 @@
 /* ----- MAX_Cutoff  <	BUFSIZE !! */
 
 #include "RBufferUtils.h"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/StringVector.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/ExpressionVector.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.hpp"
+#include "rho/StringVector.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 typedef R_StringBuffer DeparseBuffer;
 
@@ -159,7 +159,7 @@ static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
 static void deparse2(SEXP, SEXP, LocalParseData *);
 
-SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* expr_, CXXR::RObject* width_cutoff_, CXXR::RObject* backtick_, CXXR::RObject* control_, CXXR::RObject* nlines_)
+SEXP attribute_hidden do_deparse(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* expr_, rho::RObject* width_cutoff_, rho::RObject* backtick_, rho::RObject* control_, rho::RObject* nlines_)
 {
     SEXP ca1;
     int  cut0, backtick, opts, nlines;
@@ -181,7 +181,7 @@ SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::B
 	opts = asInteger(control_);
     nlines = asInteger(nlines_);
     if (nlines == NA_INTEGER) nlines = -1;
-    ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRCONSTRUCT(Rboolean, backtick), opts, nlines);
+    ca1 = deparse1WithCutoff(ca1, RHO_FALSE, cut0, RHOCONSTRUCT(Rboolean, backtick), opts, nlines);
     return ca1;
 }
 
@@ -194,7 +194,7 @@ SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 
 // Utility intended to be called from a debugger.  Prints out the
 // deparse of an RObject.
-namespace CXXR {
+namespace rho {
     void DEPARSE(SEXP s)
     {
 	GCManager::GCInhibitor gci;
@@ -334,7 +334,7 @@ SEXP attribute_hidden deparse1s(SEXP call)
 
 #include "Rconnections.h"
 
-SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* file_, CXXR::RObject* control_)
+SEXP attribute_hidden do_dput(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* file_, rho::RObject* control_)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
@@ -352,7 +352,7 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if(!isNull(control_))
 	opts = asInteger(control_);
 
-    tval = deparse1(tval, CXXRFALSE, opts);
+    tval = deparse1(tval, RHO_FALSE, opts);
     if (TYPEOF(x_) == CLOSXP) {
 	SET_CLOENV(x_, saveenv);
 	UNPROTECT(1);
@@ -363,7 +363,7 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	error(_("'file' must be a character string or connection"));
     ifile = asInteger(file_);
 
-    wasopen = CXXRTRUE;
+    wasopen = RHO_TRUE;
     try {
 	if (ifile != 1) {
 	    con = getConnection(ifile);
@@ -383,7 +383,7 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    else {
 		res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
 		if(!havewarned &&
-		   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
+		   res < RHOCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
 		    warning(_("wrote too few characters"));
 	    }
 	UNPROTECT(1); /* tval */
@@ -396,7 +396,7 @@ SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::Buil
     return (x_);
 }
 
-SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* envir_, CXXR::RObject* opts_, CXXR::RObject* evaluate_)
+SEXP attribute_hidden do_dump(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* envir_, rho::RObject* opts_, rho::RObject* evaluate_)
 {
     SEXP file, names, o, objs, tval, source, outnames;
     int i, j, nobjs, nout, res;
@@ -421,7 +421,7 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
     /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 1024)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(evaluate_));
+    evaluate = RHOCONSTRUCT(Rboolean, asLogical(evaluate_));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));
@@ -444,7 +444,7 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 		if(isValidName(obj_name)) Rprintf("%s <-\n", obj_name);
 		else if(opts & S_COMPAT) Rprintf("\"%s\" <-\n", obj_name);
 		else Rprintf("`%s` <-\n", obj_name);
-		tval = deparse1(CAR(o), CXXRFALSE, opts);
+		tval = deparse1(CAR(o), RHO_FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++)
 		    Rprintf("%s\n", CHAR(STRING_ELT(tval, j)));/* translated */
 		o = CDR(o);
@@ -475,13 +475,13 @@ SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::Buil
 			res = Rconn_printf(con, "\"%s\" <-\n", s);
 		    else
 			res = Rconn_printf(con, "`%s` <-\n", s);
-		    if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
+		    if(!havewarned && res < RHOCONSTRUCT(int, strlen(s)) + extra)
 			warning(_("wrote too few characters"));
-		    tval = deparse1(CAR(o), CXXRFALSE, opts);
+		    tval = deparse1(CAR(o), RHO_FALSE, opts);
 		    for (j = 0; j < LENGTH(tval); j++) {
 			res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 			if(!havewarned &&
-			   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
+			   res < RHOCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
 			    warning(_("wrote too few characters"));
 		    }
 		    o = CDR(o);
@@ -532,7 +532,7 @@ curlyahead(SEXP s)
     return FALSE;
 }
 
-// In CXXR, BuiltInFunction::PPinfo is (deliberately) private, so as
+// In rho, BuiltInFunction::PPinfo is (deliberately) private, so as
 // not to expose the function table format outside the BuiltInFunction
 // class.  We now introduce local definitions to keep the CR
 // code working.
@@ -564,49 +564,49 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		(TYPEOF(SYMVALUE(CAR(arg))) == SPECIALSXP)) {
 		arginfo = PPINFO(SYMVALUE(CAR(arg)));
 		switch(arginfo.kind) {
-		case CXXRBUILTINFUNCTION::PP_BINARY:	      /* Not all binary ops are binary! */
-		case CXXRBUILTINFUNCTION::PP_BINARY2:
+		case BuiltInFunction::PP_BINARY:	      /* Not all binary ops are binary! */
+		case BuiltInFunction::PP_BINARY2:
 		    switch(length(CDR(arg))) {
 		    case 1:
 			if (!left)
 			    return FALSE;
-			if (arginfo.precedence == CXXRBUILTINFUNCTION::PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    arginfo.precedence = CXXRBUILTINFUNCTION::PREC_SIGN;
+			if (arginfo.precedence == BuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    arginfo.precedence = BuiltInFunction::PREC_SIGN;
 		    case 2:
 			break;
 		    default:
 			return FALSE;
 		    }
-		case CXXRBUILTINFUNCTION::PP_ASSIGN:
-		case CXXRBUILTINFUNCTION::PP_ASSIGN2:
-		case CXXRBUILTINFUNCTION::PP_SUBSET:
-		case CXXRBUILTINFUNCTION::PP_UNARY:
-		case CXXRBUILTINFUNCTION::PP_DOLLAR:
+		case BuiltInFunction::PP_ASSIGN:
+		case BuiltInFunction::PP_ASSIGN2:
+		case BuiltInFunction::PP_SUBSET:
+		case BuiltInFunction::PP_UNARY:
+		case BuiltInFunction::PP_DOLLAR:
 		    if (mainop.precedence > arginfo.precedence
 			|| (mainop.precedence == arginfo.precedence && left == mainop.rightassoc)) {
 			return TRUE;
 		    }
 		    break;
-		case CXXRBUILTINFUNCTION::PP_FOR:
-		case CXXRBUILTINFUNCTION::PP_IF:
-		case CXXRBUILTINFUNCTION::PP_WHILE:
-		case CXXRBUILTINFUNCTION::PP_REPEAT:
-		    return CXXRCONSTRUCT(Rboolean, left == 1);
+		case BuiltInFunction::PP_FOR:
+		case BuiltInFunction::PP_IF:
+		case BuiltInFunction::PP_WHILE:
+		case BuiltInFunction::PP_REPEAT:
+		    return RHOCONSTRUCT(Rboolean, left == 1);
 		    break;
 		default:
 		    return FALSE;
 		}
 	    } else if (isUserBinop(CAR(arg))) {
-	        if (mainop.precedence > CXXRBUILTINFUNCTION::PREC_PERCENT
-	            || (mainop.precedence == CXXRBUILTINFUNCTION::PREC_PERCENT && left == mainop.rightassoc)) {
+	        if (mainop.precedence > BuiltInFunction::PREC_PERCENT
+	            || (mainop.precedence == BuiltInFunction::PREC_PERCENT && left == mainop.rightassoc)) {
 		    return TRUE;
 		}
 	    }
 	}
     }
     else if ((TYPEOF(arg) == CPLXSXP) && (length(arg) == 1)) {
-	if (mainop.precedence > CXXRBUILTINFUNCTION::PREC_SUM
-	    || (mainop.precedence == CXXRBUILTINFUNCTION::PREC_SUM && left == mainop.rightassoc)) {
+	if (mainop.precedence > BuiltInFunction::PREC_SUM
+	    || (mainop.precedence == BuiltInFunction::PREC_SUM && left == mainop.rightassoc)) {
 	    return TRUE;
 	}
     }
@@ -739,17 +739,17 @@ static Rboolean parenthesizeCaller(SEXP s)
 	    sym = SYMVALUE(op);
 	    if (TYPEOF(sym) == BUILTINSXP
 		|| TYPEOF(sym) == SPECIALSXP) {
-    	        if (PPINFO(sym).precedence >= CXXRBUILTINFUNCTION::PREC_SUBSET
-    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_FUNCALL
-    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_PAREN
-    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_CURLY) return FALSE; /* x$f(z) or x[n](z) or f(z) or (f) or {f} */
+    	        if (PPINFO(sym).precedence >= BuiltInFunction::PREC_SUBSET
+    	            || PPINFO(sym).kind == BuiltInFunction::PP_FUNCALL
+    	            || PPINFO(sym).kind == BuiltInFunction::PP_PAREN
+    	            || PPINFO(sym).kind == BuiltInFunction::PP_CURLY) return FALSE; /* x$f(z) or x[n](z) or f(z) or (f) or {f} */
 		else return TRUE;		/* (f+g)(z) etc. */
 	    }
 	    return FALSE;			/* regular function call */
 	 } else
 	    return TRUE;			/* something strange, like (1)(x) */
     } else
-        return CXXRCONSTRUCT(Rboolean, TYPEOF(s) == CLOSXP);
+        return RHOCONSTRUCT(Rboolean, TYPEOF(s) == CLOSXP);
 }
 
 /* This is the recursive part of deparsing. */
@@ -909,35 +909,35 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		s = CDR(s);
 		if (userbinop) {
 		    if (isNull(getAttrib(s, R_NamesSymbol))) {
-			fop.kind = CXXRBUILTINFUNCTION::PP_BINARY2;    /* not quite right for spacing, but can't be unary */
-			fop.precedence = CXXRBUILTINFUNCTION::PREC_PERCENT;
+			fop.kind = BuiltInFunction::PP_BINARY2;    /* not quite right for spacing, but can't be unary */
+			fop.precedence = BuiltInFunction::PREC_PERCENT;
 			fop.rightassoc = 0;
 		    } else
-			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;  /* if args are named, deparse as function call (PR#15350) */
+			fop.kind = BuiltInFunction::PP_FUNCALL;  /* if args are named, deparse as function call (PR#15350) */
 		} else
 		    fop = PPINFO(SYMVALUE(op));
-		if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY) {
+		if (fop.kind == BuiltInFunction::PP_BINARY) {
 		    switch (length(s)) {
 		    case 1:
-			fop.kind = CXXRBUILTINFUNCTION::PP_UNARY;
-			if (fop.precedence == CXXRBUILTINFUNCTION::PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    fop.precedence = CXXRBUILTINFUNCTION::PREC_SIGN;
+			fop.kind = BuiltInFunction::PP_UNARY;
+			if (fop.precedence == BuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    fop.precedence = BuiltInFunction::PREC_SIGN;
 			break;
 		    case 2:
 			break;
 		    default:
-			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;
+			fop.kind = BuiltInFunction::PP_FUNCALL;
 			break;
 		    }
 		}
-		else if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY2) {
+		else if (fop.kind == BuiltInFunction::PP_BINARY2) {
 		    if (length(s) != 2)
-			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;
+			fop.kind = BuiltInFunction::PP_FUNCALL;
 		    else if (userbinop)
-	 	    	fop.kind = CXXRBUILTINFUNCTION::PP_BINARY;
+	 	    	fop.kind = BuiltInFunction::PP_BINARY;
 		}
 		switch (fop.kind) {
-		case CXXRBUILTINFUNCTION::PP_IF:
+		case BuiltInFunction::PP_IF:
 		    print2buff("if (", d);
 		    /* print the predicate */
 		    deparse2buff(CAR(s), d);
@@ -968,13 +968,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    d->indent--;
 		    }
 		    break;
-		case CXXRBUILTINFUNCTION::PP_WHILE:
+		case BuiltInFunction::PP_WHILE:
 		    print2buff("while (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(") ", d);
 		    deparse2buff(CADR(s), d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_FOR:
+		case BuiltInFunction::PP_FOR:
 		    print2buff("for (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(" in ", d);
@@ -982,11 +982,11 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff(") ", d);
 		    deparse2buff(CADR(CDR(s)), d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_REPEAT:
+		case BuiltInFunction::PP_REPEAT:
 		    print2buff("repeat ", d);
 		    deparse2buff(CAR(s), d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_CURLY:
+		case BuiltInFunction::PP_CURLY:
 		    print2buff("{", d);
 		    d->incurly += 1;
 		    d->indent++;
@@ -1000,12 +1000,12 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff("}", d);
 		    d->incurly -= 1;
 		    break;
-		case CXXRBUILTINFUNCTION::PP_PAREN:
+		case BuiltInFunction::PP_PAREN:
 		    print2buff("(", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_SUBSET:
+		case BuiltInFunction::PP_SUBSET:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);		
 		    deparse2buff(CAR(s), d);
@@ -1021,8 +1021,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    else
 			print2buff("]]", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_FUNCALL:
-		case CXXRBUILTINFUNCTION::PP_RETURN:
+		case BuiltInFunction::PP_FUNCALL:
+		case BuiltInFunction::PP_RETURN:
 		    if (d->backtick)
 			print2buff(quotify(PRINTNAME(op), '`'), d);
 		    else
@@ -1033,7 +1033,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_FOREIGN:
+		case BuiltInFunction::PP_FOREIGN:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    print2buff("(", d);
 		    d->inlist++;
@@ -1041,7 +1041,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_FUNCTION:
+		case BuiltInFunction::PP_FUNCTION:
 		    printcomment(s, d);
 		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
@@ -1060,8 +1060,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			vmaxset(vmax);
 		    }
 		    break;
-		case CXXRBUILTINFUNCTION::PP_ASSIGN:
-		case CXXRBUILTINFUNCTION::PP_ASSIGN2:
+		case BuiltInFunction::PP_ASSIGN:
+		case BuiltInFunction::PP_ASSIGN2:
 		    if ((outerparens = Rboolean((fnarg && !strcmp(CHAR(PRINTNAME(op)), "=")))))
 		    	print2buff("(", d);
 		    if ((parens = needsparens(fop, CAR(s), 1)))
@@ -1080,7 +1080,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (outerparens)
 		    	print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_DOLLAR:
+		case BuiltInFunction::PP_DOLLAR:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1099,7 +1099,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    print2buff(")", d);
 		    }
 		    break;
-		case CXXRBUILTINFUNCTION::PP_BINARY:
+		case BuiltInFunction::PP_BINARY:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1119,7 +1119,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			lbreak = FALSE;
 		    }
 		    break;
-		case CXXRBUILTINFUNCTION::PP_BINARY2:	/* no space between op and args */
+		case BuiltInFunction::PP_BINARY2:	/* no space between op and args */
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1132,7 +1132,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_UNARY:
+		case BuiltInFunction::PP_UNARY:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    if ((parens = needsparens(fop, CAR(s), 0)))
 			print2buff("(", d);
@@ -1140,13 +1140,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_BREAK:
+		case BuiltInFunction::PP_BREAK:
 		    print2buff("break", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_NEXT:
+		case BuiltInFunction::PP_NEXT:
 		    print2buff("next", d);
 		    break;
-		case CXXRBUILTINFUNCTION::PP_SUBASS:
+		case BuiltInFunction::PP_SUBASS:
 		    if(d->opts & S_COMPAT) {
 			print2buff("\"", d);
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
@@ -1370,7 +1370,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	   Also, it is neat to deparse m:n in that form,
 	   so we do so as from 2.5.0.
 	 */
-	Rboolean intSeq = CXXRCONSTRUCT(Rboolean, (tlen > 1));
+	Rboolean intSeq = RHOCONSTRUCT(Rboolean, (tlen > 1));
 	int *tmp = INTEGER(vector);
 
 	for(i = 1; i < tlen; i++) {
@@ -1387,8 +1387,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		strp = EncodeElement(vector, tlen - 1, '"', '.');
 		print2buff(strp, d);
 	} else {
-	    addL = CXXRCONSTRUCT(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
-	    allNA = CXXRCONSTRUCT(Rboolean, (d->opts & KEEPNA) || addL);
+	    addL = RHOCONSTRUCT(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
+	    allNA = RHOCONSTRUCT(Rboolean, (d->opts & KEEPNA) || addL);
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
 		    allNA = FALSE;
@@ -1398,7 +1398,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.integer(", d);
 	    }
-	    allNA = CXXRCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
+	    allNA = RHOCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
 	    if(tlen > 1) print2buff("c(", d);
 	    for (i = 0; i < tlen; i++) {
 		if(allNA && tmp[i] == NA_INTEGER) {
@@ -1416,7 +1416,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(surround) print2buff(")", d);
 	}
     } else {
-	allNA = CXXRCONSTRUCT(Rboolean, d->opts & KEEPNA);
+	allNA = RHOCONSTRUCT(Rboolean, d->opts & KEEPNA);
 	if((d->opts & KEEPNA) && TYPEOF(vector) == REALSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(!ISNA(REAL(vector)[i])) {
@@ -1454,7 +1454,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    print2buff("as.raw(", d);
 	}
 	if(tlen > 1) print2buff("c(", d);
-	allNA = CXXRCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
+	allNA = RHOCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
 	for (i = 0; i < tlen; i++) {
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {

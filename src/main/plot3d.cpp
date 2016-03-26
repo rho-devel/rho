@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -117,11 +117,11 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		s = start;
 		ns = 0;
 		/* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-		while (s && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
+		while (s && ns < RHOCONSTRUCT(int, max_contour_segments)) {
 		    ns++;
 		    s = s->next;
 		}
-		if(ns == CXXRCONSTRUCT(int, max_contour_segments))
+		if(ns == RHOCONSTRUCT(int, max_contour_segments))
 		    warning(_("contour(): circular/long seglist -- set %s > %d?"), 
 		            "options(\"max.contour.segments\")", max_contour_segments);
 		/*
@@ -137,7 +137,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		REAL(xsxp)[0] = s->x0;
 		REAL(ysxp)[0] = s->y0;
 		ns = 1;
-		while (s->next && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
+		while (s->next && ns < RHOCONSTRUCT(int, max_contour_segments)) {
 		    s = s->next;
 		    REAL(xsxp)[ns] = s->x0;
 		    REAL(ysxp)[ns++] = s->y0;

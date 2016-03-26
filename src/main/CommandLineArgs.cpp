@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1997-2013   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ R_set_command_line_arguments(int argc, char **argv)
   in global variables.
  */
 SEXP attribute_hidden
-do_commandArgs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+do_commandArgs(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     int i;
     SEXP vals;
@@ -231,7 +231,7 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    }
 	    else if( !strncmp(*av, "--min-nsize", 11) ||
 		     !strncmp(*av, "--max-ppsize", 12)) {
-		// CXXR silently ignores these parameters for compatibility
+		// rho silently ignores these parameters for compatibility
 		// with CR.
 	    }
 	    else { /* unknown -option */

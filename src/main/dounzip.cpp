@@ -4,11 +4,11 @@
  *  first part Copyright (C) 2002-2015  The R Core Team
  *  second part Copyright (C) 1998-2010 Gilles Vollant
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@
 #include <io.h> /* for mkdir */
 #endif
 
-#include "CXXR/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 /* cf do_dircreate in platform.c */
 static int R_mkdir(char *path)
@@ -219,7 +219,7 @@ zipunzip(const char *zipname, const char *dest, int nfiles, const char **files,
     if (nfiles == 0) { /* all files */
 	unz_global_info64 gi;
 	unzGetGlobalInfo64(uf, &gi);
-	for (i = 0; i < CXXRCONSTRUCT(int, gi.number_entry); i++) {
+	for (i = 0; i < RHOCONSTRUCT(int, gi.number_entry); i++) {
 	    if (i > 0) if ((err = unzGoToNextFile(uf)) != UNZ_OK) break;
 	    if (*nnames+1 >= LENGTH(names)) {
 		SEXP onames = names;
@@ -275,7 +275,7 @@ static SEXP ziplist(const char *zipname)
     SET_VECTOR_ELT(ans, 1, lengths = allocVector(REALSXP, nfiles));
     SET_VECTOR_ELT(ans, 2, dates = allocVector(STRSXP, nfiles));
 
-    for (i = 0; CXXRCONSTRUCT(int, i) < nfiles; i++) {
+    for (i = 0; RHOCONSTRUCT(int, i) < nfiles; i++) {
 	char filename_inzip[PATH_MAX], date[50];
 	unz_file_info64 file_info;
 
@@ -295,7 +295,7 @@ static SEXP ziplist(const char *zipname)
 		 file_info.tmu_date.tm_min);
 	SET_STRING_ELT(dates, i, mkChar(date));
 
-        if (CXXRCONSTRUCT(int, i) < nfiles - 1) {
+        if (RHOCONSTRUCT(int, i) < nfiles - 1) {
 	    err = unzGoToNextFile(uf);
 	    if (err != UNZ_OK)
 		error("error %d with zipfile in unzGoToNextFile\n",err);
@@ -330,7 +330,7 @@ SEXP Runzip(SEXP args)
     if (ntopics > 0) {
 	if (!isString(fn))
 	    error(_("invalid '%s' argument"), "files");
-	topics = static_cast<const char **>( CXXR_alloc(ntopics, sizeof(char *)));
+	topics = static_cast<const char **>( RHO_alloc(ntopics, sizeof(char *)));
 	for (i = 0; i < ntopics; i++)
 	    topics[i] = translateChar(STRING_ELT(fn, i));
     }
@@ -524,7 +524,7 @@ R_newunz(const char *description, const char *const mode)
     newconn->fflush = &null_fflush;
     newconn->read = &unz_read;
     newconn->write = &null_write;
-    newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct unzconn));
+    newconn->connprivate = RHO_NO_CAST(void *) malloc(sizeof(struct unzconn));
     if(!newconn->connprivate) {
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of 'unz' connection failed"));
@@ -534,9 +534,9 @@ R_newunz(const char *description, const char *const mode)
 
        /* =================== second part ====================== */
 
-// In CXXR the following has been modified minimally to allow
+// In rho the following has been modified minimally to allow
 // compilation as C++.  In particular old-style casts are tolerated,
-// contrary to general CXXR practice.
+// contrary to general rho practice.
 
 /* From minizip contribution to zlib 1.2.3, updated for 1.2.5 */
 
@@ -1825,7 +1825,7 @@ static int unzOpenCurrentFile3 (unzFile file, int* method,
       pfile_in_zip_read_info->stream.zalloc = (alloc_func)nullptr;
       pfile_in_zip_read_info->stream.zfree = (free_func)nullptr;
       pfile_in_zip_read_info->stream.opaque = (voidpf)nullptr;
-      pfile_in_zip_read_info->stream.next_in = CXXRNOCAST(voidpf)nullptr;
+      pfile_in_zip_read_info->stream.next_in = RHO_NO_CAST(voidpf)nullptr;
       pfile_in_zip_read_info->stream.avail_in = 0;
 
       err = BZ2_bzDecompressInit(&pfile_in_zip_read_info->bstream, 0, 0);
@@ -2173,7 +2173,7 @@ static voidpf fopen_func(const void* filename, int mode)
 	mode_fopen = "wb";
 
     if ((filename != nullptr) && (mode_fopen != nullptr))
-        file = fopen(CXXRSCAST(const char*, filename), mode_fopen);
+        file = fopen(RHO_S_CAST(const char*, filename), mode_fopen);
     return file;
 }
 

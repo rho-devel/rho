@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ double currentTime(void)
     return ans;
 }
 
-SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_systime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return ScalarReal(currentTime());
 }

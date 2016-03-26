@@ -28,7 +28,7 @@ gctorture2(step, wait = step, inhibit_release = FALSE)
   Intended to ferret out memory protection bugs.  Also makes \R run
   \emph{very} slowly, unfortunately.
 
-  This function has no effect in CXXR, whose aggressive approach to
+  This function has no effect in rho, whose aggressive approach to
   garbage collection will readily manifest most memory protection bugs
   anyway.
 }

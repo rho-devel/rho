@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2013  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@ void attribute_hidden PrintGreeting(void)
     char buf[384];
 
     // To facilitate automated tests, make sure that when lines
-    // containing the string "CXXR" are grepped out, you are left with
+    // containing the string "rho" are grepped out, you are left with
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.43-3.0.2, based on:\n");
+    Rprintf("This is rho 0.43-3.0.2, based on:\n");
     PrintVersion_part_1(buf, 384);
     Rprintf("%s\n", buf);
-    Rprintf(_("CXXR Copyright (C) 2008-14 Andrew R. Runnalls.  CXXR like\n"));
+    Rprintf(_("Rho Copyright (C) 2008-14 Andrew R. Runnalls.  Rho like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
@@ -54,12 +54,12 @@ Type 'contributors()' for more information and\n\
     Rprintf(_("Type 'demo()' for some demos, 'help()' for on-line help, or\n\
 'help.start()' for an HTML browser interface to help.\n\
 Type 'q()' to quit R.\n\n"));
-    Rprintf(_("CXXR is not part of the R project, so please "
+    Rprintf(_("Rho is not part of the R project, so please "
 	      "do not report bugs\nvia r-bugs or the R website; "
-	      "instead refer to the CXXR website.\n"));
+	      "instead refer to the Rho website.\n"));
 }
 
-SEXP attribute_hidden do_version(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_version(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP value, names;
     char buf[128];

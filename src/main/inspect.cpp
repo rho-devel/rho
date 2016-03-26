@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2009-2014 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include <Internal.h>
 #include <R_ext/Print.h>
 
-// This is currently a no-op in CXXR (and quite likely always will be):
+// This is currently a no-op in rho (and quite likely always will be):
 /* pre is the prefix, v is the object to inspect, deep specifies
    the recursion behavior (0 = no recursion, -1 = [sort of] unlimited
    recursion, positive numbers define the maximum recursion depth)
@@ -47,7 +47,7 @@ static void inspect_tree(int pre, SEXP v, int deep, int pvec) {
 /* internal API - takes one mandatory argument (object to inspect) and
    two optional arguments (deep and pvec - see above), positional argument
    matching only */
-SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags) {
+SEXP attribute_hidden do_inspect(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags) {
     SEXP obj = args[0];
     int deep = -1;
     int pvec = 5;
@@ -61,15 +61,15 @@ SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::B
     return obj;
 }
 
-SEXP attribute_hidden do_address(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
+SEXP attribute_hidden do_address(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
 {
     return R_MakeExternalPtr((void *) x, R_NilValue, R_NilValue);
 }
 
-SEXP attribute_hidden do_refcnt(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
+SEXP attribute_hidden do_refcnt(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
 {
     // return ScalarInteger(REFCNT(CAR(args)));
-    return ScalarInteger(NA_INTEGER); // Not currently implemented in CXXR
+    return ScalarInteger(NA_INTEGER); // Not currently implemented in rho
 }
 
 /* the following functions can be use internally and for debugging purposes -

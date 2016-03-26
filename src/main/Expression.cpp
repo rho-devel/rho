@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,42 +24,42 @@
 
 /** @file Expression.cpp
  *
- * @brief Class CXXR::Expression and associated C interface.
+ * @brief Class rho::Expression and associated C interface.
  */
 #define R_NO_REMAP
 
-#include "CXXR/Expression.h"
+#include "rho/Expression.hpp"
 
 #include <iostream>
 #include <boost/preprocessor.hpp>
 
 #include "R_ext/Error.h"
 #include "localization.h"
-#include "CXXR/ArgList.hpp"
-#include "CXXR/ArgMatcher.hpp"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Closure.h"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/Environment.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/FunctionContext.hpp"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackFrameBoundary.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/PlainContext.hpp"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/StackChecker.hpp"
-#include "CXXR/Symbol.h"
+#include "rho/ArgList.hpp"
+#include "rho/ArgMatcher.hpp"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Closure.hpp"
+#include "rho/ClosureContext.hpp"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
+#include "rho/FunctionContext.hpp"
+#include "rho/FunctionBase.hpp"
+#include "rho/GCStackFrameBoundary.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/PlainContext.hpp"
+#include "rho/ProtectStack.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/StackChecker.hpp"
+#include "rho/Symbol.hpp"
 
 #undef match
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	SEXP (*lconsp)(SEXP cr, SEXP tl) = Rf_lcons;
    }

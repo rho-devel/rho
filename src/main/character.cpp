@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2016  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -87,9 +87,9 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 #include <R_ext/Itermacros.h>
 #include <rlocale.h>
 
-#include "CXXR/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* We use a shared buffer here to avoid reallocing small buffers, and
    keep a standard-size (MAXELTSIZE = 8192) buffer allocated shared
@@ -107,7 +107,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nzchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, ans;
 
@@ -225,7 +225,7 @@ int R_nchar(SEXP string, nchar_type type_,
     return NA_INTEGER; // -Wall
 } // R_nchar()
 
-SEXP attribute_hidden do_nchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP d, s, x, stype;
 
@@ -308,7 +308,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
     *buf = '\0';
 }
 
-SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* start_, CXXR::RObject* stop_)
+SEXP attribute_hidden do_substr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* start_, rho::RObject* stop_)
 {
     SEXP s;
     RObject* x = x_;
@@ -339,10 +339,10 @@ SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    size_t slen = strlen(ss); /* FIXME -- should handle embedded nuls */
 	    char* buf = static_cast<char*>(R_AllocStringBuffer(slen+1, &cbuff));
 	    if (start < 1) start = 1;
-	    if (start > stop || start > CXXRCONSTRUCT(int, slen)) {
+	    if (start > stop || start > RHOCONSTRUCT(int, slen)) {
 		buf[0] = '\0';
 	    } else {
-		if (stop > CXXRCONSTRUCT(int, slen)) stop = int( slen);
+		if (stop > RHOCONSTRUCT(int, slen)) stop = int( slen);
 		substr(buf, ss, ienc, start, stop);
 	    }
 	    SET_STRING_ELT(s, i, mkCharCE(buf, ienc));
@@ -358,9 +358,9 @@ SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::Bu
 // .Internal( startsWith(x, prefix) )  and
 // .Internal( endsWith  (x, suffix) )
 SEXP attribute_hidden
-do_startsWith(CXXR::Expression* call, const CXXR::BuiltInFunction* op,
-	      CXXR::RObject* x,
-	      CXXR::RObject* Xfix /* 'prefix' or 'suffix' */)
+do_startsWith(rho::Expression* call, const rho::BuiltInFunction* op,
+	      rho::RObject* x,
+	      rho::RObject* Xfix /* 'prefix' or 'suffix' */)
 {
     if (!isString(x) || !isString(Xfix))
 	error(_("non-character object(s)"));
@@ -499,7 +499,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
     }
 }
 
-SEXP attribute_hidden do_substrgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* start_, CXXR::RObject* stop_, CXXR::RObject* value_)
+SEXP attribute_hidden do_substrgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* start_, rho::RObject* stop_, rho::RObject* value_)
 {
     SEXP s, x, sa, so, value, el, v_el;
     R_xlen_t i, len;
@@ -795,7 +795,7 @@ donewsc:
     return ans;
 }
 
-SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* these_, CXXR::RObject* minlength_, CXXR::RObject* use_classes_)
+SEXP attribute_hidden do_abbrev(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* these_, rho::RObject* minlength_, rho::RObject* use_classes_)
 {
     RObject* x = these_;
 
@@ -845,7 +845,7 @@ SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* allow__)
+SEXP attribute_hidden do_makenames(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* allow__)
 {
     SEXP arg, ans;
     R_xlen_t i, n;
@@ -946,7 +946,7 @@ SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 
-SEXP attribute_hidden do_tolower(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_tolower(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP x, y;
     R_xlen_t i, n;
@@ -1221,12 +1221,12 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return (static_cast<CXXRCONST xtable_t *>(a))->c_old - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
+    return (static_cast<RHOCONST xtable_t *>(a))->c_old - (static_cast<RHOCONST xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *(static_cast<CXXRCONST wchar_t *>(a)) - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
+    return *(static_cast<RHOCONST wchar_t *>(a)) - (static_cast<RHOCONST xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \
@@ -1286,7 +1286,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
     }                                                          \
 }
 
-SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* old_, CXXR::RObject* new_, CXXR::RObject* x_)
+SEXP attribute_hidden do_chartr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* old_, rho::RObject* new_, rho::RObject* x_)
 {
     SEXP old, _new, x, y;
     R_xlen_t i, n;
@@ -1384,7 +1384,7 @@ SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	      xtable_cnt++) ;
 	wtr_free_spec(trs_cnt);
 	Free(trs_cnt_ptr);
-	xtable = static_cast<xtable_t *>( CXXR_alloc(xtable_cnt+1, sizeof(xtable_t)));
+	xtable = static_cast<xtable_t *>( RHO_alloc(xtable_cnt+1, sizeof(xtable_t)));
 
 	trs_old_ptr = Calloc(1, struct wtr_spec *);
 	*trs_old_ptr = trs_old->next;
@@ -1519,7 +1519,7 @@ SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return(y);
 }
 
-SEXP attribute_hidden do_strtrim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_)
+SEXP attribute_hidden do_strtrim(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* width_)
 {
     SEXP s, x, width;
     R_xlen_t i, len;
@@ -1592,7 +1592,7 @@ static int strtoi(SEXP s, int base)
     return int( res);
 }
 
-SEXP attribute_hidden do_strtoi(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* base_)
+SEXP attribute_hidden do_strtoi(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* base_)
 {
     SEXP ans, x, b;
     R_xlen_t i, n;
@@ -1633,7 +1633,7 @@ SEXP attribute_hidden stringSuffix(SEXP string, int fromIndex) {
     return res;
 }
 
-SEXP attribute_hidden do_strrep(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* n)
+SEXP attribute_hidden do_strrep(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* n)
 {
     SEXP d, s;
     R_xlen_t is, ix, in, ns, nx, nn;

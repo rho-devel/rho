@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ INLINE_FUN void R_Reprotect(SEXP s, PROTECT_INDEX i)
 
 /*  length - length of objects  */
 
-/* In CXXR, Rf_length() are Rf_xlength() are not inlined, and are
+/* In rho, Rf_length() are Rf_xlength() are not inlined, and are
    defined in dstruct.cpp. */
 
 /* TODO: a  Length(.) {say} which is  length() + dispatch (S3 + S4) if needed

@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,13 +42,13 @@
 
 #include <cstdarg>
 #include <vector>
-#include "CXXR/Closure.h"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/ExternalPointer.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/StdFrame.hpp"
-#include "CXXR/WeakRef.h"
+#include "rho/Closure.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/ExpressionVector.hpp"
+#include "rho/ExternalPointer.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/StdFrame.hpp"
+#include "rho/WeakRef.hpp"
 
 #ifdef Win32
 #include <trioremap.h>
@@ -59,7 +59,7 @@
 #include "basedecl.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
@@ -359,7 +359,7 @@ static void OutString(R_outpstream_t stream, const char *s, int length)
 	stream->OutChar(stream, '\n');
     }
     else
-	stream->OutBytes(stream, CXXRNOCAST(void *)s, length); /* FIXME: is this case right? */
+	stream->OutBytes(stream, RHO_NO_CAST(void *)s, length); /* FIXME: is this case right? */
 }
 
 
@@ -713,7 +713,7 @@ static int HashGet(SEXP item, SEXP ht)
 #define HAS_TAG_BIT_MASK (1 << 10)
 #define ENCODE_LEVELS(v) ((v) << 12)
 #define DECODE_LEVELS(v) ((v) >> 12)
-#define DECODE_TYPE(v) (CXXRCONSTRUCT(SEXPTYPE, (v) & 255))
+#define DECODE_TYPE(v) (RHOCONSTRUCT(SEXPTYPE, (v) & 255))
 
 static int PackFlags(int type, int levs, int isobj, int hasattr, int hastag)
 {
@@ -854,7 +854,7 @@ static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
 }
 
 #include <rpc/types.h>
-// rpc/types.h #defines FALSE to 0.  CXXR needs to stop that:
+// rpc/types.h #defines FALSE to 0.  rho needs to stop that:
 #undef FALSE
 
 #include <rpc/xdr.h>
@@ -1023,7 +1023,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    WriteItem(ENCLOS(s), ref_table, stream);
 	    GCStackRoot<> frame_pairlist(FRAME(s));
 	    WriteItem(frame_pairlist, ref_table, stream);
-	    WriteItem(nullptr, ref_table, stream);  // No hashtab field in CXXR
+	    WriteItem(nullptr, ref_table, stream);  // No hashtab field in rho
 	    WriteItem(ATTRIB(s), ref_table, stream);
 	}
     }
@@ -1047,7 +1047,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	/* With the CHARSXP cache chains maintained through the ATTRIB
 	   field the content of that field must not be serialized, so
 	   we treat it as not there. */
-	// CXXR doesn't use CHARSXP cache chains, but we keep the same logic:
+	// rho doesn't use CHARSXP cache chains, but we keep the same logic:
 	hasattr = (TYPEOF(s) != CHARSXP && ATTRIB(s) != R_NilValue);
 	flags = PackFlags(TYPEOF(s), LEVELS(s), OBJECT(s),
 			  hasattr, hastag);
@@ -1533,7 +1533,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    // Attributes:
 	    SET_ATTRIB(env, ReadItem(ref_table, stream));
 	    R_ReadItemDepth--;
-	    if (locked) R_LockEnvironment(env, CXXRCONSTRUCT(Rboolean, FALSE));
+	    if (locked) R_LockEnvironment(env, RHOCONSTRUCT(Rboolean, FALSE));
 	    /* Convert a NULL enclosure to baseenv() */
 	    if (!env->enclosingEnvironment())
 		env->setEnclosingEnvironment(Environment::base());
@@ -1653,7 +1653,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    break;
 	case WEAKREFSXP:
 	    PROTECT(s = R_MakeWeakRef(nullptr, nullptr, nullptr,
-				      CXXRCONSTRUCT(Rboolean, FALSE)));
+				      RHOCONSTRUCT(Rboolean, FALSE)));
 	    AddReadRef(ref_table, s);
 	    break;
 	case SPECIALSXP:
@@ -1780,7 +1780,7 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 	    case ATTRLANGSXP: type = LANGSXP; hasattr = TRUE; break;
 	    case ATTRLISTSXP: type = LISTSXP; hasattr = TRUE; break;
 	    }
-	    PROTECT(ans = Rf_allocSExp(CXXRCONSTRUCT(SEXPTYPE, type)));
+	    PROTECT(ans = Rf_allocSExp(RHOCONSTRUCT(SEXPTYPE, type)));
 	    if (pos >= 0)
 		SET_VECTOR_ELT(reps, pos, ans);
 	    R_ReadItemDepth++;
@@ -1924,7 +1924,7 @@ void
 R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, CXXRCONST void *, int),
+		      void (*outbytes)(R_outpstream_t, RHOCONST void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     stream->data = data;
@@ -1943,29 +1943,29 @@ R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 
 static void OutCharFile(R_outpstream_t stream, int c)
 {
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
+    FILE *fp = RHOCONSTRUCT(static_cast<FILE*>, stream->data);
     fputc(c, fp);
 }
 
 
 static int InCharFile(R_inpstream_t stream)
 {
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
+    FILE *fp = RHOCONSTRUCT(static_cast<FILE*>, stream->data);
     return fgetc(fp);
 }
 
-static void OutBytesFile(R_outpstream_t stream, CXXRCONST void *buf, int length)
+static void OutBytesFile(R_outpstream_t stream, RHOCONST void *buf, int length)
 {
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
+    FILE *fp = RHOCONSTRUCT(static_cast<FILE*>, stream->data);
     size_t out = fwrite(buf, 1, length, fp);
-    if (CXXRCONSTRUCT(int, out) != length) Rf_error(_("write failed"));
+    if (RHOCONSTRUCT(int, out) != length) Rf_error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 {
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
+    FILE *fp = RHOCONSTRUCT(static_cast<FILE*>, stream->data);
     size_t in = fread(buf, 1, length, fp);
-    if (CXXRCONSTRUCT(int, in) != length) Rf_error(_("read failed"));
+    if (RHOCONSTRUCT(int, in) != length) Rf_error(_("read failed"));
 }
 
 void
@@ -1973,7 +1973,7 @@ R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 			  R_pstream_format_t type, int version,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type, version,
+    R_InitOutPStream(stream, RHO_NO_CAST(R_pstream_data_t) fp, type, version,
 		     OutCharFile, OutBytesFile, phook, pdata);
 }
 
@@ -1982,7 +1982,7 @@ R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
 			 R_pstream_format_t type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type,
+    R_InitInPStream(stream, RHO_NO_CAST(R_pstream_data_t) fp, type,
 		    InCharFile, InBytesFile, phook, pdata);
 }
 
@@ -2015,14 +2015,14 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
     CheckInConn(con);
     if (con->text) {
 	int i;
-	char *p = CXXRCONSTRUCT(static_cast<char*>, buf);
+	char *p = RHOCONSTRUCT(static_cast<char*>, buf);
 	for (i = 0; i < length; i++)
 	    p[i] = char( Rconn_fgetc(con));
     }
     else {
 	if (stream->type == R_pstream_ascii_format) {
 	    char linebuf[4];
-	    unsigned char *p = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
+	    unsigned char *p = RHOCONSTRUCT(static_cast<unsigned char*>, buf);
 	    int i, ncread;
 	    unsigned int res;
 	    for (i = 0; i < length; i++) {
@@ -2034,7 +2034,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 		*p++ = static_cast<unsigned char>(res);
 	    }
 	} else {
-	    if (length != CXXRCONSTRUCT(int, con->read(buf, 1, length, con)))
+	    if (length != RHOCONSTRUCT(int, con->read(buf, 1, length, con)))
 		Rf_error(_("error reading from connection"));
 	}
     }
@@ -2054,18 +2054,18 @@ static int InCharConn(R_inpstream_t stream)
     }
 }
 
-static void OutBytesConn(R_outpstream_t stream, CXXRCONST void *buf, int length)
+static void OutBytesConn(R_outpstream_t stream, RHOCONST void *buf, int length)
 {
     Rconnection con = static_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	CXXRCONST char *p = CXXRCONSTRUCT(static_cast<const char*>, buf);
+	RHOCONST char *p = RHOCONSTRUCT(static_cast<const char*>, buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
     else {
-	if (length != CXXRCONSTRUCT(int, con->write(buf, 1, length, con)))
+	if (length != RHOCONSTRUCT(int, con->write(buf, 1, length, con)))
 	    Rf_error(_("error writing to connection"));
     }
 }
@@ -2107,7 +2107,7 @@ void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 	else if (type != R_pstream_ascii_format)
 	    Rf_error(_("only ascii format can be read from text mode connections"));
     }
-    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type,
+    R_InitInPStream(stream, RHO_NO_CAST(R_pstream_data_t) con, type,
 		    InCharConn, InBytesConn, phook, pdata);
 }
 
@@ -2125,7 +2125,7 @@ static SEXP CallHook(SEXP x, SEXP fun)
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden
-do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* refhook_)
+do_serializeToConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* con_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* refhook_)
 {
     /* serializeToConn(object, conn, ascii, version, hook) */
 
@@ -2142,7 +2142,7 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
 
     if (TYPEOF(ascii_) != LGLSXP)
 	Rf_error(_("'ascii' must be logical"));
-    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
+    ascii = RHOCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
     if (ascii == NA_LOGICAL) type = R_pstream_asciihex_format;
     else if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
@@ -2194,7 +2194,7 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden 
-do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* refhook_)
+do_unserializeFromConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* refhook_)
 {
     /* unserializeFromConn(conn, hook) */
 
@@ -2257,29 +2257,29 @@ typedef struct bconbuf_st {
 
 static void flush_bcon_buffer(bconbuf_t bb)
 {
-    if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
+    if (RHOCONSTRUCT(int, R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
 	Rf_error(_("error writing to connection"));
     bb->count = 0;
 }
 
 static void OutCharBB(R_outpstream_t stream, int c)
 {
-    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
+    bconbuf_t bb = RHOCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
     if (bb->count >= BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     bb->buf[bb->count++] = char( c);
 }
 
-static void OutBytesBB(R_outpstream_t stream, CXXRCONST void *buf, int length)
+static void OutBytesBB(R_outpstream_t stream, RHOCONST void *buf, int length)
 {
-    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
+    bconbuf_t bb = RHOCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
     if (bb->count + length > BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     if (length <= BCONBUFSIZ) {
 	memcpy(bb->buf + bb->count, buf, length);
 	bb->count += length;
     }
-    else if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, buf, length)) != length)
+    else if (RHOCONSTRUCT(int, R_WriteConnection(bb->con, buf, length)) != length)
 	Rf_error(_("error writing to connection"));
 }
 
@@ -2290,7 +2290,7 @@ static void InitBConOutPStream(R_outpstream_t stream, bconbuf_t bb,
 {
     bb->count = 0;
     bb->con = con;
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) bb, type, version,
+    R_InitOutPStream(stream, RHO_NO_CAST(R_pstream_data_t) bb, type, version,
 		     OutCharBB, OutBytesBB, phook, pdata);
 }
 
@@ -2350,7 +2350,7 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
     else if(needed < INT_MAX - INCR)
 	needed = (1+needed/INCR) * INCR;
 #endif
-    unsigned char *tmp = CXXRSCAST(unsigned char*, realloc(mb->buf, needed));
+    unsigned char *tmp = RHO_S_CAST(unsigned char*, realloc(mb->buf, needed));
     if (tmp == nullptr) {
 	free(mb->buf); mb->buf = nullptr;
 	Rf_error(_("cannot allocate buffer"));
@@ -2360,15 +2360,15 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
 
 static void OutCharMem(R_outpstream_t stream, int c)
 {
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = RHOCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count >= mb->size)
 	resize_buffer(mb, mb->count + 1);
     mb->buf[mb->count++] = char( c);
 }
 
-static void OutBytesMem(R_outpstream_t stream, CXXRCONST void *buf, int length)
+static void OutBytesMem(R_outpstream_t stream, RHOCONST void *buf, int length)
 {
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = RHOCONSTRUCT(static_cast<membuf_st*>, stream->data);
     R_size_t needed = mb->count + R_size_t( length);
 #ifndef LONG_VECTOR_SUPPORT
     /* There is a potential overflow here on 32-bit systems */
@@ -2382,7 +2382,7 @@ static void OutBytesMem(R_outpstream_t stream, CXXRCONST void *buf, int length)
 
 static int InCharMem(R_inpstream_t stream)
 {
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = RHOCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count >= mb->size)
 	Rf_error(_("read error"));
     return mb->buf[mb->count++];
@@ -2390,7 +2390,7 @@ static int InCharMem(R_inpstream_t stream)
 
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = RHOCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count + R_size_t( length) > mb->size)
 	Rf_error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
@@ -2403,8 +2403,8 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
 {
     mb->count = 0;
     mb->size = length;
-    mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
-    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, R_pstream_any_format,
+    mb->buf = RHOCONSTRUCT(static_cast<unsigned char*>, buf);
+    R_InitInPStream(stream, RHO_NO_CAST(R_pstream_data_t) mb, R_pstream_any_format,
 		    InCharMem, InBytesMem, phook, pdata);
 }
 
@@ -2415,7 +2415,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = 0;
     mb->buf = nullptr;
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, type, version,
+    R_InitOutPStream(stream, RHO_NO_CAST(R_pstream_data_t) mb, type, version,
 		     OutCharMem, OutBytesMem, phook, pdata);
 }
 
@@ -2431,7 +2431,7 @@ static void free_mem_buffer(membuf_t mb)
 static SEXP CloseMemOutPStream(R_outpstream_t stream)
 {
     SEXP val;
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = RHOCONSTRUCT(static_cast<membuf_st*>, stream->data);
     /* duplicate check, for future proofing */
 #ifndef LONG_VECTOR_SUPPORT
     if(mb->count > INT_MAX)
@@ -2580,7 +2580,7 @@ static char names[NC][PATH_MAX];
 static char *ptr[NC];
 
 SEXP attribute_hidden
-do_lazyLoadDBflush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBflush(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int i;
     const char *cfile = CHAR(STRING_ELT(args[0], 0));
@@ -2706,7 +2706,7 @@ static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 	Rf_error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
 	Rf_error(_("bad variable names"));
-    force = CXXRCONSTRUCT(Rboolean, Rf_asLogical(forcesxp));
+    force = RHOCONSTRUCT(Rboolean, Rf_asLogical(forcesxp));
 
     len = LENGTH(vars);
     PROTECT(val = Rf_allocVector(VECSXP, len));
@@ -2774,7 +2774,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
    If the result is a promise, then the promise is forced. */
 
 SEXP attribute_hidden
-do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* key_, CXXR::RObject* file_, CXXR::RObject* compressed_, CXXR::RObject* hook_)
+do_lazyLoadDBfetch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* key_, rho::RObject* file_, rho::RObject* compressed_, rho::RObject* hook_)
 {
     SEXP key, file, compsxp, hook;
     PROTECT_INDEX vpi;
@@ -2808,14 +2808,14 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
 }
 
 SEXP attribute_hidden
-do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getVarsFromFrame(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     return R_getVarsFromFrame(args[0], args[1], args[2]);
 }
 
 
 SEXP attribute_hidden
-do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBinsertValue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP value, file, ascii, compsxp, hook;
     value = args[0]; args = (args + 1);
@@ -2827,7 +2827,7 @@ do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
 }
 
 SEXP attribute_hidden
-do_serialize(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_serialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     if (op->variant() == 2) return R_unserialize(args[0], args[1]);
 

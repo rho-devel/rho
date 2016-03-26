@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
 #include <rlocale.h>
-#include "CXXR/uncxxr.h"
+#include "rho/unrho.hpp"
 #include "rlocale_data.h"
 
 #include <wctype.h>
@@ -122,7 +122,7 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 */
 
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int locale;
 } cjk_locale_name_t;
 
@@ -164,7 +164,7 @@ int Ri18n_wcwidth(wchar_t c)
     char lc_str[128];
     unsigned int i, j;
 
-    static CXXRCONST char *lc_cache = "";
+    static RHOCONST char *lc_cache = "";
     static int lc = 0;
 
     if (0 != strcmp(setlocale(LC_CTYPE, nullptr), lc_cache)) {
@@ -315,7 +315,7 @@ static int Ri18n_iswalnum (wint_t wc)
  * iswctype
  */
 typedef struct {
-    CXXRCONST char * name;
+    RHOCONST char * name;
     wctype_t wctype;
     int(*func)(wint_t);
 } Ri18n_wctype_func_l ;

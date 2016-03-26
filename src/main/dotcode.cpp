@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2003	      The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,14 +38,14 @@
 #include <Rmath.h>
 #include <boost/preprocessor.hpp>
 
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/RAllocStack.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/RAllocStack.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
 #endif
 
-using namespace CXXR;
+using namespace rho;
 
 /* Was 'name' prior to 2.13.0, then .NAME, but checked as
    'name' up to 2.15.1. */
@@ -336,9 +336,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return(CXXRCONSTRUCT(Rboolean, actualType == INTSXP || actualType == LGLSXP));
+	    return(RHOCONSTRUCT(Rboolean, actualType == INTSXP || actualType == LGLSXP));
 	}
-	return(CXXRCONSTRUCT(Rboolean, targetType == actualType));
+	return(RHOCONSTRUCT(Rboolean, targetType == actualType));
     }
 
     return(TRUE);
@@ -576,10 +576,10 @@ SEXP attribute_hidden R_doDotCall(DL_FUNC ofun, int nargs, SEXP *cargs,
 
 /*  This macro expands out to:
     case 1:
-	retval = CXXRNOCAST(SEXP)fun(cargs[0]);
+	retval = RHO_NO_CAST(SEXP)fun(cargs[0]);
 	break;
     case 2:
-	retval = CXXRNOCAST(SEXP)fun(cargs[0], cargs[1]);
+	retval = RHO_NO_CAST(SEXP)fun(cargs[0], cargs[1]);
 	break;
     ... on to case 65
 */
@@ -587,7 +587,7 @@ SEXP attribute_hidden R_doDotCall(DL_FUNC ofun, int nargs, SEXP *cargs,
 #define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) cargs[N]
 #define CASE_STATEMENT(Z, N, IGNORED)                                       \
     case N:                                                                 \
-	retval = CXXRNOCAST(SEXP)fun(BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0)); \
+	retval = RHO_NO_CAST(SEXP)fun(BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0)); \
 	break;
 
 	BOOST_PP_REPEAT_FROM_TO(1, BOOST_PP_INC(MAX_ARGS), CASE_STATEMENT, 0);
@@ -849,8 +849,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* Convert the arguments for use in foreign function calls. */
-    cargs = static_cast<void**>( CXXR_alloc(nargs, sizeof(void*)));
-    if (copy) cargs0 = static_cast<void**>( CXXR_alloc(nargs, sizeof(void*)));
+    cargs = static_cast<void**>( RHO_alloc(nargs, sizeof(void*)));
+    if (copy) cargs0 = static_cast<void**>( RHO_alloc(nargs, sizeof(void*)));
     for(na = 0, pa = args ; pa != R_NilValue; pa = CDR(pa), na++) {
 	if(checkTypes &&
 	   !comparePrimitiveTypes(checkTypes[na], CAR(pa))) {
@@ -908,11 +908,11 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		SEXP ss = allocVector(t, n);
 		memcpy(RAW(ss), RAW(s), n * sizeof(Rbyte));
 		SET_VECTOR_ELT(ans, na, ss);
-		cargs[na] = CXXRNOCAST(void*) RAW(ss);
+		cargs[na] = RHO_NO_CAST(void*) RAW(ss);
 #ifdef R_MEMORY_PROFILING
 		if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-	    } else cargs[na] = CXXRNOCAST(void *) RAW(s);
+	    } else cargs[na] = RHO_NO_CAST(void *) RAW(s);
 	    break;
 	case LGLSXP:
 	case INTSXP:
@@ -928,16 +928,16 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    memset(ptr, FILL, n * sizeof(int) + 2 * NG);
 		    ptr += NG;
 		    memcpy(ptr, INTEGER(s), n * sizeof(int));
-		    cargs[na] = CXXRNOCAST(void*) ptr;
+		    cargs[na] = RHO_NO_CAST(void*) ptr;
 		} else if (MAYBE_REFERENCED(s)) {
 		    SEXP ss = allocVector(t, n);
 		    memcpy(INTEGER(ss), INTEGER(s), n * sizeof(int));
 		    SET_VECTOR_ELT(ans, na, ss);
-		    cargs[na] = CXXRNOCAST(void*) INTEGER(ss);
+		    cargs[na] = RHO_NO_CAST(void*) INTEGER(ss);
 #ifdef R_MEMORY_PROFILING
 		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-		} else cargs[na] = CXXRNOCAST(void*) iptr;
+		} else cargs[na] = RHO_NO_CAST(void*) iptr;
 	    }
 	    break;
 	case REALSXP:
@@ -949,9 +949,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 			if(!R_FINITE(rptr[i]))
 			    error(_("NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
 		if (asLogical(getAttrib(s, CSingSymbol)) == 1) {
-		    float *sptr = static_cast<float*>( CXXR_alloc(n, sizeof(float)));
+		    float *sptr = static_cast<float*>( RHO_alloc(n, sizeof(float)));
 		    for (R_xlen_t i = 0 ; i < n ; i++) sptr[i] = float( REAL(s)[i]);
-		    cargs[na] = CXXRNOCAST(void*) sptr;
+		    cargs[na] = RHO_NO_CAST(void*) sptr;
 #ifdef R_MEMORY_PROFILING
 		    if (RTRACE(s)) memtrace_report(s, sptr);
 #endif
@@ -960,16 +960,16 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    memset(ptr, FILL, n * sizeof(double) + 2 * NG);
 		    ptr += NG;
 		    memcpy(ptr, REAL(s), n * sizeof(double));
-		    cargs[na] = CXXRNOCAST(void*) ptr;
+		    cargs[na] = RHO_NO_CAST(void*) ptr;
 		} else if (MAYBE_REFERENCED(s)) {
 		    SEXP ss  = allocVector(t, n);
 		    memcpy(REAL(ss), REAL(s), n * sizeof(double));
 		    SET_VECTOR_ELT(ans, na, ss);
-		    cargs[na] = CXXRNOCAST(void*) REAL(ss);
+		    cargs[na] = RHO_NO_CAST(void*) REAL(ss);
 #ifdef R_MEMORY_PROFILING
 		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-		} else cargs[na] = CXXRNOCAST(void*) rptr;
+		} else cargs[na] = RHO_NO_CAST(void*) rptr;
 	    }
 	    break;
 	case CPLXSXP:
@@ -985,16 +985,16 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    memset(ptr, FILL, n * sizeof(Rcomplex) + 2 * NG);
 		    ptr += NG;
 		    memcpy(ptr, COMPLEX(s), n * sizeof(Rcomplex));
-		    cargs[na] = CXXRNOCAST(void*) ptr;
+		    cargs[na] = RHO_NO_CAST(void*) ptr;
 		} else if (MAYBE_REFERENCED(s)) {
 		    SEXP ss = allocVector(t, n);
 		    memcpy(COMPLEX(ss), COMPLEX(s), n * sizeof(Rcomplex));
 		    SET_VECTOR_ELT(ans, na, ss);
-		    cargs[na] = CXXRNOCAST(void*) COMPLEX(ss);
+		    cargs[na] = RHO_NO_CAST(void*) COMPLEX(ss);
 #ifdef R_MEMORY_PROFILING
 		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-		} else cargs[na] = CXXRNOCAST(void *) zptr;
+		} else cargs[na] = RHO_NO_CAST(void *) zptr;
 	    }
 	    break;
 	case STRSXP:
@@ -1003,41 +1003,41 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		const char *ss = translateChar(STRING_ELT(s, 0));
 		if (n > 1)
 		    warning(_("only first string in char vector used in .Fortran"));
-		char *fptr = static_cast<char*>( CXXR_alloc(max(255, strlen(ss)) + 1, sizeof(char)));
+		char *fptr = static_cast<char*>( RHO_alloc(max(255, strlen(ss)) + 1, sizeof(char)));
 		strcpy(fptr, ss);
-		cargs[na] =  CXXRNOCAST(void*) fptr;
+		cargs[na] =  RHO_NO_CAST(void*) fptr;
 	    } else if (copy) {
-		char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*))),
-		    **cptr0 = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+		char **cptr = static_cast<char**>( RHO_alloc(n, sizeof(char*))),
+		    **cptr0 = static_cast<char**>( RHO_alloc(n, sizeof(char*)));
 		for (R_xlen_t i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    size_t nn = strlen(ss) + 1 + 2 * NG;
-		    char *ptr = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
+		    char *ptr = static_cast<char*>( RHO_alloc(nn, sizeof(char)));
 		    memset(ptr, FILL, nn);
 		    cptr[i] = cptr0[i] = ptr + NG;
 		    strcpy(cptr[i], ss);
 		}
-		cargs[na] = CXXRNOCAST(void*) cptr;
-		cargs0[na] = CXXRNOCAST(void*) cptr0;
+		cargs[na] = RHO_NO_CAST(void*) cptr;
+		cargs0[na] = RHO_NO_CAST(void*) cptr0;
 #ifdef R_MEMORY_PROFILING
 		if (RTRACE(s)) memtrace_report(s, cargs[na]);
 #endif
 	    } else {
-		char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+		char **cptr = static_cast<char**>( RHO_alloc(n, sizeof(char*)));
 		for (R_xlen_t i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    size_t nn = strlen(ss) + 1;
 		    if(nn > 1) {
-			cptr[i] = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
+			cptr[i] = static_cast<char*>( RHO_alloc(nn, sizeof(char)));
 			strcpy(cptr[i], ss);
 		    } else {
 			/* Protect ourselves against those who like to
 			   extend "", maybe using strncpy */
 			nn = 128;
-			cptr[i] = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
+			cptr[i] = static_cast<char*>( RHO_alloc(nn, sizeof(char)));
 			memset(cptr[i], 0, nn);
 		    }
-		    cargs[na] = CXXRNOCAST(void*) cptr;
+		    cargs[na] = RHO_NO_CAST(void*) cptr;
 #ifdef R_MEMORY_PROFILING
 		    if (RTRACE(s)) memtrace_report(s, cargs[na]);
 #endif
@@ -1050,9 +1050,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 				type2char(t), na + 1);
 		/* Used read-only, so this is safe */
 		n = XLENGTH(s);
-		SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+		SEXP *lptr = static_cast<SEXP *>( RHO_alloc(n, sizeof(SEXP)));
 		for (R_xlen_t i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
-		cargs[na] = CXXRNOCAST(void*) lptr;
+		cargs[na] = RHO_NO_CAST(void*) lptr;
 	    }
 	    break;
 	case CLOSXP:
@@ -1061,12 +1061,12 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	case ENVSXP:
 	    if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"),
 			    type2char(t), na + 1);
-	    cargs[na] =  CXXRNOCAST(void*) s;
+	    cargs[na] =  RHO_NO_CAST(void*) s;
 	    break;
 	case NILSXP:
 	    error(_("invalid mode (%s) to pass to C or Fortran (arg %d)"),
 		  type2char(t), na + 1);
-	    cargs[na] =  CXXRNOCAST(void*) s;
+	    cargs[na] =  RHO_NO_CAST(void*) s;
 	    break;
 	default:
 	    /* Includes pairlists from R 2.15.0 */
@@ -1210,13 +1210,13 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 			    if(*ptr++ != FILL)
 				error("array over-run in %s(\"%s\") in %s argument %d\n",
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+				      symName, type2char(RHOCONSTRUCT(SEXPTYPE, type)), na+1);
 			ptr = static_cast<unsigned char *>( p);
 			for (int i = 0; i < NG; i++)
 			    if(*--ptr != FILL)
 				error("array under-run in %s(\"%s\") in %s argument %d\n",
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+				      symName, type2char(RHOCONSTRUCT(SEXPTYPE, type)), na+1);
 		    }
 		} else {
 		    if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
@@ -1349,52 +1349,52 @@ static void *RObjToCPtr2(SEXP s)
 	{
 	    n = LENGTH(s);
 	    int *iptr = INTEGER(s);
-	    iptr = static_cast<int*>( CXXR_alloc(n, sizeof(int)));
+	    iptr = static_cast<int*>( RHO_alloc(n, sizeof(int)));
 	    for (int i = 0 ; i < n ; i++) iptr[i] = INTEGER(s)[i];
-	    return CXXRNOCAST(void*) iptr;
+	    return RHO_NO_CAST(void*) iptr;
 	}
 	break;
     case REALSXP:
 	{
 	    n = LENGTH(s);
 	    double *rptr = REAL(s);
-	    rptr = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
+	    rptr = static_cast<double*>( RHO_alloc(n, sizeof(double)));
 	    for (int i = 0 ; i < n ; i++) rptr[i] = REAL(s)[i];
-	    return CXXRNOCAST(void*) rptr;
+	    return RHO_NO_CAST(void*) rptr;
 	}
 	break;
     case CPLXSXP:
 	{
 	    n = LENGTH(s);
 	    Rcomplex *zptr = COMPLEX(s);
-	    zptr = static_cast<Rcomplex*>( CXXR_alloc(n, sizeof(Rcomplex)));
+	    zptr = static_cast<Rcomplex*>( RHO_alloc(n, sizeof(Rcomplex)));
 	    for (int i = 0 ; i < n ; i++) zptr[i] = COMPLEX(s)[i];
-	    return CXXRNOCAST(void*) zptr;
+	    return RHO_NO_CAST(void*) zptr;
 	}
 	break;
     case STRSXP:
 	{
 	    n = LENGTH(s);
-	    char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+	    char **cptr = static_cast<char**>( RHO_alloc(n, sizeof(char*)));
 	    for (int i = 0 ; i < n ; i++) {
 		const char *ss = translateChar(STRING_ELT(s, i));
-		cptr[i] = CXXRNOCAST(char*) R_alloc(strlen(ss) + 1, sizeof(char));
+		cptr[i] = RHO_NO_CAST(char*) R_alloc(strlen(ss) + 1, sizeof(char));
 		strcpy(cptr[i], ss);
 	    }
-	    return CXXRNOCAST(void*) cptr;
+	    return RHO_NO_CAST(void*) cptr;
 	}
 	break;
 	/* From here down, probably not right */
     case VECSXP:
 	{
 	    n = length(s);
-	    SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+	    SEXP *lptr = static_cast<SEXP *>( RHO_alloc(n, sizeof(SEXP)));
 	    for (int i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
-	    return CXXRNOCAST(void*) lptr;
+	    return RHO_NO_CAST(void*) lptr;
 	}
 	break;
     default:
-	return CXXRNOCAST(void*) s;
+	return RHO_NO_CAST(void*) s;
     }
     return nullptr;  // -Wall
 }
