@@ -1,5 +1,5 @@
 % File src/library/base/man/provenance.graph.Rd
-% Part of CXXR, http://www.cs.kent.ac.uk/projects/cxxr
+% Part of rho, http://www.cs.kent.ac.uk/projects/rho
 % Copyright 2012-3 Andrew R Runnalls
 % Distributed under GPL 2 or later
 
@@ -18,7 +18,7 @@ provenance.graph(names)
     currently bound within the global environment.}
 }
 \details{
-  This is a CXXR function enabled only if CXXR has been configured with
+  This is a rho function enabled only if rho has been configured with
   provenance tracking enabled.
 
   It returns details of the provenance graph of the current bindings of

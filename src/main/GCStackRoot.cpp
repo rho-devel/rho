@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@
  * Implementation of class GCStackRootBase.
  */
 
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/AddressSanitizer.h"
-#include "CXXR/GCStackFrameBoundary.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/AddressSanitizer.h"
+#include "rho/GCStackFrameBoundary.hpp"
 #include "Defn.h"
 #include "gc.h"
 
@@ -42,9 +42,9 @@ extern "C" {
 }
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	auto ensureReachableP = GCStackRootBase::ensureReachable;
     }

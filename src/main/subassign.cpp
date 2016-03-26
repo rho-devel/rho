@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,14 +93,14 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/RS.h> /* for test of S4 objects */
-#include "CXXR/ComplexVector.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/Subscripting.hpp"
+#include "rho/ComplexVector.h"
+#include "rho/ExpressionVector.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.h"
+#include "rho/RawVector.h"
+#include "rho/Subscripting.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* EnlargeVector() takes a vector "x" and changes its length to "newlen".
    This allows to assign values "past the end" of the vector or list.
@@ -382,7 +382,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call, SEXP rho)
         
     default:
 	error(_("incompatible types (from %s to %s) in subassignment type fix"),
-	      type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
+	      type2char(RHOCONSTRUCT(SEXPTYPE, which%100)), type2char(RHOCONSTRUCT(SEXPTYPE, which/100)));
     }
 
     return(100 * TYPEOF(*x) + TYPEOF(*y));
@@ -1044,7 +1044,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 
     PairList* subs;
     nsubs = SubAssignArgs(args, &x, &subs, &y);
-    S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
+    S4 = RHOCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
 
     /* Handle NULL left-hand sides.  If the right-hand side */
     /* is NULL, just return the left-hand size otherwise, */
@@ -1286,7 +1286,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 
 	default:
 	    error(_("incompatible types (from %s to %s) in [[ assignment"),
-		  type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
+		  type2char(RHOCONSTRUCT(SEXPTYPE, which%100)), type2char(RHOCONSTRUCT(SEXPTYPE, which/100)));
 	}
 	/* If we stretched, we may have a new name. */
 	/* In this case we must create a names attribute */
@@ -1413,7 +1413,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 
     PROTECT_WITH_INDEX(x, &pxidx);
     PROTECT_WITH_INDEX(val, &pvalidx);
-    S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
+    S4 = RHOCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
 
     if (MAYBE_SHARED(x)) {
 	x = shallow_duplicate(x);
@@ -1460,7 +1460,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    break;
 		}
 		else if (CDR(t) == R_NilValue && val != R_NilValue) {
-		    SETCDR(t, new CXXR::PairList);
+		    SETCDR(t, new rho::PairList);
 		    SET_TAG(CDR(t), nlist);
 		    SETCADR(t, val);
 		    break;

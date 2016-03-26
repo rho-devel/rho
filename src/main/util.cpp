@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,15 +34,15 @@
 #include "basedecl.h"
 
 #include <vector>
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/RAllocStack.h"
+#include "rho/BuiltInFunction.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/RAllocStack.h"
 
 #include <ctype.h>		/* for isspace */
 #include <float.h>		/* for DBL_MAX */
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 #undef COMPILING_R
 
@@ -138,7 +138,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    CXXRNOCAST(char *) nullptr,
+    RHO_NO_CAST(char *) nullptr,
 };
 
 const static char * const falsenames[] = {
@@ -146,7 +146,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    CXXRNOCAST(char *) nullptr,
+    RHO_NO_CAST(char *) nullptr,
 };
 
 SEXP asChar(SEXP x)
@@ -233,13 +233,13 @@ TypeTable[] = {
     { "weakref",	WEAKREFSXP },
     { "raw",		RAWSXP },
     { "S4",		S4SXP },
-    { "CXXR_extended",  CXXSXP },
-    { "CXXR_bailout",   BAILSXP },
+    { "RHO_extended",  CXXSXP },
+    { "RHO_bailout",   BAILSXP },
     /* aliases : */
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { CXXRNOCAST(char *)nullptr,     CXXRCONSTRUCT(SEXPTYPE, -1)         }
+    { RHO_NO_CAST(char *)nullptr,     RHOCONSTRUCT(SEXPTYPE, -1)         }
 };
 
 
@@ -362,7 +362,7 @@ void NORET UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
+	if (TypeTable[i].type == RHOCONSTRUCT(int, t))
 	    error(_("unimplemented type '%s' in '%s'\n"), TypeTable[i].str, s);
     }
     error(_("unimplemented type (%d) in '%s'\n"), t, s);
@@ -406,11 +406,11 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc)
     if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
 	return size_t( -1);
 
-    i_buf = CXXRNOCAST(char *)in;
+    i_buf = RHO_NO_CAST(char *)in;
     i_len = strlen(in); /* not including terminator */
     o_buf = reinterpret_cast<char *>(out);
     o_len = (size_t( nout)) * sizeof(ucs2_t);
-    status = Riconv(cd, &i_buf, CXXRNOCAST(size_t *)&i_len, &o_buf, CXXRNOCAST(size_t *)&o_len);
+    status = Riconv(cd, &i_buf, RHO_NO_CAST(size_t *)&i_len, &o_buf, RHO_NO_CAST(size_t *)&o_len);
     int serrno = errno;
     Riconv_close(cd);
     if (status == size_t(-1)) {
@@ -451,7 +451,7 @@ Rboolean isBlankString(const char *s)
 Rboolean StringBlank(SEXP x)
 {
     if (x == R_NilValue) return TRUE;
-    else return CXXRCONSTRUCT(Rboolean, CHAR(x)[0] == '\0');
+    else return RHOCONSTRUCT(Rboolean, CHAR(x)[0] == '\0');
 }
 
 /* Function to test whether a string is a true value */
@@ -550,14 +550,14 @@ SEXP nthcdr(SEXP s, int n)
 
 
 /* This is a primitive (with no arguments) */
-SEXP attribute_hidden do_nargs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nargs(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     ClosureContext *cptr = ClosureContext::innermost();
     int nargs = NA_INTEGER;
     while (cptr && cptr->workingEnvironment() != rho)
 	cptr = ClosureContext::innermost(cptr->nextOut());
     if (cptr)
-	nargs = length(CXXRCCAST(PairList*, cptr->promiseArgs()));
+	nargs = length(RHO_C_CAST(PairList*, cptr->promiseArgs()));
     return ScalarInteger(nargs);
 }
 
@@ -629,7 +629,7 @@ static void isort_with_index(int *x, int *indx, int n)
    The return value is a list with 4 elements (xi, yi, x.alone, y.alone),
    which are index vectors for rows of x or y.
 */
-SEXP attribute_hidden do_merge(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* xinds_, CXXR::RObject* yinds_, CXXR::RObject* all_x_, CXXR::RObject* all_y_)
+SEXP attribute_hidden do_merge(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* xinds_, rho::RObject* yinds_, rho::RObject* all_x_, rho::RObject* all_y_)
 {
     SEXP xi, yi, ansx, ansy, ans;
     int nx = 0, ny = 0, i, j, k, nx_lone = 0, ny_lone = 0;
@@ -649,8 +649,8 @@ SEXP attribute_hidden do_merge(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	error(_("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
-    int* ix = static_cast<int *>( CXXR_alloc(size_t( nx), sizeof(int)));
-    int* iy = static_cast<int *>( CXXR_alloc(size_t( ny), sizeof(int)));
+    int* ix = static_cast<int *>( RHO_alloc(size_t( nx), sizeof(int)));
+    int* iy = static_cast<int *>( RHO_alloc(size_t( ny), sizeof(int)));
     for(i = 0; i < nx; i++) ix[i] = i+1;
     for(i = 0; i < ny; i++) iy[i] = i+1;
     isort_with_index(INTEGER(xi), ix, nx);
@@ -743,7 +743,7 @@ SEXP static intern_getwd(void)
     return(rval);
 }
 
-SEXP attribute_hidden do_getwd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_getwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return(intern_getwd());
 }
@@ -753,7 +753,7 @@ SEXP attribute_hidden do_getwd(/*const*/ CXXR::Expression* call, const CXXR::Bui
 # include <direct.h> /* for chdir, via io.h */
 #endif
 
-SEXP attribute_hidden do_setwd(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP s = R_NilValue, wd = R_NilValue;	/* -Wall */
 
@@ -820,7 +820,7 @@ SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_basename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
+SEXP attribute_hidden do_basename(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char  buf[PATH_MAX], *p, fsp = FILESEP[0];
@@ -901,7 +901,7 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_dirname(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
+SEXP attribute_hidden do_dirname(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char buf[PATH_MAX], *p, fsp = FILESEP[0];
@@ -1028,7 +1028,7 @@ const char *getTZinfo(void)
 
 
 /* encodeString(x, w, quote, justify) */
-SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* width_, CXXR::RObject* quote_, CXXR::RObject* na_encode_, CXXR::RObject* justify_)
+SEXP attribute_hidden do_encodeString(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* width_, rho::RObject* quote_, rho::RObject* na_encode_, rho::RObject* justify_)
 {
     SEXP ans, x, s;
     R_xlen_t i, len;
@@ -1044,7 +1044,7 @@ SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CX
 	if(w != NA_INTEGER && w < 0)
 	    error(_("invalid '%s' value"), "width");
     }
-    findWidth = CXXRCONSTRUCT(Rboolean, (w == NA_INTEGER));
+    findWidth = RHOCONSTRUCT(Rboolean, (w == NA_INTEGER));
     s = quote_;
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	error(_("invalid '%s' value"), "quote");
@@ -1088,11 +1088,11 @@ SEXP attribute_hidden do_encodeString(/*const*/ CXXR::Expression* call, const CX
     return ans;
 }
 
-SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_encoding(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans, x;
     R_xlen_t i, n;
-    CXXRCONST char *tmp;
+    RHOCONST char *tmp;
 
     if (TYPEOF(x = x_) != STRSXP)
 	error(_("a character vector argument expected"));
@@ -1109,7 +1109,7 @@ SEXP attribute_hidden do_encoding(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_setencoding(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* value_)
+SEXP attribute_hidden do_setencoding(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
 {
     SEXP x, enc, tmp;
     int m;
@@ -1254,7 +1254,7 @@ utf8towcs(wchar_t *wc, const char *s, size_t n)
 	    if (m < 0) error(_("invalid input '%s' in 'utf8towcs'"), s);
 	    if (m == 0) break;
 	    res ++;
-	    if (res >= CXXRCONSTRUCT(int, n)) break;
+	    if (res >= RHOCONSTRUCT(int, n)) break;
 	}
     else
 	for(t = s; ; res++, t += m) {
@@ -1278,8 +1278,8 @@ static size_t Rwcrtomb(char *s, const wchar_t wc)
 
     b = s ? s : buf;
     if(cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < CXXRCONSTRUCT(int, sizeof(utf8_table1)/sizeof(int)); i++)
-	if (CXXRCONSTRUCT(int, cvalue) <= utf8_table1[i]) break;
+    for (i = 0; i < RHOCONSTRUCT(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (RHOCONSTRUCT(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
 	*b-- = char( (0x80 | (cvalue & 0x3f)));
@@ -1300,7 +1300,7 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
 	    m  = ssize_t( Rwcrtomb(t, *p));
 	    if(m <= 0) break;
 	    res += m;
-	    if(res >= CXXRCONSTRUCT(int, n)) break;
+	    if(res >= RHOCONSTRUCT(int, n)) break;
 	    t += m;
 	}
     } else {
@@ -1352,17 +1352,17 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 attribute_hidden
 Rboolean mbcsValid(const char *str)
 {
-    return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(nullptr, str, 0)) >= 0));
+    return  RHOCONSTRUCT(Rboolean, (int(mbstowcs(nullptr, str, 0)) >= 0));
 }
 
 /* used in src/library/grDevices/src/cairo/cairoFns.c */
 #include "valid_utf8.h"
 Rboolean utf8Valid(const char *str)
 {
-    return  CXXRCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
+    return  RHOCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
 }
 
-SEXP attribute_hidden do_validUTF8(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
+SEXP attribute_hidden do_validUTF8(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
 {
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
@@ -1374,7 +1374,7 @@ SEXP attribute_hidden do_validUTF8(CXXR::Expression* call, const CXXR::BuiltInFu
     return ans;
 }
 
-SEXP attribute_hidden do_validEnc(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
+SEXP attribute_hidden do_validEnc(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
 {
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
@@ -1399,13 +1399,13 @@ char *Rf_strchr(const char *s, int c)
     mbstate_t mb_st;
     size_t used;
 
-    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strchr(s, c));
+    if(!mbcslocale || utf8locale) return RHO_C_CAST(char*, strchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(nullptr, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) return p;
 	p += used;
     }
-    return CXXRNOCAST(char *)nullptr;
+    return RHO_NO_CAST(char *)nullptr;
 }
 
 char *Rf_strrchr(const char *s, int c)
@@ -1414,7 +1414,7 @@ char *Rf_strrchr(const char *s, int c)
     mbstate_t mb_st;
     size_t used;
 
-    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strrchr(s, c));
+    if(!mbcslocale || utf8locale) return RHO_C_CAST(char*, strrchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(nullptr, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) plast = p;
@@ -1520,7 +1520,7 @@ char *acopy_string(const char *in)
 	out = (char *) R_alloc(1 + len, sizeof(char));
 	strcpy(out, in);
     } else
-	out = CXXRCONSTRUCT(const_cast<char*>, "");
+	out = RHOCONSTRUCT(const_cast<char*>, "");
     return out;
 }
 
@@ -1564,7 +1564,7 @@ static int s2u[224] = {
 
 void *Rf_AdobeSymbol2utf8(char *work, const char *c0, int nwork)
 {
-    const unsigned char *c = reinterpret_cast<CXXRCONST unsigned char *>( c0);
+    const unsigned char *c = reinterpret_cast<RHOCONST unsigned char *>( c0);
     unsigned char *t = reinterpret_cast<unsigned char *>( work);
     while (*c) {
 	if (*c < 32) *t++ = ' ';
@@ -1754,7 +1754,7 @@ double R_atof(const char *str)
 
 /* enc2native and enc2utf8, but they are the same in a UTF-8 locale */
 /* primitive */
-SEXP attribute_hidden do_enc2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* ans)
+SEXP attribute_hidden do_enc2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* ans)
 {
     SEXP el;
     R_xlen_t i;
@@ -1998,9 +1998,9 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    break;
 		}
 	    if (collator && at == 999 && val >= 0) {
-		ucol_setStrength(collator, CXXRCONSTRUCT(UCollationStrength, val));
+		ucol_setStrength(collator, RHOCONSTRUCT(UCollationStrength, val));
 	    } else if (collator && at >= 0 && val >= 0) {
-		ucol_setAttribute(collator, CXXRCONSTRUCT(UColAttribute, at), CXXRCONSTRUCT(UColAttributeValue, val), &status);
+		ucol_setAttribute(collator, RHOCONSTRUCT(UColAttribute, at), RHOCONSTRUCT(UColAttributeValue, val), &status);
 		if (U_FAILURE(status))
 		    error("failed to set ICU collator attribute");
 	    }
@@ -2150,7 +2150,7 @@ bincode(double *x, R_xlen_t n, double *breaks, int nb,
 }
 
 /* 'breaks' cannot be a long vector as the return codes are integer. */
-SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* breaks_, CXXR::RObject* right_, CXXR::RObject* include_lowest_)
+SEXP attribute_hidden do_bincode(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* breaks_, rho::RObject* right_, rho::RObject* include_lowest_)
 {
     SEXP x, breaks, right, lowest;
     x = x_;
@@ -2175,7 +2175,7 @@ SEXP attribute_hidden do_bincode(/*const*/ CXXR::Expression* call, const CXXR::B
     return codes;
 }
 
-SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* bin_, CXXR::RObject* nbins_)
+SEXP attribute_hidden do_tabulate(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* bin_, rho::RObject* nbins_)
 {
     SEXP in = bin_, nbin = nbins_;
     if (TYPEOF(in) != INTSXP)  error("invalid input");
@@ -2196,7 +2196,7 @@ SEXP attribute_hidden do_tabulate(/*const*/ CXXR::Expression* call, const CXXR::
  *                         xt  x    right             inside       leftOp
  * x can be a long vector but xt cannot since the result is integer
 */
-SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* vec_, CXXR::RObject* x_, CXXR::RObject* rightmost_closed_, CXXR::RObject* all_inside_, CXXR::RObject* left_op_)
+SEXP attribute_hidden do_findinterval(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vec_, rho::RObject* x_, rho::RObject* rightmost_closed_, rho::RObject* all_inside_, rho::RObject* left_op_)
 {
     SEXP xt, x, right, inside, leftOp;
     xt = vec_;
@@ -2237,7 +2237,7 @@ SEXP attribute_hidden do_findinterval(/*const*/ CXXR::Expression* call, const CX
 # undef ERROR
 #endif
 #include <R_ext/Applic.h>
-SEXP attribute_hidden do_pretty(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pretty(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, nm, hi;
     double l = asReal(args[0]); args = (args + 1);
@@ -2284,7 +2284,7 @@ static void
 str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	   const char *format, const char *flag, char **result);
 
-SEXP attribute_hidden do_formatC(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formatC(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x = args[0]; args = (args + 1);
     if (!isVector(x)) error(_("'x' must be a vector"));
@@ -2295,10 +2295,10 @@ SEXP attribute_hidden do_formatC(/*const*/ CXXR::Expression* call, const CXXR::B
     const char *fmt = CHAR(STRING_ELT(args[0], 0)); args = (args + 1);
     const char *flag = CHAR(STRING_ELT(args[0], 0)); args = (args + 1);
     SEXP i_strlen = PROTECT(coerceVector(args[0], INTSXP));
-    char **cptr = static_cast<char **>( CXXR_alloc(n, sizeof(char*)));
+    char **cptr = static_cast<char **>( RHO_alloc(n, sizeof(char*)));
     for (R_xlen_t i = 0; i < n; i++) {
 	int ix = INTEGER(i_strlen)[i] + 2;
-	cptr[i] = static_cast<char *>( CXXR_alloc(ix + 1, sizeof(char)));
+	cptr[i] = static_cast<char *>( RHO_alloc(ix + 1, sizeof(char)));
 	memset(cptr[i], ' ', ix);
 	cptr[i][ix] = 0;
     }
@@ -2379,8 +2379,8 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 		const char *format, const char *flag, char **result)
 {
     int dig = abs(digits);
-    Rboolean rm_trailing_0 = CXXRCONSTRUCT(Rboolean, digits >= 0);
-    Rboolean do_fg = CXXRCONSTRUCT(Rboolean, !strcmp("fg", format)); /* TRUE  iff  format == "fg" */
+    Rboolean rm_trailing_0 = RHOCONSTRUCT(Rboolean, digits >= 0);
+    Rboolean do_fg = RHOCONSTRUCT(Rboolean, !strcmp("fg", format)); /* TRUE  iff  format == "fg" */
     double xx;
     int iex;
     size_t j, len_flag = strlen(flag);

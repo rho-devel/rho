@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2012	The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,24 +47,24 @@
 #include "arithmetic.h"
 #include "basedecl.h"
 
-#include "CXXR/ArgList.hpp"
-#include "CXXR/BailoutContext.hpp"
-#include "CXXR/Closure.h"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackFrameBoundary.hpp"
-#include "CXXR/ListFrame.hpp"
-#include "CXXR/LoopBailout.hpp"
-#include "CXXR/LoopException.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/ProvenanceTracker.h"
-#include "CXXR/ReturnBailout.hpp"
-#include "CXXR/ReturnException.hpp"
-#include "CXXR/S3Launcher.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/BailoutContext.hpp"
+#include "rho/Closure.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/ExpressionVector.h"
+#include "rho/GCStackFrameBoundary.hpp"
+#include "rho/ListFrame.hpp"
+#include "rho/LoopBailout.hpp"
+#include "rho/LoopException.hpp"
+#include "rho/Promise.h"
+#include "rho/ProvenanceTracker.h"
+#include "rho/ReturnBailout.hpp"
+#include "rho/ReturnException.hpp"
+#include "rho/S3Launcher.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 #ifdef R_PROFILING
 
@@ -152,7 +152,7 @@ static int getFilenum(const char* filename) {
 
     if (fnum == R_Line_Profiling-1) {
 	size_t len = strlen(filename);
-	if (fnum >= CXXRCONSTRUCT(int, R_Srcfile_bufcount)) { /* too many files */
+	if (fnum >= RHOCONSTRUCT(int, R_Srcfile_bufcount)) { /* too many files */
 	    R_Profiling_Error = 1;
 	    return 0;
 	}
@@ -243,7 +243,7 @@ static void doprof(int sig)  /* sig is ignored in Windows */
 	    reset_duplicate_counter();
     }
 
-// R_gc_running() not (yet) implemented in CXXR:
+// R_gc_running() not (yet) implemented in rho:
 #if 0
     if (R_GC_Profiling && R_gc_running())
 	strcat(buf, "\"<GC>\" ");
@@ -252,7 +252,7 @@ static void doprof(int sig)  /* sig is ignored in Windows */
     if (R_Line_Profiling)
 	lineprof(buf, R_Srcref);
 
-// CXXR FIXME: not yet adapted for CXXR:
+// rho FIXME: not yet adapted for rho:
 #if 0
     for (Evaluator::Context* cptr = Evaluator::Context::innermost();
 	 cptr; cptr = cptr->nextOut()) {
@@ -779,7 +779,7 @@ static SEXP assignCall(SEXP op, SEXP symbol, SEXP fun,
 
 Rboolean asLogicalNoNA(SEXP s, SEXP call)
 {
-    Rboolean cond = CXXRCONSTRUCT(Rboolean, NA_LOGICAL);
+    Rboolean cond = RHOCONSTRUCT(Rboolean, NA_LOGICAL);
 
     if (length(s) > 1)
     {
@@ -791,13 +791,13 @@ Rboolean asLogicalNoNA(SEXP s, SEXP call)
 	/* inline common cases for efficiency */
 	switch(TYPEOF(s)) {
 	case LGLSXP:
-	    cond = CXXRCONSTRUCT(Rboolean, LOGICAL(s)[0]);
+	    cond = RHOCONSTRUCT(Rboolean, LOGICAL(s)[0]);
 	    break;
 	case INTSXP:
-	    cond = CXXRCONSTRUCT(Rboolean, INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
+	    cond = RHOCONSTRUCT(Rboolean, INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
 	    break;
 	default:
-	    cond = CXXRCONSTRUCT(Rboolean, Rf_asLogical(s));
+	    cond = RHOCONSTRUCT(Rboolean, Rf_asLogical(s));
 	}
     }
 
@@ -908,7 +908,7 @@ SEXP attribute_hidden do_for_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if ( !Rf_isSymbol(sym) ) Rf_errorcall(call, _("non-symbol loop variable"));
 
-    /* CXXR FIXME
+    /* rho FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
@@ -1045,7 +1045,7 @@ static SEXP do_while_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> t;
     volatile SEXP body;
 
-    /* CXXR FIXME
+    /* rho FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
@@ -1107,7 +1107,7 @@ static SEXP do_repeat_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> t;
     volatile SEXP body;
 
-    /* CXXR FIXME
+    /* rho FIXME
     if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
@@ -1173,9 +1173,9 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-RObject* attribute_hidden do_paren(CXXR::Expression* call,
-				   const CXXR::BuiltInFunction* op,
-				   CXXR::RObject* x_)
+RObject* attribute_hidden do_paren(rho::Expression* call,
+				   const rho::BuiltInFunction* op,
+				   rho::RObject* x_)
 {
     return x_;
 }
@@ -1262,7 +1262,7 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
  *  out efficiently using previously computed components.
  */
 
-// CXXR here (necessarily) uses a proper list, with x as the CAR of
+// rho here (necessarily) uses a proper list, with x as the CAR of
 // the last element.
 
 /*
@@ -1466,7 +1466,7 @@ SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rhs = replaceCall(tmp, R_TmpvalSymbol, CDDR(expr), rhsprom);
 	    rhs = Rf_eval(rhs, rho);
 	    SET_PRVALUE(rhsprom, rhs);
-	    // Try doing without this in CXXR:
+	    // Try doing without this in rho:
 	    // SET_PRCODE(rhsprom, rhs); /* not good but is what we have been doing */
 	    lhs = lhs->tail();
 	    expr = firstarg;
@@ -1497,7 +1497,7 @@ SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	SET_TEMPVARLOC_FROM_CAR(tmploc, lhs);
 	static std::vector<Symbol*> assignsyms = obtainAssignSyms();
-	// Second arg in the foll. changed in CXXR at r253 (2008-03-18):
+	// Second arg in the foll. changed in rho at r253 (2008-03-18):
 	expr = assignCall(assignsyms[PRIMVAL(op)], CADR(lhs),
 			  afun, R_TmpvalSymbol, CDDR(expr), rhsprom);
 	expr = Rf_eval(expr, rho);
@@ -1806,11 +1806,11 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
        originally used to get it.
     */
     if (cptr->function() != R_NilValue)
-	PROTECT(s = CXXRCCAST(FunctionBase*, cptr->function()));
-    else if( TYPEOF(CAR(CXXRCCAST(Expression*, cptr->call()))) == SYMSXP)
-	PROTECT(s = Rf_findFun(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
+	PROTECT(s = RHO_C_CAST(FunctionBase*, cptr->function()));
+    else if( TYPEOF(CAR(RHO_C_CAST(Expression*, cptr->call()))) == SYMSXP)
+	PROTECT(s = Rf_findFun(CAR(RHO_C_CAST(Expression*, cptr->call())), cptr->callEnvironment()));
     else
-	PROTECT(s = Rf_eval(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
+	PROTECT(s = Rf_eval(CAR(RHO_C_CAST(Expression*, cptr->call())), cptr->callEnvironment()));
     if (TYPEOF(s) != CLOSXP)
 	Rf_error(_("'Recall' called from outside a closure"));
     Closure* closure = SEXP_downcast<Closure*>(s);
@@ -2074,7 +2074,7 @@ SEXP R_ClosureExpr(SEXP p)
     return BODY(p);
 }
 
-SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_loadfile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP file, s;
     FILE *fp;
@@ -2094,7 +2094,7 @@ SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::
     return s;
 }
 
-SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_savefile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     FILE *fp;
 
@@ -2113,7 +2113,7 @@ SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int old = R_num_math_threads, newi;
     newi = Rf_asInteger(args[0]);
@@ -2122,7 +2122,7 @@ SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const C
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setmaxnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int old = R_max_num_math_threads, newi;
     newi = Rf_asInteger(args[0]);

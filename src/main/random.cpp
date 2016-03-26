@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2003--2008  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,10 +37,10 @@
 #include "basedecl.h"
 #include <errno.h>
 #include "Internal.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/RAllocStack.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/RAllocStack.h"
 
-using namespace CXXR;
+using namespace rho;
 
 /*
  *  Unequal Probability Sampling.
@@ -202,7 +202,7 @@ static R_INLINE double ru()
 /* do_sample - probability sampling with/without replacement.
    .Internal(sample(n, size, replace, prob))
 */
-SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* size_, CXXR::RObject* replace_, CXXR::RObject* prob_)
+SEXP attribute_hidden do_sample(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* size_, rho::RObject* replace_, rho::RObject* prob_)
 {
     SEXP x, y, sn, sk, prob, sreplace;
 
@@ -260,7 +260,7 @@ SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    } else {
 #ifdef LONG_VECTOR_SUPPORT
 		R_xlen_t n = R_xlen_t( dn);
-		double *x = static_cast<double *>(CXXR_alloc(n, sizeof(double)));
+		double *x = static_cast<double *>(RHO_alloc(n, sizeof(double)));
 		double *ry = REAL(y);
 		for (R_xlen_t i = 0; i < n; i++) x[i] = double( i);
 		for (R_xlen_t i = 0; i < k; i++) {
@@ -280,7 +280,7 @@ SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    if (replace || k < 2) {
 		for (int i = 0; i < k; i++) iy[i] = int(dn * unif_rand() + 1);
 	    } else {
-		int *x = static_cast<int *>(CXXR_alloc(n, sizeof(int)));
+		int *x = static_cast<int *>(RHO_alloc(n, sizeof(int)));
 		for (int i = 0; i < n; i++) x[i] = i;
 		for (int i = 0; i < k; i++) {
 		    int j = int(n * unif_rand());

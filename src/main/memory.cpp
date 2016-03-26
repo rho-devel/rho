@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2013  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,16 +38,16 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "CXXR/ComplexVector.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/FunctionContext.hpp"
-#include "CXXR/GCManager.hpp"
-#include "CXXR/IntVector.h"
-#include "CXXR/LogicalVector.h"
-#include "CXXR/MemoryBank.hpp"
-#include "CXXR/RealVector.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/StdFrame.hpp"
+#include "rho/ComplexVector.h"
+#include "rho/ExpressionVector.h"
+#include "rho/FunctionContext.hpp"
+#include "rho/GCManager.hpp"
+#include "rho/IntVector.h"
+#include "rho/LogicalVector.h"
+#include "rho/MemoryBank.hpp"
+#include "rho/RealVector.h"
+#include "rho/RawVector.h"
+#include "rho/StdFrame.hpp"
 
 #include <Defn.h>
 #include <Internal.h>
@@ -55,7 +55,7 @@
 #include <R_ext/Rdynload.h>
 #include "Rdynpriv.h"
 
-using namespace CXXR;
+using namespace rho;
 
 #if defined(Win32)
 extern void *Rm_malloc(size_t n);
@@ -74,7 +74,7 @@ extern void *Rm_realloc(void * p, size_t n);
    length on a 64-bit system.
 */
 
-// The following are 'loose wheels' in CXXR: they have no effect.
+// The following are 'loose wheels' in rho: they have no effect.
 static int gc_force_wait = 0;
 static int gc_force_gap = 0;
 
@@ -96,7 +96,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* e_, CXXR::RObject* f_, CXXR::RObject* onexit_)
+SEXP attribute_hidden do_regFinaliz(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* e_, rho::RObject* f_, rho::RObject* onexit_)
 {
     int onexit;
 
@@ -118,7 +118,7 @@ SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR
 
 /* public interface for controlling GC torture settings */
 /* maybe, but in no header */
-// NB: all these are loose wheels in CXXR.
+// NB: all these are loose wheels in rho.
 void R_gc_torture(int gap, int wait, Rboolean inhibit)
 {
     if (gap != NA_INTEGER && gap >= 0)
@@ -129,13 +129,13 @@ void R_gc_torture(int gap, int wait, Rboolean inhibit)
     }
 }
 
-SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_)
+SEXP attribute_hidden do_gctorture(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_)
 {
     int gap;
     SEXP old = ScalarLogical(gc_force_wait > 0);
 
     if (isLogical(on_)) {
-	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(on_));
+	Rboolean on = RHOCONSTRUCT(Rboolean, asLogical(on_));
 	if (on == NA_LOGICAL) gap = NA_INTEGER;
 	else if (on) gap = 1;
 	else gap = 0;
@@ -147,7 +147,7 @@ SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR:
     return old;
 }
 
-SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* step_, CXXR::RObject* wait_, CXXR::RObject* inhibit_release_)
+SEXP attribute_hidden do_gctorture2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* step_, rho::RObject* wait_, rho::RObject* inhibit_release_)
 {
     int gap, wait;
     Rboolean inhibit;
@@ -155,13 +155,13 @@ SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR
 
     gap = asInteger(step_);
     wait = asInteger(wait_);
-    inhibit = CXXRCONSTRUCT(Rboolean, asLogical(inhibit_release_));
+    inhibit = RHOCONSTRUCT(Rboolean, asLogical(inhibit_release_));
     R_gc_torture(gap, wait, inhibit);
 
     return old;
 }
 
-SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_)
+SEXP attribute_hidden do_gcinfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_)
 {
     std::ostream* report_os = GCManager::setReporting(nullptr);
     int want_reporting = asLogical(verbose_);
@@ -178,14 +178,14 @@ void attribute_hidden get_current_mem(size_t *smallvsize,
 				      size_t *largevsize,
 				      size_t *nodes)
 {
-    // All subject to change in CXXR:
+    // All subject to change in rho:
     *smallvsize = 0;
     *largevsize = MemoryBank::bytesAllocated()/sizeof(VECREC);
     *nodes = GCNode::numNodes();
     return;
 }
 
-SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* verbose_, CXXR::RObject* reset_)
+SEXP attribute_hidden do_gc(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_, rho::RObject* reset_)
 {
     std::ostream* report_os
 	= GCManager::setReporting(asLogical(verbose_) ? &std::cerr : nullptr);
@@ -209,7 +209,7 @@ SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
-SEXP attribute_hidden do_gctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gctime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans;
     if (num_args == 0)
@@ -259,7 +259,7 @@ void InitMemory()
     GCManager::setReporting(R_Verbose ? &std::cerr : nullptr);
     GCManager::setGCThreshold(R_VSize);
 
-    ::CXXR::initializeMemorySubsystem();
+    ::rho::initializeMemorySubsystem();
 }
 
 
@@ -421,7 +421,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_memoryprofile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));
@@ -431,7 +431,7 @@ SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const C
 	SET_STRING_ELT(nms, i, type2str(SEXPTYPE(i > LGLSXP? i+2 : i)));
     }
     setAttrib(ans, R_NamesSymbol, nms);
-    // Just return a vector of zeroes in CXXR.
+    // Just return a vector of zeroes in rho.
     UNPROTECT(2);
     return ans;
 }
@@ -577,7 +577,7 @@ SEXP do_Rprofmem(SEXP args)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
     filename = STRING_ELT(CAR(args), 0);
-    threshold = CXXRCONSTRUCT(R_size_t, REAL(CADDR(args))[0]);
+    threshold = RHOCONSTRUCT(R_size_t, REAL(CADDR(args))[0]);
     if (strlen(CHAR(filename)))
 	R_InitMemReporting(filename, append_mode, threshold);
     else

@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995--2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,14 +48,14 @@
 #include <R_ext/Print.h>
 #include <cstdarg>
 
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/CommandTerminated.hpp"
-#include "CXXR/ListVector.h"
-#include "CXXR/ReturnException.hpp"
-#include "CXXR/StackChecker.hpp"
+#include "rho/ClosureContext.hpp"
+#include "rho/CommandTerminated.hpp"
+#include "rho/ListVector.h"
+#include "rho/ReturnException.hpp"
+#include "rho/StackChecker.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 #ifndef min
 #define min(a, b) (a<b?a:b)
@@ -86,7 +86,7 @@ static void try_jump_to_restart(void);
 static void NORET
 jump_to_top_ex(Rboolean, Rboolean, Rboolean, Rboolean, Rboolean);
 static void signalInterrupt(void);
-static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip);
+static RHOCONST char * R_ConciseTraceback(SEXP call, int skip);
 
 /* Interface / Calling Hierarchy :
 
@@ -262,7 +262,7 @@ void warning(const char *format, ...)
     p = buf + strlen(buf) - 1;
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
     RprintTrunc(buf);
-    warningcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, nullptr), "%s", buf);
+    warningcall(c ? RHO_C_CAST(Expression*, c->call()) : RHO_S_CAST(RObject*, nullptr), "%s", buf);
 }
 
 /* declarations for internal condition handling */
@@ -355,7 +355,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 		Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
 		RprintTrunc(buf);
 		if(R_ShowWarnCalls && call != R_NilValue) {
-		    CXXRCONST char *tr =  R_ConciseTraceback(call, 0); 
+		    RHOCONST char *tr =  R_ConciseTraceback(call, 0); 
 		    size_t nc = strlen(tr);
 		    if (nc && nc + (int)strlen(buf) + 8 < BUFSIZE) {
 			strcat(buf, "\n");
@@ -555,7 +555,7 @@ static SEXP GetSrcLoc(SEXP srcref)
 static char errbuf[BUFSIZE];
 
 const char *R_curErrorBuf() {
-    return CXXRNOCAST(const char *)errbuf;
+    return RHO_NO_CAST(const char *)errbuf;
 }
 
 /* temporary hook to allow experimenting with alternate error mechanisms */
@@ -601,8 +601,8 @@ verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    SEXP opt = GetOption1(install("show.error.locations"));
 	    if (!isNull(opt)) {
 		if (TYPEOF(opt) == STRSXP && length(opt) == 1) {
-		    if (pmatch(ScalarString(mkChar("top")), opt, CXXRFALSE)) skip = 0;
-		    else if (pmatch(ScalarString(mkChar("bottom")), opt, CXXRFALSE)) skip = -1;
+		    if (pmatch(ScalarString(mkChar("top")), opt, RHO_FALSE)) skip = 0;
+		    else if (pmatch(ScalarString(mkChar("bottom")), opt, RHO_FALSE)) skip = -1;
 		} else if (TYPEOF(opt) == LGLSXP)
 		    skip = asLogical(opt) == 1 ? 0 : NA_INTEGER;
 		else
@@ -718,7 +718,7 @@ void NORET errorcall(SEXP call, const char *format,...)
     va_end(ap);
 }
 
-SEXP attribute_hidden do_geterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_geterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP res;
 
@@ -737,7 +737,7 @@ void error(const char *format, ...)
     va_start(ap, format);
     Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
     va_end(ap);
-    errorcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, nullptr), "%s", buf);
+    errorcall(c ? RHO_C_CAST(Expression*, c->call()) : RHO_S_CAST(RObject*, nullptr), "%s", buf);
 }
 
 static void try_jump_to_restart(void)
@@ -851,7 +851,7 @@ static void jump_to_top_ex(Rboolean traceback,
 
 	if ( !R_Interactive && !haveHandler
 	     /* only bail out if at session top level, not in R_tryEval calls */
-	     // CXXR FIXME: this test not yet implemented in CXXR:
+	     // rho FIXME: this test not yet implemented in rho:
 	     /*&& R_ToplevelContext == R_SessionContext*/ ) {
 	    REprintf(_("Execution halted\n"));
 	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
@@ -881,7 +881,7 @@ void NORET jump_to_toplevel()
 /* #define DEBUG_GETTEXT 1 */
 
 /* gettext(domain, string) */
-SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* domain_)
+SEXP attribute_hidden do_gettext(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* domain_)
 {
 #ifdef ENABLE_NLS
     const char *domain = "", *cfn;
@@ -901,7 +901,7 @@ SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::B
 	     cptr != nullptr;
 	     cptr = ClosureContext::innermost(cptr->nextOut())) {
 	    /* stop() etc have internal call to .makeMessage */
-	    cfn = CHAR(STRING_ELT(deparse1s(CAR(CXXRCCAST(Expression*, cptr->call()))), 0));
+	    cfn = CHAR(STRING_ELT(deparse1s(CAR(RHO_C_CAST(Expression*, cptr->call()))), 0));
 	    if(streql(cfn, "stop") || streql(cfn, "warning")
 	       || streql(cfn, "message")) continue;
 	    rho = cptr->workingEnvironment();
@@ -983,7 +983,7 @@ SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* ngettext(n, msg1, msg2, domain) */
-SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* msg1_, CXXR::RObject* msg2_, CXXR::RObject* domain_)
+SEXP attribute_hidden do_ngettext(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* msg1_, rho::RObject* msg2_, rho::RObject* domain_)
 {
 #ifdef ENABLE_NLS
     const char *domain = "", *cfn;;
@@ -1050,7 +1050,7 @@ SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::
 
 
 /* bindtextdomain(domain, dirname) */
-SEXP attribute_hidden do_bindtextdomain(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* domain_, CXXR::RObject* dirname_)
+SEXP attribute_hidden do_bindtextdomain(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* domain_, rho::RObject* dirname_)
 {
 #ifdef ENABLE_NLS
     char *res;
@@ -1075,7 +1075,7 @@ static SEXP findCall(void)
 {
     ClosureContext *cptr
 	= ClosureContext::innermost(ClosureContext::innermost()->nextOut());
-    return (cptr ? CXXRCCAST(Expression*, cptr->call()) : nullptr);
+    return (cptr ? RHO_C_CAST(Expression*, cptr->call()) : nullptr);
 }
 
 SEXP attribute_hidden NORET do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1169,7 +1169,7 @@ const ErrorDB[] = {
 
 static struct {
     R_WARNING code;
-    CXXRCONST char* format;
+    RHOCONST char* format;
 }
 WarningDB[] = {
     { WARNING_coerce_NA,	N_("NAs introduced by coercion")	},
@@ -1273,7 +1273,7 @@ SEXP R_GetTraceback(int skip)
 	if (skip > 0)
 	    skip--;
 	else {
-	    SETCAR(t, deparse1(CXXRCCAST(Expression*, c->call()), CXXRFALSE, DEFAULTDEPARSE));
+	    SETCAR(t, deparse1(RHO_C_CAST(Expression*, c->call()), RHO_FALSE, DEFAULTDEPARSE));
 	    if (c->sourceLocation() && !isNull(c->sourceLocation())) 
 		setAttrib(CAR(t), R_SrcrefSymbol, duplicate(c->sourceLocation()));
 	    t = CDR(t);
@@ -1282,7 +1282,7 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 
-SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_traceback(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     int skip;
 
@@ -1296,7 +1296,7 @@ SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR:
 
 // Utility intended to be called from a debugger.  Prints out the
 // hierarchy of R function calls, as recorded by FunctionContexts.
-namespace CXXR {
+namespace rho {
     void TRACEBACK()
     {
 	GCManager::GCInhibitor gci;
@@ -1312,7 +1312,7 @@ namespace CXXR {
     }
 }
 
-static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
+static RHOCONST char * R_ConciseTraceback(SEXP call, int skip)
 {
     static char buf[560];
     FunctionContext *c;
@@ -1328,7 +1328,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 	if (skip > 0)
 	    skip--;
 	else {
-	    SEXP fun = CAR(CXXRCCAST(Expression*, c->call()));
+	    SEXP fun = CAR(RHO_C_CAST(Expression*, c->call()));
 	    const char *funstr = (TYPEOF(fun) == SYMSXP) ?
 		CHAR(PRINTNAME(fun)) : "<Anonymous>";
 	    if(streql(funstr, "stop") ||
@@ -1340,7 +1340,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 		ncalls++;
 		if(too_many) {
 		    top = funstr;
-		} else if(CXXRCONSTRUCT(int, strlen(buf)) > R_NShowCalls) {
+		} else if(RHOCONSTRUCT(int, strlen(buf)) > R_NShowCalls) {
 		    memmove(buf+4, buf, strlen(buf)+1);
 		    memcpy(buf, "... ", 4);
 		    too_many = TRUE;
@@ -1475,7 +1475,7 @@ namespace {
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP classes, handlers, parentenv, target, oldstack, newstack, result;
     int calling, i, n;
@@ -1618,7 +1618,7 @@ static SEXP findConditionHandler(SEXP cond)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_signalCondition(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cond_, CXXR::RObject* message_, CXXR::RObject* call_)
+SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cond_, rho::RObject* message_, rho::RObject* call_)
 {
     SEXP list, cond, msg, ecall, oldstack;
 
@@ -1724,7 +1724,7 @@ R_InsertRestartHandlers(ClosureContext *cptr, Rboolean browser)
     UNPROTECT(2);
 }
 
-SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* message_, CXXR::RObject* call_)
+SEXP attribute_hidden do_dfltWarn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_, rho::RObject* call_)
 {
     const char *msg;
     SEXP ecall;
@@ -1738,7 +1738,7 @@ SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::
     return R_NilValue;
 }
 
-SEXP attribute_hidden NORET do_dfltStop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* message_, CXXR::RObject* call_)
+SEXP attribute_hidden NORET do_dfltStop(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_, rho::RObject* call_)
 {
     const char *msg;
     SEXP ecall;
@@ -1756,7 +1756,7 @@ SEXP attribute_hidden NORET do_dfltStop(/*const*/ CXXR::Expression* call, const 
  * Restart Handling
  */
 
-SEXP attribute_hidden do_getRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* i_)
+SEXP attribute_hidden do_getRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* i_)
 {
     int i;
     SEXP list;
@@ -1787,7 +1787,7 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_addRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* restart_)
+SEXP attribute_hidden do_addRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* restart_)
 {
     CHECK_RESTART(restart_);
     R_RestartStack = CONS(restart_, R_RestartStack);
@@ -1823,13 +1823,13 @@ static void NORET invokeRestart(SEXP r, SEXP arglist)
     }
 }
 
-SEXP attribute_hidden NORET do_invokeRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* r_, CXXR::RObject* args_)
+SEXP attribute_hidden NORET do_invokeRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* r_, rho::RObject* args_)
 {
     CHECK_RESTART(r_);
     invokeRestart(r_, args_);
 }
 
-SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_seterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP msg;
 
@@ -1841,7 +1841,7 @@ SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const C
 }
 
 SEXP attribute_hidden
-do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+do_printDeferredWarnings(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     R_PrintDeferredWarnings();
     return R_NilValue;

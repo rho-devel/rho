@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,31 +25,31 @@
 /** @file Environment.cpp
  *
  *
- * @brief Implementation of class CXXR:Environment and associated C
+ * @brief Implementation of class rho:Environment and associated C
  * interface.
  */
 
-#include "CXXR/Environment.h"
+#include "rho/Environment.h"
 
 #include <cstdlib>
 #include <iostream>
 #include <typeinfo>
 #include "R_ext/Error.h"
 #include "localization.h"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/ListFrame.hpp"
-#include "CXXR/StdFrame.hpp"
-#include "CXXR/StringVector.h"
-#include "CXXR/Symbol.h"
+#include "rho/BuiltInFunction.h"
+#include "rho/FunctionBase.h"
+#include "rho/ListFrame.hpp"
+#include "rho/StdFrame.hpp"
+#include "rho/StringVector.h"
+#include "rho/Symbol.h"
 #include "sparsehash/dense_hash_map"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	SEXP (*ENCLOSp)(SEXP x) = ENCLOS;
 	Rboolean (*ENV_DEBUGp)(SEXP x) = ENV_DEBUG;
@@ -86,7 +86,7 @@ class Environment::Cache : public google::dense_hash_map<
     const Symbol*, Frame::Binding*,
     PointerHash,
     std::equal_to<const Symbol*>,
-    CXXR::Allocator<std::pair<const Symbol* const,
+    rho::Allocator<std::pair<const Symbol* const,
 			      Frame::Binding*> >
     >
 { };
@@ -378,7 +378,7 @@ namespace {
     }
 }
 
-namespace CXXR {
+namespace rho {
     FunctionBase*
     findFunction(const Symbol* symbol, Environment* env, bool inherits)
     {
@@ -391,7 +391,7 @@ namespace CXXR {
 // Utility intended to be called from a debugger.  Prints out the
 // names of the Symbols in an Environment, together with the addresses
 // the Symbols are bound to.
-namespace CXXR {
+namespace rho {
     void LS(SEXP s) {
 	const Environment* env = SEXP_downcast<Environment*>(s);
 	const Frame* frame = env->frame();
@@ -401,7 +401,7 @@ namespace CXXR {
 	    const Symbol* sym = *it;
 	    const RObject* val = frame->binding(sym)->rawValue();
 	    cout << '\"' << sym->name()->stdstring()
-		 << "\" (\'CXXR::RObject\'*)" << val;
+		 << "\" (\'rho::RObject\'*)" << val;
 	    if (val)
 		cout << " [" << typeid(*val).name() << ']';
 	    cout << '\n';

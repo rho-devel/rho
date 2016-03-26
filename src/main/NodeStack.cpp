@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,16 +24,16 @@
 
 /** @file NodeStack.cpp
  *
- * Implementation of class CXXR::NodeStack.
+ * Implementation of class rho::NodeStack.
  */
 
-#include "CXXR/NodeStack.hpp"
+#include "rho/NodeStack.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
-using namespace CXXR;
+using namespace rho;
 
 void NodeStack::Scope::nestingError()
 {
@@ -108,7 +108,7 @@ void NodeStack::retarget(RObject* node, size_t index)
     m_vector[index] = node;
 }
 #else
-namespace CXXR {
+namespace rho {
 namespace ForceNonInline {
 void (NodeStack::*nodeStackPopP)(unsigned int) = &NodeStack::pop;
 void (NodeStack::*nodeStackRetargetP)(RObject*, size_t) = &NodeStack::retarget;

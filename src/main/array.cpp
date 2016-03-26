@@ -4,11 +4,11 @@
  *  Copyright (C) 1998-2015   The R Core Team
  *  Copyright (C) 2002-2015   The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@
 #include <R_ext/Itermacros.h>
 
 #include "duplicate.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/Subscripting.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/RAllocStack.h"
+#include "rho/Subscripting.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* "GetRowNames" and "GetColNames" are utility routines which
  * locate and return the row names and column names from the
@@ -71,7 +71,7 @@ SEXP GetColNames(SEXP dimnames)
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_matrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP vals, ans, snr, snc, dimnames;
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
@@ -164,9 +164,9 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
     PROTECT(ans = allocMatrix(TYPEOF(vals), nr, nc));
     if(lendat) {
 	if (isVector(vals))
-	    copyMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
+	    copyMatrix(ans, vals, RHOCONSTRUCT(Rboolean, byrow));
 	else
-	    copyListMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
+	    copyListMatrix(ans, vals, RHOCONSTRUCT(Rboolean, byrow));
     } else if (isVector(vals)) { /* fill with NAs */
 	R_xlen_t N = R_xlen_t( nr) * nc, i;
 	switch(TYPEOF(vals)) {
@@ -305,7 +305,7 @@ SEXP DropDims(SEXP x)
     return vb;
 }
 
-SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_drop(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     GCStackRoot<> x;
     SEXP xdims;
@@ -327,7 +327,7 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 /* Length of Primitive Objects */
 
-SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_length(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x = args[0];
 
@@ -411,7 +411,7 @@ static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
     return ans;
 }
 
-SEXP attribute_hidden do_lengths(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x = args[0], ans;
     R_xlen_t x_len, i;
@@ -460,7 +460,7 @@ SEXP attribute_hidden do_lengths(/*const*/ CXXR::Expression* call, const CXXR::B
     return ans;
 }
 
-SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rowscols(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, ans;
     int i, j, nr, nc;
@@ -495,7 +495,7 @@ SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    CXXRCONST char *transa = "N", *transb = "N";
+    RHOCONST char *transa = "N", *transb = "N";
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
     Rboolean have_na = FALSE;
@@ -529,7 +529,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    CXXRCONST char *transa = "N", *transb = "N";
+    RHOCONST char *transa = "N", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -573,7 +573,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRCONST char *trans = "T", *uplo = "U";
+    RHOCONST char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     R_xlen_t NC = nc;
     if (nr > 0 && nc > 0) {
@@ -589,7 +589,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRCONST char *transa = "T", *transb = "N";
+    RHOCONST char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -603,7 +603,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRCONST char *transa = "T", *transb = "N";
+    RHOCONST char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -618,7 +618,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRCONST char *trans = "N", *uplo = "U";
+    RHOCONST char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     if (nr > 0 && nc > 0) {
 	F77_CALL(dsyrk)(uplo, trans, &nr, &nc, &one, x, &nr, &zero, z, &nr);
@@ -634,7 +634,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRCONST char *transa = "N", *transb = "T";
+    RHOCONST char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -648,7 +648,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRCONST char *transa = "N", *transb = "T";
+    RHOCONST char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -662,7 +662,7 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 }
 
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
-SEXP do_crossprod(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x, CXXR::RObject* y)
+SEXP do_crossprod(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y)
 {
     int ldx, ldy, nrx, ncx, nry, ncy;
     SEXPTYPE mode;
@@ -985,7 +985,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 			SEXP_downcast<BuiltInFunction*>(op), x, y);
 }
 
-SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_transpose(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP a, r, dims, dimnames, dimnamesnames = R_NilValue,
 	ndimnamesnames, rnames, cnames;
@@ -1127,7 +1127,7 @@ SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR:
 	lj += iip[itmp] * stride[itmp];
 
 /* aperm (a, perm, resize = TRUE) */
-SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* a_, CXXR::RObject* perm_, CXXR::RObject* resize_)
+SEXP attribute_hidden do_aperm(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a_, rho::RObject* perm_, rho::RObject* resize_)
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
@@ -1142,7 +1142,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     /* check the permutation */
 
-    int *pp = static_cast<int *>( CXXR_alloc(size_t( n), sizeof(int)));
+    int *pp = static_cast<int *>( RHO_alloc(size_t( n), sizeof(int)));
     perm = perm_;
     if (length(perm) == 0) {
 	for (i = 0; i < n; i++) pp[i] = n-1-i;
@@ -1172,7 +1172,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	}
     }
 
-    R_xlen_t *iip = static_cast<R_xlen_t *>( CXXR_alloc(size_t( n), sizeof(R_xlen_t)));
+    R_xlen_t *iip = static_cast<R_xlen_t *>( RHO_alloc(size_t( n), sizeof(R_xlen_t)));
     for (i = 0; i < n; iip[i++] = 0);
     for (i = 0; i < n; i++)
 	if (pp[i] >= 0 && pp[i] < n) iip[pp[i]]++;
@@ -1182,7 +1182,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     /* create the stride object and permute */
 
-    R_xlen_t *stride = static_cast<R_xlen_t *>( CXXR_alloc(size_t( n), sizeof(R_xlen_t)));
+    R_xlen_t *stride = static_cast<R_xlen_t *>( RHO_alloc(size_t( n), sizeof(R_xlen_t)));
     for (iip[0] = 1, i = 1; i<n; i++) iip[i] = iip[i-1] * isa[i-1];
     for (i = 0; i < n; i++) stride[i] = iip[pp[i]];
 
@@ -1305,7 +1305,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 }
 
 /* colSums(x, n, p, na.rm) and friends */
-SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* X_, CXXR::RObject* n_, CXXR::RObject* p_, CXXR::RObject* na_rm_)
+SEXP attribute_hidden do_colsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* X_, rho::RObject* n_, rho::RObject* p_, rho::RObject* na_rm_)
 {
     SEXP x, ans = R_NilValue;
     int type;
@@ -1314,13 +1314,13 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
     x = X_;
     R_xlen_t n = asVecSize(n_);
     R_xlen_t p = asVecSize(p_);
-    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(na_rm_));
+    NaRm = RHOCONSTRUCT(Rboolean, asLogical(na_rm_));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
 	error(_("invalid '%s' argument"), "p");
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
-    keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
+    keepNA = RHOCONSTRUCT(Rboolean, !NaRm);
 
     switch (type = TYPEOF(x)) {
     case LGLSXP:
@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 */
 
 /* array(data, dim, dimnames) */
-SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* data_, CXXR::RObject* dim_, CXXR::RObject* dimnames_)
+SEXP attribute_hidden do_array(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* data_, rho::RObject* dim_, rho::RObject* dimnames_)
 {
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
@@ -1589,7 +1589,7 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* nrow_, CXXR::RObject* ncol_)
+SEXP attribute_hidden do_diag(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* nrow_, rho::RObject* ncol_)
 {
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
@@ -1648,7 +1648,7 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 
 /* backsolve(r, b, k, upper.tri, transpose) */
-SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* r_, CXXR::RObject* x_, CXXR::RObject* k_, CXXR::RObject* upper_tri_, CXXR::RObject* transpose_)
+SEXP attribute_hidden do_backsolve(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* r_, rho::RObject* x_, rho::RObject* k_, rho::RObject* upper_tri_, rho::RObject* transpose_)
 {
     int nprot = 1;
 
@@ -1692,7 +1692,7 @@ SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* max.col(m, ties.method) */
-SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* m_, CXXR::RObject* ties_method_)
+SEXP attribute_hidden do_maxcol(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* m_, rho::RObject* ties_method_)
 {
     SEXP m = m_;
     int method = asInteger(ties_method_);

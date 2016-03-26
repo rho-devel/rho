@@ -983,7 +983,7 @@
    */
 #undef PRI_MACROS_BROKEN
 
-/* Define this to enable CXXR provenance tracking. */
+/* Define this to enable rho provenance tracking. */
 #undef PROVENANCE_TRACKING
 
 /* Define if the pthread_in_use() detection is hard. (For intl) */

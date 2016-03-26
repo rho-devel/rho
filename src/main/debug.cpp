@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,11 +31,11 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
-#include "CXXR/Closure.h"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/FunctionContext.hpp"
+#include "rho/Closure.h"
+#include "rho/FunctionBase.h"
+#include "rho/FunctionContext.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -56,12 +56,12 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("argument must be a function"));
     switch(PRIMVAL(op)) {
     case 0: // debug()
-	SET_RDEBUG(CAR(args), CXXRTRUE);
+	SET_RDEBUG(CAR(args), RHO_TRUE);
 	break;
     case 1: // undebug()
 	if( RDEBUG(CAR(args)) != 1 )
 	    warningcall(call, "argument is not being debugged");
-	SET_RDEBUG(CAR(args), CXXRFALSE);
+	SET_RDEBUG(CAR(args), RHO_FALSE);
 	break;
     case 2: // isdebugged()
 	ans = ScalarLogical(RDEBUG(CAR(args)));
@@ -97,14 +97,14 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace & debug state */
 
-SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* on_)
+SEXP attribute_hidden do_traceOnOff(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_)
 {
     SEXP onOff = on_;
     bool trace = op->variant() == 0;  // Otherwise it's debug.
     Rboolean prev = Rboolean(trace ? FunctionBase::tracingEnabled()
 			     : Closure::debuggingEnabled());
     if(length(onOff) > 0) {
-	Rboolean _new = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
+	Rboolean _new = RHOCONSTRUCT(Rboolean, asLogical(onOff));
 	if(_new == TRUE || _new == FALSE) {
 	    if (trace)
 		FunctionBase::enableTracing(_new);
@@ -130,7 +130,7 @@ R_current_debugging_state() { return Rboolean(Closure::debuggingEnabled()); }
 /* report when a traced object is duplicated */
 
 #ifdef R_MEMORY_PROFILING
-SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP object;
     char buffer[21];
@@ -152,7 +152,7 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_untracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP object;
 
@@ -163,12 +163,12 @@ SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR
 
 #else
 
-SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_tracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }
 
-SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_untracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }
@@ -246,7 +246,7 @@ SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 	snprintf(buffer, 21, "<%p>", (void *) object);
 	ans = mkString(buffer);
     } else {
-	R_Visible = CXXRFALSE;
+	R_Visible = RHO_FALSE;
 	ans = R_NilValue;
     }
 
@@ -263,7 +263,7 @@ SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
     UNPROTECT(1);
     return ans;
 #else
-    R_Visible = CXXRFALSE; /* for consistency with other case */
+    R_Visible = RHO_FALSE; /* for consistency with other case */
     return R_NilValue;
 #endif
 }

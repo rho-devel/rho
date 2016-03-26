@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cxxr-devel/cxxr.svg?branch=master)](https://travis-ci.org/cxxr-devel/cxxr)
+[![Build Status](https://travis-ci.org/rho-devel/rho.svg?branch=master)](https://travis-ci.org/rho-devel/rho)
 
 # Rho
 

@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,17 +23,17 @@
 
 #define R_NO_REMAP
 
-#include "CXXR/jit/FrameDescriptor.hpp"
-#include "CXXR/Closure.h"
-#include "CXXR/ConsCell.h"
-#include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/PairList.h"
-#include "CXXR/RObject.h"
-#include "CXXR/Symbol.h"
+#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/Closure.h"
+#include "rho/ConsCell.h"
+#include "rho/Expression.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/PairList.h"
+#include "rho/RObject.h"
+#include "rho/Symbol.h"
 #include <algorithm>
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 namespace {
@@ -164,4 +164,4 @@ int FrameDescriptor::getLocation(const Symbol* symbol) const
 }
 
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

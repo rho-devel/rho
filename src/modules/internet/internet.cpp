@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-2016   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -164,8 +164,8 @@ static Rboolean url_open(Rconnection con)
     }
 
     con->isopen = TRUE;
-    con->canwrite = (CXXRCONSTRUCT(Rboolean, con->mode[0] == 'w' || con->mode[0] == 'a'));
-    con->canread = CXXRCONSTRUCT(Rboolean, !con->canwrite);
+    con->canwrite = (RHOCONSTRUCT(Rboolean, con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = RHOCONSTRUCT(Rboolean, !con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     con->save = -1000;
@@ -221,10 +221,10 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
     switch(type) {
     case HTTPsh:
     case HTTPSsh:
-	n = in_R_HTTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
+	n = in_R_HTTPRead(ctxt, RHO_S_CAST(char*, ptr), size*nitems);
 	break;
     case FTPsh:
-	n = in_R_FTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
+	n = in_R_FTPRead(ctxt, RHO_S_CAST(char*, ptr), size*nitems);
 	break;
     default:
 	break;
@@ -469,7 +469,7 @@ static SEXP in_do_download(SEXP args)
     if(Rf_length(sfile) > 1)
 	warning(_("only first element of 'destfile' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    quiet = IDquiet = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    quiet = IDquiet = RHOCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
     if(quiet == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "quiet");
     smode =  CAR(args); args = CDR(args);
@@ -596,7 +596,7 @@ static SEXP in_do_download(SEXP args)
 #endif
 	    while ((len = Ri_HTTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
+		if(RHOCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 		if(!quiet) {
 #ifdef Win32
@@ -707,7 +707,7 @@ static SEXP in_do_download(SEXP args)
 #endif
 	    while ((len = Ri_FTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
+		if(RHOCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 		if(!quiet) {
 #ifdef Win32

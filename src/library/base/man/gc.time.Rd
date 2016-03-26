@@ -8,7 +8,7 @@
 \title{Report Time Spent in Garbage Collection}
 \description{
   This function reports the time spent in garbage collection so far in
-  the \R session while GC timing was enabled.  Not implemented in CXXR.
+  the \R session while GC timing was enabled.  Not implemented in rho.
 }
 \usage{
 gc.time(on = TRUE)
@@ -34,7 +34,7 @@ gc.time(on = TRUE)
   \code{\link{proc.time}} for the timings for the session.}
 
 \examples{
-## Not implemented in CXXR
+## Not implemented in rho
 ## gc.time()
 }
 \keyword{utilities}

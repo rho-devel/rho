@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2014  The R Core Team.
  *  Copyright (C) 2003--2011  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
  *  See ./print.c  for do_printdefault, do_prmatrix, etc.
  *
  * Exports
- *	formatString  (not in CXXR)
+ *	formatString  (not in rho)
  *	formatLogical
  *	formatInteger
  *	formatReal
@@ -53,7 +53,7 @@
 #include <Print.h>
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* this is just for conformity with other types */
 attribute_hidden
@@ -63,7 +63,7 @@ void formatRaw(Rbyte *x, R_xlen_t n, int *fieldwidth)
 }
 
 // Designed for use with std::accumulate():
-unsigned int CXXR::stringWidth(unsigned int minwidth, const String* string)
+unsigned int rho::stringWidth(unsigned int minwidth, const String* string)
 {
     unsigned int width = R_print.na_width_noquote;
     if (string != NA_STRING)
@@ -72,7 +72,7 @@ unsigned int CXXR::stringWidth(unsigned int minwidth, const String* string)
 }
 
 // Designed for use with std::accumulate():
-unsigned int CXXR::stringWidthQuote(unsigned int minwidth,
+unsigned int rho::stringWidthQuote(unsigned int minwidth,
 				    const String* string)
 {
     unsigned int width = R_print.na_width;

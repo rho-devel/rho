@@ -34,7 +34,7 @@ Rdiff(from, to, useDiff = FALSE, forEx = FALSE,
   a simple quote.  Addresses of environments and
   other exotic types expressed as hex addresses
   (e.g. \code{<environment: 0x12345678>}) are mapped to
-  \code{0x00000000}.  In addition, CXXR replaces a program location
+  \code{0x00000000}.  In addition, rho replaces a program location
   given in the context 'In ... :' by a single question mark; this is
   because the given location may differ according to whether or not
   byte-compilation is applied.  The files are then compared line-by-line.

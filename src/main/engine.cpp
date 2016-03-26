@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@
 
 # include <rlocale.h>
 
-#include "CXXR/RAllocStack.h"
-#include "CXXR/Expression.h"
+#include "rho/RAllocStack.h"
+#include "rho/Expression.h"
 
 int R_GE_getVersion()
 {
@@ -426,7 +426,7 @@ double toDeviceHeight(double value, GEUnit from, pGEDevDesc dd)
  ****************************************************************
  */
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     R_GE_lineend end;
 } LineEND;
 
@@ -434,10 +434,10 @@ static LineEND lineend[] = {
     { "round",   GE_ROUND_CAP  },
     { "butt",	 GE_BUTT_CAP   },
     { "square",	 GE_SQUARE_CAP },
-    { nullptr,	 CXXRCONSTRUCT(R_GE_lineend, 0)	     }
+    { nullptr,	 RHOCONSTRUCT(R_GE_lineend, 0)	     }
 };
 
-static int nlineend = (CXXRCONSTRUCT(int, sizeof(lineend)/sizeof(LineEND))-2);
+static int nlineend = (RHOCONSTRUCT(int, sizeof(lineend)/sizeof(LineEND))-2);
 
 R_GE_lineend GE_LENDpar(SEXP value, int ind)
 {
@@ -449,7 +449,7 @@ R_GE_lineend GE_LENDpar(SEXP value, int ind)
 	    if(!strcmp(CHAR(STRING_ELT(value, ind)), lineend[i].name)) /*ASCII */
 		return lineend[i].end;
 	}
-	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return CXXRCONSTRUCT(R_GE_lineend, 0);
+	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return RHOCONSTRUCT(R_GE_lineend, 0);
     }
     else if(isInteger(value)) {
 	code = INTEGER(value)[ind];
@@ -469,7 +469,7 @@ R_GE_lineend GE_LENDpar(SEXP value, int ind)
 	return lineend[code].end;
     }
     else {
-	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return CXXRCONSTRUCT(R_GE_lineend, 0);
+	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return RHOCONSTRUCT(R_GE_lineend, 0);
     }
 }
 
@@ -491,7 +491,7 @@ SEXP GE_LENDget(R_GE_lineend lend)
 }
 
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     R_GE_linejoin join;
 } LineJOIN;
 
@@ -499,10 +499,10 @@ static LineJOIN linejoin[] = {
     { "round",   GE_ROUND_JOIN },
     { "mitre",	 GE_MITRE_JOIN },
     { "bevel",	 GE_BEVEL_JOIN},
-    { nullptr,	 CXXRCONSTRUCT(R_GE_linejoin, 0)	     }
+    { nullptr,	 RHOCONSTRUCT(R_GE_linejoin, 0)	     }
 };
 
-static int nlinejoin = (CXXRCONSTRUCT(int, sizeof(linejoin)/sizeof(LineJOIN))-2);
+static int nlinejoin = (RHOCONSTRUCT(int, sizeof(linejoin)/sizeof(LineJOIN))-2);
 
 R_GE_linejoin GE_LJOINpar(SEXP value, int ind)
 {
@@ -514,7 +514,7 @@ R_GE_linejoin GE_LJOINpar(SEXP value, int ind)
 	    if(!strcmp(CHAR(STRING_ELT(value, ind)), linejoin[i].name)) /* ASCII */
 		return linejoin[i].join;
 	}
-	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return CXXRCONSTRUCT(R_GE_linejoin, 0);
+	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return RHOCONSTRUCT(R_GE_linejoin, 0);
     }
     else if(isInteger(value)) {
 	code = INTEGER(value)[ind];
@@ -534,7 +534,7 @@ R_GE_linejoin GE_LJOINpar(SEXP value, int ind)
 	return linejoin[code].join;
     }
     else {
-	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return CXXRCONSTRUCT(R_GE_linejoin, 0);
+	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return RHOCONSTRUCT(R_GE_linejoin, 0);
     }
 }
 
@@ -801,8 +801,8 @@ static void CScliplines(int n, double *x, double *y,
     else
 	getClipRect(&cr.xl, &cr.yb, &cr.xr, &cr.yt, dd);
 
-    xx = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
-    yy = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
+    xx = static_cast<double *>( RHO_alloc(n, sizeof(double)));
+    yy = static_cast<double *>( RHO_alloc(n, sizeof(double)));
     if (xx == nullptr || yy == nullptr)
 	error(_("out of memory while clipping polyline"));
 
@@ -984,7 +984,7 @@ void clipPoint (Edge b, double x, double y,
 	if (cross (b, x, y, cs[b].sx, cs[b].sy, clip)) {
 	    intersect (b, x, y, cs[b].sx, cs[b].sy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (CXXRCONSTRUCT(Edge, b + 1), ix, iy, xout, yout, cnt, store,
+		clipPoint (RHOCONSTRUCT(Edge, b + 1), ix, iy, xout, yout, cnt, store,
 			   clip, cs);
 	    else {
 		if (store) {
@@ -1003,7 +1003,7 @@ void clipPoint (Edge b, double x, double y,
     /* proceed to next clip edge, if any */
     if (inside (b, x, y, clip)) {
 	if (b < Top)
-	    clipPoint (CXXRCONSTRUCT(Edge, b + 1), x, y, xout, yout, cnt, store, clip, cs);
+	    clipPoint (RHOCONSTRUCT(Edge, b + 1), x, y, xout, yout, cnt, store, clip, cs);
 	else {
 	    if (store) {
 		xout[*cnt] = x;
@@ -1021,12 +1021,12 @@ void closeClip (double *xout, double *yout, int *cnt, int store,
     double ix = 0.0, iy = 0.0 /* -Wall */;
     Edge b;
 
-    for (b = Left; b <= Top; b = CXXRCONSTRUCT(Edge, b + 1)) {
+    for (b = Left; b <= Top; b = RHOCONSTRUCT(Edge, b + 1)) {
 	if (cross (b, cs[b].sx, cs[b].sy, cs[b].fx, cs[b].fy, clip)) {
 	    intersect (b, cs[b].sx, cs[b].sy,
 		       cs[b].fx, cs[b].fy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (CXXRCONSTRUCT(Edge, b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
+		clipPoint (RHOCONSTRUCT(Edge, b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
 	    else {
 		if (store) {
 		    xout[*cnt] = ix;
@@ -1068,8 +1068,8 @@ static void clipPolygon(int n, double *x, double *y,
      * If bg was NA then it has been converted to fully transparent */
     if (R_TRANSPARENT(gc->fill)) {
 	int i;
-	xc = static_cast<double*>( CXXR_alloc(n + 1, sizeof(double)));
-	yc = static_cast<double*>( CXXR_alloc(n + 1, sizeof(double)));
+	xc = static_cast<double*>( RHO_alloc(n + 1, sizeof(double)));
+	yc = static_cast<double*>( RHO_alloc(n + 1, sizeof(double)));
 	for (i=0; i<n; i++) {
 	    xc[i] = x[i];
 	    yc[i] = y[i];
@@ -1083,8 +1083,8 @@ static void clipPolygon(int n, double *x, double *y,
 	xc = yc = nullptr;		/* -Wall */
 	npts = clipPoly(x, y, n, 0, toDevice, xc, yc, dd);
 	if (npts > 1) {
-	    xc = static_cast<double*>( CXXR_alloc(npts, sizeof(double)));
-	    yc = static_cast<double*>( CXXR_alloc(npts, sizeof(double)));
+	    xc = static_cast<double*>( RHO_alloc(npts, sizeof(double)));
+	    yc = static_cast<double*>( RHO_alloc(npts, sizeof(double)));
 	    npts = clipPoly(x, y, n, 1, toDevice, xc, yc, dd);
 	    dd->dev->polygon(npts, xc, yc, gc, dd->dev);
 	}
@@ -1264,8 +1264,8 @@ void GECircle(double x, double y, double radius, const pGEcontext gc, pGEDevDesc
 	}
 	else {
 	    vmax = vmaxget();
-	    xc = static_cast<double*>(CXXR_alloc(result+1, sizeof(double)));
-	    yc = static_cast<double*>(CXXR_alloc(result+1, sizeof(double)));
+	    xc = static_cast<double*>(RHO_alloc(result+1, sizeof(double)));
+	    yc = static_cast<double*>(RHO_alloc(result+1, sizeof(double)));
 	    convertCircle(x, y, radius, result, xc, yc);
 	    if (R_TRANSPARENT(gc->fill)) {
 		GEPolyline(result+1, xc, yc, gc, dd);
@@ -1277,8 +1277,8 @@ void GECircle(double x, double y, double radius, const pGEcontext gc, pGEDevDesc
 		npts = clipPoly(xc, yc, result, 0, !dd->dev->canClip,
 				    xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
-		    ycc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
+		    xcc = static_cast<double*>(RHO_alloc(npts, sizeof(double)));
+		    ycc = static_cast<double*>(RHO_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, result, 1, !dd->dev->canClip,
 					xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
@@ -1353,8 +1353,8 @@ void GERect(double x0, double y0, double x1, double y1,
 	    dd->dev->rect(x0, y0, x1, y1, gc, dd->dev);
 	else {
 	    vmax = vmaxget();
-	    xc = static_cast<double*>(CXXR_alloc(5, sizeof(double)));
-	    yc = static_cast<double*>(CXXR_alloc(5, sizeof(double)));
+	    xc = static_cast<double*>(RHO_alloc(5, sizeof(double)));
+	    yc = static_cast<double*>(RHO_alloc(5, sizeof(double)));
 	    xc[0] = x0; yc[0] = y0;
 	    xc[1] = x0; yc[1] = y1;
 	    xc[2] = x1; yc[2] = y1;
@@ -1369,8 +1369,8 @@ void GERect(double x0, double y0, double x1, double y1,
 		xcc = ycc = nullptr;		/* -Wall */
 		npts = clipPoly(xc, yc, 4, 0, !dd->dev->canClip, xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
-		    ycc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
+		    xcc = static_cast<double*>(RHO_alloc(npts, sizeof(double)));
+		    ycc = static_cast<double*>(RHO_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, 4, 1, !dd->dev->canClip, xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
 		}
@@ -1554,7 +1554,7 @@ static void clipText(double x, double y, const char *str, cetype_t enc,
  */
 
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int minface;
     int maxface;
 } VFontTab;
@@ -1940,7 +1940,7 @@ SEXP GEXspline(int n, double *x, double *y, double *s, Rboolean open,
      * after any R_alloc's done by functions I call.
      */
     const void *vmaxsave = vmaxget();
-    ys = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
+    ys = static_cast<double *>( RHO_alloc(n, sizeof(double)));
     for (i = 0; i < n; i++) ys[i] = y[i]*asp;
     if (open) {
       compute_open_spline(n, x, ys, s, repEnds, LOW_PRECISION, dd);
@@ -2026,7 +2026,7 @@ void GESymbol(double x, double y, int pch, double size,
 	res = ucstoutf8(str, -pch); // throws error if unsuccessful 
 	str[res] = '\0';
 	GEText(x, y, str, CE_UTF8, NA_REAL, NA_REAL, 0., gc, dd);
-    } else if(' ' <= pch && pch <= CXXRCONSTRUCT(int, maxchar)) {
+    } else if(' ' <= pch && pch <= RHOCONSTRUCT(int, maxchar)) {
 	if (pch == '.') {
 	    /*
 	     * NOTE:  we are *filling* a rect with the current
@@ -2060,7 +2060,7 @@ void GESymbol(double x, double y, int pch, double size,
 		   NA_REAL, NA_REAL, 0., gc, dd);
 	}
     }
-    else if(pch > CXXRCONSTRUCT(int, maxchar))
+    else if(pch > RHOCONSTRUCT(int, maxchar))
 	    warning(_("pch value '%d' is invalid in this locale"), pch);
     else {
 	double GSTR_0 = fromDeviceWidth(size, GE_INCHES, dd);
@@ -2490,7 +2490,7 @@ double GEStrWidth(const char *str, cetype_t enc, const pGEcontext gc, pGEDevDesc
 		enc2 = (dd->dev->hasTextUTF8 == TRUE) ? CE_UTF8 : CE_NATIVE;
 	    else if(dd->dev->wantSymbolUTF8 == TRUE) enc2 = CE_UTF8;
 
-	    sb = sbuf = CXXRNOCAST(char*) R_alloc(strlen(str) + 1, sizeof(char));
+	    sb = sbuf = RHO_NO_CAST(char*) R_alloc(strlen(str) + 1, sizeof(char));
 	    for(s = str; ; s++) {
 		if (*s == '\n' || *s == '\0') {
 		    const char *str;
@@ -2697,7 +2697,7 @@ Rboolean GEcheckState(pGEDevDesc dd)
 
 Rboolean GErecording(SEXP call, pGEDevDesc dd)
 {
-    return CXXRCONSTRUCT(Rboolean, (call != nullptr && dd->recordGraphics));
+    return RHOCONSTRUCT(Rboolean, (call != nullptr && dd->recordGraphics));
 }
 
 /****************************************************************
@@ -2783,7 +2783,7 @@ void GEplayDisplayList(pGEDevDesc dd)
 	savedDevice = curDevice();
 	selectDevice(devnum);
 	while (theList != R_NilValue && plotok) {
-            using namespace CXXR;
+            using namespace rho;
             Expression* theOperation
                 = dynamic_cast<Expression*>(CAR(theList));
             // We can't call the_expression->evaluate() here, because the
@@ -3065,7 +3065,7 @@ void GEonExit()
 int GEstring_to_pch(SEXP pch)
 {
     int ipch = NA_INTEGER;
-    static CXXR::GCRoot<> last_pch = nullptr;
+    static rho::GCRoot<> last_pch = nullptr;
     static int last_ipch = 0;
 
     if (pch == NA_STRING) return NA_INTEGER;
@@ -3111,7 +3111,7 @@ int GEstring_to_pch(SEXP pch)
  */
 
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int pattern;
 } LineTYPE;
 
@@ -3137,7 +3137,7 @@ static unsigned int hexdigit(int digit)
     return digit; /* never occurs (-Wall) */
 }
 
-static int nlinetype = (CXXRCONSTRUCT(int, sizeof(linetype)/sizeof(LineTYPE))-2);
+static int nlinetype = (RHOCONSTRUCT(int, sizeof(linetype)/sizeof(LineTYPE))-2);
 
 unsigned int GE_LTYpar(SEXP value, int ind)
 {
@@ -3196,7 +3196,7 @@ SEXP GE_LTYget(unsigned int lty)
     char cbuf[17]; /* 8 hex digits plus nul */
 
     for (i = 0; linetype[i].name; i++)
-	if(linetype[i].pattern == CXXRCONSTRUCT(int, lty)) return mkString(linetype[i].name);
+	if(linetype[i].pattern == RHOCONSTRUCT(int, lty)) return mkString(linetype[i].name);
 
     l = lty; ndash = 0;
     for (i = 0; i < 8 && l & 15; i++) {

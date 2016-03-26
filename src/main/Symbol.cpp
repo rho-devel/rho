@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,27 +24,27 @@
 
 /** @file Symbol.cpp
  *
- * @brief Implementation of class CXXR::Symbol and associated C
+ * @brief Implementation of class rho::Symbol and associated C
  * interface.
  */
 
 #define R_NO_REMAP
 
-#include "CXXR/Symbol.h"
+#include "rho/Symbol.h"
 
 #include <sstream>
 #include "localization.h"
 #include "boost/regex.hpp"
 #include "R_ext/Error.h"
-#include "CXXR/Environment.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/String.h"
+#include "rho/Environment.h"
+#include "rho/Evaluator.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/String.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	Rboolean (*DDVALp)(SEXP x) = DDVAL;
 	SEXP (*Rf_installp)(const char *name) = Rf_install;
@@ -137,9 +137,9 @@ void Symbol::initialize()
 	symbol->m_is_special_symbol = true;
     }
 
-#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
-    C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);
-#include "CXXR/PredefinedSymbols.h"
+#define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
+    C_NAME = RHO_NAME = Symbol::obtain(R_NAME);
+#include "rho/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 
     // DISABLE_REFCNT(R_LastvalueSymbol);
@@ -212,18 +212,18 @@ void Symbol::visitReferents(const_visitor* v) const
 }
 
 // Predefined Symbols:
-namespace CXXR {
-#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
-    Symbol* CXXR_NAME = nullptr;
-#include "CXXR/PredefinedSymbols.h"
+namespace rho {
+#define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
+    Symbol* RHO_NAME = nullptr;
+#include "rho/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 }
 
 // ***** C interface *****
 
-#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+#define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     SEXP C_NAME = nullptr;
-#include "CXXR/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 
 // Rf_install() is currently defined in main.cpp

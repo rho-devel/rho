@@ -4,11 +4,11 @@
  *  Copyright (C) 2002-3	      The R Foundation
  *  Copyright (C) 1999-2013   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,17 +38,17 @@
 #include <Internal.h>
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
-#include "CXXR/ArgList.hpp"
-#include "CXXR/Closure.h"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ListFrame.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/ReturnBailout.hpp"
-#include "CXXR/S3Launcher.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/Closure.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/ListFrame.hpp"
+#include "rho/Promise.h"
+#include "rho/ReturnBailout.hpp"
+#include "rho/S3Launcher.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 static RObject* GetObject(ClosureContext *cptr)
 {
@@ -812,7 +812,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* primitive */
-SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object)
+SEXP attribute_hidden do_unclass(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object)
 {
     switch(TYPEOF(object)) {
     case ENVSXP:
@@ -895,7 +895,7 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
     return rval;
 }
 
-SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* what_, CXXR::RObject* which_)
+SEXP attribute_hidden do_inherits(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* what_, rho::RObject* which_)
 {
     return inherits3(/* x = */ x_,
 		     /* what = */ what_,
@@ -1030,7 +1030,7 @@ static SEXP R_isMethodsDispatchOn(SEXP onOff)
     R_stdGen_ptr_t old = R_get_standardGeneric_ptr();
     int ival =  !NOT_METHODS_DISPATCH_PTR(old);
     if(length(onOff) > 0) {
-	Rboolean onOffValue = CXXRCONSTRUCT(Rboolean, Rf_asLogical(onOff));
+	Rboolean onOffValue = RHOCONSTRUCT(Rboolean, Rf_asLogical(onOff));
 	if(onOffValue == NA_INTEGER)
 	    Rf_error(_("'onOff' must be TRUE or FALSE"));
 	else if(onOffValue == FALSE)
@@ -1054,7 +1054,7 @@ static SEXP R_isMethodsDispatchOn(SEXP onOff)
 attribute_hidden
 Rboolean isMethodsDispatchOn(void)
 {
-    return CXXRCONSTRUCT(Rboolean, !NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr));
+    return RHOCONSTRUCT(Rboolean, !NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr));
 }
 
 
@@ -1065,7 +1065,7 @@ Rboolean isMethodsDispatchOn(void)
    It seems it is not currently called with onOff = TRUE (and would
    not have worked prior to 3.0.2).
 */ 
-SEXP attribute_hidden do_S4on(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_S4on(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     if(num_args == 0) return Rf_ScalarLogical(isMethodsDispatchOn());
     return R_isMethodsDispatchOn(args[0]);
@@ -1119,7 +1119,7 @@ static SEXP get_this_generic(RObject* const* args, int num_args);
 
 
 
-SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_standardGeneric(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
@@ -1552,7 +1552,7 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 	    Rf_getAttrib(klass, R_PackageSymbol) != R_NilValue) ? TRUE: FALSE;
 }
 
-SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object_, CXXR::RObject* flag_, CXXR::RObject* complete_)
+SEXP attribute_hidden do_setS4Object(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* flag_, rho::RObject* complete_)
 {
     SEXP object = object_;
     int flag = Rf_asLogical(flag_), complete = Rf_asInteger(complete_);
@@ -1560,10 +1560,10 @@ SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXX
 	Rf_error("invalid '%s' argument", "flag");
     if(complete == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "complete");
-    if(flag == CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(object)))
+    if(flag == RHOCONSTRUCT(Rboolean, IS_S4_OBJECT(object)))
 	return object;
     else
-      return Rf_asS4(object, CXXRCONSTRUCT(Rboolean, flag), complete);
+      return Rf_asS4(object, RHOCONSTRUCT(Rboolean, flag), complete);
 }
 
 #ifdef UNUSED

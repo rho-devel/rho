@@ -4,11 +4,11 @@
  *  Copyright (C) 2000--2014	The R Core Team
  *  Copyright (C) 2001--2012	The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,11 +42,11 @@
 #include "Print.h"
 
 #include <stdlib.h> /* for div() */
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/StringVector.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/StringVector.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* We need display width of a string.
    Used only for row/column names found by GetMatrixDimnames,

@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2002--2015  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,12 +39,12 @@
 
 #include "duplicate.h"
 #include "RBufferUtils.h"
-#include "CXXR/Closure.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/Closure.h"
+#include "rho/ExpressionVector.h"
+#include "rho/GCStackRoot.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
@@ -756,7 +756,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
     for (a = ans; a != R_NilValue; a = next) {
 	n = TAG(a);
 	next = CDR(a);
-	if (n != R_NilValue && pmatch(R_RecursiveSymbol, n, CXXRTRUE)) {
+	if (n != R_NilValue && pmatch(R_RecursiveSymbol, n, RHO_TRUE)) {
 	    if (n_recurse++ == 1)
 		errorcall(call, _("repeated formal argument 'recursive'"));
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
@@ -767,7 +767,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 	    else
 		SETCDR(last, next);
 	}
-	else if (n != R_NilValue && pmatch(R_UseNamesSymbol, n, CXXRTRUE)) {
+	else if (n != R_NilValue && pmatch(R_UseNamesSymbol, n, RHO_TRUE)) {
 	    if (n_usenames++ == 1)
 		errorcall(call, _("repeated formal argument 'use.names'"));
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
@@ -914,7 +914,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 } /* do_c */
 
 
-SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unlist(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args_, int num_args, const rho::PairList* tags)
 {
     SEXP ans, t;
     SEXPTYPE mode;

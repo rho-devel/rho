@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 
 #include <tre/tre.h>
 
-#include "CXXR/RAllocStack.h"
+#include "rho/RAllocStack.h"
 
 static SEXP allocMatrixNA(SEXPTYPE, int, int);
 static void transferVector(SEXP s, SEXP t);
@@ -67,7 +67,7 @@ static char *Rconn_getline2(Rconnection con, char *buf, int bufsize)
     return buf;
 }
 
-SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* fields_, CXXR::RObject* keep_white_)
+SEXP attribute_hidden do_readDCF(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* fields_, rho::RObject* keep_white_)
 {
     int nwhat, nret, nc, nr, m, k, lastm, need;
     Rboolean blank_skip, field_skip = FALSE;
@@ -98,7 +98,7 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
 	dynwhat = (nwhat == 0);
 
 	PROTECT(fold_excludes = coerceVector(keep_white_, STRSXP));
-	has_fold_excludes = CXXRCONSTRUCT(Rboolean, (LENGTH(fold_excludes) > 0));
+	has_fold_excludes = RHOCONSTRUCT(Rboolean, (LENGTH(fold_excludes) > 0));
 
 	buf = static_cast<char *>( malloc(buflen));
 	if(!buf) error(_("could not allocate memory for 'read.dcf'"));
@@ -117,7 +117,7 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
 	k = 0;
 	lastm = -1; /* index of the field currently being recorded */
 	blank_skip = TRUE;
-	CXXR::RAllocStack::Scope rscope;
+	rho::RAllocStack::Scope rscope;
 	char buf0[MAXELTSIZE];
 	while((line = Rconn_getline2(con, buf0, MAXELTSIZE))) {
 	    if(strlen(line) == 0 ||
@@ -183,7 +183,7 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
 		    if(tre_regexecb(&regline, line, 1, regmatch, 0) == 0){
 			for(m = 0; m < nwhat; m++){
 			    whatlen = int( strlen(CHAR(STRING_ELT(what, m))));
-			    if(CXXRSCAST(int, strlen(line)) > whatlen &&
+			    if(RHO_S_CAST(int, strlen(line)) > whatlen &&
 			       line[whatlen] == ':' &&
 			       strncmp(CHAR(STRING_ELT(what, m)),
 				       line, whatlen) == 0) {
@@ -293,7 +293,7 @@ SEXP attribute_hidden do_readDCF(/*const*/ CXXR::Expression* call, const CXXR::B
 
     /* and now transpose the whole matrix */
     PROTECT(retval2 = allocMatrixNA(STRSXP, k, LENGTH(what)));
-    copyMatrix(retval2, retval, CXXRTRUE);
+    copyMatrix(retval2, retval, RHO_TRUE);
 
     PROTECT(dimnames = allocVector(VECSXP, 2));
     PROTECT(dims = allocVector(INTSXP, 2));

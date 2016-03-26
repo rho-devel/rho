@@ -7,7 +7,7 @@
 \alias{Memory-limits}
 \concept{memory}
 \concept{limits}
-\title{Memory Limits in R (adapted for CXXR)}
+\title{Memory Limits in R (adapted for rho)}
 \description{
   \R holds objects it is using in virtual memory.  This help file
   documents the current design limitations on large objects: these

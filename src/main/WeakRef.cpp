@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2007   The R Development Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,17 +32,17 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "CXXR/CommandTerminated.hpp"
-#include "CXXR/Environment.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/WeakRef.h"
-#include "CXXR/errors.h"
+#include "rho/CommandTerminated.hpp"
+#include "rho/Environment.h"
+#include "rho/Evaluator.h"
+#include "rho/Expression.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/ProtectStack.h"
+#include "rho/WeakRef.h"
+#include "rho/errors.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 int WeakRef::s_count = 0;
 

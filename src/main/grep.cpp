@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -139,7 +139,7 @@ static SEXP mkCharW(const wchar_t *wc)
  * list is the collection of splits for the corresponding element of x.
 */
 
-SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* split_, CXXR::RObject* fixed_, CXXR::RObject* perl_, CXXR::RObject* useBytes_)
+SEXP attribute_hidden do_strsplit(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* split_, rho::RObject* fixed_, rho::RObject* perl_, rho::RObject* useBytes_)
 {
     SEXP ans, tok, x;
     R_xlen_t i, itok, len, tlen;
@@ -643,7 +643,7 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 	namesgets(ans, getAttrib(x, R_NamesSymbol));
     UNPROTECT(1);
     Free(pt); Free(wpt);
-    if (tables) pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
+    if (tables) pcre_free(RHO_NO_CAST(void *)RHO_C_CAST(unsigned char*, tables));
     return ans;
 }
 
@@ -744,7 +744,7 @@ static int fgrep_one_bytes(const char *pat, const char *target, int len,
     return -1;
 }
 
-SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* value_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_, CXXR::RObject* invert_)
+SEXP attribute_hidden do_grep(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* x_, rho::RObject* ignore_case_, rho::RObject* value_, rho::RObject* perl_, rho::RObject* fixed_, rho::RObject* useBytes_, rho::RObject* invert_)
 {
     SEXP pat, text, ind, ans;
     regex_t reg;
@@ -805,7 +805,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     }
 
     if (!useBytes) {
-	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = RHOCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++) {
 		if(STRING_ELT(text, i) == NA_STRING) continue;
@@ -817,7 +817,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
-	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if (!haveBytes)
 	    for (i = 0; i < n; i++)
 		if (IS_BYTES(STRING_ELT(text, i))) {
@@ -914,7 +914,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    }
 
 	    if (fixed_opt)
-		LOGICAL(ind)[i] = fgrep_one(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8, nullptr) >= 0;
+		LOGICAL(ind)[i] = fgrep_one(spat, s, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8, nullptr) >= 0;
 	    else if (perl_opt) {
 		if (pcre_exec(re_pcre, re_pe, s, int( strlen(s)), 0, 0, ov, 0) >= 0)
 		    INTEGER(ind)[i] = 1;
@@ -935,7 +935,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else if (perl_opt) {
 	if (re_pe) pcre_free(re_pe);
 	pcre_free(re_pcre);
-	pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
+	pcre_free(RHO_NO_CAST(void *)RHO_C_CAST(unsigned char*, tables));
     } else
 	tre_regfree(&reg);
 
@@ -1039,7 +1039,7 @@ static R_size_t fgrepraw1(SEXP pat, SEXP text, R_size_t offset) {
 
 /* grepRaw(pattern, text, offset, ignore.case, fixed, value, all, invert) */
 // FIXME:  allow long vectors.
-SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* x_, CXXR::RObject* offset_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* value_, CXXR::RObject* all_, CXXR::RObject* invert_)
+SEXP attribute_hidden do_grepraw(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* x_, rho::RObject* offset_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* value_, rho::RObject* all_, rho::RObject* invert_)
 {
     SEXP pat, text, ans, res_head, res_tail;
     regex_t reg;
@@ -1084,7 +1084,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 	error(_("invalid '%s' argument"), "pattern");
     if (!isRaw(text))
 	error(_("invalid '%s' argument"), "text");
-    if (offset > CXXRSCAST(R_size_t, LENGTH(text)))
+    if (offset > RHO_S_CAST(R_size_t, LENGTH(text)))
 	return allocVector(INTSXP, 0);
 
     offset--; /* reduce offset to base 0 */
@@ -1100,7 +1100,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 	    R_size_t res = fgrepraw1(pat, text, offset);
 	    if (invert) {
 		Rbyte *ansp;
-		if (res == CXXRSCAST(R_size_t, -1)) return value ? text : ScalarInteger(1);
+		if (res == RHO_S_CAST(R_size_t, -1)) return value ? text : ScalarInteger(1);
 		if (!value) return ScalarInteger(((res == 0) ? LENGTH(pat) : 0) + 1);
 		ans = allocVector(RAWSXP, LENGTH(text) - LENGTH(pat));
 		ansp = RAW(ans);
@@ -1109,11 +1109,11 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 		    ansp += res;
 		}
 		res += LENGTH(pat);
-		if (res < CXXRSCAST(R_size_t, LENGTH(text)))
+		if (res < RHO_S_CAST(R_size_t, LENGTH(text)))
 		    memcpy(ansp, RAW(text) + res, LENGTH(text) - res);
 		return ans;
 	    }
-	    if (res == CXXRSCAST(R_size_t, -1)) return allocVector(value ? RAWSXP : INTSXP, 0);
+	    if (res == RHO_S_CAST(R_size_t, -1)) return allocVector(value ? RAWSXP : INTSXP, 0);
 	    if (!value) return ScalarInteger(int(res + 1));
 	    /* value=TRUE doesn't really make sense for anything other than
 	       match/nomatch detection since we just return the pattern */
@@ -1128,9 +1128,9 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 #define MAX_MATCHES_MINIBUF 32
 	    int matches[MAX_MATCHES_MINIBUF];
 	    int n = LENGTH(text);
-	    while (CXXRCONSTRUCT(int, offset) < n) {
+	    while (RHOCONSTRUCT(int, offset) < n) {
 		offset = fgrepraw1(pat, text, offset);
-		if (offset == CXXRSCAST(R_size_t, -1))
+		if (offset == RHO_S_CAST(R_size_t, -1))
 		    break;
 		if (nmatches < MAX_MATCHES_MINIBUF)
 		    matches[nmatches] = int(offset + 1);
@@ -1142,7 +1142,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 				 is performing something like strsplit */
 		    R_size_t pos = 0;
 		    SEXP elt, mvec = nullptr;
-		    int *fmatches = CXXRNOCAST(int*) matches; /* either the minbuffer or an allocated maxibuffer */
+		    int *fmatches = RHO_NO_CAST(int*) matches; /* either the minbuffer or an allocated maxibuffer */
 
 		    if (!nmatches) return text;
 
@@ -1154,9 +1154,9 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 			memcpy(fmatches, matches, sizeof(matches));
 			nmatches = MAX_MATCHES_MINIBUF;
 			offset = matches[MAX_MATCHES_MINIBUF - 1] + LENGTH(pat) - 1;
-			while (CXXRCONSTRUCT(int, offset) < n) {
+			while (RHOCONSTRUCT(int, offset) < n) {
 			    offset = fgrepraw1(pat, text, offset);
-			    if (offset == CXXRSCAST(R_size_t, -1))
+			    if (offset == RHO_S_CAST(R_size_t, -1))
 				break;
 			    INTEGER(mvec)[nmatches++] = int(offset + 1);
 			    offset += LENGTH(pat);
@@ -1166,7 +1166,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 		    /* there are always nmatches + 1 pieces (unlike strsplit) */
 		    ans = PROTECT(allocVector(VECSXP, nmatches + 1));
 		    /* add all pieces before matches */
-		    for (i = 0; i < CXXRSCAST(R_size_t, nmatches); i++) {
+		    for (i = 0; i < RHO_S_CAST(R_size_t, nmatches); i++) {
 			R_size_t elt_size = fmatches[i] - 1 - pos;
 			elt = allocVector(RAWSXP, elt_size);
 			SET_VECTOR_ELT(ans, i, elt);
@@ -1188,7 +1188,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 		/* value=TRUE is pathetic for fixed=TRUE without
 		   invert as it is just rep(pat, nmatches) */
 		ans = PROTECT(allocVector(VECSXP, nmatches));
-		for (i = 0; i < CXXRSCAST(R_size_t, nmatches); i++)
+		for (i = 0; i < RHO_S_CAST(R_size_t, nmatches); i++)
 		    SET_VECTOR_ELT(ans, i, pat);
 		UNPROTECT(1);
 		return ans;
@@ -1204,9 +1204,9 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 	       where amnesia hit us */
 	    nmatches = MAX_MATCHES_MINIBUF;
 	    offset = matches[MAX_MATCHES_MINIBUF - 1] + LENGTH(pat) - 1; /* matches are 1-based, we are 0-based hence - 1 */
-	    while (CXXRCONSTRUCT(int, offset) < n) {
+	    while (RHOCONSTRUCT(int, offset) < n) {
 		offset = fgrepraw1(pat, text, offset);
-		if (offset == CXXRSCAST(R_size_t, -1))
+		if (offset == RHO_S_CAST(R_size_t, -1))
 		    break;
 		INTEGER(ans)[nmatches++] = int(offset + 1);
 		offset += LENGTH(pat);
@@ -1262,7 +1262,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 	if (rc)
 	    break;
 	if (!nmatches) eflags |= REG_NOTBOL;
-	if (res_ptr >= CXXRSCAST(R_size_t, res_alloc)) {
+	if (res_ptr >= RHO_S_CAST(R_size_t, res_alloc)) {
 	    if (res_alloc < (2^24)) res_alloc <<= 1;
 	    SETCDR(res_tail, list1(allocVector(INTSXP, res_alloc)));
 	    res_tail = CDR(res_tail);
@@ -1285,7 +1285,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 		warning(_("pattern matches an empty string infinitely, returning first match only"));
 	    break;
 	}
-	if (offset >= CXXRSCAST(R_size_t, LENGTH(text))) break;
+	if (offset >= RHO_S_CAST(R_size_t, LENGTH(text))) break;
     }
 
     if (value) { /* for values we store in fact the absolute start offsets and length in the integer vector */
@@ -1294,7 +1294,7 @@ SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::B
 	R_size_t inv_start = 0; /* 0-based start position of the pieces for invert */
 	res_val = INTEGER(vec);
 	ans = PROTECT(allocVector(VECSXP, invert ? (nmatches + 1) : nmatches));
-	while (entry < CXXRSCAST(R_size_t, nmatches)) {
+	while (entry < RHO_S_CAST(R_size_t, nmatches)) {
 	    if (invert) { /* for invert=TRUE store the current piece up to the match */
 		SEXP rvec = allocVector(RAWSXP, res_val[cptr] - 1 - inv_start);
 		SET_VECTOR_ELT(ans, entry, rvec);
@@ -1487,7 +1487,7 @@ static int wcount_subs(const wchar_t *repl)
  * either once or globally.
  * The functions are loosely patterned on the "sub" and "gsub" in "nawk". */
 
-SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* replacement_, CXXR::RObject* x_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
+SEXP attribute_hidden do_gsub(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* replacement_, rho::RObject* x_, rho::RObject* ignore_case_, rho::RObject* perl_, rho::RObject* fixed_, rho::RObject* useBytes_)
 {
     SEXP pat, rep, text, ans;
     regex_t reg;
@@ -1548,7 +1548,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
     }
 
     if (!useBytes) {
-	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = RHOCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++) {
 		if(STRING_ELT(text, i) == NA_STRING) continue;
@@ -1560,7 +1560,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
-	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if (!haveBytes)
 	    for (i = 0; i < n; i++)
 		if (IS_BYTES(STRING_ELT(text, i))) {
@@ -1670,7 +1670,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	if (fixed_opt) {
 	    int st, nr, slen = int( strlen(s));
 	    ns = slen;
-	    st = fgrep_one_bytes(spat, s, ns, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8);
+	    st = fgrep_one_bytes(spat, s, ns, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8);
 	    if (st < 0)
 		SET_STRING_ELT(ans, i, STRING_ELT(text, i));
 	    else if (STRING_ELT(rep, 0) == NA_STRING)
@@ -1684,7 +1684,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 			nr++;
 			ss += sst+patlen;
                         slen -= int(sst+patlen);
-		    } while((sst = fgrep_one_bytes(spat, ss, slen, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
+		    } while((sst = fgrep_one_bytes(spat, ss, slen, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
 		} else nr = 1;
 		cbuf = u = Calloc(ns + nr*(replen - patlen) + 1, char);
 		*u = '\0';
@@ -1696,7 +1696,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
                     slen -= int(st+patlen);
 		    strncpy(u, srep, replen);
 		    u += replen;
-		} while(global && (st = fgrep_one_bytes(spat, s, slen, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
+		} while(global && (st = fgrep_one_bytes(spat, s, slen, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
 		strcpy(u, s);
 		if (useBytes)
 		    SET_STRING_ELT(ans, i, mkChar(cbuf));
@@ -1914,7 +1914,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else if (perl_opt) {
 	if (re_pe) pcre_free(re_pe);
 	pcre_free(re_pcre);
-	pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
+	pcre_free(RHO_NO_CAST(void *)RHO_C_CAST(unsigned char*, tables));
     } else tre_regfree(&reg);
     SHALLOW_DUPLICATE_ATTRIB(ans, text);
     /* This copied the class, if any */
@@ -1925,7 +1925,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 static int getNc(const char *s, int st)
 {
     R_CheckStack2(st+1);
-    char *buf = CXXRSCAST(char*, alloca(st+1));
+    char *buf = RHO_S_CAST(char*, alloca(st+1));
     memcpy(buf, s, st);
     buf[st] = '\0';
     return int( utf8towcs(nullptr, buf, 0));
@@ -2230,7 +2230,7 @@ gregexpr_perl(const char *pattern, const char *string,
 		start = ovector[0] + 1;
 	    else
 		start = ovector[1];
-	    if (start >= slen) foundAll = CXXRTRUE;
+	    if (start >= slen) foundAll = RHO_TRUE;
 	} else {
 	    foundAll = TRUE;
 	    if (!foundAny) matchIndex = 0;
@@ -2304,7 +2304,7 @@ static SEXP gregexpr_BadStringAns(void)
     return ans;
 }
 
-SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* perl_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
+SEXP attribute_hidden do_regexpr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* perl_, rho::RObject* fixed_, rho::RObject* useBytes_)
 {
     SEXP pat, text, ans;
     regex_t reg;
@@ -2352,7 +2352,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 
     n = XLENGTH(text);
     if (!useBytes) {
-	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = RHOCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++) {
 		if(STRING_ELT(text, i) == NA_STRING) continue;
@@ -2364,7 +2364,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
-	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if (!haveBytes)
 	    for (i = 0; i < n; i++)
 		if (IS_BYTES(STRING_ELT(text, i))) {
@@ -2514,7 +2514,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 		    }
 		}
 		if (fixed_opt) {
-		    int st = fgrep_one(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8, nullptr);
+		    int st = fgrep_one(spat, s, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8, nullptr);
 		    INTEGER(ans)[i] = (st > -1)?(st+1):-1;
 		    if (!useBytes && use_UTF8) {
 			INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
@@ -2530,7 +2530,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 		    rc = pcre_exec(re_pcre, re_pe, s, int( strlen(s)), 0, 0, 
 				   ovector, ovector_size);
 		    if (rc >= 0) {
-			if (capture_count > 0) {  // CXXR change
+			if (capture_count > 0) {  // rho change
 			    extract_match_and_groups(use_UTF8, ovector, 
 						     capture_count,
 						     // don't use this for large i
@@ -2591,10 +2591,10 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 			elt = gregexpr_BadStringAns();
 		    } else {
 			if (fixed_opt)
-			    elt = gregexpr_fixed(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8);
+			    elt = gregexpr_fixed(spat, s, RHOCONSTRUCT(Rboolean, useBytes), use_UTF8);
 			else
 			    elt = gregexpr_perl(spat, s, re_pcre, re_pe,
-						CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8, ovector,
+						RHOCONSTRUCT(Rboolean, useBytes), use_UTF8, ovector,
 						ovector_size, capture_count,
 						capture_names);
 		    }
@@ -2611,7 +2611,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     else if (perl_opt) {
 	if (re_pe) pcre_free(re_pe);
 	pcre_free(re_pcre);
-	pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
+	pcre_free(RHO_NO_CAST(void *)RHO_C_CAST(unsigned char*, tables));
 	UNPROTECT(1);
 	free(ovector);
     } else
@@ -2621,7 +2621,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     return ans;
 }
 
-SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* text_, CXXR::RObject* ignore_case_, CXXR::RObject* fixed_, CXXR::RObject* useBytes_)
+SEXP attribute_hidden do_regexec(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* useBytes_)
 {
     SEXP pat, text, ans, matchpos, matchlen;
     int opt_icase, opt_fixed, useBytes;
@@ -2679,7 +2679,7 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
 	useBytes = onlyASCII;
     }
     if(!useBytes) {
-        Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+        Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if(!haveBytes)
 	    for(i = 0; i < n; i++) {
 		if(IS_BYTES(STRING_ELT(text, i))) {
@@ -2693,7 +2693,7 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
     }
 
     if(!useBytes) {
-        use_WC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
+        use_WC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
 	if(!use_WC) {
 	    for(i = 0 ; i < n ; i++) {
 		if(STRING_ELT(text, i) == NA_STRING) continue;
@@ -2758,7 +2758,7 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
 	    if(rc == REG_OK) {
 		PROTECT(matchpos = allocVector(INTSXP, nmatch));
 		PROTECT(matchlen = allocVector(INTSXP, nmatch));
-		for(j = 0; j < CXXRCONSTRUCT(int, nmatch); j++) {
+		for(j = 0; j < RHOCONSTRUCT(int, nmatch); j++) {
 		    so = pmatch[j].rm_so;
 		    INTEGER(matchpos)[j] = so + 1;
 		    INTEGER(matchlen)[j] = pmatch[j].rm_eo - so;

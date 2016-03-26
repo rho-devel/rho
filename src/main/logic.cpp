@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999--2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,13 +31,13 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "CXXR/BinaryFunction.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/LogicalVector.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/UnaryFunction.hpp"
+#include "rho/BinaryFunction.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/LogicalVector.h"
+#include "rho/RawVector.h"
+#include "rho/UnaryFunction.hpp"
 
-using namespace CXXR;
+using namespace rho;
 using namespace VectorOps;
 
 // Functionality to support do_logic() :
@@ -137,7 +137,7 @@ namespace {
 }  // anonymous namespace
 
 /* & | ! */
-SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_logic(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans;
 
@@ -280,7 +280,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 			    type2char(TYPEOF(t)));
 	    t = coerceVector(t, LGLSXP);
 	}
-	val = CXXRCONSTRUCT(Rboolean, checkValues(PRIMVAL(op), narm, LOGICAL(t), XLENGTH(t)));
+	val = RHOCONSTRUCT(Rboolean, checkValues(PRIMVAL(op), narm, LOGICAL(t), XLENGTH(t)));
         if (val != NA_LOGICAL) {
             if ((PRIMVAL(op) == _OP_ANY && val)
                 || (PRIMVAL(op) == _OP_ALL && !val)) {
@@ -295,7 +295,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 #undef _OP_ALL
 #undef _OP_ANY
 
-namespace CXXR {
+namespace rho {
     namespace VectorOps {
 	void checkOperandsConformable(const VectorBase* vl, const VectorBase* vr)
 	{
@@ -314,4 +314,4 @@ namespace CXXR {
 		Rf_error(_("time-series/vector length mismatch"));
 	}
     } // namespace VectorOps
-} // namespace CXXR  
+} // namespace rho  

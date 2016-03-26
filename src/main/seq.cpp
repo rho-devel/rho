@@ -3,11 +3,11 @@
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,10 +39,10 @@
 #include <R_ext/Itermacros.h>
 
 #include "RBufferUtils.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/ExpressionVector.h"
+#include "rho/GCStackRoot.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
@@ -154,7 +154,7 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     return ans;
 }
 
-SEXP attribute_hidden do_colon(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_colon(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP s1, s2;
     double n1, n2;
@@ -336,7 +336,7 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
     return a;
 }
 
-SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* times_)
+SEXP attribute_hidden do_rep_int(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* times_)
 {
     SEXP s = x_, ncopy = times_;
     R_xlen_t nc;
@@ -390,7 +390,7 @@ SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::B
     return a;
 }
 
-SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* length_out_)
+SEXP attribute_hidden do_rep_len(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* length_out_)
 {
     R_xlen_t ns, na;
     SEXP a, s, len;
@@ -737,7 +737,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, from, to, by, len, along;
     int nargs = length(args), lf;
-    Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
+    Rboolean One = RHOCONSTRUCT(Rboolean, nargs == 1);
     R_xlen_t i, lout = NA_INTEGER;
     static SEXP do_seq_formals = NULL;
 
@@ -937,7 +937,7 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_seq_along(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans;
 
@@ -969,7 +969,7 @@ SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* length_)
+SEXP attribute_hidden do_seq_len(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* length_)
 {
     SEXP ans;
     R_xlen_t len;

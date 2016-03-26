@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2007   The R Development Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,27 +29,27 @@
  * Class GCNode and associated C-callable functions.
  */
 
-#include "CXXR/GCNode.hpp"
+#include "rho/GCNode.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include "CXXR/AddressSanitizer.h"
-#include "CXXR/GCManager.hpp"
-#include "CXXR/GCRoot.h"
-#include "CXXR/GCStackFrameBoundary.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/WeakRef.h"
+#include "rho/AddressSanitizer.h"
+#include "rho/GCManager.hpp"
+#include "rho/GCRoot.h"
+#include "rho/GCStackFrameBoundary.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/ProtectStack.h"
+#include "rho/RAllocStack.h"
+#include "rho/WeakRef.h"
 #include "gc.h"
 extern "C" {
 #  include "private/gc_priv.h"
 }
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
@@ -331,7 +331,7 @@ void GCNode::Marker::operator()(const GCNode* node)
     node->visitReferents(this);
 }
 
-void CXXR::initializeMemorySubsystem()
+void rho::initializeMemorySubsystem()
 {
     static bool initialized = false;
     if (!initialized) {

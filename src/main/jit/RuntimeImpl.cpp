@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,18 +23,18 @@
 
 #define R_NO_REMAP
 
-#include "CXXR/ArgList.hpp"
-#include "CXXR/Environment.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/Expression.h"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/LoopBailout.hpp"
-#include "CXXR/LoopException.hpp"
-#include "CXXR/PairList.h"
-#include "CXXR/RObject.h"
-#include "CXXR/StackChecker.hpp"
-#include "CXXR/Symbol.h"
-#include "CXXR/jit/CompiledFrame.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/Environment.h"
+#include "rho/Evaluator.h"
+#include "rho/Expression.h"
+#include "rho/FunctionBase.h"
+#include "rho/LoopBailout.hpp"
+#include "rho/LoopException.hpp"
+#include "rho/PairList.h"
+#include "rho/RObject.h"
+#include "rho/StackChecker.hpp"
+#include "rho/Symbol.h"
+#include "rho/jit/CompiledFrame.hpp"
 #include "Defn.h"
 
 /*
@@ -49,16 +49,16 @@
  * clang -emit-llvm -S  -o foo.ll # emits human readable IR
  */
 
-using namespace CXXR;
+using namespace rho;
 
 extern "C" {
 
-RObject* cxxr_runtime_evaluate(RObject* value, Environment* environment)
+RObject* rho_runtime_evaluate(RObject* value, Environment* environment)
 {
     return Evaluator::evaluate(value, environment);
 }
 
-RObject* cxxr_runtime_lookupSymbol(const Symbol* value,
+RObject* rho_runtime_lookupSymbol(const Symbol* value,
 				   Environment* environment)
 {
     return const_cast<Symbol*>(value)->evaluate(environment);
@@ -67,10 +67,10 @@ RObject* cxxr_runtime_lookupSymbol(const Symbol* value,
 /*
  * Lookup a symbol in a CompiledFrame.
  * Note that this function doesn't handle the cases where the symbol is
- * ..., ..n, or missingArg().  cxxr_runtime_lookupSymbol should be used in
+ * ..., ..n, or missingArg().  rho_runtime_lookupSymbol should be used in
  * those cases.
  */
-RObject* cxxr_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
+RObject* rho_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
 						  Environment* environment,
 						  int position)
 {
@@ -106,13 +106,13 @@ RObject* cxxr_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
 	}
     }
     // Fallback to the interpreter.
-    return cxxr_runtime_lookupSymbol(symbol, environment);
+    return rho_runtime_lookupSymbol(symbol, environment);
 }
 
 /*
  * Assign to a symbol in a CompiledFrame.
  */
-void cxxr_runtime_assignSymbolInCompiledFrame(const Symbol* symbol,
+void rho_runtime_assignSymbolInCompiledFrame(const Symbol* symbol,
 					      Environment* environment,
 					      int position,
 					      RObject* value)
@@ -130,13 +130,13 @@ void cxxr_runtime_assignSymbolInCompiledFrame(const Symbol* symbol,
     binding->assign(value);
 }
 
-FunctionBase* cxxr_runtime_lookupFunction(const Symbol* symbol,
+FunctionBase* rho_runtime_lookupFunction(const Symbol* symbol,
 					  Environment* environment)
 {
     return findFunction(symbol, environment, true);
 }
 
-RObject* cxxr_runtime_callFunction(const FunctionBase* function,
+RObject* rho_runtime_callFunction(const FunctionBase* function,
 				   const PairList* args, const Expression* call,
 				   Environment* environment)
 {
@@ -146,19 +146,19 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
     return call->evaluateFunctionCall(function, environment, &arglist);
 }
 
-void cxxr_runtime_do_break(Environment* environment) {
+void rho_runtime_do_break(Environment* environment) {
     if (!environment->loopActive())
 	Rf_error(_("no loop to break from"));
     (new LoopBailout(environment, false))->throwException();
 }
 
-void cxxr_runtime_do_next(Environment* environment) {
+void rho_runtime_do_next(Environment* environment) {
     if (!environment->loopActive())
 	Rf_error(_("no loop to break from"));
     (new LoopBailout(environment, true))->throwException();
 }
 
-bool cxxr_runtime_loopExceptionIsNext(void* exception) {
+bool rho_runtime_loopExceptionIsNext(void* exception) {
     LoopException* loop_exception = static_cast<LoopException*>(exception);
     return loop_exception->next();
 }
@@ -169,26 +169,26 @@ Rboolean asLogicalNoNA(SEXP s, SEXP call);
 extern "C++"
 SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho);
 
-bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
+bool rho_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
     return asLogicalNoNA(object, call);
 }
 
-bool cxxr_runtime_is_function(RObject* object) {
+bool rho_runtime_is_function(RObject* object) {
     return Rf_isFunction(object);
 }
 
-void cxxr_runtime_setVisibility(bool visible) {
+void rho_runtime_setVisibility(bool visible) {
     Evaluator::enableResultPrinting(visible);
 }
 
-void cxxr_runtime_incrementNamed(RObject* object) {
+void rho_runtime_incrementNamed(RObject* object) {
     switch (NAMED(object)) {
     case 0: SET_NAMED(object, 1); break;
     case 1: SET_NAMED(object, 2); break;
     }
 }
 
-void cxxr_runtime_maybeCheckForUserInterrupts() {
+void rho_runtime_maybeCheckForUserInterrupts() {
     Evaluator::maybeCheckForUserInterrupts();
 }
 
@@ -200,7 +200,7 @@ void Rf_warning(const char*, ...);
 // TODO(kmillar): remove this once BuiltInFunction is used in this file.
 void force_symbol_emission_built_in_function(BuiltInFunction*) { }
 
-RObject* cxxr_runtime_applydefine(RObject* call, RObject* op, RObject* args,
+RObject* rho_runtime_applydefine(RObject* call, RObject* op, RObject* args,
                                   RObject* rho) {
   return applydefine(call, op, args, rho);
 }

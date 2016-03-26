@@ -5,11 +5,11 @@
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2009--2011  Romain Francois
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,9 +40,9 @@
 #include "Fileio.h"
 #include "Parse.h"
 #include <R_ext/Print.h>
-#include "CXXR/Expression.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/ProtectStack.h"
+#include "rho/Expression.h"
+#include "rho/ExpressionVector.h"
+#include "rho/ProtectStack.h"
 
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocale.h),
@@ -63,7 +63,7 @@ static void initData(void);
 static void initId(void);
 static void record_( int, int, int, int, int, int, char* ) ;
 
-// CXXR FIXME: 2012-02-21.  We encountered parse errors building the
+// rho FIXME: 2012-02-21.  We encountered parse errors building the
 // tools package with YYINITDEPTH at its default value (200).  But we
 // really need to get to the bottom of what was going wrong.
 #define YYINITDEPTH 400
@@ -875,7 +875,7 @@ static SEXP xxforcond(SEXP sym, SEXP expr)
     SEXP ans;
     EatLines = 1;
     if (GenerateCode)
-	PROTECT(ans = lang2(sym, expr));  /* CXXR change */
+	PROTECT(ans = lang2(sym, expr));  /* rho change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(expr);
@@ -887,7 +887,7 @@ static SEXP xxfor(SEXP forsym, SEXP forcond, SEXP body)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* CXXR change */
+	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* rho change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(body);
@@ -1040,7 +1040,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 
     EatLines = 0;
     if (GenerateCode) {
-	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in CXXR */
+	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in rho */
 	SETCAR(a2, a1);
 	if (ParseState.keepSrcRefs) {
 	    PROTECT(prevSrcrefs = getAttrib(a2, R_SrcrefSymbol));
@@ -1053,7 +1053,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 	}
 	else
 	    PROTECT(ans = a2);
-	/* CXXR: Transform ans to class Expression: */
+	/* rho: Transform ans to class Expression: */
 	{
             anslist = ans;
 	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
@@ -1373,7 +1373,7 @@ attribute_hidden
 SEXP R_Parse1File(FILE *fp, int gencode, ParseStatus *status)
 {
     {
-	CXXR::ProtectStack::Scope psscope;
+	rho::ProtectStack::Scope psscope;
 	ParseInit();
 	ParseContextInit();
 	GenerateCode = gencode;
@@ -1399,9 +1399,9 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
 
     R_InitSrcRefState();
     {
-	CXXR::ProtectStack::Scope psscope;
+	rho::ProtectStack::Scope psscope;
 	if (gencode) {
-	    keepSource = CXXRCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
+	    keepSource = RHOCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
 	    if (keepSource) {
 		ParseState.keepSrcRefs = TRUE;
 		REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
@@ -1724,7 +1724,7 @@ static int nextchar(int expect)
 /* Syntactic Keywords + Symbolic Constants */
 
 struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int token;
 }
 static keywords[] = {
@@ -1929,7 +1929,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i;
 	/* Edit the error message */
-	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
+	expecting = RHO_C_CAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
 	if (expecting) *expecting = '\0';
 	for (i = 0; yytname_translations[i]; i += 2) {
 	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -2053,7 +2053,7 @@ static int SkipComment(void)
     int _first_parsed = ParseState.xxparseno ;
     int type = COMMENT ;
 
-    Rboolean maybeLine = CXXRCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
+    Rboolean maybeLine = RHOCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
     Rboolean doSave;
 
     DECLARE_YYTEXT_BUFP(yyp);
@@ -2082,13 +2082,13 @@ static int SkipComment(void)
         _last_parsed = prevparse[prevpos];
     }
     
-    doSave = CXXRCONSTRUCT(Rboolean, !maybeLine);
+    doSave = RHOCONSTRUCT(Rboolean, !maybeLine);
     
     while (c != '\n' && c != R_EOF) {
         // Comments can be any length; we only record the ones that fit in yytext.
         if (doSave) {
             YYTEXT_PUSH(c, yyp);
-            doSave = CXXRCONSTRUCT(Rboolean, (yyp - yytext) < sizeof(yytext) - 2);
+            doSave = RHOCONSTRUCT(Rboolean, (yyp - yytext) < sizeof(yytext) - 2);
         }
  	_last_column = ParseState.xxcolno ;
 	_last_parsed = ParseState.xxparseno ;
@@ -2236,7 +2236,7 @@ static int NumericValue(int c)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
 	    nstext *= 2;                    \
-	    stext = CXXRSCAST(char*, malloc(nstext));         \
+	    stext = RHO_S_CAST(char*, malloc(nstext));         \
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), ParseState.xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -2729,14 +2729,14 @@ static int processLineDirective(int *type)
 }
 
 /* Get the R symbol, and set yytext at the same time */
-static SEXP install_and_save(CXXRCONST char * text)
+static SEXP install_and_save(RHOCONST char * text)
 {
     strcpy(yytext, text);
     return install(text);
 }
 
 /* Get an R symbol, and set different yytext.  Used for translation of -> to <-. ->> to <<- */
-static SEXP install_and_save2(CXXRCONST char * text, CXXRCONST char * savetext)
+static SEXP install_and_save2(RHOCONST char * text, RHOCONST char * savetext)
 {
     strcpy(yytext, savetext);
     return install(text);

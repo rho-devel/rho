@@ -44,11 +44,11 @@ retracemem(x, previous = NULL)
 
   The messages can be turned off with \code{\link{tracingState}}.
 
-  In CXXR any R object (other than NULL) can be traced in this way;
+  In rho any R object (other than NULL) can be traced in this way;
   however (as in CR) it is not useful to trace environments, promises,
   weak references, or external pointer objects, as these are not
-  duplicated, and CXXR gives a warning in this case.  On the other hand
-  CXXR (unlike CR) does not track copying into and out of the arguments
+  duplicated, and rho gives a warning in this case.  On the other hand
+  rho (unlike CR) does not track copying into and out of the arguments
   of \code{.C} and \code{.Fortran}.
 
   These functions are \link{primitive}.

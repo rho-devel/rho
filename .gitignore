@@ -58,7 +58,7 @@
 /src/extra/sparsehash/time_hash_map
 
 /src/include/*.tsa
-/src/include/CXXR/stamp-R
+/src/include/rho/stamp-R
 /src/include/R_ext/stamp-R
 /src/include/Rconfig.h
 /src/include/Rmath.h

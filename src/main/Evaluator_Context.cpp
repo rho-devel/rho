@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,14 +24,14 @@
 
 /** @file Evaluator_Context.cpp
  *
- * Implementation of class CXXR::Evaluator::Context.
+ * Implementation of class rho::Evaluator::Context.
  *
  * @note The long name Evaluator_Context.cpp is used rather than
  * Context.cpp because the latter would differ only in case from the
  * filename of context.cpp derived from CR's context.c.
  */
 
-#include "CXXR/Evaluator_Context.hpp"
+#include "rho/Evaluator_Context.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;

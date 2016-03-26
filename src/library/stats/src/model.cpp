@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,11 +40,11 @@
 #endif
 
 #include <vector>
-#include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/Expression.h"
+#include "rho/GCStackRoot.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* inline-able versions, used just once! */
 static R_INLINE Rboolean isUnordered_int(SEXP s)
@@ -1003,7 +1003,7 @@ static int isOne(SEXP x)
 static int Seql2(SEXP a, SEXP b)
 {
     if (a == b) return 1;
-    // IS_CACHED not implemented in CXXR, because always true.
+    // IS_CACHED not implemented in rho, because always true.
     if (/*IS_CACHED(a) && IS_CACHED(b) &&*/ ENC_KNOWN(a) == ENC_KNOWN(b))
 	return 0;
     else {
@@ -1760,7 +1760,7 @@ SEXP termsform(SEXP args)
 
     PROTECT(varnames = allocVector(STRSXP, nvar));
     for (v = CDR(varlist), i = 0; v != R_NilValue; v = CDR(v))
-	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), CXXRFALSE), 0));
+	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), RHO_FALSE), 0));
 
     /* Step 2b: Find and remove any offset(s) */
 

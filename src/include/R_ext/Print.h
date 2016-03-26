@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1998-2010    The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -31,7 +31,7 @@
 #ifdef  __cplusplus
 /* If the vprintf interface is defined at all in C++ it may only be
    defined in namespace std. */
-/* CXXR comment 2011-07-28: ISO14882:2003 specifies that vprintf() be
+/* rho comment 2011-07-28: ISO14882:2003 specifies that vprintf() be
    included in cstdio. */
 # ifdef R_USE_C99_IN_CXX
 #  include <cstdarg>

@@ -1,18 +1,18 @@
-/*CXXR $Id$
- *CXXR
- *CXXR This file is part of CXXR, a project to refactor the R interpreter
- *CXXR into C++.  It may consist in whole or in part of program code and
- *CXXR documentation taken from the R project itself, incorporated into
- *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
- *CXXR Licence.
- *CXXR 
- *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
- *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
- *CXXR CXXR is not part of the R project, and bugs and other issues should
- *CXXR not be reported via r-bugs or other R project channels; instead refer
- *CXXR to the CXXR website.
- *CXXR */
+/* $Id$
+ *
+ * This file is part of Rho, a project to refactor the R interpreter
+ * into C++.  It may consist in whole or in part of program code and
+ * documentation taken from the R project itself, incorporated into
+ * Rho (and possibly MODIFIED) under the terms of the GNU General Public
+ * Licence.
+ * 
+ * Rho is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ * copyrights and copyright restrictions as may be stated below.
+ * 
+ * Rho is not part of the R project, and bugs and other issues should
+ * not be reported via r-bugs or other R project channels; instead refer
+ * to the Rho website.
+ * */
 
 /*
  * Source code from Xfig 3.2.4 modified to work with arrays of doubles
@@ -76,8 +76,8 @@ add_point(double x, double y, pGEDevDesc dd)
 	    error(_("add_point - reached MAXNUMPTS (%d)"),tmp_n);
 	}
 	if (max_points == 0) {
-	    tmp_px = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
-	    tmp_py = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
+	    tmp_px = static_cast<double *>( RHO_alloc(tmp_n, sizeof(double)));
+	    tmp_py = static_cast<double *>( RHO_alloc(tmp_n, sizeof(double)));
 	} else {
 	    tmp_px = reinterpret_cast<double *>( S_realloc(reinterpret_cast<char *>( xpoints),
 							  tmp_n, max_points,

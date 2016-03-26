@@ -1760,7 +1760,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-provenance-tracking
-                          enable CXXR provenance tracking facilities [no]
+                          enable rho provenance tracking facilities [no]
   --enable-llvm-jit       enable JIT compilation of R code with LLVM [no]
   --enable-R-profiling    attempt to compile support for Rprof() [yes]
   --enable-memory-profiling
@@ -5030,7 +5030,7 @@ fi
 config_opts="${ac_configure_args}"
 
 
-### ** CXXR Optional features.
+### ** rho Optional features.
 ## Allow the user to specify support for memory profiling.
 # Check whether --enable-provenance-tracking was given.
 if test "${enable_provenance_tracking+set}" = set; then :
@@ -5265,7 +5265,7 @@ else
 fi
 
 
-### CXXR Requires Boost of at least a given version,
+### rho Requires Boost of at least a given version,
 ### including the boost::regex library.
 
 ac_ext=cpp
@@ -5798,7 +5798,7 @@ $as_echo "$as_me: We could not detect the boost libraries (version $boost_lib_ve
 $as_echo "$as_me: Your boost libraries seems to old (version $_version)." >&6;}
         fi
         # execute ACTION-IF-NOT-FOUND (if present):
-        as_fn_error $? "CXXR requires boost, which was not found." "$LINENO" 5
+        as_fn_error $? "rho requires boost, which was not found." "$LINENO" 5
 
     else
 
@@ -31979,7 +31979,7 @@ fi
 
 
 ## isfinite() is in territory where C++98 clashes with C99,
-## so is not used in CXXR.
+## so is not used in rho.
 ## if test "${ac_cv_have_decl_isfinite}" = "yes"; then
 ## R_FUNC_ISFINITE
 ## fi
@@ -38315,7 +38315,7 @@ else
 fi
 
 
-## CXXR provenance tracking.
+## rho provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
 
 $as_echo "#define PROVENANCE_TRACKING 1" >>confdefs.h
@@ -46811,7 +46811,7 @@ esac
 as_dir=src/extra/gtest/fused-src/gtest; as_fn_mkdir_p
 ac_config_headers="$ac_config_headers src/include/config.h"
 
-ac_config_files="$ac_config_files Makeconf Makefile doc/Makefile doc/html/Makefile doc/manual/Makefile etc/Makefile etc/Makeconf etc/Renviron etc/javaconf etc/ldpaths m4/Makefile po/Makefile share/Makefile src/Makefile src/appl/Makefile src/extra/Makefile src/extra/blas/Makefile src/extra/gc/Makefile src/extra/gtest/Makefile src/extra/intl/Makefile src/extra/tre/Makefile src/extra/tzone/Makefile src/extra/xdr/Makefile src/include/Makefile src/include/Rmath.h0 src/include/R_ext/Makefile src/include/CXXR/Makefile src/library/Recommended/Makefile src/library/Makefile src/library/base/DESCRIPTION src/library/base/Makefile src/library/datasets/DESCRIPTION src/library/datasets/Makefile src/library/graphics/DESCRIPTION src/library/graphics/Makefile src/library/graphics/src/Makefile src/library/grDevices/DESCRIPTION src/library/grDevices/Makefile src/library/grDevices/src/Makefile src/library/grDevices/src/cairo/Makefile src/library/grid/DESCRIPTION src/library/grid/Makefile src/library/grid/src/Makefile src/library/methods/DESCRIPTION src/library/methods/Makefile src/library/methods/src/Makefile src/library/parallel/DESCRIPTION src/library/parallel/Makefile src/library/parallel/src/Makefile src/library/profile/Makefile src/library/stats/DESCRIPTION src/library/stats/Makefile src/library/stats/src/Makefile src/library/stats4/DESCRIPTION src/library/stats4/Makefile src/library/splines/DESCRIPTION src/library/splines/Makefile src/library/splines/src/Makefile src/library/tcltk/DESCRIPTION src/library/tcltk/Makefile src/library/tcltk/src/Makefile src/library/tools/DESCRIPTION src/library/tools/Makefile src/library/tools/src/Makefile src/library/translations/DESCRIPTION src/library/translations/Makefile src/library/utils/DESCRIPTION src/library/utils/Makefile src/library/utils/src/Makefile src/main/Makefile src/main/jit/Makefile src/modules/Makefile src/modules/X11/Makefile src/modules/internet/Makefile src/modules/lapack/Makefile src/nmath/Makefile src/nmath/standalone/Makefile src/scripts/Makefile src/scripts/R.sh src/scripts/Rcmd src/scripts/f77_f2c src/scripts/javareconf src/scripts/mkinstalldirs src/scripts/pager src/scripts/rtags src/unix/Makefile tests/Makefile tests/CXXR/Makefile tests/CXXR2/Makefile tests/testr/Makefile tests/Embedding/Makefile tests/Examples/Makefile tools/Makefile"
+ac_config_files="$ac_config_files Makeconf Makefile doc/Makefile doc/html/Makefile doc/manual/Makefile etc/Makefile etc/Makeconf etc/Renviron etc/javaconf etc/ldpaths m4/Makefile po/Makefile share/Makefile src/Makefile src/appl/Makefile src/extra/Makefile src/extra/blas/Makefile src/extra/gc/Makefile src/extra/gtest/Makefile src/extra/intl/Makefile src/extra/tre/Makefile src/extra/tzone/Makefile src/extra/xdr/Makefile src/include/Makefile src/include/Rmath.h0 src/include/R_ext/Makefile src/include/rho/Makefile src/library/Recommended/Makefile src/library/Makefile src/library/base/DESCRIPTION src/library/base/Makefile src/library/datasets/DESCRIPTION src/library/datasets/Makefile src/library/graphics/DESCRIPTION src/library/graphics/Makefile src/library/graphics/src/Makefile src/library/grDevices/DESCRIPTION src/library/grDevices/Makefile src/library/grDevices/src/Makefile src/library/grDevices/src/cairo/Makefile src/library/grid/DESCRIPTION src/library/grid/Makefile src/library/grid/src/Makefile src/library/methods/DESCRIPTION src/library/methods/Makefile src/library/methods/src/Makefile src/library/parallel/DESCRIPTION src/library/parallel/Makefile src/library/parallel/src/Makefile src/library/profile/Makefile src/library/stats/DESCRIPTION src/library/stats/Makefile src/library/stats/src/Makefile src/library/stats4/DESCRIPTION src/library/stats4/Makefile src/library/splines/DESCRIPTION src/library/splines/Makefile src/library/splines/src/Makefile src/library/tcltk/DESCRIPTION src/library/tcltk/Makefile src/library/tcltk/src/Makefile src/library/tools/DESCRIPTION src/library/tools/Makefile src/library/tools/src/Makefile src/library/translations/DESCRIPTION src/library/translations/Makefile src/library/utils/DESCRIPTION src/library/utils/Makefile src/library/utils/src/Makefile src/main/Makefile src/main/jit/Makefile src/modules/Makefile src/modules/X11/Makefile src/modules/internet/Makefile src/modules/lapack/Makefile src/nmath/Makefile src/nmath/standalone/Makefile src/scripts/Makefile src/scripts/R.sh src/scripts/Rcmd src/scripts/f77_f2c src/scripts/javareconf src/scripts/mkinstalldirs src/scripts/pager src/scripts/rtags src/unix/Makefile tests/Makefile tests/rho/Makefile tests/rho2/Makefile tests/testr/Makefile tests/Embedding/Makefile tests/Examples/Makefile tools/Makefile"
 
 
 ac_config_commands="$ac_config_commands stamp-h"
@@ -48217,7 +48217,7 @@ do
     "src/include/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/Makefile" ;;
     "src/include/Rmath.h0") CONFIG_FILES="$CONFIG_FILES src/include/Rmath.h0" ;;
     "src/include/R_ext/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/R_ext/Makefile" ;;
-    "src/include/CXXR/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/CXXR/Makefile" ;;
+    "src/include/rho/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/rho/Makefile" ;;
     "src/library/Recommended/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Recommended/Makefile" ;;
     "src/library/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Makefile" ;;
     "src/library/base/DESCRIPTION") CONFIG_FILES="$CONFIG_FILES src/library/base/DESCRIPTION" ;;
@@ -48278,8 +48278,8 @@ do
     "src/scripts/rtags") CONFIG_FILES="$CONFIG_FILES src/scripts/rtags" ;;
     "src/unix/Makefile") CONFIG_FILES="$CONFIG_FILES src/unix/Makefile" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
-    "tests/CXXR/Makefile") CONFIG_FILES="$CONFIG_FILES tests/CXXR/Makefile" ;;
-    "tests/CXXR2/Makefile") CONFIG_FILES="$CONFIG_FILES tests/CXXR2/Makefile" ;;
+    "tests/rho/Makefile") CONFIG_FILES="$CONFIG_FILES tests/rho/Makefile" ;;
+    "tests/rho2/Makefile") CONFIG_FILES="$CONFIG_FILES tests/rho2/Makefile" ;;
     "tests/testr/Makefile") CONFIG_FILES="$CONFIG_FILES tests/testr/Makefile" ;;
     "tests/Embedding/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Embedding/Makefile" ;;
     "tests/Examples/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Examples/Makefile" ;;
@@ -50277,7 +50277,7 @@ fi
 fi
 
 r_options=
-cxxr_options=
+rho_options=
 r_no_options=
 if test "${want_R_framework}" = yes; then
   separator=", "
@@ -50386,15 +50386,15 @@ fi
 if test "${want_provenance_tracking}" = yes; then
   separator=", "
 test -z "${separator}" && separator=" "
-if test -z "${cxxr_options}"; then
-  cxxr_options="Provenance Tracking"
+if test -z "${rho_options}"; then
+  rho_options="Provenance Tracking"
 else
-  cxxr_options="${cxxr_options}${separator}Provenance Tracking"
+  rho_options="${rho_options}${separator}Provenance Tracking"
 fi
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result:
-CXXR is now configured for ${host}
+rho is now configured for ${host}
 
   Source directory:          ${srcdir}
   Installation directory:    ${prefix}
@@ -50410,7 +50410,7 @@ CXXR is now configured for ${host}
   External libraries:        ${r_external_libs}
   Additional capabilities:   ${r_capabilities}
   CR Options enabled:        ${r_options}
-  CXXR Options enabled:      ${cxxr_options}
+  rho Options enabled:       ${rho_options}
 
   Capabilities skipped:      ${r_no_capabilities}
   Options not enabled:       ${r_no_options}
@@ -50418,7 +50418,7 @@ CXXR is now configured for ${host}
   Recommended packages:      ${use_recommended_packages}
 " >&5
 $as_echo "
-CXXR is now configured for ${host}
+rho is now configured for ${host}
 
   Source directory:          ${srcdir}
   Installation directory:    ${prefix}
@@ -50434,7 +50434,7 @@ CXXR is now configured for ${host}
   External libraries:        ${r_external_libs}
   Additional capabilities:   ${r_capabilities}
   CR Options enabled:        ${r_options}
-  CXXR Options enabled:      ${cxxr_options}
+  rho Options enabled:       ${rho_options}
 
   Capabilities skipped:      ${r_no_capabilities}
   Options not enabled:       ${r_no_options}

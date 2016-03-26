@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,19 +23,19 @@
 
 #define R_NO_REMAP
 
-#include "CXXR/jit/TypeBuilder.hpp"
-#include "CXXR/jit/Runtime.hpp"
+#include "rho/jit/TypeBuilder.hpp"
+#include "rho/jit/Runtime.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 namespace llvm {
 
-#define DEFINE_TYPEBUILDER_FOR(CXXR_TYPE)                                      \
+#define DEFINE_TYPEBUILDER_FOR(RHO_TYPE)                                      \
     template <>                                                                \
-    StructType* TypeBuilder<CXXR_TYPE, false>::get(LLVMContext& context)       \
+    StructType* TypeBuilder<RHO_TYPE, false>::get(LLVMContext& context)       \
     {                                                                          \
 	static StructType* result                                              \
-	    = CXXR::JIT::Runtime::getCxxrType(#CXXR_TYPE, context);            \
+	    = rho::JIT::Runtime::getRhoType(#RHO_TYPE, context);               \
 	return result;                                                         \
     }
 

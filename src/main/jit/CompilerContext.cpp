@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,18 +23,18 @@
 
 #include <typeinfo>
 
-#include "CXXR/jit/llvm.hpp"
+#include "rho/jit/llvm.hpp"
 
 #define R_NO_REMAP
-#include "CXXR/jit/CompilerContext.hpp"
+#include "rho/jit/CompilerContext.hpp"
 
-#include "CXXR/jit/Compiler.hpp"
-#include "CXXR/jit/FrameDescriptor.hpp"
-#include "CXXR/jit/OptimizationOptions.hpp"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Closure.h"
-#include "CXXR/Frame.hpp"
-#include "CXXR/LoopException.hpp"
+#include "rho/jit/Compiler.hpp"
+#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/jit/OptimizationOptions.hpp"
+#include "rho/BuiltInFunction.h"
+#include "rho/Closure.h"
+#include "rho/Frame.hpp"
+#include "rho/LoopException.hpp"
 
 using llvm::BasicBlock;
 using llvm::Function;
@@ -43,7 +43,7 @@ using llvm::Module;
 using llvm::PHINode;
 using llvm::Value;
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 CompilerContext::CompilerContext(const Closure* closure,
@@ -233,4 +233,4 @@ const std::set<const Symbol*>& CompilerContext::assignmentOperatorNames()
 }
 
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

@@ -32,7 +32,7 @@ CONFIGURE_DEPENDENCIES = $(srcdir)/VERSION
 config.status: $(srcdir)/configure
 	$(SHELL) ./config.status --recheck
 
-# CXXR always rebuilds aclocal.m4 if autoconf needs to be run.  This
+# rho always rebuilds aclocal.m4 if autoconf needs to be run.  This
 # saves having to enumerate here all the m4 files as dependencies of
 # aclocal.m4
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(CONFIGURE_DEPENDENCIES) \
@@ -78,12 +78,12 @@ javaconf: R
 	@$(MAKE) stamp-java
 
 install install-strip:
-	@echo "CXXR is currently in an immature state."
+	@echo "rho is currently in an immature state."
 	@echo "Installing it would overwrite your installation of standard R;"
 	@echo "consequently, installation is currently disabled."
 	@false
 
-CXXR-install CXXR-install-strip: installdirs gitonly
+rho-install rho-install-strip: installdirs gitonly
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) $@) || exit 1; \
 	done

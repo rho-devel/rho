@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-11 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -242,7 +242,7 @@ typedef struct {
 
 struct _GEDevDesc {
     /* Location within the R_Devices table, or -1 if not (yet) in
-     * table. (Temporary CXXR kludge.) */
+     * table. (Temporary rho kludge.) */
     int index;
     /*
      * Stuff that the devices can see (and modify).
@@ -251,7 +251,7 @@ struct _GEDevDesc {
     pDevDesc dev;
     /*
      * Stuff about the device that only the graphics engine sees
-     * (the devices don't see it).  Note that in CXXR, displayList and
+     * (the devices don't see it).  Note that in rho, displayList and
      * savedSnapshot must be modified only by using the functions
      * setDisplayList() and saveSnapshot() respectively.  (In future,
      * this should be enforced by class access controls.)
@@ -289,7 +289,7 @@ struct _GEDevDesc {
 
 typedef GEDevDesc* pGEDevDesc;
 
-/* Mutator functions introduced in CXXR pending fuller refactorisation:
+/* Mutator functions introduced in rho pending fuller refactorisation:
  */
 void setDisplayList(pGEDevDesc dev, SEXP newDisplayList);
 void saveSnapshot(pGEDevDesc dev, SEXP newSnapshot);

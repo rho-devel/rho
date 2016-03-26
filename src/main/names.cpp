@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2016  The R Core Team
  *  Copyright (C) 2003--2016  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,10 +31,10 @@
 
 #include <iostream>
 
-#include "CXXR/Evaluator_Context.hpp"
-#include "CXXR/GCManager.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/LogicalVector.h"
+#include "rho/Evaluator_Context.hpp"
+#include "rho/GCManager.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/LogicalVector.h"
 
 #include <Defn.h>
 #include <Internal.h>
@@ -44,7 +44,7 @@
 
 #include <Rinterface.h>
 
-using namespace CXXR;
+using namespace rho;
 
 /* Table of  .Internal(.) and .Primitive(.)  R functions
  * =====     =========	      ==========
@@ -906,7 +906,7 @@ SEXP attribute_hidden R_Primitive(const char *primname)
     return BuiltInFunction::obtainPrimitive(primname);
 }
 
-SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* name_)
+SEXP attribute_hidden do_primitive(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_)
 {
     SEXP name, prim;
     name = name_;

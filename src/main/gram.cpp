@@ -71,7 +71,7 @@
 #define yylloc          gram_lloc
 
 /* Copy the first part of user declarations.  */
-#line 1 "../../../cxxr/src/main/gram.y" /* yacc.c:339  */
+#line 1 "../../../rho/src/main/gram.y" /* yacc.c:339  */
 
 /*
  *  R : A Computer Langage for Statistical Data Analysis
@@ -79,11 +79,11 @@
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2009--2011  Romain Francois
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -114,9 +114,9 @@
 #include "Fileio.h"
 #include "Parse.h"
 #include <R_ext/Print.h>
-#include "CXXR/Expression.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/ProtectStack.h"
+#include "rho/Expression.h"
+#include "rho/ExpressionVector.h"
+#include "rho/ProtectStack.h"
 
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocale.h),
@@ -137,7 +137,7 @@ static void initData(void);
 static void initId(void);
 static void record_( int, int, int, int, int, int, char* ) ;
 
-// CXXR FIXME: 2012-02-21.  We encountered parse errors building the
+// rho FIXME: 2012-02-21.  We encountered parse errors building the
 // tools package with YYINITDEPTH at its default value (200).  But we
 // really need to get to the bottom of what was going wrong.
 #define YYINITDEPTH 400
@@ -1956,535 +1956,535 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 354 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 354 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { YYACCEPT; }
 #line 1962 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 355 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 355 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { yyresult = xxvalue(NULL,2,NULL);	goto yyreturn; }
 #line 1968 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 356 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 356 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { yyresult = xxvalue((yyvsp[-1]),3,&(yylsp[-1]));	goto yyreturn; }
 #line 1974 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 357 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 357 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { yyresult = xxvalue((yyvsp[-1]),4,&(yylsp[-1]));	goto yyreturn; }
 #line 1980 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 358 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 358 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { YYABORT; }
 #line 1986 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 361 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 361 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]); }
 #line 1992 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 362 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 362 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]); }
 #line 1998 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 365 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 365 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0])); }
 #line 2004 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 368 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 368 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);	setId( (yyval), (yyloc)); }
 #line 2010 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 369 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 369 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);	setId( (yyval), (yyloc)); }
 #line 2016 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 370 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 370 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);	setId( (yyval), (yyloc)); }
 #line 2022 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 371 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 371 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);	setId( (yyval), (yyloc)); }
 #line 2028 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 373 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 373 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxexprlist((yyvsp[-2]),&(yylsp[-2]),(yyvsp[-1])); setId( (yyval), (yyloc)); }
 #line 2034 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 374 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 374 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxparen((yyvsp[-2]),(yyvsp[-1]));	setId( (yyval), (yyloc)); }
 #line 2040 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 376 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 376 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxunary((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2046 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 377 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 377 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxunary((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2052 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 378 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 378 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxunary((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2058 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 379 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 379 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxunary((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2064 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 380 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 380 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxunary((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2070 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 382 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 382 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2076 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 383 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 383 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2082 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 384 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 384 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2088 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 385 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 385 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2094 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 386 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 386 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2100 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 387 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 387 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2106 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 388 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 388 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2112 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 389 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 389 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2118 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 390 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 390 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2124 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 391 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 391 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2130 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 392 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 392 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2136 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 393 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 393 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2142 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 394 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 394 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2148 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 395 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 395 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2154 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 396 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 396 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2160 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 397 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 397 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2166 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 398 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 398 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2172 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 399 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 399 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2178 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 400 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 400 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2184 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 401 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 401 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2190 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 403 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 403 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2196 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 404 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 404 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[0]),(yyvsp[-2]));	setId( (yyval), (yyloc)); }
 #line 2202 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 406 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 406 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxdefun((yyvsp[-5]),(yyvsp[-3]),(yyvsp[0]),&(yyloc)); 	setId( (yyval), (yyloc)); }
 #line 2208 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 407 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 407 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxfuncall((yyvsp[-3]),(yyvsp[-1]));  setId( (yyval), (yyloc)); modif_token( &(yylsp[-3]), SYMBOL_FUNCTION_CALL ) ; }
 #line 2214 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 408 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 408 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxif((yyvsp[-2]),(yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2220 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 409 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 409 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxifelse((yyvsp[-4]),(yyvsp[-3]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2226 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 410 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 410 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxfor((yyvsp[-2]),(yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2232 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 411 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 411 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxwhile((yyvsp[-2]),(yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2238 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
-#line 412 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 412 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxrepeat((yyvsp[-1]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2244 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 413 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 413 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsubscript((yyvsp[-4]),(yyvsp[-3]),(yyvsp[-2]));	setId( (yyval), (yyloc)); }
 #line 2250 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 414 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 414 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsubscript((yyvsp[-3]),(yyvsp[-2]),(yyvsp[-1]));	setId( (yyval), (yyloc)); }
 #line 2256 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 415 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 415 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));      setId( (yyval), (yyloc)); modif_token( &(yylsp[-2]), SYMBOL_PACKAGE ) ; }
 #line 2262 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 416 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 416 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));      setId( (yyval), (yyloc)); modif_token( &(yylsp[-2]), SYMBOL_PACKAGE ) ; }
 #line 2268 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 417 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 417 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2274 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 418 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 418 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2280 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 419 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 419 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));      setId( (yyval), (yyloc)); modif_token( &(yylsp[-2]), SYMBOL_PACKAGE ) ;}
 #line 2286 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 420 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 420 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));      setId( (yyval), (yyloc)); modif_token( &(yylsp[-2]), SYMBOL_PACKAGE ) ;}
 #line 2292 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 421 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 421 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2298 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 422 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 422 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2304 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 423 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 423 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2310 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 424 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 424 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2316 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 425 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 425 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));      setId( (yyval), (yyloc)); modif_token( &(yylsp[0]), SLOT ) ; }
 #line 2322 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 426 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 426 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxbinary((yyvsp[-1]),(yyvsp[-2]),(yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2328 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 427 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 427 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxnxtbrk((yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2334 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 428 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 428 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxnxtbrk((yyvsp[0]));	setId( (yyval), (yyloc)); }
 #line 2340 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 66:
-#line 432 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 432 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxcond((yyvsp[-1]));   }
 #line 2346 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 67:
-#line 435 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 435 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxifcond((yyvsp[-1])); }
 #line 2352 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 438 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 438 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxforcond((yyvsp[-3]),(yyvsp[-1]));	setId( (yyval), (yyloc)); }
 #line 2358 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 69:
-#line 442 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 442 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxexprlist0();	setId( (yyval), (yyloc)); }
 #line 2364 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 70:
-#line 443 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 443 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxexprlist1((yyvsp[0]), &(yylsp[0])); }
 #line 2370 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 71:
-#line 444 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 444 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxexprlist2((yyvsp[-2]), (yyvsp[0]), &(yylsp[0])); }
 #line 2376 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 72:
-#line 445 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 445 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]);		setId( (yyval), (yyloc)); }
 #line 2382 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 73:
-#line 446 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 446 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxexprlist2((yyvsp[-2]), (yyvsp[0]), &(yylsp[0])); }
 #line 2388 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 74:
-#line 447 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 447 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]);}
 #line 2394 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 75:
-#line 450 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 450 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsublist1((yyvsp[0]));	  }
 #line 2400 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 76:
-#line 451 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 451 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsublist2((yyvsp[-3]),(yyvsp[0])); }
 #line 2406 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 77:
-#line 454 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 454 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsub0();	 }
 #line 2412 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
-#line 455 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 455 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsub1((yyvsp[0]), &(yylsp[0]));  }
 #line 2418 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
-#line 456 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 456 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsymsub0((yyvsp[-1]), &(yylsp[-1])); 	modif_token( &(yylsp[0]), EQ_SUB ) ; modif_token( &(yylsp[-1]), SYMBOL_SUB ) ; }
 #line 2424 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
-#line 457 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 457 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsymsub1((yyvsp[-2]),(yyvsp[0]), &(yylsp[-2])); 	modif_token( &(yylsp[-1]), EQ_SUB ) ; modif_token( &(yylsp[-2]), SYMBOL_SUB ) ; }
 #line 2430 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
-#line 458 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 458 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsymsub0((yyvsp[-1]), &(yylsp[-1])); 	modif_token( &(yylsp[0]), EQ_SUB ) ; }
 #line 2436 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 82:
-#line 459 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 459 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxsymsub1((yyvsp[-2]),(yyvsp[0]), &(yylsp[-2])); 	modif_token( &(yylsp[-1]), EQ_SUB ) ; }
 #line 2442 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 83:
-#line 460 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 460 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxnullsub0(&(yylsp[-1])); 	modif_token( &(yylsp[0]), EQ_SUB ) ; }
 #line 2448 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 84:
-#line 461 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 461 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxnullsub1((yyvsp[0]), &(yylsp[-2])); 	modif_token( &(yylsp[-1]), EQ_SUB ) ; }
 #line 2454 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 85:
-#line 464 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 464 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxnullformal(); }
 #line 2460 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 86:
-#line 465 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 465 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxfirstformal0((yyvsp[0])); 	modif_token( &(yylsp[0]), SYMBOL_FORMALS ) ; }
 #line 2466 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 87:
-#line 466 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 466 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxfirstformal1((yyvsp[-2]),(yyvsp[0])); 	modif_token( &(yylsp[-2]), SYMBOL_FORMALS ) ; modif_token( &(yylsp[-1]), EQ_FORMALS ) ; }
 #line 2472 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 88:
-#line 467 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 467 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxaddformal0((yyvsp[-2]),(yyvsp[0]), &(yylsp[0]));   modif_token( &(yylsp[0]), SYMBOL_FORMALS ) ; }
 #line 2478 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 89:
-#line 469 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 469 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { (yyval) = xxaddformal1((yyvsp[-4]),(yyvsp[-2]),(yyvsp[0]),&(yylsp[-2])); modif_token( &(yylsp[-2]), SYMBOL_FORMALS ) ; modif_token( &(yylsp[-1]), EQ_FORMALS ) ;}
 #line 2484 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 90:
-#line 472 "../../../cxxr/src/main/gram.y" /* yacc.c:1646  */
+#line 472 "../../../rho/src/main/gram.y" /* yacc.c:1646  */
     { EatLines = 1; }
 #line 2490 "y.tab.c" /* yacc.c:1646  */
     break;
@@ -2725,7 +2725,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 474 "../../../cxxr/src/main/gram.y" /* yacc.c:1906  */
+#line 474 "../../../rho/src/main/gram.y" /* yacc.c:1906  */
 
 
 
@@ -3130,7 +3130,7 @@ static SEXP xxforcond(SEXP sym, SEXP expr)
     SEXP ans;
     EatLines = 1;
     if (GenerateCode)
-	PROTECT(ans = lang2(sym, expr));  /* CXXR change */
+	PROTECT(ans = lang2(sym, expr));  /* rho change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(expr);
@@ -3142,7 +3142,7 @@ static SEXP xxfor(SEXP forsym, SEXP forcond, SEXP body)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* CXXR change */
+	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* rho change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(body);
@@ -3295,7 +3295,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 
     EatLines = 0;
     if (GenerateCode) {
-	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in CXXR */
+	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in rho */
 	SETCAR(a2, a1);
 	if (ParseState.keepSrcRefs) {
 	    PROTECT(prevSrcrefs = getAttrib(a2, R_SrcrefSymbol));
@@ -3308,7 +3308,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 	}
 	else
 	    PROTECT(ans = a2);
-	/* CXXR: Transform ans to class Expression: */
+	/* rho: Transform ans to class Expression: */
 	{
             anslist = ans;
 	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
@@ -3628,7 +3628,7 @@ attribute_hidden
 SEXP R_Parse1File(FILE *fp, int gencode, ParseStatus *status)
 {
     {
-	CXXR::ProtectStack::Scope psscope;
+	rho::ProtectStack::Scope psscope;
 	ParseInit();
 	ParseContextInit();
 	GenerateCode = gencode;
@@ -3654,9 +3654,9 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
 
     R_InitSrcRefState();
     {
-	CXXR::ProtectStack::Scope psscope;
+	rho::ProtectStack::Scope psscope;
 	if (gencode) {
-	    keepSource = CXXRCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
+	    keepSource = RHOCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
 	    if (keepSource) {
 		ParseState.keepSrcRefs = TRUE;
 		REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
@@ -3979,7 +3979,7 @@ static int nextchar(int expect)
 /* Syntactic Keywords + Symbolic Constants */
 
 struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int token;
 }
 static keywords[] = {
@@ -4184,7 +4184,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i;
 	/* Edit the error message */
-	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
+	expecting = RHO_C_CAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
 	if (expecting) *expecting = '\0';
 	for (i = 0; yytname_translations[i]; i += 2) {
 	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -4308,7 +4308,7 @@ static int SkipComment(void)
     int _first_parsed = ParseState.xxparseno ;
     int type = COMMENT ;
 
-    Rboolean maybeLine = CXXRCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
+    Rboolean maybeLine = RHOCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
     Rboolean doSave;
 
     DECLARE_YYTEXT_BUFP(yyp);
@@ -4337,13 +4337,13 @@ static int SkipComment(void)
         _last_parsed = prevparse[prevpos];
     }
     
-    doSave = CXXRCONSTRUCT(Rboolean, !maybeLine);
+    doSave = RHOCONSTRUCT(Rboolean, !maybeLine);
     
     while (c != '\n' && c != R_EOF) {
         // Comments can be any length; we only record the ones that fit in yytext.
         if (doSave) {
             YYTEXT_PUSH(c, yyp);
-            doSave = CXXRCONSTRUCT(Rboolean, (yyp - yytext) < sizeof(yytext) - 2);
+            doSave = RHOCONSTRUCT(Rboolean, (yyp - yytext) < sizeof(yytext) - 2);
         }
  	_last_column = ParseState.xxcolno ;
 	_last_parsed = ParseState.xxparseno ;
@@ -4491,7 +4491,7 @@ static int NumericValue(int c)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
 	    nstext *= 2;                    \
-	    stext = CXXRSCAST(char*, malloc(nstext));         \
+	    stext = RHO_S_CAST(char*, malloc(nstext));         \
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), ParseState.xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -4984,14 +4984,14 @@ static int processLineDirective(int *type)
 }
 
 /* Get the R symbol, and set yytext at the same time */
-static SEXP install_and_save(CXXRCONST char * text)
+static SEXP install_and_save(RHOCONST char * text)
 {
     strcpy(yytext, text);
     return install(text);
 }
 
 /* Get an R symbol, and set different yytext.  Used for translation of -> to <-. ->> to <<- */
-static SEXP install_and_save2(CXXRCONST char * text, CXXRCONST char * savetext)
+static SEXP install_and_save2(RHOCONST char * text, RHOCONST char * savetext)
 {
     strcpy(yytext, savetext);
     return install(text);

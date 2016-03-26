@@ -25,7 +25,7 @@
 #endif
 
 #define COMPILING_RADIXSORT
-#include "CXXR/StringVector.h"
+#include "rho/StringVector.h"
 #undef COMPILING_RADIXSORT
 
 #include <Defn.h>

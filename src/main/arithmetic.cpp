@@ -4,11 +4,11 @@
  *  Copyright (C) 1998--2015	    The R Core Team.
  *  Copyright (C) 2003--2015	    The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,15 +63,15 @@
 #include <math.h>
 
 #include "R_ext/Itermacros.h"
-#include "CXXR/BinaryFunction.hpp"
-#include "CXXR/LogicalVector.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/IntVector.h"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/RealVector.h"
-#include "CXXR/UnaryFunction.hpp"
+#include "rho/BinaryFunction.hpp"
+#include "rho/LogicalVector.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/IntVector.h"
+#include "rho/RAllocStack.h"
+#include "rho/RealVector.h"
+#include "rho/UnaryFunction.hpp"
 
-using namespace CXXR;
+using namespace rho;
 using namespace VectorOps;
 
 #ifdef HAVE_MATHERR
@@ -154,7 +154,7 @@ Rboolean R_IsNaN(double x)
     if (isnan(x)) {
 	ieee_double y;
 	y.value = x;
-	return CXXRCONSTRUCT(Rboolean, (y.word[lw] != 1954));
+	return RHOCONSTRUCT(Rboolean, (y.word[lw] != 1954));
     }
     return FALSE;
 }
@@ -163,7 +163,7 @@ Rboolean R_IsNaN(double x)
 /* Mainly for use in packages */
 
 // Force a non-inline embodiment of R_finite():
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline{
 	Rboolean (*R_finitep)(double) = R_finite;
     }
@@ -805,7 +805,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* methods are allowed to have more than one arg */
-SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_trunc(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     call->check1arg("x"); // Checked _after_ internal dispatch.
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
@@ -1142,7 +1142,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* log{2,10} are builtins */
-SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_log1arg(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP res, tmp = R_NilValue /* -Wall */;
 
@@ -1390,7 +1390,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     }
     const void *vmax = vmaxget();
     nw = 1 + long(floor(amax));
-    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
+    work = static_cast<double *>( RHO_alloc(size_t( nw), sizeof(double)));
 
     MOD_ITERATE3 (n, na, nb, nc, i, ia, ib, ic, {
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
@@ -1414,7 +1414,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 #define Math3_2(A, FUN) math3_2(args[0], args[1], args[2], args[3], args[4], FUN, call)
 #define Math3B(A, FUN)  math3B (args[0], args[1], args[2], FUN, call);
 
-SEXP attribute_hidden do_math3(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_math3(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     switch (op->variant()) {
 

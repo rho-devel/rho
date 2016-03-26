@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,10 +73,10 @@
 #include <cstdarg>
 
 #include "RBufferUtils.h"
-#include "CXXR/StringVector.h"
+#include "rho/StringVector.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocales.h),
@@ -172,7 +172,7 @@ const char *EncodeEnvironment(SEXP x)
     else if (R_IsNamespaceEnv(x))
 	snprintf(ch, 1000, "<environment: namespace:%s>",
 		 translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
-    else snprintf(ch, 1000, "<environment: %p>", CXXRNOCAST(void *)x);
+    else snprintf(ch, 1000, "<environment: %p>", RHO_NO_CAST(void *)x);
 
     vmaxset(vmax);
     return ch;
@@ -540,7 +540,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
     int b, b0, i, j, cnt;
     const char *p; char *q, buf[11];
     cetype_t ienc = getCharCE(s);
-    Rboolean useUTF8 = CXXRCONSTRUCT(Rboolean, w < 0);
+    Rboolean useUTF8 = RHOCONSTRUCT(Rboolean, w < 0);
     const void *vmax = vmaxget();
 
     if (w < 0) w = w + 1000000;
@@ -714,7 +714,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRCONST unsigned char *>(p)));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<RHOCONST unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}

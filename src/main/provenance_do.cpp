@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2007   The R Development Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,11 +33,11 @@
 #include <config.h>
 #endif
 
-#include "CXXR/RObject.h"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/IntVector.h"
-#include "CXXR/StringVector.h"
-#include "CXXR/RealVector.h" /* EJP */
+#include "rho/RObject.h"
+#include "rho/BuiltInFunction.h"
+#include "rho/IntVector.h"
+#include "rho/StringVector.h"
+#include "rho/RealVector.h" /* EJP */
 #include <Internal.h>
 
 #include <fstream>
@@ -45,14 +45,14 @@
 #include <set>
 #include <boost/math/special_functions/nonfinite_num_facets.hpp>
 
-#include "CXXR/Provenance.hpp"
-#include "CXXR/StdFrame.hpp"
+#include "rho/Provenance.hpp"
+#include "rho/StdFrame.hpp"
 
 // Try to get rid of this:
 #include "Defn.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -191,7 +191,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
-SEXP attribute_hidden do_provCommand (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* /* const* */ args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_provCommand (/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* /* const* */ args, int num_args, const rho::PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -212,7 +212,7 @@ SEXP attribute_hidden do_provCommand (/*const*/ CXXR::Expression* call, const CX
 }
 
 SEXP attribute_hidden
-do_provenance_graph(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_provenance_graph(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -222,7 +222,7 @@ do_provenance_graph(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunctio
     if (nargs != 1)
 	Rf_error(_("%d arguments passed to 'provenance.graph' which requires 1"),
 		 nargs);
-    // SEXP arg1 = CAR((CXXR::RObject*) args);
+    // SEXP arg1 = CAR((rho::RObject*) args);
     const RObject* arg1 = args[0];
     if (!arg1 || arg1->sexptype() != STRSXP)
 	    Rf_error(_("invalid 'names' argument"));

@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,20 +25,20 @@
 /** @file ListFrame.cpp
  *
  *
- * @brief Implementation of class CXXR:ListFrame.
+ * @brief Implementation of class rho:ListFrame.
  */
 
-#include "CXXR/ListFrame.hpp"
+#include "rho/ListFrame.hpp"
 
 #include <cmath>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/Symbol.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/SEXP_downcast.hpp"
+#include "rho/Symbol.h"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 ListFrame::ListFrame(size_t size)
 {

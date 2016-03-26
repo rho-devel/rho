@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2003-2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,10 +30,10 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "CXXR/RAllocStack.h"
+#include "rho/RAllocStack.h"
 
 SEXP attribute_hidden
-do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_mapply(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP f = args[0], varyingArgs = args[1], constantArgs = args[2];
     int m, zero = 0;
@@ -41,9 +41,9 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
 
     m = length(varyingArgs);
     SEXP vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
-    Rboolean named = CXXRCONSTRUCT(Rboolean, vnames != nullptr);
+    Rboolean named = RHOCONSTRUCT(Rboolean, vnames != nullptr);
 
-    lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
+    lengths = static_cast<R_xlen_t *>(  RHO_alloc(m, sizeof(R_xlen_t)));
     for (int i = 0; i < m; i++) {
 	SEXP tmp1 = VECTOR_ELT(varyingArgs, i);
 	lengths[i] = get_object_length(tmp1, rho);
@@ -53,7 +53,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
     if (zero && longest)
 	error(_("zero-length inputs cannot be mixed with those of non-zero length"));
 
-    counters = static_cast<R_xlen_t *>( CXXR_alloc(m, sizeof(R_xlen_t)));
+    counters = static_cast<R_xlen_t *>( RHO_alloc(m, sizeof(R_xlen_t)));
     if (m) memset(counters, 0, m * sizeof(R_xlen_t));
 
     SEXP mindex = PROTECT(allocVector(VECSXP, m));
@@ -73,7 +73,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
     PROTECT_INDEX fi;
     PROTECT_WITH_INDEX(fcall, &fi);
 
-    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, longest > INT_MAX);
+    Rboolean realIndx = RHOCONSTRUCT(Rboolean, longest > INT_MAX);
     SEXP Dots = install("dots");
     for (int j = m - 1; j >= 0; j--) {
 	SET_VECTOR_ELT(mindex, j, ScalarInteger(j + 1));

@@ -41,7 +41,7 @@
 #include <Print.h>
 
 #include <rlocale.h> /* for btowc */
-#include "CXXR/IntVector.h"
+#include "rho/IntVector.h"
 
 #undef _
 #ifdef ENABLE_NLS
@@ -551,7 +551,7 @@ extern "C"
 SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP cvec, a, dup, levs, dims, names, dec, numerals;
-    CXXR::GCStackRoot<> rval;
+    rho::GCStackRoot<> rval;
     int i, j, len, asIs, i_exact, exact;
     Rboolean done = FALSE;
     char *endp;
@@ -732,7 +732,7 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(levs, j++, STRING_ELT(cvec, i));
 	    }
 
-	    rval = CXXR::IntVector::create(len);
+	    rval = rho::IntVector::create(len);
 
 	    /* put the levels in lexicographic order */
 

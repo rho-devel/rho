@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2016   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -80,10 +80,10 @@ typedef ptrdiff_t R_xlen_t;
 #define R_XLEN_T_MAX PTRDIFF_MAX
 
 #ifdef __cplusplus
-namespace CXXR {
+namespace rho {
     class RObject;
 }
-typedef CXXR::RObject* SEXP;
+typedef rho::RObject* SEXP;
 
 extern "C" {
 #else
@@ -111,76 +111,76 @@ typedef struct SEXPREC* SEXP;
      * @brief CR's object type identification.
      *
      * This enumeration is used within CR to identify different types
-     * of R object.  In CXXR the same purpose could be (and sometimes
+     * of R object.  In rho the same purpose could be (and sometimes
      * is) achieved by C++ run-time type information (RTTI), virtual
      * function despatch etc.  However, a ::SEXPTYPE field is retained
-     * within each CXXR::RObject for backwards compatibility, and indeed
+     * within each rho::RObject for backwards compatibility, and indeed
      * efficiency.
      */
     typedef enum {
-	NILSXP	    = 0,    /**< NULL. In CXXR no CXXR::RObject has
+	NILSXP	    = 0,    /**< NULL. In rho no rho::RObject has
 			     * this type, but for backward
 			     * compatibility TYPEOF will return ::NILSXP
 			     * if passed a null pointer.
 			     */
 	SYMSXP	    = 1,    /**< symbols, implemented in class
-			       CXXR::Symbol. */
+			       rho::Symbol. */
 	LISTSXP	    = 2,    /**< lists of dotted pairs, implemented in
-			       class CXXR::PairList. */
+			       class rho::PairList. */
 	CLOSXP	    = 3,    /**< closures, implemented in class
-			       CXXR::Closure. */
+			       rho::Closure. */
 	ENVSXP	    = 4,    /**< environments, implemented in class
-			       CXXR::Environment. */
+			       rho::Environment. */
 	PROMSXP	    = 5,    /**< promises: [un]evaluated closure
 			       arguments, implemented in class
-			       CXXR::Promise. */
+			       rho::Promise. */
 	LANGSXP	    = 6,    /**< language constructs (special lists),
-			       implemented in class CXXR::Expression. */
+			       implemented in class rho::Expression. */
 	SPECIALSXP  = 7,    /**< special forms, implemented in class
-			       CXXR::BuiltInFunction. */
+			       rho::BuiltInFunction. */
 	BUILTINSXP  = 8,    /**< builtin non-special forms, also
 			       implemented in class
-			       CXXR::BuiltInFunction. */
+			       rho::BuiltInFunction. */
 	CHARSXP	    = 9,    /**< "scalar" string type (internal only),
-			       implemented in class CXXR::String. */
+			       implemented in class rho::String. */
 	LGLSXP	    = 10,   /**< logical vectors, implemented in class
-			       CXXR::LogicalVector. */
+			       rho::LogicalVector. */
 	INTSXP	    = 13,   /**< integer vectors, implemented in class
-			       CXXR::IntVector. */
+			       rho::IntVector. */
 	REALSXP	    = 14,   /**< real variables, implemented in class
-			       CXXR::RealVector. */
+			       rho::RealVector. */
 	CPLXSXP	    = 15,   /**< complex variables, implemented in
-			       class CXXR::ComplexVector. */
+			       class rho::ComplexVector. */
 	STRSXP	    = 16,   /**< string vectors, implemented in class
-			       CXXR::StringVector. */
+			       rho::StringVector. */
 	DOTSXP	    = 17,   /**< dot-dot-dot objects, implemented in
-			       class CXXR::DottedArgs. */
+			       class rho::DottedArgs. */
 	ANYSXP	    = 18,   /**< Used to make "any" args work.  No
-			       CXXR::RObject has this type. */
+			       rho::RObject has this type. */
 	VECSXP	    = 19,   /**< generic vectors, implemented in class
-			       CXXR::ListVector. */
+			       rho::ListVector. */
 	EXPRSXP	    = 20,   /**< expression vectors, implemented in
-			       class CXXR::ExpressionVector. */
-	BCODESXP    = 21,   /**< byte code.  Unused in CXXR. */
+			       class rho::ExpressionVector. */
+	BCODESXP    = 21,   /**< byte code.  Unused in rho. */
 	EXTPTRSXP   = 22,   /**< external pointers, implemented in
-			       class CXXR::ExternalPointer. */
+			       class rho::ExternalPointer. */
 	WEAKREFSXP  = 23,   /**< weak references, implemented in class
-			       CXXR::WeakRef. */
+			       rho::WeakRef. */
 	RAWSXP      = 24,   /**< raw bytes, implemented in class
-			       CXXR::RawVector. */
+			       rho::RawVector. */
 	S4SXP       = 25,   /**< S4 object not inheriting from another
 			     *   ::SEXPTYPE, implemented in class
-			     *   CXXR::S4Object.
+			     *   rho::S4Object.
 			     */
 
-	CXXSXP      = 43,   /**< object types specific to CXXR.*/
+	CXXSXP      = 43,   /**< object types specific to rho.*/
 	                    /* (43 = ASCII +) */
 
 	BAILSXP     = 44,   /**< Object used to implement indirect flow of
 			     *   control in R without using a C++ exception.
 			     */
 
-	FUNSXP	    = 99    /**< Closure or Builtin.  No CXXR::RObject has
+	FUNSXP	    = 99    /**< Closure or Builtin.  No rho::RObject has
 			       this type. */
     } SEXPTYPE;
 
@@ -275,7 +275,7 @@ Rboolean (Rf_isObject)(SEXP s);
 #define IS_GETTER_CALL(call) (CADR(call) == R_TmpvalSymbol)
 
 /* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section (phased out in CXXR).
+   definitions in the USE_RINTERNALS section (phased out in rho).
    The function STRING_ELT is used as an argument to arrayAssign even
    if the macro version is in use.
 */
@@ -317,7 +317,7 @@ SEXP (VECTOR_ELT)(SEXP x, R_xlen_t i);
 void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
-// Extract an item from an Expression (EXPRSXP, CXXR::ExpressionVector)
+// Extract an item from an Expression (EXPRSXP, rho::ExpressionVector)
 SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
 
 /* List Access Functions */
@@ -385,7 +385,7 @@ void SET_PRSEEN(SEXP x, int v);
 int  (HASHVALUE)(SEXP x);
 
 /* External pointer access macros */
-/* (only for backwards compatibility in CXXR) */
+/* (only for backwards compatibility in rho) */
 #define EXTPTR_PTR(x)	R_ExternalPtrAddr(x)
 #define EXTPTR_PROT(x)  R_ExternalPtrProtected(x)
 #define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
@@ -398,7 +398,7 @@ int  (HASHVALUE)(SEXP x);
   /* Danger!  You almost certainly don't need to use DISABLE_PROTECT_MACROS for
    * your code.
    *
-   * In most cases, CXXR doesn't require nodes to be explicitly PROTECTed, as it
+   * In most cases, rho doesn't require nodes to be explicitly PROTECTed, as it
    * automatically protects local variables.  In that case, any function that
    * only stores SEXPs as local variables, inside other R SEXPs or protected
    * by calls to R_Protect/R_PreserveObject() doesn't need to use PROTECT() and
@@ -409,8 +409,8 @@ int  (HASHVALUE)(SEXP x);
    * storage or heap memory allocated with malloc or new cannot safely use
    * this macro, as the garbage collector doesn't scan those locations.
    */
-  inline SEXP cxxr_function_to_prevent_compiler_warnings(SEXP s) { return s; }
-#  define PROTECT(s) (cxxr_function_to_prevent_compiler_warnings(s))
+  inline SEXP rho_function_to_prevent_compiler_warnings(SEXP s) { return s; }
+#  define PROTECT(s) (rho_function_to_prevent_compiler_warnings(s))
 #  define UNPROTECT(n) (void)(n)
 #  define UNPROTECT_PTR(s) (void)(s)
 #  define PROTECT_WITH_INDEX(x, i) ((void)(x), (void)(i))
@@ -856,7 +856,7 @@ void R_orderVector (int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean de
 void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean decreasing);
 
 /* These Rf_ macros are retained for backwards compatibility, but
- * their use is deprecated within CXXR.  In particular header files
+ * their use is deprecated within rho.  In particular header files
  * should always use the Rf_ prefix explicitly, and not rely on these
  * macros to paste it in.
  */
@@ -975,7 +975,7 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #ifndef __cplusplus
 /* Under gcc, this macro can play havoc with some standard C++ header
  * files.  Consequently, the alternative approach is taken of defining
- * length as an inline function within the namespace CXXR.  The
+ * length as an inline function within the namespace rho.  The
  * relevant definition is at the end of this file.
  */
 #define length                  Rf_length
@@ -1043,14 +1043,14 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define xlengthgets		Rf_xlengthgets
 #endif /* R_NO_REMAP */
 
-/** @brief Create a CXXR::Expression with a specified car and tail.
+/** @brief Create a rho::Expression with a specified car and tail.
  *
  * This function protects its arguments from the garbage collector.
  *
  * @param cr Pointer to the 'car' of the element to be created.
  *
  * @param tl Pointer to the 'tail' of the element to be created,
- *          which must be of a CXXR::PairList type (checked).
+ *          which must be of a rho::PairList type (checked).
  *
  * @return Pointer to the constructed list.
  */
@@ -1129,7 +1129,7 @@ SEXP R_FixupRHS(SEXP x, SEXP y);
 #ifdef __cplusplus
 }  // extern "C"
 
-namespace CXXR {
+namespace rho {
     /** @brief Shorthand for Rf_length().
      *
      * @deprecated This is provided only for use in code inherited
