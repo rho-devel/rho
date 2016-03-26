@@ -31,8 +31,8 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
-#include "rho/Closure.h"
-#include "rho/FunctionBase.h"
+#include "rho/Closure.hpp"
+#include "rho/FunctionBase.hpp"
 #include "rho/FunctionContext.hpp"
 
 using namespace rho;

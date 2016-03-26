@@ -39,7 +39,7 @@
 #include <R_ext/Itermacros.h>
 
 #include "RBufferUtils.h"
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
 
 using namespace rho;

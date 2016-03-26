@@ -28,7 +28,7 @@
 #include "rho/jit/Compiler.hpp"
 #include "rho/jit/Globals.hpp"
 #include "rho/jit/TypeBuilder.hpp"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 #include "Defn.h"
 #include "Rinternals.h"
 

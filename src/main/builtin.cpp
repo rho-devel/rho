@@ -35,7 +35,7 @@
 #include <Fileio.h>
 #include <Rconnections.h>
 #include "rho/ClosureContext.hpp"
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 
 #include <R_ext/RS.h> /* for Memzero */
 

@@ -26,8 +26,8 @@
 #include "TestHelpers.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCManager.hpp"
-#include "rho/RealVector.h"
-#include "rho/RObject.h"
+#include "rho/RealVector.hpp"
+#include "rho/RObject.hpp"
 
 using namespace rho;
 

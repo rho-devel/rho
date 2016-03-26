@@ -27,12 +27,12 @@
  * Implementation of class rho::String and related functions.
  */
 
-#include "rho/String.h"
+#include "rho/String.hpp"
 
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
 
-#include "rho/errors.h"
+#include "rho/errors.hpp"
 
 using namespace rho;
 

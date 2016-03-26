@@ -50,7 +50,7 @@
 
 #include "rho/ClosureContext.hpp"
 #include "rho/CommandTerminated.hpp"
-#include "rho/ListVector.h"
+#include "rho/ListVector.hpp"
 #include "rho/ReturnException.hpp"
 #include "rho/StackChecker.hpp"
 

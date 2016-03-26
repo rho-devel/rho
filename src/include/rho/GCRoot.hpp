@@ -31,7 +31,7 @@
 #ifndef GCROOT_H
 #define GCROOT_H 1
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 

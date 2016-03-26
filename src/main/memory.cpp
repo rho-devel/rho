@@ -38,15 +38,15 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "rho/ComplexVector.h"
-#include "rho/ExpressionVector.h"
+#include "rho/ComplexVector.hpp"
+#include "rho/ExpressionVector.hpp"
 #include "rho/FunctionContext.hpp"
 #include "rho/GCManager.hpp"
-#include "rho/IntVector.h"
-#include "rho/LogicalVector.h"
+#include "rho/IntVector.hpp"
+#include "rho/LogicalVector.hpp"
 #include "rho/MemoryBank.hpp"
-#include "rho/RealVector.h"
-#include "rho/RawVector.h"
+#include "rho/RealVector.hpp"
+#include "rho/RawVector.hpp"
 #include "rho/StdFrame.hpp"
 
 #include <Defn.h>

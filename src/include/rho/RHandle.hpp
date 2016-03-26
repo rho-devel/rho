@@ -34,7 +34,7 @@
 
 #include "rho/ElementTraits.hpp"
 #include "rho/GCEdge.hpp"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 namespace rho {
     class RObject;

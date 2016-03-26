@@ -31,8 +31,8 @@
 #define BINARYFUNCTION_HPP 1
 
 #include "rho/UnaryFunction.hpp"
-#include "rho/VectorBase.h"
-#include "rho/errors.h"
+#include "rho/VectorBase.hpp"
+#include "rho/errors.hpp"
 
 namespace rho {
    /** @brief Services to support common operations on R vectors and arrays.

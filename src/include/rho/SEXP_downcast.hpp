@@ -28,7 +28,7 @@
 #ifndef SEXP_DOWNCAST_HPP
 #define SEXP_DOWNCAST_HPP 1
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 namespace rho {
 #ifdef __GNUC__

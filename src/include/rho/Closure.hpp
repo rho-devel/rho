@@ -31,13 +31,13 @@
 #ifndef RCLOSURE_H
 #define RCLOSURE_H
 
-#include "rho/FunctionBase.h"
+#include "rho/FunctionBase.hpp"
 
 #ifdef __cplusplus
 
 #include "rho/ArgMatcher.hpp"
-#include "rho/Environment.h"
-#include "rho/PairList.h"
+#include "rho/Environment.hpp"
+#include "rho/PairList.hpp"
 
 namespace rho {
     class ClosureContext;

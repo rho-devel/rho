@@ -30,7 +30,7 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 #define isRaw(x) (TYPEOF(x) == RAWSXP)
 

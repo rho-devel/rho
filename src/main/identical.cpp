@@ -29,7 +29,7 @@
 #endif
 #include <Defn.h>
 #include <Internal.h>
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 /* -> Rinternals.h which exports R_compute_identical() */
 
 /* Implementation of identical(x, y) */

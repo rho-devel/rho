@@ -26,9 +26,9 @@
 #include "TestHelpers.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/GCNode.hpp"
-#include "rho/GCRoot.h"
-#include "rho/RealVector.h"
-#include "rho/RObject.h"
+#include "rho/GCRoot.hpp"
+#include "rho/RealVector.hpp"
+#include "rho/RObject.hpp"
 
 using namespace rho;
 

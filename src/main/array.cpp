@@ -38,7 +38,7 @@
 
 #include "duplicate.h"
 #include "rho/GCStackRoot.hpp"
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 #include "rho/Subscripting.hpp"
 
 using namespace rho;

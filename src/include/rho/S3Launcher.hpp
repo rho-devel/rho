@@ -31,7 +31,7 @@
 
 #include "rho/GCNode.hpp"
 
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 namespace rho {
     class Environment;

@@ -35,8 +35,8 @@
 
 # include <rlocale.h>
 
-#include "rho/RAllocStack.h"
-#include "rho/Expression.h"
+#include "rho/RAllocStack.hpp"
+#include "rho/Expression.hpp"
 
 int R_GE_getVersion()
 {

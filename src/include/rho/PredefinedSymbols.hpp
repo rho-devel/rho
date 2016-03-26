@@ -33,7 +33,7 @@
 // e.g.
 //   #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
 //   SEXP C_NAME = rho::RHO_NAME;
-//   #include "rho/PredefinedSymbols.h"
+//   #include "rho/PredefinedSymbols.hpp"
 //   #undef PREDEFINED_SYMBOL
 // generates:
 //   SEXP R_Bracket2Symbol = rho::Bracket2Symbol;

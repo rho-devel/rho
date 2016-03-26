@@ -31,10 +31,10 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "rho/Evaluator.h"
-#include "rho/FunctionBase.h"
+#include "rho/Evaluator.hpp"
+#include "rho/FunctionBase.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/Promise.h"
+#include "rho/Promise.hpp"
 #include <algorithm>
 
 using namespace std;

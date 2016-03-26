@@ -37,7 +37,7 @@
 #ifndef EXPRESSIONVECTOR_H
 #define EXPRESSIONVECTOR_H
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
 
 #ifdef __cplusplus
 

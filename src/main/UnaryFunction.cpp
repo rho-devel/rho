@@ -29,7 +29,7 @@
 
 #include "rho/UnaryFunction.hpp"
 
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 
 using namespace rho;
 using namespace VectorOps;

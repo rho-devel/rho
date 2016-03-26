@@ -27,14 +27,14 @@
  * @brief Implementation of class VectorBase and related functions.
  */
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
 
-#include "rho/IntVector.h"
-#include "rho/ListVector.h"
-#include "rho/PairList.h"
-#include "rho/StringVector.h"
-#include "rho/Symbol.h"
-#include "rho/errors.h"
+#include "rho/IntVector.hpp"
+#include "rho/ListVector.hpp"
+#include "rho/PairList.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
+#include "rho/errors.hpp"
 
 using namespace rho;
 

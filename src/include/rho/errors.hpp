@@ -35,7 +35,7 @@
 
 #include "R_ext/Error.h"
 #include "localization.h"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 extern "C" {

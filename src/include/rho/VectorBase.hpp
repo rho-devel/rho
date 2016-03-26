@@ -31,7 +31,7 @@
 #ifndef VECTORBASE_H
 #define VECTORBASE_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 #include <stddef.h>
 
 #ifdef __cplusplus

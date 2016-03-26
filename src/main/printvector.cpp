@@ -39,7 +39,7 @@
 
 #include <cstdarg>
 #include "Print.h"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 #include <numeric>
 

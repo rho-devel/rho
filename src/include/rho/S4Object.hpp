@@ -34,7 +34,7 @@
 #ifndef S4OBJECT_H
 #define S4OBJECT_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 

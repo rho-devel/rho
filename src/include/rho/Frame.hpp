@@ -33,7 +33,7 @@
 
 #include "rho/GCNode.hpp"
 #include "rho/Provenance.hpp"
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 
 namespace rho {
     class Environment;

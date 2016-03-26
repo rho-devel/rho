@@ -31,7 +31,7 @@
 #ifndef EXTERNALPOINTER_H
 #define EXTERNALPOINTER_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 

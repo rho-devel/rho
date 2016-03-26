@@ -33,8 +33,8 @@
 
 #include "rho/BinaryFunction.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/LogicalVector.h"
-#include "rho/RawVector.h"
+#include "rho/LogicalVector.hpp"
+#include "rho/RawVector.hpp"
 #include "rho/UnaryFunction.hpp"
 
 using namespace rho;

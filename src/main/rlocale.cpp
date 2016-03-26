@@ -52,7 +52,7 @@
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
 #include <rlocale.h>
-#include "rho/unrho.h"
+#include "rho/unrho.hpp"
 #include "rlocale_data.h"
 
 #include <wctype.h>

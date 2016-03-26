@@ -32,7 +32,7 @@
 #ifndef FUNCTIONBASE_H
 #define FUNCTIONBASE_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 

@@ -31,7 +31,7 @@
 #include <functional>
 
 #include "rho/GCStackRoot.hpp"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 #include "Defn.h"
 
 using namespace std;

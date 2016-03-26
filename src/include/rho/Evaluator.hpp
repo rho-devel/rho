@@ -31,8 +31,8 @@
 #define EVALUATOR_H
 
 #include "R_ext/Boolean.h"
-#include "rho/Environment.h"
-#include "rho/PairList.h"
+#include "rho/Environment.hpp"
+#include "rho/PairList.hpp"
 
 // Move this to ByteCode.hpp in due course:
 #define BYTECODE

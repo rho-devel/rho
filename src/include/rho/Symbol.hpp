@@ -31,13 +31,13 @@
 #ifndef RSYMBOL_H
 #define RSYMBOL_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 
-#include "rho/GCRoot.h"
+#include "rho/GCRoot.hpp"
 #include "rho/SEXP_downcast.hpp"
-#include "rho/String.h"
+#include "rho/String.hpp"
 
 namespace rho {
     /** @brief Class used to represent R symbols.
@@ -347,7 +347,7 @@ namespace rho {
     // Predefined Symbols visible in 'namespace rho':
 #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     extern Symbol* RHO_NAME;
-#include "rho/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.hpp"
 #undef PREDEFINED_SYMBOL
 
 }  // namespace rho
@@ -363,7 +363,7 @@ extern "C" {
     /* Symbol Table Shortcuts */
 #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     extern SEXP C_NAME;
-#include "rho/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.hpp"
 #undef PREDEFINED_SYMBOL
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?

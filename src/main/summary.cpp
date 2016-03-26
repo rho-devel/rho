@@ -32,7 +32,7 @@
 #include <Internal.h>
 #include "duplicate.h"
 
-#include "rho/Closure.h"
+#include "rho/Closure.hpp"
 #include "rho/GCStackRoot.hpp"
 #include <R_ext/Itermacros.h>
 

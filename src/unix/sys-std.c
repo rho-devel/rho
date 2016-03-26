@@ -52,7 +52,7 @@
 #include "Startup.h"
 #include <R_ext/Riconv.h>
 #include <R_ext/Print.h> // for REprintf
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>		/* for unlink */

@@ -34,7 +34,7 @@
 #include "rho/Evaluator_Context.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/LogicalVector.h"
+#include "rho/LogicalVector.hpp"
 
 #include <Defn.h>
 #include <Internal.h>

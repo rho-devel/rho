@@ -38,8 +38,8 @@
 #include "rho/CommandChronicle.hpp"
 #include "rho/GCEdge.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/RObject.h"
-#include "rho/Symbol.h"
+#include "rho/RObject.hpp"
+#include "rho/Symbol.hpp"
 
 namespace rho {
     /** @brief Provenance of a Frame::Binding state.

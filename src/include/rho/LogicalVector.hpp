@@ -24,86 +24,80 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file IntVector.h
- * @brief Class rho::IntVector and associated C interface.
+/** @file LogicalVector.h
+ * @brief Class rho::LogicalVector and associated C interface.
  */
 
-#ifndef INTVECTOR_H
-#define INTVECTOR_H
+#ifndef LOGICALVECTOR_H
+#define LOGICALVECTOR_H
+
+#include "rho/VectorBase.hpp"
 
 #ifdef __cplusplus
 
 #include "R_ext/Arith.h"
-#include "rho/ElementTraits.hpp"
-
-namespace rho {
-    // Template specializations:
-    namespace ElementTraits {
-	template <>
-	inline const int& NAFunc<int>::operator()() const
-	{
-            static int na = NA_INTEGER;
-            return na;
-        }
-
-	template<>
-	struct MustConstruct<int> : boost::mpl::false_ {};
-
-	template<>
-	struct MustDestruct<int> : boost::mpl::false_ {};
-    }
-}
-
-#include "rho/VectorBase.h"
 #include "rho/FixedVector.hpp"
+#include "rho/Logical.hpp"
 #include "rho/SEXP_downcast.hpp"
 
-#ifndef USE_TYPE_CHECKING_STRICT
-#include "rho/LogicalVector.h"
-#endif
-
 namespace rho {
-    /** @brief Vector of integer values.
+    /** @brief Vector of truth values.
      */
-    typedef FixedVector<int, INTSXP> IntVector;
+    typedef rho::FixedVector<Logical, LGLSXP> LogicalVector;
 
     template<>
-    struct VectorTypeFor<int> {
-      typedef IntVector type;
+    struct VectorTypeFor<Logical> {
+      typedef LogicalVector type;
     };
-
 }  // namespace rho
 
 extern "C" {
 #endif /* __cplusplus */
 
+    /**
+     * @param s Pointer to a rho::RObject.
+     * @return TRUE iff the rho::RObject pointed to by \a s is a
+     *         logical vector.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isLogical(SEXP s);
+#else
+    inline Rboolean Rf_isLogical(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == LGLSXP);
+    }
+#endif
+
 /**
- * @param x Pointer to an \c IntVector or a \c LogicalVector (i.e. an
- *          R integer or logical vector).  An error is generated if \a
- *          x is not a non-null pointer to an \c IntVector or a \c
- *          LogicalVector .
+ * @param x Pointer to a rho::LogicalVector (checked).
  *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
-int *INTEGER(SEXP x);
+int* LOGICAL(SEXP x);
 #else
-inline int* INTEGER(SEXP x)
+inline int* LOGICAL(SEXP x)
 {
     using namespace rho;
-#ifndef USE_TYPE_CHECKING_STRICT
-    // Quicker than dynamic_cast:
-    if (x && x->sexptype() == LGLSXP) {
-	LogicalVector* lvec = static_cast<LogicalVector*>(x);
-	return reinterpret_cast<int*>(&(*lvec)[0]);
-    }
-#endif
-    return &(*SEXP_downcast<IntVector*>(x, false))[0];
+    return reinterpret_cast<int*>
+      (&(*SEXP_downcast<LogicalVector*>(x, false))[0]);
 }
 #endif
+
+    /** @brief Create a unit-length LogicalVector containing FALSE.
+     *
+     * @return a unit-length LogicalVector containing FALSE.
+     */
+    SEXP Rf_mkFalse();
+
+    /** @brief Create a unit-length LogicalVector containing TRUE.
+     *
+     * @return a unit-length LogicalVector containing TRUE.
+     */
+    SEXP Rf_mkTrue();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* INTVECTOR_H */
+#endif /* LOGICALVECTOR_H */

@@ -30,7 +30,7 @@
 #ifndef FIXEDVECTOR_HPP
 #define FIXEDVECTOR_HPP 1
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
 #include "rho/MemoryBank.hpp"
 
 namespace rho {

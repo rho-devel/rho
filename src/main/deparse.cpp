@@ -112,11 +112,11 @@
 /* ----- MAX_Cutoff  <	BUFSIZE !! */
 
 #include "RBufferUtils.h"
-#include "rho/BuiltInFunction.h"
-#include "rho/ExpressionVector.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/Promise.h"
-#include "rho/StringVector.h"
+#include "rho/Promise.hpp"
+#include "rho/StringVector.hpp"
 
 using namespace std;
 using namespace rho;

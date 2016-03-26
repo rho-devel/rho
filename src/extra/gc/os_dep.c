@@ -15,7 +15,7 @@
  */
 
 #include "private/gc_priv.h"
-#include "rho/AddressSanitizer.h"
+#include "rho/AddressSanitizer.hpp"
 
 #if defined(LINUX) && !defined(POWERPC) && !defined(NO_SIGCONTEXT_H)
 # include <linux/version.h>

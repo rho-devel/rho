@@ -40,7 +40,7 @@
 #endif
 
 #include <vector>
-#include "rho/Expression.h"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
 
 using namespace std;

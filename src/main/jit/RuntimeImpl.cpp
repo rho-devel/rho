@@ -24,16 +24,16 @@
 #define R_NO_REMAP
 
 #include "rho/ArgList.hpp"
-#include "rho/Environment.h"
-#include "rho/Evaluator.h"
-#include "rho/Expression.h"
-#include "rho/FunctionBase.h"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
+#include "rho/Expression.hpp"
+#include "rho/FunctionBase.hpp"
 #include "rho/LoopBailout.hpp"
 #include "rho/LoopException.hpp"
-#include "rho/PairList.h"
-#include "rho/RObject.h"
+#include "rho/PairList.hpp"
+#include "rho/RObject.hpp"
 #include "rho/StackChecker.hpp"
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 #include "rho/jit/CompiledFrame.hpp"
 #include "Defn.h"
 

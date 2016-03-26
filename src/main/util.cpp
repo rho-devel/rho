@@ -34,9 +34,9 @@
 #include "basedecl.h"
 
 #include <vector>
-#include "rho/BuiltInFunction.h"
+#include "rho/BuiltInFunction.hpp"
 #include "rho/ClosureContext.hpp"
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 #include <ctype.h>		/* for isspace */
 #include <float.h>		/* for DBL_MAX */

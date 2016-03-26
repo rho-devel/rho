@@ -33,7 +33,7 @@
 #include <cstring>
 #include "config.h"
 #include "rho/CellPool.hpp"
-#include "rho/SEXPTYPE.h"
+#include "rho/SEXPTYPE.hpp"
 
 namespace rho {
     /** @brief Class to manage memory allocation and deallocation for rho.

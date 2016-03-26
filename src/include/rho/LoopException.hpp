@@ -30,8 +30,8 @@
 #ifndef LOOPEXCEPTION_HPP
 #define LOOPEXCEPTION_HPP 1
 
-#include "rho/Environment.h"
-#include "rho/GCRoot.h"
+#include "rho/Environment.hpp"
+#include "rho/GCRoot.hpp"
 
 namespace rho {
     /** @brief Exception thrown by R commands 'break' and 'next'.

@@ -30,8 +30,8 @@
 #endif
 
 #include "Defn.h"
-#include "rho/Closure.h"
-#include "rho/Environment.h"
+#include "rho/Closure.hpp"
+#include "rho/Environment.hpp"
 #include "rho/GCStackRoot.hpp"
 
 using namespace rho;

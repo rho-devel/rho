@@ -23,9 +23,9 @@
 
 #include "gtest/gtest.h"
 #include "rho/FixedVector.hpp"
-#include "rho/IntVector.h"
-#include "rho/ListVector.h"
-#include "rho/RealVector.h"
+#include "rho/IntVector.hpp"
+#include "rho/ListVector.hpp"
+#include "rho/RealVector.hpp"
 
 using namespace rho;
 

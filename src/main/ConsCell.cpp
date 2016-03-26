@@ -27,14 +27,14 @@
  * @brief Class rho::ConsCell and associated C interface.
  */
 
-#include "rho/ConsCell.h"
+#include "rho/ConsCell.hpp"
 
 #include <iostream>
 #include "rho/DottedArgs.hpp"
-#include "rho/Expression.h"
-#include "rho/PairList.h"
-#include "rho/StringVector.h"
-#include "rho/Symbol.h"
+#include "rho/Expression.hpp"
+#include "rho/PairList.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace rho;
 

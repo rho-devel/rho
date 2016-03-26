@@ -24,56 +24,77 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file DotInternal.h
- *
- * @brief Table of functions invoked \e via <tt>.Internal()</tt>.
+/** @file RawVector.h
+ * @brief Class rho::RawVector and associated C interface.
  */
 
-#ifndef DOTINTERNAL_H
-#define DOTINTERNAL_H
+#ifndef RAWVECTOR_H
+#define RAWVECTOR_H
 
-#include "rho/RObject.h"
+#include "rho/VectorBase.hpp"
+
+typedef unsigned char Rbyte;
 
 #ifdef __cplusplus
 
-#include "rho/BuiltInFunction.h"
+#include "rho/FixedVector.hpp"
 #include "rho/SEXP_downcast.hpp"
 
-extern "C" {
-#endif
+namespace rho {
+    // Template specializations:
+    namespace ElementTraits {
+	template<>
+	struct MustConstruct<Rbyte> : boost::mpl::false_ {};
 
-    /** @brief Get function accessed via <tt>.Internal()</tt>.
-     *
-     * @param x Pointer to a rho::Symbol (checked).
-     *
-     * @return If \a x is associated with a function invoked in R \e
-     * via <tt>.Internal()</tt>, then a pointer to the appropriate
-     * rho::BuiltInFunction, otherwise a null pointer.
-     */
-#ifndef __cplusplus
-    SEXP INTERNAL(SEXP x);
-#else
-    inline SEXP INTERNAL(SEXP x)
-    {
-	using namespace rho;
-	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	return BuiltInFunction::obtainInternal(sym);
+	template<>
+	struct MustDestruct<Rbyte> : boost::mpl::false_ {};
+
+	template <>
+	inline const Rbyte& NAFunc<Rbyte>::operator()() const
+	{
+	    static Rbyte s_na = 0;
+	    return s_na;
+	}
+
+	template <>
+	inline bool IsNA<Rbyte>::operator()(const Rbyte&) const
+	{
+	    return false;
+	}
     }
-#endif
 
-    /** @brief Associate a Symbol with a <tt>.Internal()</tt> function.
-     *
-     * @param x Pointer to a rho::Symbol (checked).
-     *
-     * @param v Pointer to the rho::BuiltInFunction (checked) to be
-     * associated by this symbol.  A null pointer is permissible, and
-     * signifies that any previous association of \a sym with a
-     * function is to be removed from the table.
+    /** @brief Vector of 'raw bytes'.
      */
-    void SET_INTERNAL(SEXP x, SEXP v);
+    typedef rho::FixedVector<Rbyte, RAWSXP> RawVector;
+
+    template<>
+    struct VectorTypeFor<Rbyte> {
+      typedef RawVector type;
+    };
+}  // namespace rho
+
+extern "C" {
+#endif /* __cplusplus */
+
+/**
+ * @param x Pointer to a rho::RawVector (i.e. a RAWSXP).  An error is
+ *          generated if \a x is not a non-null pointer to a
+ *          rho::RawVector .
+ *
+ * @return Pointer to element 0 of \a x .
+ */
+#ifndef __cplusplus
+Rbyte *RAW(SEXP x);
+#else
+inline Rbyte *RAW(SEXP x)
+{
+    using namespace rho;
+    return &(*SEXP_downcast<RawVector*>(x, false))[0];
+}
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* DOTINTERNAL_H */
+#endif /* RAWVECTOR_H */

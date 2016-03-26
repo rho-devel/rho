@@ -37,7 +37,7 @@
 #include "Print.h"
 #include "Fileio.h"
 #include "Parse.h"
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 
 #include <stdio.h>
 #ifdef Win32

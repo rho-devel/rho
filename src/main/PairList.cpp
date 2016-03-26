@@ -27,7 +27,7 @@
  * @brief Class rho::PairList and associated C interface.
  */
 
-#include "rho/PairList.h"
+#include "rho/PairList.hpp"
 
 #include <iostream>
 #include "localization.h"

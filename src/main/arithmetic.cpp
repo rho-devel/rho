@@ -64,11 +64,11 @@
 
 #include "R_ext/Itermacros.h"
 #include "rho/BinaryFunction.hpp"
-#include "rho/LogicalVector.h"
+#include "rho/LogicalVector.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/IntVector.h"
-#include "rho/RAllocStack.h"
-#include "rho/RealVector.h"
+#include "rho/IntVector.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/RealVector.hpp"
 #include "rho/UnaryFunction.hpp"
 
 using namespace rho;

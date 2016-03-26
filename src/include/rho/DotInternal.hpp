@@ -24,64 +24,56 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file ComplexVector.h
- * @brief Class rho::ComplexVector and associated C interface.
+/** @file DotInternal.h
+ *
+ * @brief Table of functions invoked \e via <tt>.Internal()</tt>.
  */
 
-#ifndef COMPLEXVECTOR_H
-#define COMPLEXVECTOR_H
+#ifndef DOTINTERNAL_H
+#define DOTINTERNAL_H
 
-#include "rho/VectorBase.h"
-#include "R_ext/Complex.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 
-#include "R_ext/Arith.h"
-#include "rho/Complex.hpp"
-#include "rho/FixedVector.hpp"
+#include "rho/BuiltInFunction.hpp"
 #include "rho/SEXP_downcast.hpp"
 
-namespace rho {
-    /** @brief Vector of complex numbers.
-     */
-    typedef rho::FixedVector<Complex, CPLXSXP> ComplexVector;
-}  // namespace rho
-
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a complex vector.
+    /** @brief Get function accessed via <tt>.Internal()</tt>.
+     *
+     * @param x Pointer to a rho::Symbol (checked).
+     *
+     * @return If \a x is associated with a function invoked in R \e
+     * via <tt>.Internal()</tt>, then a pointer to the appropriate
+     * rho::BuiltInFunction, otherwise a null pointer.
      */
 #ifndef __cplusplus
-    Rboolean Rf_isComplex(SEXP s);
+    SEXP INTERNAL(SEXP x);
 #else
-    inline Rboolean Rf_isComplex(SEXP s)
+    inline SEXP INTERNAL(SEXP x)
     {
-	return Rboolean(s && TYPEOF(s) == CPLXSXP);
+	using namespace rho;
+	const Symbol* sym = SEXP_downcast<Symbol*>(x);
+	return BuiltInFunction::obtainInternal(sym);
     }
 #endif
 
-/**
- * @param x Pointer to a rho::ComplexVector (i.e. an R complex vector).
- *          An error is generated if \a x is not a non-null pointer to a
- *          rho::ComplexVector .
- *
- * @return Pointer to element 0 of \a x .
- */
-#ifndef __cplusplus
-Rcomplex *COMPLEX(SEXP x);
-#else
-inline Rcomplex *COMPLEX(SEXP x)
-{
-    using namespace rho;
-    return &(*SEXP_downcast<ComplexVector*>(x, false))[0];
-}
-#endif
+    /** @brief Associate a Symbol with a <tt>.Internal()</tt> function.
+     *
+     * @param x Pointer to a rho::Symbol (checked).
+     *
+     * @param v Pointer to the rho::BuiltInFunction (checked) to be
+     * associated by this symbol.  A null pointer is permissible, and
+     * signifies that any previous association of \a sym with a
+     * function is to be removed from the table.
+     */
+    void SET_INTERNAL(SEXP x, SEXP v);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* COMPLEXVECTOR_H */
+#endif /* DOTINTERNAL_H */

@@ -28,7 +28,7 @@
  */
 #define R_NO_REMAP
 
-#include "rho/Expression.h"
+#include "rho/Expression.hpp"
 
 #include <iostream>
 #include <boost/preprocessor.hpp>
@@ -37,20 +37,20 @@
 #include "localization.h"
 #include "rho/ArgList.hpp"
 #include "rho/ArgMatcher.hpp"
-#include "rho/BuiltInFunction.h"
-#include "rho/Closure.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Closure.hpp"
 #include "rho/ClosureContext.hpp"
-#include "rho/Environment.h"
-#include "rho/Evaluator.h"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
 #include "rho/FunctionContext.hpp"
-#include "rho/FunctionBase.h"
+#include "rho/FunctionBase.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/PlainContext.hpp"
-#include "rho/ProtectStack.h"
-#include "rho/RAllocStack.h"
+#include "rho/ProtectStack.hpp"
+#include "rho/RAllocStack.hpp"
 #include "rho/StackChecker.hpp"
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 
 #undef match
 

@@ -54,7 +54,7 @@
 #include "rho/ArgMatcher.hpp"
 #include "rho/DottedArgs.hpp"
 #include "rho/FunctionContext.hpp"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 using namespace rho;
 

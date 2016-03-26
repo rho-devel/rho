@@ -31,7 +31,7 @@
 #ifndef DOTTEDARGS_HPP
 #define DOTTEDARGS_HPP
 
-#include "rho/ConsCell.h"
+#include "rho/ConsCell.hpp"
 
 namespace rho {
     /** @brief List of Promise objects corresponding to an R ... argument

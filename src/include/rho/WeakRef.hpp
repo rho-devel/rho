@@ -35,8 +35,8 @@
 
 #include <list>
 #include "rho/Allocator.hpp"
-#include "rho/FunctionBase.h"
-#include "rho/RObject.h"
+#include "rho/FunctionBase.hpp"
+#include "rho/RObject.hpp"
 
 namespace rho {
     /** @brief Weak reference.

@@ -35,8 +35,8 @@
 #include "basedecl.h"
 #include "rho/ClosureContext.hpp"
 #include "rho/DottedArgs.hpp"
-#include "rho/Promise.h"
-#include "rho/RAllocStack.h"
+#include "rho/Promise.hpp"
+#include "rho/RAllocStack.hpp"
 
 using namespace rho;
 

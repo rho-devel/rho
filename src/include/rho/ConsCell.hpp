@@ -39,14 +39,14 @@
 #ifndef CONSCELL_H
 #define CONSCELL_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 
 #include <stdexcept>
 
 #include "rho/GCManager.hpp"
-#include "rho/GCRoot.h"
+#include "rho/GCRoot.hpp"
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {

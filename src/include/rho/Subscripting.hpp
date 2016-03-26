@@ -32,12 +32,12 @@
 #define SUBSCRIPTING_HPP 1
 
 #include "rho/GCStackRoot.hpp"
-#include "rho/IntVector.h"
-#include "rho/ListVector.h"
-#include "rho/PairList.h"
-#include "rho/RealVector.h"
-#include "rho/StringVector.h"
-#include "rho/Symbol.h"
+#include "rho/IntVector.hpp"
+#include "rho/ListVector.hpp"
+#include "rho/PairList.hpp"
+#include "rho/RealVector.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 
 namespace rho {
    /** @brief Services to support R subscripting operations.

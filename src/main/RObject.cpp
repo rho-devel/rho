@@ -31,7 +31,7 @@
 
 #define R_NO_REMAP
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -39,8 +39,8 @@
 #include "R_ext/Error.h"
 #include "Rinternals.h"
 #include "rho/GCStackRoot.hpp"
-#include "rho/PairList.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace std;
 using namespace rho;

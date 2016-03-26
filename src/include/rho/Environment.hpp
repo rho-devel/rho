@@ -31,7 +31,7 @@
 #ifndef RENVIRONMENT_H
 #define RENVIRONMENT_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 
@@ -40,8 +40,8 @@ void Rf_InitGlobalEnv();
 
 #include "rho/Frame.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/PairList.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/Symbol.hpp"
 
 /** @def DETACH_LOCAL_FRAMES
  *

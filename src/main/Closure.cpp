@@ -28,21 +28,21 @@
  * interface.
  */
 
-#include "rho/Closure.h"
+#include "rho/Closure.hpp"
 
 #include <cstdlib>
 #include "rho/ArgList.hpp"
 #include "rho/ArgMatcher.hpp"
 #include "rho/BailoutContext.hpp"
 #include "rho/ClosureContext.hpp"
-#include "rho/Expression.h"
+#include "rho/Expression.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/ListFrame.hpp"
 #include "rho/PlainContext.hpp"
 #include "rho/ReturnBailout.hpp"
 #include "rho/ReturnException.hpp"
-#include "rho/errors.h"
+#include "rho/errors.hpp"
 #include "rho/jit/CompiledExpression.hpp"
 
 using namespace std;

@@ -43,7 +43,7 @@
 
 #include <stdlib.h> /* for div() */
 #include "rho/GCStackRoot.hpp"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 using namespace std;
 using namespace rho;

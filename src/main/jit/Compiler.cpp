@@ -31,16 +31,16 @@
 #include "rho/jit/Runtime.hpp"
 #include "rho/jit/TypeBuilder.hpp"
 
-#include "rho/BuiltInFunction.h"
-#include "rho/Closure.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Closure.hpp"
 #include "rho/DottedArgs.hpp"
-#include "rho/Environment.h"
-#include "rho/Expression.h"
-#include "rho/FunctionBase.h"
-#include "rho/RObject.h"
+#include "rho/Environment.hpp"
+#include "rho/Expression.hpp"
+#include "rho/FunctionBase.hpp"
+#include "rho/RObject.hpp"
 #include "rho/SEXP_downcast.hpp"
-#include "rho/StringVector.h"
-#include "rho/Symbol.h"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 
 using llvm::BasicBlock;
 using llvm::PHINode;

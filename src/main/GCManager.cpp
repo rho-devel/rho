@@ -38,7 +38,7 @@
 #include <limits>
 #include "R_ext/Print.h"
 #include "rho/GCNode.hpp"
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 using namespace rho;
 

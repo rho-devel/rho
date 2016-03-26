@@ -26,7 +26,7 @@
 #define RHO_TESTS_RHO_TEST_HELPERS_HPP
 
 #include "gtest/gtest.h"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 #include "Rinternals.h"
 
 #define EXPECT_IDENTICAL(x, y) EXPECT_PRED3(R_compute_identical, (x), (y), 0)

@@ -29,7 +29,7 @@
 
 #include "rho/LoopBailout.hpp"
 
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 #include "rho/LoopException.hpp"
 
 using namespace rho;

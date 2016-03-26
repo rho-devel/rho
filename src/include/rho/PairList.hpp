@@ -39,7 +39,7 @@
 #ifndef RPAIRLIST_H
 #define RPAIRLIST_H
 
-#include "rho/ConsCell.h"
+#include "rho/ConsCell.hpp"
 
 #ifdef __cplusplus
 

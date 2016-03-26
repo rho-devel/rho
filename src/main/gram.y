@@ -40,9 +40,9 @@
 #include "Fileio.h"
 #include "Parse.h"
 #include <R_ext/Print.h>
-#include "rho/Expression.h"
-#include "rho/ExpressionVector.h"
-#include "rho/ProtectStack.h"
+#include "rho/Expression.hpp"
+#include "rho/ExpressionVector.hpp"
+#include "rho/ProtectStack.hpp"
 
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocale.h),

@@ -24,72 +24,81 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RawVector.h
- * @brief Class rho::RawVector and associated C interface.
+/** @file IntVector.h
+ * @brief Class rho::IntVector and associated C interface.
  */
 
-#ifndef RAWVECTOR_H
-#define RAWVECTOR_H
-
-#include "rho/VectorBase.h"
-
-typedef unsigned char Rbyte;
+#ifndef INTVECTOR_H
+#define INTVECTOR_H
 
 #ifdef __cplusplus
 
-#include "rho/FixedVector.hpp"
-#include "rho/SEXP_downcast.hpp"
+#include "R_ext/Arith.h"
+#include "rho/ElementTraits.hpp"
 
 namespace rho {
     // Template specializations:
     namespace ElementTraits {
-	template<>
-	struct MustConstruct<Rbyte> : boost::mpl::false_ {};
-
-	template<>
-	struct MustDestruct<Rbyte> : boost::mpl::false_ {};
-
 	template <>
-	inline const Rbyte& NAFunc<Rbyte>::operator()() const
+	inline const int& NAFunc<int>::operator()() const
 	{
-	    static Rbyte s_na = 0;
-	    return s_na;
-	}
+            static int na = NA_INTEGER;
+            return na;
+        }
 
-	template <>
-	inline bool IsNA<Rbyte>::operator()(const Rbyte&) const
-	{
-	    return false;
-	}
+	template<>
+	struct MustConstruct<int> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<int> : boost::mpl::false_ {};
     }
+}
 
-    /** @brief Vector of 'raw bytes'.
+#include "rho/VectorBase.hpp"
+#include "rho/FixedVector.hpp"
+#include "rho/SEXP_downcast.hpp"
+
+#ifndef USE_TYPE_CHECKING_STRICT
+#include "rho/LogicalVector.hpp"
+#endif
+
+namespace rho {
+    /** @brief Vector of integer values.
      */
-    typedef rho::FixedVector<Rbyte, RAWSXP> RawVector;
+    typedef FixedVector<int, INTSXP> IntVector;
 
     template<>
-    struct VectorTypeFor<Rbyte> {
-      typedef RawVector type;
+    struct VectorTypeFor<int> {
+      typedef IntVector type;
     };
+
 }  // namespace rho
 
 extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @param x Pointer to a rho::RawVector (i.e. a RAWSXP).  An error is
- *          generated if \a x is not a non-null pointer to a
- *          rho::RawVector .
+ * @param x Pointer to an \c IntVector or a \c LogicalVector (i.e. an
+ *          R integer or logical vector).  An error is generated if \a
+ *          x is not a non-null pointer to an \c IntVector or a \c
+ *          LogicalVector .
  *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
-Rbyte *RAW(SEXP x);
+int *INTEGER(SEXP x);
 #else
-inline Rbyte *RAW(SEXP x)
+inline int* INTEGER(SEXP x)
 {
     using namespace rho;
-    return &(*SEXP_downcast<RawVector*>(x, false))[0];
+#ifndef USE_TYPE_CHECKING_STRICT
+    // Quicker than dynamic_cast:
+    if (x && x->sexptype() == LGLSXP) {
+	LogicalVector* lvec = static_cast<LogicalVector*>(x);
+	return reinterpret_cast<int*>(&(*lvec)[0]);
+    }
+#endif
+    return &(*SEXP_downcast<IntVector*>(x, false))[0];
 }
 #endif
 
@@ -97,4 +106,4 @@ inline Rbyte *RAW(SEXP x)
 }
 #endif
 
-#endif /* RAWVECTOR_H */
+#endif /* INTVECTOR_H */

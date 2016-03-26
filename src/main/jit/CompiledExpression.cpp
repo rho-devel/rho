@@ -33,9 +33,9 @@
 #include "rho/jit/Runtime.hpp"
 #include "rho/jit/TypeBuilder.hpp"
 
-#include "rho/Closure.h"
-#include "rho/Environment.h"
-#include "rho/RObject.h"
+#include "rho/Closure.hpp"
+#include "rho/Environment.hpp"
+#include "rho/RObject.hpp"
 
 using llvm::Module;
 using llvm::Value;

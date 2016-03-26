@@ -35,7 +35,7 @@
 #ifndef CONTEXT_HPP
 #define CONTEXT_HPP 1
 
-#include "rho/Evaluator.h"
+#include "rho/Evaluator.hpp"
 
 namespace rho {
     /** @brief Housekeeping information on R call stack.

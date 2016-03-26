@@ -30,16 +30,16 @@
 
 #define R_NO_REMAP
 
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 
 #include <sstream>
 #include "localization.h"
 #include "boost/regex.hpp"
 #include "R_ext/Error.h"
-#include "rho/Environment.h"
-#include "rho/Evaluator.h"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/String.h"
+#include "rho/String.hpp"
 
 using namespace std;
 using namespace rho;
@@ -139,7 +139,7 @@ void Symbol::initialize()
 
 #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     C_NAME = RHO_NAME = Symbol::obtain(R_NAME);
-#include "rho/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.hpp"
 #undef PREDEFINED_SYMBOL
 
     // DISABLE_REFCNT(R_LastvalueSymbol);
@@ -215,7 +215,7 @@ void Symbol::visitReferents(const_visitor* v) const
 namespace rho {
 #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     Symbol* RHO_NAME = nullptr;
-#include "rho/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.hpp"
 #undef PREDEFINED_SYMBOL
 }
 
@@ -223,7 +223,7 @@ namespace rho {
 
 #define PREDEFINED_SYMBOL(C_NAME, RHO_NAME, R_NAME) \
     SEXP C_NAME = nullptr;
-#include "rho/PredefinedSymbols.h"
+#include "rho/PredefinedSymbols.hpp"
 #undef PREDEFINED_SYMBOL
 
 // Rf_install() is currently defined in main.cpp

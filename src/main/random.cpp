@@ -38,7 +38,7 @@
 #include <errno.h>
 #include "Internal.h"
 #include "rho/GCStackRoot.hpp"
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 using namespace rho;
 

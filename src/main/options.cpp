@@ -34,7 +34,7 @@
 #include <Rinternals.h>
 
 #include "rho/ArgMatcher.hpp"
-#include "rho/Evaluator.h"
+#include "rho/Evaluator.hpp"
 #include "rho/StackChecker.hpp"
 
 using namespace rho;

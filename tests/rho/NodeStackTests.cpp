@@ -23,9 +23,9 @@
 
 #include "gtest/gtest.h"
 #include "rho/GCManager.hpp"
-#include "rho/IntVector.h"
+#include "rho/IntVector.hpp"
 #include "rho/NodeStack.hpp"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 #include "TestHelpers.hpp"
 
 namespace rho {

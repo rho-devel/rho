@@ -104,7 +104,7 @@
 #include "basedecl.h"
 #include <vector>
 #include "rho/GCStackRoot.hpp"
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 using namespace std;
 using namespace rho;

@@ -103,11 +103,11 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "rho/ClosureContext.hpp"
-#include "rho/ListVector.h"
-#include "rho/Promise.h"
-#include "rho/ProvenanceTracker.h"
+#include "rho/ListVector.hpp"
+#include "rho/Promise.hpp"
+#include "rho/ProvenanceTracker.hpp"
 #include "rho/StdFrame.hpp"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 using namespace rho;
 

@@ -38,7 +38,7 @@
 
 #include <Defn.h>
 #include <Internal.h>
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 
 /* Utility functions moved to Rinlinedfuns.h */
 

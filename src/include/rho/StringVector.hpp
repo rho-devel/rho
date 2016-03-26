@@ -33,7 +33,7 @@
 #ifndef STRINGVECTOR_H
 #define STRINGVECTOR_H
 
-#include "rho/String.h"
+#include "rho/String.hpp"
 
 #ifdef __cplusplus
 

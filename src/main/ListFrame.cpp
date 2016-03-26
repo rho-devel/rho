@@ -35,7 +35,7 @@
 #include "R_ext/Error.h"
 #include "rho/GCStackRoot.hpp"
 #include "rho/SEXP_downcast.hpp"
-#include "rho/Symbol.h"
+#include "rho/Symbol.hpp"
 
 using namespace std;
 using namespace rho;

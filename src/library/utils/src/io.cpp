@@ -41,7 +41,7 @@
 #include <Print.h>
 
 #include <rlocale.h> /* for btowc */
-#include "rho/IntVector.h"
+#include "rho/IntVector.hpp"
 
 #undef _
 #ifdef ENABLE_NLS

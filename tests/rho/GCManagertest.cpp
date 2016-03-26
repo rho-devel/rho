@@ -29,7 +29,7 @@
 #include <vector>
 #include "rho/GCManager.hpp"
 #include "rho/GCNode.hpp"
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 using namespace std;
 using namespace rho;

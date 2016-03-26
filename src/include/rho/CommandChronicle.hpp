@@ -36,7 +36,7 @@
 
 #include "rho/GCEdge.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 namespace rho {
     class Provenance;

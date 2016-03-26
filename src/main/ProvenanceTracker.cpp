@@ -23,10 +23,10 @@
  *  https://www.R-project.org/Licenses/
  */
 
-#include "rho/ProvenanceTracker.h"
+#include "rho/ProvenanceTracker.hpp"
 
 #include "rho/CommandChronicle.hpp"
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 
 using namespace rho;
 

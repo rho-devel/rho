@@ -27,7 +27,7 @@
  * @brief Class rho::S4Object and associated C interface.
  */
 
-#include "rho/S4Object.h"
+#include "rho/S4Object.hpp"
 
 using namespace rho;
 

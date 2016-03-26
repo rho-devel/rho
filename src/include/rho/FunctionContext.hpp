@@ -31,8 +31,8 @@
 #define FUNCTIONCONTEXT_HPP 1
 
 #include "rho/Evaluator_Context.hpp"
-#include "rho/Expression.h"
-#include "rho/FunctionBase.h"
+#include "rho/Expression.hpp"
+#include "rho/FunctionBase.hpp"
 #include "rho/GCStackRoot.hpp"
 
 extern "C" {

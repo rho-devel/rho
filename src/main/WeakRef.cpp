@@ -33,13 +33,13 @@
 #include <iostream>
 
 #include "rho/CommandTerminated.hpp"
-#include "rho/Environment.h"
-#include "rho/Evaluator.h"
-#include "rho/Expression.h"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ProtectStack.h"
-#include "rho/WeakRef.h"
-#include "rho/errors.h"
+#include "rho/ProtectStack.hpp"
+#include "rho/WeakRef.hpp"
+#include "rho/errors.hpp"
 
 using namespace std;
 using namespace rho;

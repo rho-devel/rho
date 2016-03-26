@@ -34,9 +34,9 @@
 #include <Rmath.h>
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
-#include "rho/Closure.h"
-#include "rho/RAllocStack.h"
-#include "rho/StringVector.h"
+#include "rho/Closure.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/StringVector.hpp"
 
 // 'using namespace std' causes ambiguity of 'greater'
 using namespace rho;

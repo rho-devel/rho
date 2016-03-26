@@ -33,7 +33,7 @@
 #ifndef LISTVECTOR_H
 #define LISTVECTOR_H
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
 
 #ifdef __cplusplus
 

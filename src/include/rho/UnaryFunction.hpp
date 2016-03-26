@@ -32,7 +32,7 @@
 
 #include <algorithm>
 #include "rho/FixedVector.hpp"
-#include "rho/errors.h"
+#include "rho/errors.hpp"
 
 namespace rho {
    /** @brief Services to support common operations on R vectors and arrays.

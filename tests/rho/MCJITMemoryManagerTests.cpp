@@ -27,8 +27,8 @@
 #include "rho/jit/MCJITMemoryManager.hpp"
 #include "rho/jit/TypeBuilder.hpp"
 
-#include "rho/BuiltInFunction.h"
-#include "rho/Symbol.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace rho;
 using namespace rho::JIT;

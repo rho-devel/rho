@@ -87,7 +87,7 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 #include <R_ext/Itermacros.h>
 #include <rlocale.h>
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 using namespace rho;
 

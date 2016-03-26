@@ -48,8 +48,8 @@
 #include "rho/CommandTerminated.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/ListFrame.hpp"
-#include "rho/PairList.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace std;
 using namespace rho;

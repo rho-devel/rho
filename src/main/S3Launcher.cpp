@@ -29,8 +29,8 @@
 
 #include "rho/S3Launcher.hpp"
 
-#include "rho/Environment.h"
-#include "rho/FunctionBase.h"
+#include "rho/Environment.hpp"
+#include "rho/FunctionBase.hpp"
 
 using namespace std;
 using namespace rho;

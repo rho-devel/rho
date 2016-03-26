@@ -32,7 +32,7 @@
 
 #include <vector>
 #include "rho/GCNode.hpp"
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 namespace rho {
     class RObject;

@@ -42,13 +42,13 @@
 
 #include <cstdarg>
 #include <vector>
-#include "rho/Closure.h"
+#include "rho/Closure.hpp"
 #include "rho/DottedArgs.hpp"
-#include "rho/ExpressionVector.h"
-#include "rho/ExternalPointer.h"
+#include "rho/ExpressionVector.hpp"
+#include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/StdFrame.hpp"
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 #ifdef Win32
 #include <trioremap.h>

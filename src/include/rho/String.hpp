@@ -31,8 +31,8 @@
 #ifndef RHO_STRING_H
 #define RHO_STRING_H
 
-#include "rho/GCRoot.h"
-#include "rho/VectorBase.h"
+#include "rho/GCRoot.hpp"
+#include "rho/VectorBase.hpp"
 #include "Rinternals.h"
 
 #ifdef __cplusplus

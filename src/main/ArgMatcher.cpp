@@ -33,12 +33,12 @@
 
 #include "rho/ArgList.hpp"
 #include "rho/DottedArgs.hpp"
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/PairList.h"
-#include "rho/Promise.h"
-#include "rho/Symbol.h"
-#include "rho/errors.h"
+#include "rho/PairList.hpp"
+#include "rho/Promise.hpp"
+#include "rho/Symbol.hpp"
+#include "rho/errors.hpp"
 #include "boost/functional/hash.hpp"
 #include "sparsehash/dense_hash_set"
 

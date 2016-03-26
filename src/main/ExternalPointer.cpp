@@ -27,7 +27,7 @@
  * @brief Class rho::ExternalPointer and associated C interface.
  */
 
-#include "rho/ExternalPointer.h"
+#include "rho/ExternalPointer.hpp"
 
 #include "localization.h"
 #include "rho/GCStackRoot.hpp"

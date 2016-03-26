@@ -31,10 +31,10 @@
 
 #include <list>
 #include "rho/DottedArgs.hpp"
-#include "rho/Environment.h"
-#include "rho/Evaluator.h"
-#include "rho/Promise.h"
-#include "rho/errors.h"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
+#include "rho/Promise.hpp"
+#include "rho/errors.hpp"
 
 using namespace std;
 using namespace rho;

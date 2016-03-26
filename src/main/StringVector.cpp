@@ -27,7 +27,7 @@
  * Implementation of class StringVector and related functions.
  */
 
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 #include "Defn.h"
 
 #include <iostream>

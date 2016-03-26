@@ -29,12 +29,12 @@
  * Class FunctionBase and associated C interface functions.
  */
 
-#include "rho/FunctionBase.h"
+#include "rho/FunctionBase.hpp"
 
 #include <cstdarg>
 #include "R_ext/Print.h"
 #include "Rinternals.h"  // For Rf_PrintValue
-#include "rho/Expression.h"
+#include "rho/Expression.hpp"
 
 using namespace rho;
 

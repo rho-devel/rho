@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 #include "rho/Frame.hpp"
 #include "rho/ListFrame.hpp"
-#include "rho/RealVector.h"
+#include "rho/RealVector.hpp"
 #include "rho/StdFrame.hpp"
 
 #ifdef ENABLE_LLVM_JIT

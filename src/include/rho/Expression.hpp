@@ -31,8 +31,8 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
-#include "rho/FunctionBase.h"
-#include "rho/PairList.h"
+#include "rho/FunctionBase.hpp"
+#include "rho/PairList.hpp"
 
 #ifdef __cplusplus
 

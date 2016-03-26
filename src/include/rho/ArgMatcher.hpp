@@ -36,8 +36,8 @@
 #include "rho/ArgList.hpp"
 #include "rho/Frame.hpp"
 #include "rho/GCEdge.hpp"
-#include "rho/Promise.h"
-#include "rho/String.h"
+#include "rho/Promise.hpp"
+#include "rho/String.hpp"
 
 namespace rho {
     class ArgMatchInfo;

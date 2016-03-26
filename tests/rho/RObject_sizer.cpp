@@ -18,10 +18,10 @@
  */
 
 #include <iostream>
-#include "rho/Environment.h"
-#include "rho/IntVector.h"
-#include "rho/PairList.h"
-#include "rho/RealVector.h"
+#include "rho/Environment.hpp"
+#include "rho/IntVector.hpp"
+#include "rho/PairList.hpp"
+#include "rho/RealVector.hpp"
 #include "rho/StdFrame.hpp"
 
 using namespace std;

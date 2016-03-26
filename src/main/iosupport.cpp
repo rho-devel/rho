@@ -50,7 +50,7 @@
 
 #include "IOStuff.h"
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 
 /* Move the iob->write_buf pointer to the next */

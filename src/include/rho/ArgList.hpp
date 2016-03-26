@@ -31,8 +31,8 @@
 
 #include <boost/range.hpp>
 #include "rho/GCStackRoot.hpp"
-#include "rho/PairList.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/Symbol.hpp"
 #include "R_ext/Error.h"
 
 namespace rho {

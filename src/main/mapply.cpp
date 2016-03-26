@@ -30,7 +30,7 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 SEXP attribute_hidden
 do_mapply(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)

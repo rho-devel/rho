@@ -33,7 +33,7 @@
 
 #include <tre/tre.h>
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 static SEXP allocMatrixNA(SEXPTYPE, int, int);
 static void transferVector(SEXP s, SEXP t);

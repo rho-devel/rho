@@ -29,8 +29,8 @@
 
 #include <set>
 #include <unordered_map>
-#include "rho/RAllocStack.h"
-#include "rho/RealVector.h"
+#include "rho/RAllocStack.hpp"
+#include "rho/RealVector.hpp"
 #include "rho/Subscripting.hpp"
 
 using namespace rho;

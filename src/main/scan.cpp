@@ -50,7 +50,7 @@
 #include <Rconnections.h>
 #include <errno.h>
 #include "rho/GCStackRoot.hpp"
-#include "rho/ProvenanceTracker.h"
+#include "rho/ProvenanceTracker.hpp"
 
 using namespace rho;
 

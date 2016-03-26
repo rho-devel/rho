@@ -24,80 +24,64 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file LogicalVector.h
- * @brief Class rho::LogicalVector and associated C interface.
+/** @file ComplexVector.h
+ * @brief Class rho::ComplexVector and associated C interface.
  */
 
-#ifndef LOGICALVECTOR_H
-#define LOGICALVECTOR_H
+#ifndef COMPLEXVECTOR_H
+#define COMPLEXVECTOR_H
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
+#include "R_ext/Complex.h"
 
 #ifdef __cplusplus
 
 #include "R_ext/Arith.h"
+#include "rho/Complex.hpp"
 #include "rho/FixedVector.hpp"
-#include "rho/Logical.hpp"
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {
-    /** @brief Vector of truth values.
+    /** @brief Vector of complex numbers.
      */
-    typedef rho::FixedVector<Logical, LGLSXP> LogicalVector;
-
-    template<>
-    struct VectorTypeFor<Logical> {
-      typedef LogicalVector type;
-    };
+    typedef rho::FixedVector<Complex, CPLXSXP> ComplexVector;
 }  // namespace rho
 
 extern "C" {
 #endif /* __cplusplus */
 
     /**
-     * @param s Pointer to a rho::RObject.
-     * @return TRUE iff the rho::RObject pointed to by \a s is a
-     *         logical vector.
+     * @param s Pointer to an RObject.
+     * @return TRUE iff the RObject pointed to by \a s is a complex vector.
      */
 #ifndef __cplusplus
-    Rboolean Rf_isLogical(SEXP s);
+    Rboolean Rf_isComplex(SEXP s);
 #else
-    inline Rboolean Rf_isLogical(SEXP s)
+    inline Rboolean Rf_isComplex(SEXP s)
     {
-	return Rboolean(s && TYPEOF(s) == LGLSXP);
+	return Rboolean(s && TYPEOF(s) == CPLXSXP);
     }
 #endif
 
 /**
- * @param x Pointer to a rho::LogicalVector (checked).
+ * @param x Pointer to a rho::ComplexVector (i.e. an R complex vector).
+ *          An error is generated if \a x is not a non-null pointer to a
+ *          rho::ComplexVector .
  *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
-int* LOGICAL(SEXP x);
+Rcomplex *COMPLEX(SEXP x);
 #else
-inline int* LOGICAL(SEXP x)
+inline Rcomplex *COMPLEX(SEXP x)
 {
     using namespace rho;
-    return reinterpret_cast<int*>
-      (&(*SEXP_downcast<LogicalVector*>(x, false))[0]);
+    return &(*SEXP_downcast<ComplexVector*>(x, false))[0];
 }
 #endif
-
-    /** @brief Create a unit-length LogicalVector containing FALSE.
-     *
-     * @return a unit-length LogicalVector containing FALSE.
-     */
-    SEXP Rf_mkFalse();
-
-    /** @brief Create a unit-length LogicalVector containing TRUE.
-     *
-     * @return a unit-length LogicalVector containing TRUE.
-     */
-    SEXP Rf_mkTrue();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LOGICALVECTOR_H */
+#endif /* COMPLEXVECTOR_H */

@@ -39,15 +39,15 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include <ctype.h>		/* for isspace */
-#include "rho/BuiltInFunction.h"
+#include "rho/BuiltInFunction.hpp"
 #include "rho/DottedArgs.hpp"
-#include "rho/ExternalPointer.h"
+#include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/Promise.h"
-#include "rho/ProvenanceTracker.h"
-#include "rho/RAllocStack.h"
+#include "rho/Promise.hpp"
+#include "rho/ProvenanceTracker.hpp"
+#include "rho/RAllocStack.hpp"
 #include "rho/StdFrame.hpp"
-#include "rho/WeakRef.h"
+#include "rho/WeakRef.hpp"
 
 using namespace rho;
 

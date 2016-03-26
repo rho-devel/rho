@@ -39,11 +39,11 @@
 
 #include "rho/BinaryFunction.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ComplexVector.h"
-#include "rho/IntVector.h"
-#include "rho/LogicalVector.h"
-#include "rho/RawVector.h"
-#include "rho/RealVector.h"
+#include "rho/ComplexVector.hpp"
+#include "rho/IntVector.hpp"
+#include "rho/LogicalVector.hpp"
+#include "rho/RawVector.hpp"
+#include "rho/RealVector.hpp"
 
 using namespace rho;
 using namespace VectorOps;

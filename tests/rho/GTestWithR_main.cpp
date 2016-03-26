@@ -23,7 +23,7 @@
 
 #include "gtest/gtest.h"
 #include "Rembedded.h"
-#include "rho/Evaluator.h"
+#include "rho/Evaluator.hpp"
 
 int main(int argc, char**argv)
 {

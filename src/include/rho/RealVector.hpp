@@ -31,7 +31,7 @@
 #ifndef REALVECTOR_H
 #define REALVECTOR_H
 
-#include "rho/VectorBase.h"
+#include "rho/VectorBase.hpp"
 
 #ifdef __cplusplus
 

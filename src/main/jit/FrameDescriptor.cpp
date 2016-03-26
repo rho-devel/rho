@@ -24,13 +24,13 @@
 #define R_NO_REMAP
 
 #include "rho/jit/FrameDescriptor.hpp"
-#include "rho/Closure.h"
-#include "rho/ConsCell.h"
-#include "rho/Expression.h"
+#include "rho/Closure.hpp"
+#include "rho/ConsCell.hpp"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/PairList.h"
-#include "rho/RObject.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/RObject.hpp"
+#include "rho/Symbol.hpp"
 #include <algorithm>
 
 namespace rho {

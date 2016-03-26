@@ -32,7 +32,7 @@
 #ifndef BAILOUT_HPP
 #define BAILOUT_HPP
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #include "rho/SEXP_downcast.hpp"
 

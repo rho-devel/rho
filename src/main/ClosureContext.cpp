@@ -29,7 +29,7 @@
 
 #include "rho/ClosureContext.hpp"
 
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 #include "rho/StackChecker.hpp"
 
 using namespace std;

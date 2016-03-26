@@ -47,11 +47,11 @@
 #include <stdexcept>
 #include <Defn.h>
 #include <Internal.h>
-#include "rho/ComplexVector.h"
-#include "rho/ExpressionVector.h"
+#include "rho/ComplexVector.hpp"
+#include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/Promise.h"
-#include "rho/RawVector.h"
+#include "rho/Promise.hpp"
+#include "rho/RawVector.hpp"
 #include "rho/Subscripting.hpp"
 
 using namespace std;

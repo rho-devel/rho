@@ -31,7 +31,7 @@
 #define RETURNBAILOUT_HPP 1
 
 #include "rho/Bailout.hpp"
-#include "rho/Evaluator.h"
+#include "rho/Evaluator.hpp"
 
 namespace rho {
     class Environment;

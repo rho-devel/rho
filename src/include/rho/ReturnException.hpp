@@ -30,7 +30,7 @@
 #ifndef RETURNEXCEPTION_HPP
 #define RETURNEXCEPTION_HPP 1
 
-#include "rho/GCRoot.h"
+#include "rho/GCRoot.hpp"
 
 namespace rho {
     class Environment;

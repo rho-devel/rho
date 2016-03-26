@@ -22,10 +22,10 @@
  */
 
 #include "gtest/gtest.h"
-#include "rho/PairList.h"
-#include "rho/IntVector.h"
-#include "rho/RealVector.h"
-#include "rho/Symbol.h"
+#include "rho/PairList.hpp"
+#include "rho/IntVector.hpp"
+#include "rho/RealVector.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace rho;
 

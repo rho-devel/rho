@@ -31,15 +31,15 @@
 #ifndef RPROMISE_H
 #define RPROMISE_H
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 // Just to pick up define of BYTECODE:
-#include "rho/Evaluator.h"
+#include "rho/Evaluator.hpp"
 
 #ifdef __cplusplus
 
-#include "rho/Environment.h"
-#include "rho/Expression.h"
-#include "rho/Symbol.h"
+#include "rho/Environment.hpp"
+#include "rho/Expression.hpp"
+#include "rho/Symbol.hpp"
 
 extern "C"
 void SET_PRVALUE(SEXP x, SEXP v);

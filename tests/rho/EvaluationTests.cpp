@@ -24,10 +24,10 @@
 #include "EvaluationTests.hpp"
 
 #include "gtest/gtest.h"
-#include "rho/Closure.h"
+#include "rho/Closure.hpp"
 #include "rho/CommandTerminated.hpp"
-#include "rho/Evaluator.h"
-#include "rho/ListVector.h"
+#include "rho/Evaluator.hpp"
+#include "rho/ListVector.hpp"
 #include "rho/StdFrame.hpp"
 #include "Defn.h"
 #include "Parse.h"

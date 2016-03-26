@@ -34,11 +34,11 @@
 #define R_INTERNAL_H
 
 #include "R_ext/Error.h"
-#include "rho/BuiltInFunction.h"
-#include "rho/RObject.h"
-#include "rho/Expression.h"
-#include "rho/Environment.h"
-#include "rho/PairList.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/RObject.hpp"
+#include "rho/Expression.hpp"
+#include "rho/Environment.hpp"
+#include "rho/PairList.hpp"
 
 #ifdef __cplusplus
 

@@ -33,11 +33,11 @@
 #include <config.h>
 #endif
 
-#include "rho/RObject.h"
-#include "rho/BuiltInFunction.h"
-#include "rho/IntVector.h"
-#include "rho/StringVector.h"
-#include "rho/RealVector.h" /* EJP */
+#include "rho/RObject.hpp"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/IntVector.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/RealVector.hpp" /* EJP */
 #include <Internal.h>
 
 #include <fstream>

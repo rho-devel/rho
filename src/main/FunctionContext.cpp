@@ -29,7 +29,7 @@
 
 #include "rho/FunctionContext.hpp"
 
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 
 using namespace std;
 using namespace rho;

@@ -33,12 +33,12 @@
 #define ROBJECT_H
 
 #include "R_ext/Boolean.h"
-#include "rho/SEXPTYPE.h"
+#include "rho/SEXPTYPE.hpp"
 
 #ifdef __cplusplus
 
 #include "rho/GCEdge.hpp"
-#include "rho/unrho.h"
+#include "rho/unrho.hpp"
 
 /** @brief Namespace for the rho project.
  *

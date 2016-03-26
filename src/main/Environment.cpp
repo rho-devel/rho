@@ -29,19 +29,19 @@
  * interface.
  */
 
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 
 #include <cstdlib>
 #include <iostream>
 #include <typeinfo>
 #include "R_ext/Error.h"
 #include "localization.h"
-#include "rho/BuiltInFunction.h"
-#include "rho/FunctionBase.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/FunctionBase.hpp"
 #include "rho/ListFrame.hpp"
 #include "rho/StdFrame.hpp"
-#include "rho/StringVector.h"
-#include "rho/Symbol.h"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 #include "sparsehash/dense_hash_map"
 
 using namespace std;

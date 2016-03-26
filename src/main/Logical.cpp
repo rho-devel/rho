@@ -23,8 +23,8 @@
 
 #include "rho/Logical.hpp"
 
-#include "rho/GCRoot.h"
-#include "rho/LogicalVector.h"
+#include "rho/GCRoot.hpp"
+#include "rho/LogicalVector.hpp"
 #include "Defn.h"
 
 using namespace rho;

@@ -31,8 +31,8 @@
 #include "rho/jit/Compiler.hpp"
 #include "rho/jit/FrameDescriptor.hpp"
 #include "rho/jit/OptimizationOptions.hpp"
-#include "rho/BuiltInFunction.h"
-#include "rho/Closure.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Closure.hpp"
 #include "rho/Frame.hpp"
 #include "rho/LoopException.hpp"
 

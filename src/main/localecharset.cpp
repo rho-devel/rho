@@ -62,7 +62,7 @@
 
 //#include <rlocale.h> /* To get the correct linkage for locale2charset */
 
-#include "rho/unrho.h"
+#include "rho/unrho.hpp"
 
 /* name_value struct */
 typedef struct {

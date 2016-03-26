@@ -28,7 +28,7 @@
  */
 
 #include "rho/GCStackRoot.hpp"
-#include "rho/AddressSanitizer.h"
+#include "rho/AddressSanitizer.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "Defn.h"
 #include "gc.h"

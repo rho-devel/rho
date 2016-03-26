@@ -28,7 +28,7 @@
  * interface.
  */
 
-#include "rho/Promise.h"
+#include "rho/Promise.hpp"
 
 #include "localization.h"
 #include "R_ext/Error.h"

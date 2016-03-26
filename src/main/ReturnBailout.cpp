@@ -29,7 +29,7 @@
 
 #include "rho/ReturnBailout.hpp"
 
-#include "rho/Environment.h"
+#include "rho/Environment.hpp"
 #include "rho/ReturnException.hpp"
 
 using namespace rho;

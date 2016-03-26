@@ -27,7 +27,7 @@
  * Implementation of class RAllocStack and related functions.
  */
 
-#include "rho/RAllocStack.h"
+#include "rho/RAllocStack.hpp"
 
 #include <cstring>
 #include <stdexcept>

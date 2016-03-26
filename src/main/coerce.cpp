@@ -47,9 +47,9 @@
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
-#include "rho/ExpressionVector.h"
+#include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/Promise.h"
+#include "rho/Promise.hpp"
 
 using namespace std;
 using namespace rho;

@@ -31,7 +31,7 @@
 #ifndef BUILTINFUNCTION_H
 #define BUILTINFUNCTION_H
 
-#include "rho/FunctionBase.h"
+#include "rho/FunctionBase.hpp"
 
 #ifdef __cplusplus
 
@@ -39,8 +39,8 @@
 #include <vector>
 
 #include "rho/ArgList.hpp"
-#include "rho/Environment.h"
-#include "rho/Expression.h"
+#include "rho/Environment.hpp"
+#include "rho/Expression.hpp"
 
 extern "C" {
 #endif

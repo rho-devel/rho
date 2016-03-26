@@ -30,8 +30,8 @@
  * of <tt>const_cast</tt>.
  */
 
-#include "rho/ListVector.h"
-#include "rho/ExpressionVector.h"
+#include "rho/ListVector.hpp"
+#include "rho/ExpressionVector.hpp"
 
 using namespace rho;
 

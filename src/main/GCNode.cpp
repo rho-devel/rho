@@ -35,14 +35,14 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include "rho/AddressSanitizer.h"
+#include "rho/AddressSanitizer.hpp"
 #include "rho/GCManager.hpp"
-#include "rho/GCRoot.h"
+#include "rho/GCRoot.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ProtectStack.h"
-#include "rho/RAllocStack.h"
-#include "rho/WeakRef.h"
+#include "rho/ProtectStack.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/WeakRef.hpp"
 #include "gc.h"
 extern "C" {
 #  include "private/gc_priv.h"

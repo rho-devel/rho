@@ -73,7 +73,7 @@
 #include <cstdarg>
 
 #include "RBufferUtils.h"
-#include "rho/StringVector.h"
+#include "rho/StringVector.hpp"
 
 using namespace std;
 using namespace rho;

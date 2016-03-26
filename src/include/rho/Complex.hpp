@@ -33,7 +33,7 @@
 
 #include "rho/ElementTraits.hpp"
 #include "rho/Logical.hpp"
-#include "rho/RealVector.h"  // for isNA(double)
+#include "rho/RealVector.hpp"  // for isNA(double)
 #include "R_ext/Complex.h"
 
 namespace rho

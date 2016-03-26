@@ -36,7 +36,7 @@
 #ifndef PROTECTSTACK_H
 #define PROTECTSTACK_H 1
 
-#include "rho/RObject.h"
+#include "rho/RObject.hpp"
 
 #ifdef __cplusplus
 
