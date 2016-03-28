@@ -27,45 +27,38 @@ include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-RHO_HS = \
-  AddressSanitizer.h \
-  BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
-  DotInternal.h \
-  Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
-  FunctionBase.h GCRoot.h IntVector.h \
-  ListVector.h LogicalVector.h \
-  PairList.h PredefinedSymbols.h Promise.h ProtectStack.h ProvenanceTracker.h \
-  RAllocStack.h RObject.h RawVector.h RealVector.h \
-  S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
-  VectorBase.h WeakRef.h errors.h unrho.h
-
 RHO_HPPS = \
-  Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
-  CellPool.hpp CommandChronicle.hpp Complex.hpp \
-  ElementTraits.hpp Evaluator_Context.hpp \
-  FixedVector.hpp Frame.hpp GCEdge.hpp GCManager.hpp \
-  GCNode.hpp \
+  AddressSanitizer.hpp Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
+  BuiltInFunction.hpp CellPool.hpp Closure.hpp CommandChronicle.hpp Complex.hpp \
+  ComplexVector.hpp ConsCell.hpp \
+  DotInternal.hpp \
+  Environment.hpp ElementTraits.hpp Evaluator.hpp Evaluator_Context.hpp \
+  Expression.hpp ExpressionVector.hpp ExternalPointer.hpp \
+  FixedVector.hpp Frame.hpp FunctionBase.hpp GCEdge.hpp GCManager.hpp \
+  GCNode.hpp GCRoot.hpp\
   GCStackRoot.hpp \
-  Logical.hpp \
+  IntVector.hpp \
+  ListVector.hpp LogicalVector.hpp Logical.hpp \
   MemoryBank.hpp NodeStack.hpp \
-  Provenance.hpp RHandle.hpp \
-  SEXP_downcast.hpp StdFrame.hpp Subscripting.hpp \
-  UnaryFunction.hpp config.hpp
+  PairList.hpp PredefinedSymbols.hpp Promise.hpp ProtectStack.hpp \
+  Provenance.hpp ProvenanceTracker.hpp \
+  RAllocStack.hpp RObject.hpp RawVector.hpp RealVector.hpp RHandle.hpp \
+  S4Object.hpp SEXP_downcast.hpp SEXPTYPE.hpp StdFrame.hpp String.hpp \
+  StringVector.hpp Subscripting.hpp Symbol.hpp\
+  UnaryFunction.hpp VectorBase.hpp WeakRef.hpp \
+  errors.hpp unrho.hpp config.hpp
 
-RHO_HEADERS = $(RHO_HS) $(RHO_HPPS)
 
-DISTFILES = Makefile.in $(RHO_HS) $(RHO_HPPS)
-TIMESTAMPS = $(RHO_HS:.h=.ts) $(RHO_HPPS:.hpp=.ts)
+RHO_HEADERS = $(RHO_HPPS)
+
+DISTFILES = Makefile.in $(RHO_HPPS)
+TIMESTAMPS = $(RHO_HPPS:.hpp=.ts)
 
 CLEANFILES = stamp-R $(TIMESTAMPS)
 DISTCLEANFILES = Makefile config.hpp
 
 .SUFFIXES:
-.SUFFIXES: .h .hpp .ts
-
-.h.ts: 
-	@$(INSTALL_DATA) $< $(top_builddir)/include/rho/`basename $<`
-	@touch $@
+.SUFFIXES: .hpp .ts
 
 .hpp.ts: 
 	@$(INSTALL_DATA) $< $(top_builddir)/include/rho/`basename $<`
