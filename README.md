@@ -26,15 +26,15 @@ Rho has been tested to compile on both Linux and Mac OSX systems.
 
 ## Configuration and Compilation
 
-To build a development build with the LLVM JIT enabled:
+To build with the LLVM JIT enabled:
   ```
    configure --enable-llvm-jit --enable-maintainer-mode 
    make
    make check
    ```
-It is useful to additionally define `-Wall -DNO_CELLPOOLS -fsanitize=address -O1` in order to find bugs more easily. 
-
-For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined.
+For development builds, it is useful to define
+`-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
+in order to find bugs more easily. 
 
 ## Rho Discussion Mailing List.
 
