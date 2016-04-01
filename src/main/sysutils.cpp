@@ -3,11 +3,11 @@
  *  Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ double attribute_hidden R_FileMtime(const char *path)
 Rboolean R_FileExists(const char *path)
 {
     struct stat sb;
-    return CXXRCONSTRUCT(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
+    return RHOCONSTRUCT(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
 }
 
 double attribute_hidden R_FileMtime(const char *path)
@@ -101,8 +101,8 @@ double attribute_hidden R_FileMtime(const char *path)
 
 Rboolean attribute_hidden R_HiddenFile(const char *name)
 {
-    if (name && name[0] != '.') return CXXRFALSE;
-    else return CXXRTRUE;
+    if (name && name[0] != '.') return RHO_FALSE;
+    else return RHO_TRUE;
 }
 
 /* The MSVC runtime has a global to determine whether an unspecified
@@ -231,18 +231,18 @@ char *R_HomeDir(void)
 }
 
 /* This is a primitive (with no arguments) */
-SEXP attribute_hidden do_interactive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_interactive(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return ScalarLogical( (R_Interactive) ? 1 : 0 );
 }
 
-SEXP attribute_hidden do_tempdir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_tempdir(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return mkString(R_TempDir);
 }
 
 
-SEXP attribute_hidden do_tempfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* pattern_, CXXR::RObject* tmpdir_, CXXR::RObject* fileext_)
+SEXP attribute_hidden do_tempfile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* tmpdir_, rho::RObject* fileext_)
 {
     SEXP  ans, pattern, fileext, tempdir;
     const char *tn, *td, *te;
@@ -354,7 +354,7 @@ extern char ** environ;
 # include <windows.h> /* _wgetenv etc */
 #endif
 
-SEXP attribute_hidden do_getenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int i, j;
     SEXP ans;
@@ -446,7 +446,7 @@ static int Rputenv(const char *nm, const char *val)
 #endif
 
 
-SEXP attribute_hidden do_setenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
 #if defined(HAVE_PUTENV) || defined(HAVE_SETENV)
     int i, n;
@@ -483,7 +483,7 @@ SEXP attribute_hidden do_setenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #endif
 }
 
-SEXP attribute_hidden do_unsetenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_unsetenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     int i, n;
     SEXP ans, vars;
@@ -569,7 +569,7 @@ write_one (unsigned int namescount, const char * const *names, void *data)
 #include "RBufferUtils.h"
 
 /* iconv(x, from, to, sub, mark) */
-SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* sub_, CXXR::RObject* mark_, CXXR::RObject* toRaw_)
+SEXP attribute_hidden do_iconv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* from_, rho::RObject* to_, rho::RObject* sub_, rho::RObject* mark_, rho::RObject* toRaw_)
 {
     SEXP ans, x = x_, si;
     void * obj;
@@ -628,7 +628,7 @@ SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::Bui
 #else
 	    error(_("unsupported conversion from '%s' to '%s'"), from, to);
 #endif
-	isRawlist = CXXRCONSTRUCT(Rboolean, (TYPEOF(x) == VECSXP));
+	isRawlist = RHOCONSTRUCT(Rboolean, (TYPEOF(x) == VECSXP));
 	if(isRawlist) {
 	    if(toRaw)
 		PROTECT(ans = duplicate(x));
@@ -673,10 +673,10 @@ SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	    *outbuf = '\0';
 	    /* other possible error conditions are incomplete
 	       and invalid multibyte chars */
-	    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+	    if(res == RHOCONSTRUCT(size_t, -1) && errno == E2BIG) {
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
-	    } else if(res == CXXRCONSTRUCT(size_t, -1) && sub && 
+	    } else if(res == RHOCONSTRUCT(size_t, -1) && sub && 
 		      (errno == EILSEQ || errno == EINVAL)) {
 		/* it seems this gets thrown for non-convertible input too */
 		if(strcmp(sub, "byte") == 0) {
@@ -701,14 +701,14 @@ SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	    }
 
 	    if(toRaw) {
-		if(res != CXXRCONSTRUCT(size_t, -1) && inb == 0) {
+		if(res != RHOCONSTRUCT(size_t, -1) && inb == 0) {
 		    size_t nout = cbuff.bufsize - 1 - outb;
 		    SEXP el = allocVector(RAWSXP, nout);
 		    memcpy(RAW(el), cbuff.data, nout);
 		    SET_VECTOR_ELT(ans, i, el);
 		} /* otherwise is already NULL */
 	    } else {
-		if(res != CXXRCONSTRUCT(size_t, -1) && inb == 0) {
+		if(res != RHOCONSTRUCT(size_t, -1) && inb == 0) {
 		    cetype_t ienc = CE_NATIVE;
 
 		    size_t nout = cbuff.bufsize - 1 - outb;
@@ -987,10 +987,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+    if(res == RHOCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
+    } else if(res == RHOCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -1085,10 +1085,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(CXXRCONSTRUCT(int, res) == -1 && errno == E2BIG) {
+    if(RHOCONSTRUCT(int, res) == -1 && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(CXXRCONSTRUCT(int, res) == -1 && (errno == EILSEQ || errno == EINVAL)) {
+    } else if(RHOCONSTRUCT(int, res) == -1 && (errno == EILSEQ || errno == EINVAL)) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -1120,7 +1120,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     const char *inbuf;
     char *outbuf, *p;
     size_t inb, outb, res, top;
-    CXXRCONST char *tocode = nullptr, *fromcode = nullptr;
+    RHOCONST char *tocode = nullptr, *fromcode = nullptr;
 #ifdef Win32
     char buf[20];
 #endif
@@ -1133,7 +1133,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
 	if(ce_out == CE_UTF8) {
 	    size_t nc = 3*strlen(x)+1; /* all in BMP */
 	    p = R_alloc(nc, 1);
-	    Rf_AdobeSymbol2utf8(p, x, CXXRCONSTRUCT(int, nc));
+	    Rf_AdobeSymbol2utf8(p, x, RHOCONSTRUCT(int, nc));
 	    return p;
 	} else return x;
     }
@@ -1190,10 +1190,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+    if(res == RHOCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
+    } else if(res == RHOCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
 	switch(subst) {
 	case 1: /* substitute hex */
 	    if(outb < 5) {
@@ -1554,7 +1554,7 @@ mbtoucs(unsigned int *wc, const char *s, size_t n)
     }
     Riconv_close(cd);
     *wc = wcs[0];
-    return CXXRNOCAST(size_t) 1;
+    return RHO_NO_CAST(size_t) 1;
 }
 
 /* made available for use in graphics devices */
@@ -1617,7 +1617,7 @@ size_t ucstoutf8(char *s, const unsigned int wc)
 # define S_IFDIR __S_IFDIR
 #endif
 
-static int isDir(CXXRCONST char *path)
+static int isDir(RHOCONST char *path)
 {
 #ifdef Win32
     struct _stati64 sb;
@@ -1641,7 +1641,7 @@ static int isDir(CXXRCONST char *path)
     return isdir;
 }
 #else
-static int isDir(CXXRCONST char *path)
+static int isDir(RHOCONST char *path)
 {
     return 1;
 }
@@ -1658,7 +1658,7 @@ extern char * mkdtemp (char *template);
 void attribute_hidden InitTempDir()
 {
     char *tmp, tmp1[PATH_MAX+11], *p;
-    CXXRCONST char* tm;
+    RHOCONST char* tm;
 #ifdef Win32
     char tmp2[PATH_MAX];
     int hasspace = 0;
@@ -1777,7 +1777,7 @@ char * R_tmpnam2(const char *prefix, const char *tempdir, const char *fileext)
     return res;
 }
 
-SEXP attribute_hidden do_proctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_proctime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, nm;
 
@@ -1815,7 +1815,7 @@ void attribute_hidden resetTimeLimits()
 }
 
 SEXP attribute_hidden
-do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_, CXXR::RObject* transient_)
+do_setTimeLimit(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cpu_, rho::RObject* elapsed_, rho::RObject* transient_)
 {
     double cpu, elapsed, old_cpu = cpuLimitValue,
 	old_elapsed = elapsedLimitValue;
@@ -1841,7 +1841,7 @@ do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* o
 }
 
 SEXP attribute_hidden
-do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* cpu_, CXXR::RObject* elapsed_)
+do_setSessionTimeLimit(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cpu_, rho::RObject* elapsed_)
 {
     double cpu, elapsed, data[5];
 
@@ -1877,7 +1877,7 @@ do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunc
 #  define GLOB_QUOTE 0
 # endif
 #endif
-SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* dirmark_)
+SEXP attribute_hidden do_glob(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* paths_, rho::RObject* dirmark_)
 {
     SEXP x, ans;
     R_xlen_t i, n;

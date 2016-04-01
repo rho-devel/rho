@@ -4,11 +4,11 @@
  *  Copyright (C) 1998-2015   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,16 +57,16 @@
 
 #include <locale.h>
 
-#include "CXXR/Browser.hpp"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/CommandTerminated.hpp"
-#include "CXXR/ListVector.h"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/ProvenanceTracker.h"
-#include "CXXR/ReturnException.hpp"
-#include "CXXR/GCStackFrameBoundary.hpp"
+#include "rho/Browser.hpp"
+#include "rho/ClosureContext.hpp"
+#include "rho/CommandTerminated.hpp"
+#include "rho/ListVector.hpp"
+#include "rho/ProtectStack.hpp"
+#include "rho/ProvenanceTracker.hpp"
+#include "rho/ReturnException.hpp"
+#include "rho/GCStackFrameBoundary.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 #ifdef ENABLE_NLS
 void attribute_hidden nl_Rdummy(void)
@@ -95,7 +95,7 @@ void attribute_hidden nl_Rdummy(void)
  * in separate platform dependent modules.
  */
 
-// Now read on: In CXXR the preprocessor trickery referred to above is
+// Now read on: In rho the preprocessor trickery referred to above is
 // not used.  Gradually global variables will be replaced by variables
 // with class or namespace scope, and their definitions migrated to
 // the appropriate class-related source file, but those that have not
@@ -338,7 +338,7 @@ typedef struct {
  point, i.e. the end of the first line or after the first ;.
  */
 int
-Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
+Rf_ReplIteration(SEXP rho, unsigned int savestack, R_ReplState *state)
 {
     int c, browsevalue;
     SEXP value, thisExpr;
@@ -615,19 +615,19 @@ static unsigned char ConsoleBuf[CONSOLE_BUFFER_SIZE];
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
-    CXXRCONST char *s;
+    RHOCONST char *s;
 
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
      */
-    if(signum == SIGSEGV && (ip != CXXRNOCAST(siginfo_t *)nullptr) &&
+    if(signum == SIGSEGV && (ip != RHO_NO_CAST(siginfo_t *)nullptr) &&
        intptr_t( R_CStackStart) != -1) {
 	uintptr_t addr = uintptr_t( ip->si_addr);
 	intptr_t diff = (R_CStackDir > 0) ? R_CStackStart - addr:
 	    addr - R_CStackStart;
 	uintptr_t upper = 0x1000000;  /* 16Mb */
 	if(intptr_t( R_CStackLimit) != -1) upper += R_CStackLimit;
-	if(diff > 0 && diff < CXXRCONSTRUCT(int, upper)) {
+	if(diff > 0 && diff < RHOCONSTRUCT(int, upper)) {
 	    REprintf(_("Error: segfault from C stack overflow\n"));
 	    jump_to_toplevel();
 	}
@@ -640,7 +640,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     REprintf("\n *** caught %s ***\n",
 	     signum == SIGILL ? "illegal operation" :
 	     signum == SIGBUS ? "bus error" : "segfault");
-    if(ip != CXXRNOCAST(siginfo_t *)nullptr) {
+    if(ip != RHO_NO_CAST(siginfo_t *)nullptr) {
 	if(signum == SIGILL) {
 
 	    switch(ip->si_code) {
@@ -1001,7 +1001,7 @@ void setup_Rmainloop(void)
     /* methods package needs to trample here */
     R_LockEnvironment(R_BaseEnv, TRUE);
 #endif
-    R_unLockBinding(R_LastvalueSymbol, R_BaseEnv);  // CXXR addition
+    R_unLockBinding(R_LastvalueSymbol, R_BaseEnv);  // rho addition
     /* At least temporarily unlock some bindings used in graphics */
     R_unLockBinding(R_DeviceSymbol, R_BaseEnv);
     R_unLockBinding(R_DevicesSymbol, R_BaseEnv);
@@ -1153,10 +1153,10 @@ static void printwhere(void)
   for (cptr = FunctionContext::innermost();
        cptr;
        cptr = FunctionContext::innermost(cptr->nextOut())) {
-      if (TYPEOF(CXXRCCAST(Expression*, cptr->call())) == LANGSXP) {
+      if (TYPEOF(RHO_C_CAST(Expression*, cptr->call())) == LANGSXP) {
 	  Rprintf("where %d", lct++);
 	  SrcrefPrompt("", cptr->sourceLocation());
-	  PrintValue(CXXRCCAST(Expression*, cptr->call()));
+	  PrintValue(RHO_C_CAST(Expression*, cptr->call()));
       }
   }
   Rprintf("\n");
@@ -1181,7 +1181,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	const char *expr = CHAR(PRINTNAME(CExpr));
 	if (!strcmp(expr, "c") || !strcmp(expr, "cont")) {
 	    rval = 1;
-	    SET_ENV_DEBUG(rho, CXXRFALSE);
+	    SET_ENV_DEBUG(rho, RHO_FALSE);
 #if 0
 	} else if (!strcmp(expr, "f")) {
 	    rval = 1;
@@ -1191,7 +1191,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 		cntxt = cntxt->nextcontext;
 	    }
 	    cntxt->browserfinish = 1;
-	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    SET_ENV_DEBUG(rho, RHO_TRUE);
 	    R_BrowserLastCommand = 'f';
 #endif
 	} else if (!strcmp(expr, "help")) {
@@ -1199,21 +1199,21 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	    printBrowserHelp();
 	} else if (!strcmp(expr, "n")) {
 	    rval = 1;
-	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    SET_ENV_DEBUG(rho, RHO_TRUE);
 	    R_BrowserLastCommand = 'n';
 	} else if (!strcmp(expr, "Q")) {
 	    /* this is really dynamic state that should be managed as such */
-	    SET_ENV_DEBUG(rho, CXXRFALSE); /*PR#1721*/
+	    SET_ENV_DEBUG(rho, RHO_FALSE); /*PR#1721*/
 
 	    jump_to_toplevel();
 	} else if (!strcmp(expr, "s")) {
 	    rval = 1;
-	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    SET_ENV_DEBUG(rho, RHO_TRUE);
 	    R_BrowserLastCommand = 's';
 	} else if (!strcmp(expr, "where")) {
 	    rval = 2;
 	    printwhere();
-	    /* SET_ENV_DEBUG(rho, CXXRTRUE); */
+	    /* SET_ENV_DEBUG(rho, RHO_TRUE); */
 
 	}
     }
@@ -1296,7 +1296,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    redo = false;
 	    try {
 		ClosureContext* cptr = ClosureContext::innermost();
-		// CXXR doesn't have a top-level context.  The
+		// rho doesn't have a top-level context.  The
 		// following test stops an error if browser() is
 		// invoked at top level, but this workaround needs to
 		// be reviewed when arr understands restarts better!
@@ -1352,7 +1352,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP attribute_hidden do_quit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* save_, CXXR::RObject* status_, CXXR::RObject* runLast_)
+SEXP attribute_hidden do_quit(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* save_, rho::RObject* status_, rho::RObject* runLast_)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;
@@ -1636,7 +1636,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     SEXP f = static_cast<SEXP>( userData);
     SEXP e, tmp, val, cur;
     int errorOccurred;
-    Rboolean again, useData = CXXRCONSTRUCT(Rboolean, LOGICAL(VECTOR_ELT(f, 2))[0]);
+    Rboolean again, useData = RHOCONSTRUCT(Rboolean, LOGICAL(VECTOR_ELT(f, 2))[0]);
 
     PROTECT(e = allocVector(LANGSXP, 5 + useData));
     SETCAR(e, VECTOR_ELT(f, 0));
@@ -1662,7 +1662,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 	      /* It would be nice to identify the function. */
 	    warning(_("top-level task callback did not return a logical value"));
 	}
-	again = CXXRCONSTRUCT(Rboolean, asLogical(val));
+	again = RHOCONSTRUCT(Rboolean, asLogical(val));
 	UNPROTECT(1);
     } else {
 	/* warning("error occurred in top-level task callback\n"); */

@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2006-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

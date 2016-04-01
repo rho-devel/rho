@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,26 +24,26 @@
 
 /** @file ConsCell.cpp
  *
- * @brief Class CXXR::ConsCell and associated C interface.
+ * @brief Class rho::ConsCell and associated C interface.
  */
 
-#include "CXXR/ConsCell.h"
+#include "rho/ConsCell.hpp"
 
 #include <iostream>
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/Expression.h"
-#include "CXXR/PairList.h"
-#include "CXXR/StringVector.h"
-#include "CXXR/Symbol.h"
+#include "rho/DottedArgs.hpp"
+#include "rho/Expression.hpp"
+#include "rho/PairList.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
-	RObject* (*car0p)(ConsCell*) = CXXR::car0;
-	PairList* (*tail0p)(ConsCell*) = CXXR::tail0;
+	RObject* (*car0p)(ConsCell*) = rho::car0;
+	PairList* (*tail0p)(ConsCell*) = rho::tail0;
 	SEXP (*CAARp)(SEXP e) = CAAR;
 	SEXP (*CARp)(SEXP e) = CAR;
 	SEXP (*TAGp)(SEXP e) = TAG;
@@ -101,7 +101,7 @@ namespace {
     }
 }
 
-void CXXR::ccdump(std::ostream& os, const ConsCell& cc, std::size_t margin)
+void rho::ccdump(std::ostream& os, const ConsCell& cc, std::size_t margin)
 {
     indent(os, margin);
     os << Rf_type2char(cc.sexptype()) << '\n';

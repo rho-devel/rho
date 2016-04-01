@@ -3,11 +3,11 @@
  *  Copyright (C) 1995-1996 Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997-2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,11 +103,11 @@
 #include <Rdynpriv.h>
 #include "basedecl.h"
 #include <vector>
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/WeakRef.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/WeakRef.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 #ifdef Unix
 /* HP-UX 11.0 has dlfcn.h, but according to libtool as of Dec 2001
@@ -148,7 +148,7 @@ static int CountDLL = 0;
 
 static DllInfo LoadedDLL[MAX_NUM_DLLS];
 
-static int addDLL(char *dpath, CXXRCONST char *name, HINSTANCE handle);
+static int addDLL(char *dpath, RHOCONST char *name, HINSTANCE handle);
 static SEXP Rf_MakeDLLInfo(DllInfo *info);
 
 static SEXP createRSymbolObject(SEXP sname, DL_FUNC f,
@@ -239,7 +239,7 @@ R_getDllInfo(const char *path)
     for(i = 0; i < CountDLL; i++) {
 	if(strcmp(LoadedDLL[i].path, path) == 0) return(&LoadedDLL[i]);
     }
-    return CXXRNOCAST(DllInfo*) nullptr;
+    return RHO_NO_CAST(DllInfo*) nullptr;
 }
 
 /*
@@ -515,7 +515,7 @@ DL_FUNC Rf_lookupCachedSymbol(const char *name, const char *pkg, int all)
 	    return CPFun[i].func;
 #endif
 
-    return(CXXRNOCAST(DL_FUNC) nullptr);
+    return(RHO_NO_CAST(DL_FUNC) nullptr);
 }
 
 
@@ -629,7 +629,7 @@ static DllInfo *R_RegisterDLL(HINSTANCE handle, const char *path)
 }
 
 static int
-addDLL(char *dpath, CXXRCONST char *DLLname, HINSTANCE handle)
+addDLL(char *dpath, RHOCONST char *DLLname, HINSTANCE handle)
 {
     int ans = CountDLL;
     char *name = static_cast<char *>( malloc(strlen(DLLname)+1));
@@ -678,7 +678,7 @@ Rf_lookupRegisteredFortranSymbol(DllInfo *info, const char *name)
 	    return(&(info->FortranSymbols[i]));
     }
 
-    return CXXRNOCAST(Rf_DotFortranSymbol*) nullptr;
+    return RHO_NO_CAST(Rf_DotFortranSymbol*) nullptr;
 }
 
 static Rf_DotCallSymbol *
@@ -688,7 +688,7 @@ Rf_lookupRegisteredCallSymbol(DllInfo *info, const char *name)
 	if(strcmp(name, info->CallSymbols[i].name) == 0)
 	    return(&(info->CallSymbols[i]));
     }
-    return CXXRNOCAST(Rf_DotCallSymbol*) nullptr;
+    return RHO_NO_CAST(Rf_DotCallSymbol*) nullptr;
 }
 
 static Rf_DotExternalSymbol *
@@ -698,7 +698,7 @@ Rf_lookupRegisteredExternalSymbol(DllInfo *info, const char *name)
 	if(strcmp(name, info->ExternalSymbols[i].name) == 0)
 	    return(&(info->ExternalSymbols[i]));
     }
-    return CXXRNOCAST(Rf_DotExternalSymbol*) nullptr;
+    return RHO_NO_CAST(Rf_DotExternalSymbol*) nullptr;
 }
 
 static DL_FUNC
@@ -767,7 +767,7 @@ R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 	}
     }
 
-    return(CXXRNOCAST(DL_FUNC) nullptr);
+    return(RHO_NO_CAST(DL_FUNC) nullptr);
 }
 
 DL_FUNC attribute_hidden
@@ -823,7 +823,7 @@ R_dlsym(DllInfo *info, char const *name,
 DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 		     R_RegisteredNativeSymbol *symbol)
 {
-    DL_FUNC fcnptr = CXXRNOCAST(DL_FUNC) nullptr;
+    DL_FUNC fcnptr = RHO_NO_CAST(DL_FUNC) nullptr;
     int i, all = (strlen(pkg) == 0), doit;
 
     if(R_osDynSymbol->lookupCachedSymbol)
@@ -843,7 +843,7 @@ DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 	if(doit && LoadedDLL[i].forceSymbols) doit = 0;
 	if(doit) {
 	    fcnptr = R_dlsym(&LoadedDLL[i], name, symbol); /* R_osDynSymbol->dlsym */
-	    if (fcnptr != CXXRNOCAST(DL_FUNC) nullptr) {
+	    if (fcnptr != RHO_NO_CAST(DL_FUNC) nullptr) {
 		if(symbol)
 		    symbol->dll = LoadedDLL+i;
 #ifdef CACHE_DLL_SYM
@@ -857,10 +857,10 @@ DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 		return fcnptr;
 	    }
 	}
-	if(doit > 1) return CXXRNOCAST(DL_FUNC) nullptr;  /* Only look in the first-matching DLL */
+	if(doit > 1) return RHO_NO_CAST(DL_FUNC) nullptr;  /* Only look in the first-matching DLL */
     }
 
-    return CXXRNOCAST(DL_FUNC) nullptr;
+    return RHO_NO_CAST(DL_FUNC) nullptr;
 }
 
 
@@ -887,7 +887,7 @@ static void GetFullDLLPath(SEXP call, char *buf, const char *const path)
   call routines from "incomplete" DLLs.
  */
 
-SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* local_, CXXR::RObject* now_, CXXR::RObject* dots_)
+SEXP attribute_hidden do_dynload(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* local_, rho::RObject* now_, rho::RObject* dots_)
 {
     char buf[2 * PATH_MAX];
     DllInfo *info;
@@ -903,7 +903,7 @@ SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::B
     return(Rf_MakeDLLInfo(info));
 }
 
-SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_dynunload(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     char buf[2 * PATH_MAX];
 
@@ -1123,7 +1123,7 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
 
     if(f)
 	sym = createRSymbolObject(sname, f, &symbol,
-				  CXXRCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
+				  RHOCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
 
     vmaxset(vmax);
     return sym;
@@ -1192,7 +1192,7 @@ createRSymbolObject(SEXP sname, DL_FUNC f, R_RegisteredNativeSymbol *symbol,
 	   the number of arguments and the classname.
 	*/
 	int nargs = -1;
-	CXXRCONST char *className = "";
+	RHOCONST char *className = "";
 	switch(symbol->type) {
 	case R_C_SYM:
 	    nargs = symbol->symbol.c->numArgs;
@@ -1316,7 +1316,7 @@ R_getRegisteredRoutines(SEXP dll)
 }
 
 SEXP attribute_hidden
-do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+do_getSymbolInfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     const char *package = "", *name;
     R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {nullptr}, nullptr};
@@ -1341,13 +1341,13 @@ do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
 	f = R_FindSymbol(name, package, &symbol);
     if(f)
 	sym = createRSymbolObject(sname, f, &symbol,
-				  CXXRCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
+				  RHOCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
     return sym;
 }
 
 /* .Internal(getLoadedDLLs()) */
 SEXP attribute_hidden
-do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+do_getDllTable(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, nm;
 
@@ -1376,7 +1376,7 @@ do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op
 }
 
 SEXP attribute_hidden
-do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* info_)
+do_getRegisteredRoutines(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* info_)
 {
     const char * const names[] = {".C", ".Call", ".Fortran", ".External"};
 

@@ -4,11 +4,11 @@
  *  Copyright (C) 1997-2015  The R Core Team
  *  Copyright (C) 2003-2015  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,12 +47,12 @@
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
+#include "rho/ExpressionVector.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* This section of code handles type conversion for elements */
 /* of data vectors.  Type coercion throughout R should use these */
@@ -938,7 +938,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    if (Rf_isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(rval, i, STRING_ELT(Rf_deparse1line(CAR(vp), CXXRFALSE), 0));
+		SET_STRING_ELT(rval, i, STRING_ELT(Rf_deparse1line(CAR(vp), RHO_FALSE), 0));
 	}
     }
     else if (type == VECSXP) {
@@ -1045,7 +1045,7 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	    else
 		SET_STRING_ELT(rval, i,
-			       STRING_ELT(Rf_deparse1line(elt, CXXRFALSE), 0));
+			       STRING_ELT(Rf_deparse1line(elt, RHO_FALSE), 0));
 	}
     }
     else if (type == LISTSXP) {
@@ -1189,7 +1189,7 @@ SEXP Rf_coerceVector(SEXP v, SEXPTYPE type)
 	    if (Rf_isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(ans, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(ans, i, STRING_ELT(Rf_deparse1line(CAR(vp), CXXRFALSE), 0));
+		SET_STRING_ELT(ans, i, STRING_ELT(Rf_deparse1line(CAR(vp), RHO_FALSE), 0));
 	}
 	UNPROTECT(1);
 	break;
@@ -1330,7 +1330,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
-SEXP attribute_hidden do_asCharacterFactor(CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x)
+SEXP attribute_hidden do_asCharacterFactor(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
 {
     return Rf_asCharacterFactor(x);
 }
@@ -1363,7 +1363,7 @@ SEXP Rf_asCharacterFactor(SEXP x)
 }
 
 
-SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asatomic(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, x;
 
@@ -1401,7 +1401,7 @@ SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::
 
 /* NB: as.vector is used for several other as.xxxx, including
    as.expression, as.list, as.pairlist, as.symbol, (as.single) */
-SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, ans;
     SEXPTYPE type;
@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* envir_)
+SEXP attribute_hidden do_asfunction(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* envir_)
 {
     SEXP arglist, envir, names, args, pargs, body;
     int i, n;
@@ -1522,7 +1522,7 @@ SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR
 
 
 /* primitive */
-SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* args)
+SEXP attribute_hidden do_ascall(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* args)
 {
     SEXP ap, ans, names;
     int i, n;
@@ -1718,7 +1718,7 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_typeof(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     return Rf_type2rstr(TYPEOF(x_));
 }
@@ -1726,7 +1726,7 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* Define many of the <primitive> "is.xxx" functions :
    Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or ../include/Rinlinedfuns.h
 */
-SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans;
 
@@ -1876,7 +1876,7 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
  */
 
 // is.vector(x, mode) :
-SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* mode_)
+SEXP attribute_hidden do_isvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* mode_)
 {
     SEXP ans, a, x;
     const char *stype;
@@ -1950,7 +1950,7 @@ namespace {
     }
 }
     
-SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -2167,7 +2167,7 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -2224,7 +2224,7 @@ SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
@@ -2279,7 +2279,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isinfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP ans, x, names, dims;
     double xr, xi;
@@ -2368,7 +2368,7 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (rfun);
 }
 
-SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* what_, CXXR::RObject* args_, CXXR::RObject* envir_)
+SEXP attribute_hidden do_docall(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_, rho::RObject* args_, rho::RObject* envir_)
 {
     SEXP c, fun, names, envir;
     int i, n;
@@ -2568,7 +2568,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 typedef struct {
-    CXXRCONST char *s;
+    RHOCONST char *s;
     SEXPTYPE sexp;
     Rboolean canChange;
 } classType;
@@ -2598,7 +2598,7 @@ static int class2type(const char *s)
        classes; e.g., "language" is a type but many classes correspond to objects of
        this type.
     */
-    int i; CXXRCONST char *si;
+    int i; RHOCONST char *si;
     for(i = 0; ; i++) {
 	si = classTable[i].s;
 	if(!si)
@@ -2664,7 +2664,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	valueType = (whichType == -1) ? SEXPTYPE( -1) : classTable[whichType].sexp;
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	/*  assigning type as a class deletes an explicit class attribute. */
-	if(valueType != CXXRCONSTRUCT(SEXPTYPE, -1)) {
+	if(valueType != RHOCONSTRUCT(SEXPTYPE, -1)) {
 	    Rf_setAttrib(obj, R_ClassSymbol, R_NilValue);
 	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
 	      do_unsetS4(obj, value);
@@ -2713,13 +2713,13 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     return obj;
 }
 
-SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* object, CXXR::RObject* klass)
+SEXP attribute_hidden R_do_set_class(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* klass)
 {
     return R_set_class(object, klass, call);
 }
 
 /* primitive */
-SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* obj, CXXR::RObject* value)
+SEXP attribute_hidden do_storage_mode(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* obj, rho::RObject* value)
 {
 /* storage.mode(obj) <- value */
     SEXP ans;
@@ -2746,7 +2746,7 @@ SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CX
     return ans;
 }
 
-#include "CXXR/ArgList.hpp"
+#include "rho/ArgList.hpp"
 
 const Symbol* ArgList::coerceTag(const RObject* tag)
 {

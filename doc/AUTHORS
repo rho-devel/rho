@@ -1,4 +1,4 @@
-Authors of CXXR.
+Authors of rho.
 
 Arun Chauhan
 Karl Millar
@@ -6,11 +6,11 @@ Andrew R. Runnalls
 Chris Silles
 Google Inc.
 
-Prior to 2014, the vast bulk of CXXR development was written by
+Prior to 2014, the vast bulk of rho (then CXXR) development was written by
 Andrew R. Runnalls.
 
 
-Authors of R (on which CXXR is based).
+Authors of R (on which rho is based).
 
 R was initially written by Robert Gentleman and Ross Ihaka—also known as "R & R"
 of the Statistics Department of the University of Auckland.

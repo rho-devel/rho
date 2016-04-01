@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002--2015     The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ static Rboolean checkfmt(const char *fmt, const char *pattern)
     : translateChar(STRING_ELT(_STR_, _i_)))
 
 
-SEXP attribute_hidden do_sprintf(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sprintf(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int i, nargs, cnt, v, thislen, nfmt, nprotect = 0;
     /* fmt2 is a copy of fmt with '*' expanded.
@@ -138,12 +138,12 @@ SEXP attribute_hidden do_sprintf(/*const*/ CXXR::Expression* call, const CXXR::B
 
     CHECK_maxlen;
 
-    outputString = CXXRCONSTRUCT(static_cast<char*>, R_AllocStringBuffer(0, &outbuff));
+    outputString = RHOCONSTRUCT(static_cast<char*>, R_AllocStringBuffer(0, &outbuff));
 
     /* We do the format analysis a row at a time */
     for(ns = 0; ns < maxlen; ns++) {
 	outputString[0] = '\0';
-	use_UTF8 = CXXRCONSTRUCT(Rboolean, getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8);
+	use_UTF8 = RHOCONSTRUCT(Rboolean, getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8);
 	if (!use_UTF8) {
 	    for(i = 0; i < nargs; i++) {
 		if (!isString(a[i])) continue;
@@ -311,7 +311,7 @@ SEXP attribute_hidden do_sprintf(/*const*/ CXXR::Expression* call, const CXXR::B
 				    nprotect++;				\
 				    did_this = TRUE;			\
 				    CHECK_this_length;			\
-				    do_check = (CXXRCONSTRUCT(Rboolean, lens[nthis] == maxlen)); \
+				    do_check = (RHOCONSTRUCT(Rboolean, lens[nthis] == maxlen)); \
 				    lens[nthis] = thislen; /* may have changed! */ \
 				    if(do_check && thislen < maxlen) {	\
 					CHECK_maxlen;			\

@@ -7,7 +7,7 @@
 \alias{memory.profile}
 \title{Profile the Usage of Cons Cells}
 \description{
-    Performs no useful function in CXXR.
+    Performs no useful function in rho.
 }
 \usage{
 memory.profile()
@@ -22,7 +22,7 @@ memory.profile()
 % Also \code{FUNSXP} is not included.
 % Nonsense: that is a mode, not a type.
 \value{
-    A vector of counts, named by the types: in CXXR these counts are all
+    A vector of counts, named by the types: in rho these counts are all
     zero.  See \code{\link{typeof}} for an explanation of types.
 }
 

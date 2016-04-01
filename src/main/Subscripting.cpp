@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,16 +24,16 @@
 
 /** @file Subscripting.cpp
  *
- * Implementation of class CXXR::Subscripting and associated functions.
+ * Implementation of class rho::Subscripting and associated functions.
  */
 
 #include <set>
 #include <unordered_map>
-#include "CXXR/RAllocStack.h"
-#include "CXXR/RealVector.h"
-#include "CXXR/Subscripting.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/RealVector.hpp"
+#include "rho/Subscripting.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 // ***** Class Subscripting::Indices *****
 

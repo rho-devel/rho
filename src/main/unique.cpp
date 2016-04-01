@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,12 +33,12 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/RAllocStack.h"
+#include "rho/ClosureContext.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/Promise.hpp"
+#include "rho/RAllocStack.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 #define NIL -1
 #define ARGUSED(x) LEVELS(x)
@@ -402,7 +402,7 @@ static void HashTableSetup(SEXP x, HashData *d, R_xlen_t nmax)
 	UNIMPLEMENTED_TYPE("HashTableSetup", x);
     }
 #ifdef LONG_VECTOR_SUPPORT
-    d->isLong = CXXRCONSTRUCT(Rboolean, IS_LONG_VEC(x));
+    d->isLong = RHOCONSTRUCT(Rboolean, IS_LONG_VEC(x));
     if (d->isLong) {
 	d->HashTable = allocVector(REALSXP, R_xlen_t( d->M));
 	for (R_xlen_t i = 0; i < d->M; i++) REAL(d->HashTable)[i] = NIL;
@@ -663,7 +663,7 @@ R_xlen_t any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
   .Internal(unique(x))		  [op=1]
    .Internal(anyDuplicated(x))	  [op=2]
 */
-SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_duplicated(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP x, incomp, dup, ans;
     int fromLast, nmax = NA_INTEGER;
@@ -976,7 +976,7 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 
 
 // .Internal(match(x, table, nomatch, incomparables)) :
-SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_match(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     if ((!isVector(args[0]) && !isNull(args[0]))
 	|| (!isVector(args[1]) && !isNull(args[1])))
@@ -1006,7 +1006,7 @@ SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::Bui
  * Empty strings are unmatched			      BDR 2000/2/16
  */
 
-SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_, CXXR::RObject* duplicates_ok_)
+SEXP attribute_hidden do_pmatch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* table_, rho::RObject* nomatch_, rho::RObject* duplicates_ok_)
 {
     SEXP ans, input, target;
     int mtch, n_target, mtch_count, dups_ok, no_match;
@@ -1024,13 +1024,13 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
     dups_ok = asLogical(duplicates_ok_);
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
-    no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
+    no_dups = RHOCONSTRUCT(Rboolean, !dups_ok);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
 
     if(no_dups) {
-	used = static_cast<int *>( CXXR_alloc(size_t( n_target), sizeof(int)));
+	used = static_cast<int *>( RHO_alloc(size_t( n_target), sizeof(int)));
 	for (int j = 0; j < n_target; j++) used[j] = 0;
     }
 
@@ -1055,8 +1055,8 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	}
     }
 
-    in = static_cast<const char **>( CXXR_alloc(size_t( n_input), sizeof(char *)));
-    tar = static_cast<const char **>( CXXR_alloc(size_t( n_target), sizeof(char *)));
+    in = static_cast<const char **>( RHO_alloc(size_t( n_input), sizeof(char *)));
+    tar = static_cast<const char **>( RHO_alloc(size_t( n_target), sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
     if(useBytes) {
@@ -1151,7 +1151,7 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* Partial Matching of Strings */
 /* Based on Therneau's charmatch. */
 
-SEXP attribute_hidden do_charmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* table_, CXXR::RObject* nomatch_)
+SEXP attribute_hidden do_charmatch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* table_, rho::RObject* nomatch_)
 {
     SEXP ans, input, target;
     const char *ss, *st;
@@ -1412,7 +1412,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = new CXXR::Expression);
+    PROTECT(rval = new rho::Expression);
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(3);
@@ -1568,7 +1568,7 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     return ans;
 }
 
-SEXP attribute_hidden do_rowsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rowsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     if(op->variant() == 1)
 	return rowsum_df(args[0], args[1], args[2], args[3],
@@ -1614,7 +1614,7 @@ static SEXP duplicated2(SEXP x, HashData *d)
     return ans;
 }
 
-SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* sep_)
+SEXP attribute_hidden do_makeunique(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* sep_)
 {
     SEXP names, sep, ans, dup, newx;
     int i, cnt, *cnts, dp;
@@ -1649,7 +1649,7 @@ SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR
 	} else {
 	    /* This is going to be slow so use expensive allocation
 	       that will be recovered if interrupted. */
-	    cnts = static_cast<int *>( CXXR_alloc(size_t( n),  sizeof(int)));
+	    cnts = static_cast<int *>( RHO_alloc(size_t( n),  sizeof(int)));
 	}
 	for(i = 0; i < n; i++) cnts[i] = 1;
 	data.nomatch = 0;
@@ -1730,7 +1730,7 @@ static R_INLINE double ru()
 }
 
 // sample.int(.) --> .Internal(sample2(n, size)) :
-SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_, CXXR::RObject* size_)
+SEXP attribute_hidden do_sample2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* size_)
 {
     SEXP ans;
     double dn = asReal(n_);

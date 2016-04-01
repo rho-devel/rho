@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -689,7 +689,7 @@ makelt(stm *tm, SEXP ans, R_xlen_t i, int valid, double frac_secs)
 	     /* --------- R interfaces --------- */
 
 // We assume time zone names/abbreviations are ASCII, as all known ones are.
-SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_)
+SEXP attribute_hidden do_asPOSIXlt(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* tz_)
 {
     SEXP stz, x, ans, ansnames, klass, tzone;
     int isgmt = 0, valid, settz = 0;
@@ -785,7 +785,7 @@ SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* tz_)
+SEXP attribute_hidden do_asPOSIXct(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* tz_)
 {
     SEXP stz, x, ans;
     R_xlen_t n = 0, nlen[9];
@@ -875,7 +875,7 @@ SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* usetz_)
+SEXP attribute_hidden do_formatPOSIXlt(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* format_, rho::RObject* usetz_)
 {
     SEXP x, sformat, ans, tz;
     R_xlen_t n = 0, m, N, nlen[9];
@@ -1048,7 +1048,7 @@ SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const C
     return ans;
 }
 
-SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* format_, CXXR::RObject* tz_)
+SEXP attribute_hidden do_strptime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* format_, rho::RObject* tz_)
 {
     SEXP x, sformat, ans, ansnames, klass, stz, tzone = R_NilValue;
     int invalid, isgmt = 0, settz = 0, offset;
@@ -1195,7 +1195,7 @@ SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_D2POSIXlt(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP x, ans, ansnames, klass;
     R_xlen_t n;
@@ -1256,7 +1256,7 @@ SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_)
+SEXP attribute_hidden do_POSIXlt2D(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP x, ans, klass;
     R_xlen_t n = 0, nlen[9];

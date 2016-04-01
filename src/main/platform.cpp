@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,13 +55,13 @@
 
 #include "basedecl.h"
 #include <vector>
-#include "CXXR/Evaluator.h"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/StackChecker.hpp"
-#include "CXXR/StringVector.h"
+#include "rho/Evaluator.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/StackChecker.hpp"
+#include "rho/StringVector.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* Machine Constants */
 
@@ -253,7 +253,7 @@ void attribute_hidden R_check_locale(void)
 # endif
     }
 #endif
-    mbcslocale = CXXRCONSTRUCT(Rboolean, MB_CUR_MAX > 1);
+    mbcslocale = RHOCONSTRUCT(Rboolean, MB_CUR_MAX > 1);
 #ifdef Win32
     {
 	char *ctype = setlocale(LC_CTYPE, NULL), *p;
@@ -288,7 +288,7 @@ static char *R_Date(void)
     return s;
 }
 
-SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_date(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return mkString(R_Date());
 }
@@ -301,7 +301,7 @@ SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::Buil
  */
 
 // .Internal so manages R_alloc stack used by acopy_string
-SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* files_, CXXR::RObject* header_, CXXR::RObject* title_, CXXR::RObject* delete_file_, CXXR::RObject* pager_)
+SEXP attribute_hidden do_fileshow(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* files_, rho::RObject* header_, rho::RObject* title_, rho::RObject* delete_file_, rho::RObject* pager_)
 {
     SEXP fn, tl, hd, pg;
     const char **f, **h, *t, *pager = nullptr /* -Wall */;
@@ -322,8 +322,8 @@ SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::
 	error(_("invalid '%s' argument"), "title");
     if (!isString(pg))
 	error(_("invalid '%s' argument"), "pager");
-    f = static_cast<const char**>( CXXR_alloc(n, sizeof(char*)));
-    h = static_cast<const char**>( CXXR_alloc(n, sizeof(char*)));
+    f = static_cast<const char**>( RHO_alloc(n, sizeof(char*)));
+    h = static_cast<const char**>( RHO_alloc(n, sizeof(char*)));
     for (i = 0; i < n; i++) {
 	SEXP el = STRING_ELT(fn, i);
 	if (!isNull(el) && el != NA_STRING)
@@ -392,7 +392,7 @@ static int R_AppendFile(SEXP file1, SEXP file2)
     return status;
 }
 
-SEXP attribute_hidden do_fileappend(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file1_, CXXR::RObject* file2_)
+SEXP attribute_hidden do_fileappend(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file1_, rho::RObject* file2_)
 {
     SEXP f1, f2, ans;
     int n, n1, n2;
@@ -449,7 +449,7 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* showWarnings_)
+SEXP attribute_hidden do_filecreate(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* showWarnings_)
 {
     SEXP fn, ans;
     FILE *fp;
@@ -477,7 +477,7 @@ SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR
     return ans;
 }
 
-SEXP attribute_hidden do_fileremove(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_)
+SEXP attribute_hidden do_fileremove(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_)
 {
     SEXP f, ans;
     int i, n;
@@ -541,7 +541,7 @@ const char *formatError(DWORD res);  /* extra.c */
    have, and which many people report granting in the Policy Editor
    fails to work.
 */
-SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
+SEXP attribute_hidden do_filesymlink(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -622,7 +622,7 @@ SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXX
 }
 
 
-SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
+SEXP attribute_hidden do_filelink(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -694,7 +694,7 @@ int Rwin_rename(char *from, char *to);  /* in src/gnuwin32/extra.c */
 int Rwin_wrename(const wchar_t *from, const wchar_t *to);
 #endif
 
-SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_)
+SEXP attribute_hidden do_filerename(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_)
 {
     SEXP f1, f2, ans;
     int i, n1, n2;
@@ -780,7 +780,7 @@ SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR
 # define STAT_TIMESPEC_NS(st, st_xtim) ((st).st_xtim.st__tim.tv_nsec)
 #endif
 
-SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_, CXXR::RObject* extra_cols_)
+SEXP attribute_hidden do_fileinfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* extra_cols_)
 {
     SEXP fn, ans, ansnames, fsize, mtime, ctime, atime, isdir,
 	mode, xxclass;
@@ -1073,7 +1073,7 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
     if ((dir = opendir(dnp)) != nullptr) {
 	while ((de = readdir(dir))) {
 	    if (allfiles || !R_HiddenFile(de->d_name)) {
-		Rboolean not_dot = CXXRCONSTRUCT(Rboolean, strcmp(de->d_name, ".") && strcmp(de->d_name, ".."));
+		Rboolean not_dot = RHOCONSTRUCT(Rboolean, strcmp(de->d_name, ".") && strcmp(de->d_name, ".."));
 		if (recursive) {
 #ifdef Win32
 		    if (strlen(dnp) == 2 && dnp[1] == ':') // e.g. "C:"
@@ -1131,7 +1131,7 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
 }
 #undef IF_MATCH_ADD_TO_ANS
 
-SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* pattern_, CXXR::RObject* all_files_, CXXR::RObject* full_names_, CXXR::RObject* recursive_, CXXR::RObject* ignore_case_, CXXR::RObject* include_dirs_, CXXR::RObject* no_dots_)
+SEXP attribute_hidden do_listfiles(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* pattern_, rho::RObject* all_files_, rho::RObject* full_names_, rho::RObject* recursive_, rho::RObject* ignore_case_, rho::RObject* include_dirs_, rho::RObject* no_dots_)
 {
     int countmax = 128;
 
@@ -1174,9 +1174,9 @@ SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR:
     for (int i = 0; i < LENGTH(d) ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	const char *dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_files(dnp, fullnames ? dnp : nullptr, &count, &ans, CXXRCONSTRUCT(Rboolean, allfiles),
-		   CXXRCONSTRUCT(Rboolean, recursive), pattern ? &reg : nullptr, &countmax, idx,
-		   CXXRCONSTRUCT(Rboolean, idirs), /* allowdots = */ CXXRCONSTRUCT(Rboolean, !nodots));
+	list_files(dnp, fullnames ? dnp : nullptr, &count, &ans, RHOCONSTRUCT(Rboolean, allfiles),
+		   RHOCONSTRUCT(Rboolean, recursive), pattern ? &reg : nullptr, &countmax, idx,
+		   RHOCONSTRUCT(Rboolean, idirs), /* allowdots = */ RHOCONSTRUCT(Rboolean, !nodots));
     }
     REPROTECT(ans = lengthgets(ans, count), idx);
     if (pattern) tre_regfree(&reg);
@@ -1248,7 +1248,7 @@ static void list_dirs(const char *dnp, const char *nm,
     }
 }
 
-SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* full_names_, CXXR::RObject* recursive_)
+SEXP attribute_hidden do_listdirs(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* full_names_, rho::RObject* recursive_)
 {
     PROTECT_INDEX idx;
     SEXP d, ans;
@@ -1270,7 +1270,7 @@ SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::
     for (i = 0; i < LENGTH(d) ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_dirs(dnp, "", CXXRCONSTRUCT(Rboolean, fullnames), &count, &ans, &countmax, idx, CXXRCONSTRUCT(Rboolean, recursive));
+	list_dirs(dnp, "", RHOCONSTRUCT(Rboolean, fullnames), &count, &ans, &countmax, idx, RHOCONSTRUCT(Rboolean, recursive));
     }
     REPROTECT(ans = lengthgets(ans, count), idx);
     StringVector* sv = static_cast<StringVector*>(ans);
@@ -1279,7 +1279,7 @@ SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_Rhome(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_Rhome(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     char *path;
     if (!(path = R_HomeDir()))
@@ -1295,7 +1295,7 @@ static Rboolean attribute_hidden R_WFileExists(const wchar_t *path)
 }
 #endif
 
-SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* dots_)
+SEXP attribute_hidden do_fileexists(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_)
 {
     SEXP file, ans;
     int i, nfile;
@@ -1349,7 +1349,7 @@ extern int winAccessW(const wchar_t *path, int mode);
 #endif
 
 /* we require 'access' as from 2.12.0 */
-SEXP attribute_hidden do_fileaccess(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* names_, CXXR::RObject* mode_)
+SEXP attribute_hidden do_fileaccess(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* mode_)
 {
     SEXP fn, ans;
     int i, n, mode, modemask;
@@ -1595,7 +1595,7 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
 #  include <glob.h>
 # endif
 
-SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* recursive_, CXXR::RObject* force_)
+SEXP attribute_hidden do_unlink(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* recursive_, rho::RObject* force_)
 {
     SEXP  fn;
     int i, nfiles, failures = 0, recursive, force;
@@ -1644,7 +1644,7 @@ SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::Bu
 }
 #endif
 
-SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_)
+SEXP attribute_hidden do_getlocale(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* category_)
 {
     int cat;
     char *p = nullptr;
@@ -1675,7 +1675,7 @@ SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* Locale specs are always ASCII */
-SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* category_, CXXR::RObject* locale_)
+SEXP attribute_hidden do_setlocale(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* category_, rho::RObject* locale_)
 {
     SEXP locale = locale_, ans;
     int cat;
@@ -1773,7 +1773,7 @@ SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR:
 
 
 
-SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_localeconv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, ansnames;
     struct lconv *lc = localeconv();
@@ -1832,7 +1832,7 @@ SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR
 }
 
 /* .Internal function for path.expand */
-SEXP attribute_hidden do_pathexpand(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
+SEXP attribute_hidden do_pathexpand(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
 {
     SEXP fn, ans;
     int i, n;
@@ -1875,12 +1875,12 @@ static Rboolean R_can_use_X11(void)
 #endif
     }
 
-    return CXXRCONSTRUCT(Rboolean, var_R_can_use_X11 > 0);
+    return RHOCONSTRUCT(Rboolean, var_R_can_use_X11 > 0);
 }
 #endif
 
 /* only actually used on Unix */
-SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_capabilitiesX11(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
 #ifdef Unix
     return ScalarLogical(R_can_use_X11());
@@ -1889,7 +1889,7 @@ SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const
 #endif
 }
 
-SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_capabilities(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, ansnames;
     int i = 0;
@@ -2055,7 +2055,7 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
     return ans;
 }
 
-SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_sysgetpid(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     return ScalarInteger(getpid());
 }
@@ -2069,7 +2069,7 @@ SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR:
 */
 #ifndef Win32
 /* mkdir is defined in <sys/stat.h> */
-SEXP attribute_hidden do_dircreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* showWarnings_, CXXR::RObject* recursive_, CXXR::RObject* mode_)
+SEXP attribute_hidden do_dircreate(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* showWarnings_, rho::RObject* recursive_, rho::RObject* mode_)
 {
     SEXP path;
     int res, show, recursive, mode, serrno = 0;
@@ -2528,7 +2528,7 @@ copy_error:
 }
 
 /* file.copy(files, dir, recursive), only */
-SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* from_, CXXR::RObject* to_, CXXR::RObject* overwrite_, CXXR::RObject* recursive_, CXXR::RObject* copy_mode_, CXXR::RObject* copy_date_)
+SEXP attribute_hidden do_filecopy(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_, rho::RObject* overwrite_, rho::RObject* recursive_, rho::RObject* copy_mode_, rho::RObject* copy_date_)
 {
     SEXP fn, to, ans;
     char *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
@@ -2594,7 +2594,7 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 }
 #endif
 
-SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_l10n_info(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
 #ifdef Win32
     int len = 4;
@@ -2621,7 +2621,7 @@ SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR:
 
 /* do_normalizepath moved to util.c in R 2.13.0 */
 
-SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_, CXXR::RObject* mode_, CXXR::RObject* use_umask_)
+SEXP attribute_hidden do_syschmod(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* paths_, rho::RObject* mode_, rho::RObject* use_umask_)
 {
 #ifdef HAVE_CHMOD
     SEXP paths, smode, ans;
@@ -2645,7 +2645,7 @@ SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::
     PROTECT(ans = allocVector(LGLSXP, n));
     for (i = 0; i < n; i++) {
 	mode_t mode = mode_t( modes[i % m]);
-	if (CXXRCONSTRUCT(int, mode) == NA_INTEGER) mode = 0777;
+	if (RHOCONSTRUCT(int, mode) == NA_INTEGER) mode = 0777;
 #ifdef HAVE_UMASK
 	if(useUmask) mode = mode & ~um;
 #endif
@@ -2683,7 +2683,7 @@ SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::
 #endif
 }
 
-SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* mode_)
+SEXP attribute_hidden do_sysumask(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* mode_)
 {
     SEXP ans;
     int mode;
@@ -2709,7 +2709,7 @@ SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* paths_)
+SEXP attribute_hidden do_readlink(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* paths_)
 {
     SEXP paths, ans;
     int n;
@@ -2739,15 +2739,15 @@ SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_Cstack_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op)
+SEXP attribute_hidden do_Cstack_info(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
     SEXP ans, nms;
 
     PROTECT(ans = allocVector(INTSXP, 4));
     PROTECT(nms = allocVector(STRSXP, 4));
     /* FIXME: could be out of range */
-    INTEGER(ans)[0] = (R_CStackLimit == CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int( R_CStackLimit);
-    INTEGER(ans)[1] = (R_CStackLimit ==  CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int
+    INTEGER(ans)[0] = (R_CStackLimit == RHOCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int( R_CStackLimit);
+    INTEGER(ans)[1] = (R_CStackLimit ==  RHOCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int
 	(R_CStackDir * (R_CStackStart - uintptr_t( &ans)));
     INTEGER(ans)[2] = R_CStackDir;
     INTEGER(ans)[3] = StackChecker::depth();
@@ -2792,7 +2792,7 @@ static int winSetFileTime(const char *fn, time_t ftime)
 #endif
 
 SEXP attribute_hidden
-do_setFileTime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_, CXXR::RObject* time_)
+do_setFileTime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* time_)
 {
     const char *fn = translateChar(STRING_ELT(path_, 0));
     int ftime = asInteger(time_), res;

@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,19 +24,19 @@
 
 /** @file String.cpp
  *
- * Implementation of class CXXR::String and related functions.
+ * Implementation of class rho::String and related functions.
  */
 
-#include "CXXR/String.h"
+#include "rho/String.hpp"
 
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
 
-#include "CXXR/errors.h"
+#include "rho/errors.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
 	int (*IS_ASCIIp)(const SEXP x) = IS_ASCII;
@@ -143,7 +143,7 @@ String::map* String::getCache()
     return cache;
 }
 
-bool CXXR::isASCII(const std::string& str)
+bool rho::isASCII(const std::string& str)
 {
     using namespace boost::lambda;
     // Beware of the iterator dereferencing to a *signed* char, hence
@@ -167,7 +167,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     default:
         Rf_error("unknown encoding: %d", encoding);
     }
-    bool ascii = CXXR::isASCII(str);
+    bool ascii = rho::isASCII(str);
     if (ascii)
 	encoding = CE_NATIVE;
     std::pair<map::iterator, bool> pr

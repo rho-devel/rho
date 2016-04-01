@@ -194,10 +194,10 @@ AC_SUBST([rsharedir])
 config_opts="${ac_configure_args}"
 AC_SUBST(config_opts)
 
-### ** CXXR Optional features.
+### ** rho Optional features.
 ## Allow the user to specify support for memory profiling.
 AC_ARG_ENABLE([provenance-tracking],
-[AS_HELP_STRING([--enable-provenance-tracking],[enable CXXR provenance tracking facilities @<:@no@:>@])],
+[AS_HELP_STRING([--enable-provenance-tracking],[enable rho provenance tracking facilities @<:@no@:>@])],
 [if test "${enableval}" = no; then
   want_provenance_tracking=no
 elif test "${enableval}" = yes; then
@@ -353,12 +353,12 @@ AC_SUBST(LTO)
 AC_SUBST(LTOALL)
 AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
-### CXXR Requires Boost of at least a given version,
+### rho Requires Boost of at least a given version,
 ### including the boost::regex library.
 
 AX_BOOST_BASE([1.48.0],
 	      [],
-              [AC_MSG_ERROR([CXXR requires boost, which was not found.])]
+              [AC_MSG_ERROR([rho requires boost, which was not found.])]
              )
 AX_BOOST_REGEX
 if test -n "$BOOST_LDFLAGS"; then
@@ -2059,7 +2059,7 @@ R_FUNC___SETFPUCW
 R_FUNC_CALLOC
 
 ## isfinite() is in territory where C++98 clashes with C99,
-## so is not used in CXXR.
+## so is not used in rho.
 ## if test "${ac_cv_have_decl_isfinite}" = "yes"; then
 ## R_FUNC_ISFINITE
 ## fi
@@ -2378,9 +2378,9 @@ fi
 AC_SUBST(ENABLE_LLVM_JIT)
 AM_CONDITIONAL(BUILD_LLVM_JIT, [test "${enable_llvm_jit}" = yes])
 
-## CXXR provenance tracking.
+## rho provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
-  AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable CXXR provenance tracking.])
+  AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable rho provenance tracking.])
 fi
  
 ## R profiling.
@@ -2745,7 +2745,7 @@ AC_CONFIG_FILES(
   src/include/Makefile
   src/include/Rmath.h0
   src/include/R_ext/Makefile
-  src/include/CXXR/Makefile
+  src/include/rho/Makefile
   src/library/Recommended/Makefile
   src/library/Makefile
   src/library/base/DESCRIPTION
@@ -2806,8 +2806,8 @@ AC_CONFIG_FILES(
   src/scripts/rtags
   src/unix/Makefile
   tests/Makefile
-  tests/CXXR/Makefile
-  tests/CXXR2/Makefile
+  tests/rho/Makefile
+  tests/rho2/Makefile
   tests/testr/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
@@ -2914,7 +2914,7 @@ else
 fi
 
 r_options=
-cxxr_options=
+rho_options=
 r_no_options=
 if test "${want_R_framework}" = yes; then
   R_SH_VAR_ADD(r_options, [framework], [, ])
@@ -2949,12 +2949,12 @@ if test "${want_prebuilt_html}" = yes; then
 fi
 
 if test "${want_provenance_tracking}" = yes; then
-  R_SH_VAR_ADD(cxxr_options, [Provenance Tracking], [, ])
+  R_SH_VAR_ADD(rho_options, [Provenance Tracking], [, ])
 fi
 
 AC_MSG_RESULT(
 [
-CXXR is now configured for ${host}
+rho is now configured for ${host}
 
   Source directory:          ${srcdir}
   Installation directory:    ${prefix}
@@ -2970,7 +2970,7 @@ CXXR is now configured for ${host}
   External libraries:        ${r_external_libs}
   Additional capabilities:   ${r_capabilities}
   CR Options enabled:        ${r_options}
-  CXXR Options enabled:      ${cxxr_options}
+  rho Options enabled:       ${rho_options}
 
   Capabilities skipped:      ${r_no_capabilities}
   Options not enabled:       ${r_no_options}

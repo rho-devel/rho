@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) Chris A. Silles 2009-12.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,12 +23,12 @@
  *  https://www.R-project.org/Licenses/
  */
 
-#include "CXXR/ProvenanceTracker.h"
+#include "rho/ProvenanceTracker.hpp"
 
-#include "CXXR/CommandChronicle.hpp"
-#include "CXXR/Environment.h"
+#include "rho/CommandChronicle.hpp"
+#include "rho/Environment.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 #ifdef PROVENANCE_TRACKING
 
@@ -37,7 +37,7 @@ ProvenanceTracker::CommandScope* ProvenanceTracker::s_scope = 0;
 
 // ***** Class ProvenanceTracker::CommandScope *****
 
-// CXXR FIXME: Maybe ought to duplicate 'command', either here or in
+// rho FIXME: Maybe ought to duplicate 'command', either here or in
 // CommandChronicle constructor.
 ProvenanceTracker::CommandScope::CommandScope(const RObject* command)
     : m_xenogenetic(false)
@@ -69,7 +69,7 @@ void ProvenanceTracker::CommandScope::monitorWrite(const Frame::Binding &bdg)
     GCStackRoot<Provenance> prov(new Provenance(sym, m_chronicle));
     if (m_xenogenetic)
 	prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
-    CXXR::Frame::Binding& ncbdg = const_cast<CXXR::Frame::Binding&>(bdg);
+    rho::Frame::Binding& ncbdg = const_cast<rho::Frame::Binding&>(bdg);
     ncbdg.setProvenance(prov);
     m_chronicle->writeBinding(prov);
 }

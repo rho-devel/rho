@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1646,7 +1646,7 @@ static const struct interval table_walpha[] = {
     { 0x2f800, 0x2fa1d }
 };
 static const int table_walpha_count =
-  (CXXRCONSTRUCT(int, sizeof(table_walpha)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_walpha)/sizeof(struct interval)));
 
 /* ------------------- iswblank -------------------- */
 static const struct interval table_wblank[] = {
@@ -1661,7 +1661,7 @@ static const struct interval table_wblank[] = {
   { 0x3000, 0x3000 }  /* (CJK) ideographic space */
 };
 static const int table_wblank_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wblank)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wblank)/sizeof(struct interval)));
 
 /* ------------------- iswcntrl -------------------- */
 static const struct interval table_wcntrl[] = {
@@ -1670,14 +1670,14 @@ static const struct interval table_wcntrl[] = {
   { 0x2028, 0x2029 }
 };
 static const int table_wcntrl_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wcntrl)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wcntrl)/sizeof(struct interval)));
 
 /* ------------------- iswdigit -------------------- */
 static const struct interval table_wdigit[] = {
     { 0x30, 0x39 }
 };
 static const int table_wdigit_count =
-   (CXXRCONSTRUCT(int, sizeof(table_wdigit)/sizeof(struct interval)));
+   (RHOCONSTRUCT(int, sizeof(table_wdigit)/sizeof(struct interval)));
 
 /* ------------------- iswgraph -------------------- */
 static const struct interval table_wgraph[] = {
@@ -2072,7 +2072,7 @@ static const struct interval table_wgraph[] = {
     { 0x100000, 0x10fffd }
 };
 static const int table_wgraph_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wgraph)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wgraph)/sizeof(struct interval)));
 
 /* ------------------- iswlower -------------------- */
 static const struct interval table_wlower[] = {
@@ -2475,7 +2475,7 @@ static const struct interval table_wlower[] = {
     { 0x10428, 0x1044d }
 };
 static const int table_wlower_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wlower)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wlower)/sizeof(struct interval)));
 
 /* ------------------- iswprint -------------------- */
 static const struct interval table_wprint[] = {
@@ -2869,7 +2869,7 @@ static const struct interval table_wprint[] = {
     { 0x100000, 0x10fffd }
 };
 static const int table_wprint_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wprint)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wprint)/sizeof(struct interval)));
 
 /* ------------------- iswpunct -------------------- */
 static const struct interval table_wpunct[] = {
@@ -3124,7 +3124,7 @@ static const struct interval table_wpunct[] = {
     { 0x100000, 0x10fffd }
 };
 static const int table_wpunct_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wpunct)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wpunct)/sizeof(struct interval)));
 
 /* ------------------- iswspace -------------------- */
 static const struct interval table_wspace[] = {
@@ -3139,7 +3139,7 @@ static const struct interval table_wspace[] = {
     { 0x3000, 0x3000 }  /* (CJK) ideographic space */
 };
 static const int table_wspace_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wspace)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wspace)/sizeof(struct interval)));
 
 /* ------------------- iswupper -------------------- */
 static const struct interval table_wupper[] = {
@@ -3525,7 +3525,7 @@ static const struct interval table_wupper[] = {
     { 0x10400, 0x10425 }
 };
 static const int table_wupper_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wupper)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wupper)/sizeof(struct interval)));
 
 
 /* ------------------- iswxdigit -------------------- */
@@ -3535,7 +3535,7 @@ static const struct interval table_wxdigit[] = {
   { 0x61, 0x66 }
 };
 static const int table_wxdigit_count =
-  (CXXRCONSTRUCT(int, sizeof(table_wxdigit)/sizeof(struct interval)));
+  (RHOCONSTRUCT(int, sizeof(table_wxdigit)/sizeof(struct interval)));
 #endif
 
 /* -------------------helper for wcwidth -------------------- */

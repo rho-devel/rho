@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,17 +39,17 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include <ctype.h>		/* for isspace */
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/ExternalPointer.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/ProvenanceTracker.h"
-#include "CXXR/RAllocStack.h"
-#include "CXXR/StdFrame.hpp"
-#include "CXXR/WeakRef.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/ExternalPointer.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.hpp"
+#include "rho/ProvenanceTracker.hpp"
+#include "rho/RAllocStack.hpp"
+#include "rho/StdFrame.hpp"
+#include "rho/WeakRef.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
@@ -500,7 +500,7 @@ static SEXPTYPE FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return CXXRCONSTRUCT(SEXPTYPE, type);
+    return RHOCONSTRUCT(SEXPTYPE, type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
@@ -527,8 +527,8 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
-	Rf_error("Loading pre-version-1 serialization not (yet) supported in CXXR");
-	// All this code needs fixing in CXXR!
+	Rf_error("Loading pre-version-1 serialization not (yet) supported in rho");
+	// All this code needs fixing in rho!
 	// s = new RObject(type);
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
@@ -551,14 +551,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -566,7 +566,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -575,7 +575,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++) {
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -619,35 +619,35 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* Better to use a fresh copy in the cache */
-	// CXXR FIXME
+	// rho FIXME
 	// strcpy(CHAR_RW(s), m->InString(fp, d));
 	m->InString(fp, d);  // Just skip the string for the mo.
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
+	for (j = 0; j < RHOCONSTRUCT(uint, len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -685,7 +685,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     /* save the current non-relocatable base */
 
     vmaxsave = vmaxget();
-    node.OldOffset = static_cast<int*>(CXXR_alloc(node.NSymbol + node.NSave, sizeof(int)));
+    node.OldOffset = static_cast<int*>(RHO_alloc(node.NSymbol + node.NSave, sizeof(int)));
     PROTECT(node.NewAddress = allocVector(VECSXP, node.NSymbol + node.NSave));
     for (i = 0 ; i < node.NTotal ; i++) {
 	node.OldOffset[i] = 0;
@@ -794,13 +794,13 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (CXXRCONSTRUCT(int, type)) {
+    switch (RHOCONSTRUCT(int, type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
     case -4: return R_MissingArg;
     }
-    return CXXRNOCAST(SEXP) nullptr;	/* not strictly legal... */
+    return RHO_NO_CAST(SEXP) nullptr;	/* not strictly legal... */
 }
 
 
@@ -1228,7 +1228,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     int pos, levs;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
+    type = RHOCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
@@ -1608,7 +1608,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (CXXRCONSTRUCT(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
+    if (RHOCONSTRUCT(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1699,7 +1699,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = nullptr;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (CXXRCONSTRUCT(int, nbytes) >= buflen) {
+    if (RHOCONSTRUCT(int, nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
@@ -1945,7 +1945,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 }
 
 /* Only used for version 1 saves */
-SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* file_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_)
+SEXP attribute_hidden do_save(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* envir_, rho::RObject* eval_promises_)
 {
     /* save(list, file, ascii, version, environment) */
 
@@ -2064,7 +2064,7 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 }
 
 /* This is only used for version 1 or earlier formats */
-SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* file_, CXXR::RObject* envir_)
+SEXP attribute_hidden do_load(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* envir_)
 {
     SEXP fname, aenv;
     GCStackRoot<> val;
@@ -2218,7 +2218,7 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
    with either a pairlist or list.
 */
 
-SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* list_, CXXR::RObject* con_, CXXR::RObject* ascii_, CXXR::RObject* version_, CXXR::RObject* envir_, CXXR::RObject* eval_promises_)
+SEXP attribute_hidden do_saveToConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* con_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* envir_, rho::RObject* eval_promises_)
 {
     /* saveToConn(list, conn, ascii, version, environment) */
 
@@ -2228,7 +2228,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    CXXRCONST char *magic;
+    RHOCONST char *magic;
 
     if (TYPEOF(list_) != STRSXP)
 	error(_("first argument must be a character vector"));
@@ -2238,7 +2238,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 
     if (TYPEOF(ascii_) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
+    ascii = RHOCONSTRUCT(Rboolean, INTEGER(ascii_)[0]);
 
     if (version_ == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
@@ -2323,7 +2323,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 extern int R_ReadItemDepth;
 extern int R_InitReadItemDepth;
 
-SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* con_, CXXR::RObject* envir_, CXXR::RObject* verbose_)
+SEXP attribute_hidden do_loadFromConn2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* envir_, rho::RObject* verbose_)
 {
     /* loadFromConn2(conn, environment, verbose) */
 

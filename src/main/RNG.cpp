@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ static RNGtype RNG_kind = RNG_DEFAULT;
 typedef struct {
     RNGtype kind;
     N01type Nkind;
-    CXXRCONST char *name; /* print name */
+    RHOCONST char *name; /* print name */
     int n_seed; /* length of seed vector */
     Int32 *i_seed;
 } RNGTAB;
@@ -151,7 +151,7 @@ double unif_rand(void)
 	   http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/c2010/RngStream.c
 	   but using int_least64_t, which C99 guarantees.
 	*/
-	int_least64_t k;  // CXXR change
+	int_least64_t k;  // rho change
 	int_least64_t p1, p2;
 
 #define II(i) (RNG_Table[RNG_kind].i_seed[i])
@@ -421,7 +421,7 @@ void GetRNGstate()
 	else {
 	    int j, *is = INTEGER(seeds);
 	    for(j = 1; j <= len_seed; j++)
-		RNG_Table[RNG_kind].i_seed[j - 1] = CXXRCONSTRUCT(Int32, is[j]);
+		RNG_Table[RNG_kind].i_seed[j - 1] = RHOCONSTRUCT(Int32, is[j]);
 	    FixupSeeds(RNG_kind, 0);
 	}
     }
@@ -444,7 +444,7 @@ void PutRNGstate()
 
     INTEGER(seeds)[0] = RNG_kind + 100 * N01_kind;
     for(j = 0; j < len_seed; j++)
-	INTEGER(seeds)[j+1] = CXXRCONSTRUCT(int, RNG_Table[RNG_kind].i_seed[j]);
+	INTEGER(seeds)[j+1] = RHOCONSTRUCT(int, RNG_Table[RNG_kind].i_seed[j]);
 					    
     /* assign only in the workspace */
     defineVar(R_SeedsSymbol, seeds, R_GlobalEnv);
@@ -503,7 +503,7 @@ static void Norm_kind(N01type kind)
 
 /*------ .Internal interface ------------------------*/
 
-SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* kind_, CXXR::RObject* normal_kind_)
+SEXP attribute_hidden do_RNGkind (/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* kind_, rho::RObject* normal_kind_)
 {
     SEXP ans, rng, norm;
 
@@ -525,7 +525,7 @@ SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* seed_, CXXR::RObject* kind_, CXXR::RObject* normal_kind_)
+SEXP attribute_hidden do_setseed (/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* seed_, rho::RObject* kind_, rho::RObject* normal_kind_)
 {
     SEXP skind, nkind;
     int seed;
@@ -534,7 +534,7 @@ SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::
 	seed = asInteger(seed_);
 	if (seed == NA_INTEGER)
 	    error(_("supplied seed is not a valid integer"));
-    } else seed = CXXRCONSTRUCT(int, TimeToSeed());
+    } else seed = RHOCONSTRUCT(int, TimeToSeed());
     skind = kind_;
     nkind = normal_kind_;
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from
@@ -636,7 +636,7 @@ static double MT_genrand(void)
     static Int32 mag01[2]={0x0, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
-    mti = CXXRCONSTRUCT(int, dummy[0]);
+    mti = RHOCONSTRUCT(int, dummy[0]);
 
     if (mti >= N) { /* generate N words at one time */
 	int kk;
@@ -663,7 +663,7 @@ static double MT_genrand(void)
     y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
     y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
     y ^= TEMPERING_SHIFT_L(y);
-    dummy[0] = CXXRCONSTRUCT(Int32, mti);
+    dummy[0] = RHOCONSTRUCT(Int32, mti);
 
     return ( double(y) * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }

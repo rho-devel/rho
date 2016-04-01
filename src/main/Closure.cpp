@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,33 +24,33 @@
 
 /** @file Closure.cpp
  *
- * @brief Implementation of class CXXR::Closure and associated C
+ * @brief Implementation of class rho::Closure and associated C
  * interface.
  */
 
-#include "CXXR/Closure.h"
+#include "rho/Closure.hpp"
 
 #include <cstdlib>
-#include "CXXR/ArgList.hpp"
-#include "CXXR/ArgMatcher.hpp"
-#include "CXXR/BailoutContext.hpp"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/Expression.h"
-#include "CXXR/GCStackFrameBoundary.hpp"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ListFrame.hpp"
-#include "CXXR/PlainContext.hpp"
-#include "CXXR/ReturnBailout.hpp"
-#include "CXXR/ReturnException.hpp"
-#include "CXXR/errors.h"
-#include "CXXR/jit/CompiledExpression.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/ArgMatcher.hpp"
+#include "rho/BailoutContext.hpp"
+#include "rho/ClosureContext.hpp"
+#include "rho/Expression.hpp"
+#include "rho/GCStackFrameBoundary.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/ListFrame.hpp"
+#include "rho/PlainContext.hpp"
+#include "rho/ReturnBailout.hpp"
+#include "rho/ReturnException.hpp"
+#include "rho/errors.hpp"
+#include "rho/jit/CompiledExpression.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	SEXP (*BODYp)(SEXP x) = BODY;
 	SEXP (*CLOENVp)(SEXP x) = CLOENV;

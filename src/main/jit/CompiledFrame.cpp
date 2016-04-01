@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,11 +23,11 @@
 
 #define R_NO_REMAP
 
-#include "CXXR/jit/CompiledFrame.hpp"
-#include "CXXR/jit/FrameDescriptor.hpp"
-#include "CXXR/StdFrame.hpp"
+#include "rho/jit/CompiledFrame.hpp"
+#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/StdFrame.hpp"
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 CompiledFrame::CompiledFrame(const FrameDescriptor* descriptor)
@@ -82,4 +82,4 @@ Frame::Binding* CompiledFrame::v_obtainBinding(const Symbol* symbol)
 
 
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

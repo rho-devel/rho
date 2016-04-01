@@ -2,11 +2,11 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -100,7 +100,7 @@ amatch_regaparams(regaparams_t *params, int patlen,
     }
 }
 
-SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP pat, vec, ind, ans;
     SEXP opt_costs, opt_bounds;
@@ -143,7 +143,7 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     n = XLENGTH(vec);
     if(!useBytes) {
-	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if(!haveBytes)
 	    for (i = 0; i < n; i++)
 		if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -153,7 +153,7 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	if(haveBytes) useBytes = TRUE;
     }
     if(!useBytes) {
-	useWC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
+	useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
 	if(!useWC) {
 	    for (i = 0 ; i < n ; i++) {
 		if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -184,11 +184,11 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     static SEXP s_nchar = install("nchar");
     if(useBytes)
-	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
 		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("bytes")))));
     else
-	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
 		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
@@ -490,7 +490,7 @@ adist_full(SEXP x, SEXP y, double *costs, Rboolean opt_counts)
 
 #define OFFSETS(I, J, K)	INTEGER(offsets)[I + J * nx + K * nxy]
 
-SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* x_, CXXR::RObject* y_, CXXR::RObject* costs_, CXXR::RObject* counts_, CXXR::RObject* fixed_, CXXR::RObject* partial_, CXXR::RObject* ignore_case_, CXXR::RObject* useBytes_)
+SEXP attribute_hidden do_adist(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* y_, rho::RObject* costs_, rho::RObject* counts_, rho::RObject* fixed_, rho::RObject* partial_, rho::RObject* ignore_case_, rho::RObject* useBytes_)
 {
     SEXP x, y;
     SEXP ans, counts, offsets, dimnames, names, elt;
@@ -533,7 +533,7 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
     }
 
     if(!opt_partial)
-	return(adist_full(x, y, REAL(opt_costs), CXXRCONSTRUCT(Rboolean, opt_counts)));
+	return(adist_full(x, y, REAL(opt_costs), RHOCONSTRUCT(Rboolean, opt_counts)));
 
     counts = R_NilValue;	/* -Wall */
     offsets = R_NilValue;	/* -Wall */
@@ -736,7 +736,7 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP pat, vec, ans, matchpos, matchlen;
     SEXP opt_bounds, opt_costs;
@@ -787,7 +787,7 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
     n = XLENGTH(vec);
 
     if(!useBytes) {
-        haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+        haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if(!haveBytes)
 	    for(i = 0; i < n; i++) {
 		if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -799,7 +799,7 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
     }
 
     if(!useBytes) {
-        useWC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
+        useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
 	if(!useWC) {
 	    for(i = 0 ; i < n ; i++) {
 		if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -813,11 +813,11 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
 
     static SEXP s_nchar = install("nchar");
     if(useBytes)
-	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
 		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("bytes")))));
     else
-	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
 		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
@@ -886,7 +886,7 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
 	    if(rc == REG_OK) {
 		PROTECT(matchpos = allocVector(INTSXP, nmatch));
 		PROTECT(matchlen = allocVector(INTSXP, nmatch));
-		for(j = 0; j < CXXRCONSTRUCT(int, match.nmatch); j++) {
+		for(j = 0; j < RHOCONSTRUCT(int, match.nmatch); j++) {
 		    so = match.pmatch[j].rm_so;
 		    INTEGER(matchpos)[j] = so + 1;
 		    INTEGER(matchlen)[j] = match.pmatch[j].rm_eo - so;

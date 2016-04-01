@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2007   The R Development Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,23 +31,23 @@
 
 #define R_NO_REMAP
 
-#include "CXXR/RObject.h"
+#include "rho/RObject.hpp"
 
 #include <cstdlib>
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "Rinternals.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/PairList.h"
-#include "CXXR/Symbol.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/PairList.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	void (*DUPLICATE_ATTRIBptr)(SEXP, SEXP) = DUPLICATE_ATTRIB;
 	void (*SHALLOW_DUPLICATE_ATTRIBptr)(SEXP, SEXP) = SHALLOW_DUPLICATE_ATTRIB;

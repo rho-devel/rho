@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,15 +20,15 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-#include "CXXR/jit/llvm.hpp"
+#include "rho/jit/llvm.hpp"
 
 #define R_NO_REMAP
-#include "CXXR/jit/Runtime.hpp"
+#include "rho/jit/Runtime.hpp"
 
-#include "CXXR/jit/Compiler.hpp"
-#include "CXXR/jit/Globals.hpp"
-#include "CXXR/jit/TypeBuilder.hpp"
-#include "CXXR/RObject.h"
+#include "rho/jit/Compiler.hpp"
+#include "rho/jit/Globals.hpp"
+#include "rho/jit/TypeBuilder.hpp"
+#include "rho/RObject.hpp"
 #include "Defn.h"
 #include "Rinternals.h"
 
@@ -36,7 +36,7 @@
 
 using namespace llvm;
 
-namespace CXXR {
+namespace rho {
 
 namespace JIT {
 
@@ -172,7 +172,7 @@ void emitIncrementNamed(llvm::Value* value, Compiler* compiler)
 void emitMaybeCheckForUserInterrupt(Compiler* compiler)
 {
     Function* maybe_check_for_interrupt
-	= getDeclaration("cxxr_runtime_maybeCheckForUserInterrupts", compiler);
+	= getDeclaration("rho_runtime_maybeCheckForUserInterrupts", compiler);
     compiler->emitCallOrInvoke(maybe_check_for_interrupt, {});
 }
 
@@ -217,7 +217,7 @@ void emitRethrow(Compiler* compiler)
 Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
 {
     Function* loop_exception_is_next = getDeclaration(
-	"cxxr_runtime_loopExceptionIsNext", compiler);
+	"rho_runtime_loopExceptionIsNext", compiler);
     // Never throws.
     return compiler->CreateCall(loop_exception_is_next, loop_exception);
 }
@@ -225,7 +225,7 @@ Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
 Value* emitGetReturnExceptionValue(Value* return_exception, Compiler* compiler)
 {
     Function* get_return_exception_value = getDeclaration(
-	"cxxr_runtime_getReturnExceptionValue", compiler);
+	"rho_runtime_getReturnExceptionValue", compiler);
      // Never throws.
      return compiler->CreateCall(get_return_exception_value, return_exception);
 }
@@ -233,7 +233,7 @@ Value* emitGetReturnExceptionValue(Value* return_exception, Compiler* compiler)
 Value* emitIsAFunction(llvm::Value* object, Compiler* compiler)
 {
     Function* is_a_function = getDeclaration(
-	"cxxr_runtime_is_function", compiler);
+	"rho_runtime_is_function", compiler);
      return compiler->emitCallOrInvoke(is_a_function, object);
 }
 
@@ -308,10 +308,10 @@ void linkInRuntimeModule(llvm::Module* module)
     // Nothing needed.
 }
 
-StructType* getCxxrType(const std::string& name, LLVMContext& context)
+StructType* getRhoType(const std::string& name, LLVMContext& context)
 {
     StructType* type = getRuntimeModule(context)->getTypeByName(
-	"class.CXXR::" + name);
+	"class.rho::" + name);
     assert(type != nullptr);
     return type;
 }
@@ -323,27 +323,27 @@ std::string getName(FunctionId function)
 	assert(0 && "Invalid FunctionId value passed.");
 	return nullptr; // TODO: throw an exception.
     case EVALUATE:
-	return "cxxr_runtime_evaluate";
+	return "rho_runtime_evaluate";
     case LOOKUP_SYMBOL:
-	return "cxxr_runtime_lookupSymbol";
+	return "rho_runtime_lookupSymbol";
     case LOOKUP_SYMBOL_IN_COMPILED_FRAME:
-	return "cxxr_runtime_lookupSymbolInCompiledFrame";
+	return "rho_runtime_lookupSymbolInCompiledFrame";
     case ASSIGN_SYMBOL_IN_COMPILED_FRAME:
-	return "cxxr_runtime_assignSymbolInCompiledFrame";
+	return "rho_runtime_assignSymbolInCompiledFrame";
     case LOOKUP_FUNCTION:
-	return "cxxr_runtime_lookupFunction";
+	return "rho_runtime_lookupFunction";
     case CALL_FUNCTION:
-	return "cxxr_runtime_callFunction";
+	return "rho_runtime_callFunction";
     case DO_BREAK:
-	return "cxxr_runtime_do_break";
+	return "rho_runtime_do_break";
     case DO_NEXT:
-	return "cxxr_runtime_do_next";
+	return "rho_runtime_do_next";
     case COERCE_TO_TRUE_OR_FALSE:
-	return "cxxr_runtime_coerceToTrueOrFalse";
+	return "rho_runtime_coerceToTrueOrFalse";
     case SET_VISIBILITY:
-	return "cxxr_runtime_setVisibility";
+	return "rho_runtime_setVisibility";
     case INCREMENT_NAMED:
-	return "cxxr_runtime_incrementNamed";
+	return "rho_runtime_incrementNamed";
     };
 }
 
@@ -367,19 +367,19 @@ FunctionId getFunctionId(llvm::Function* function)
 
 namespace ForceCodeEmission {
 #define FORCE_EMISSION(FUNCTION) auto FUNCTION ## _p = &FUNCTION;
-    FORCE_EMISSION(cxxr_runtime_evaluate);
-    FORCE_EMISSION(cxxr_runtime_lookupSymbol);
-    FORCE_EMISSION(cxxr_runtime_lookupSymbolInCompiledFrame);
-    FORCE_EMISSION(cxxr_runtime_lookupFunction);
-    FORCE_EMISSION(cxxr_runtime_callFunction);
-    FORCE_EMISSION(cxxr_runtime_do_break);
-    FORCE_EMISSION(cxxr_runtime_do_next);
-    FORCE_EMISSION(cxxr_runtime_loopExceptionIsNext);
-    FORCE_EMISSION(cxxr_runtime_coerceToTrueOrFalse);
-    FORCE_EMISSION(cxxr_runtime_is_function);
-    FORCE_EMISSION(cxxr_runtime_setVisibility);
+    FORCE_EMISSION(rho_runtime_evaluate);
+    FORCE_EMISSION(rho_runtime_lookupSymbol);
+    FORCE_EMISSION(rho_runtime_lookupSymbolInCompiledFrame);
+    FORCE_EMISSION(rho_runtime_lookupFunction);
+    FORCE_EMISSION(rho_runtime_callFunction);
+    FORCE_EMISSION(rho_runtime_do_break);
+    FORCE_EMISSION(rho_runtime_do_next);
+    FORCE_EMISSION(rho_runtime_loopExceptionIsNext);
+    FORCE_EMISSION(rho_runtime_coerceToTrueOrFalse);
+    FORCE_EMISSION(rho_runtime_is_function);
+    FORCE_EMISSION(rho_runtime_setVisibility);
 }
 
 } // namespace Runtime
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

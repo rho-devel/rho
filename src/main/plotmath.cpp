@@ -7,11 +7,11 @@
  *  Copyright (C) 1997, 1998 Paul Murrell and Ross Ihaka
  *  Copyright (C) 1998-2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@
 
 #include <Rmath.h> // provides M_2PI
 #include <R_ext/GraphicsEngine.h>
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/GCStackRoot.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /*
  *  TeX Math Styles
@@ -555,7 +555,7 @@ static double CenterShift(BBOX bbox)
 
 
 typedef struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int code;
 } SymTab;
 
@@ -868,12 +868,12 @@ static int StringAtom(SEXP expr)
 
 static FontType GetFont(pGEcontext gc)
 {
-    return CXXRCONSTRUCT(FontType, gc->fontface);
+    return RHOCONSTRUCT(FontType, gc->fontface);
 }
 
 static FontType SetFont(FontType font, pGEcontext gc)
 {
-    FontType prevfont = CXXRCONSTRUCT(FontType, gc->fontface);
+    FontType prevfont = RHOCONSTRUCT(FontType, gc->fontface);
     gc->fontface = font;
     return prevfont;
 }
@@ -985,7 +985,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 	    while (*s) {
 		wc = 0;
 		res = mbrtowc(&wc, s, MB_LEN_MAX, &mb_st);
-		if(res == CXXRCONSTRUCT(size_t, -1)) error("invalid multibyte string '%s'", s);
+		if(res == RHOCONSTRUCT(size_t, -1)) error("invalid multibyte string '%s'", s);
 		if (iswdigit(wc) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
@@ -1003,7 +1003,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		if (draw) {
 		    memset(chr, 0, sizeof(chr));
 		    /* should not be possible, as we just converted to wc */
-		    if(wcrtomb(chr, wc, &mb_st) == CXXRCONSTRUCT(size_t, -1))
+		    if(wcrtomb(chr, wc, &mb_st) == RHOCONSTRUCT(size_t, -1))
 			error("invalid multibyte string");
 		    PMoveAcross(lastItalicCorr, mc);
 		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
@@ -1067,7 +1067,7 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
 	memset(asciiStr, 0, sizeof(asciiStr));
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, nullptr);
-	    if(res == CXXRCONSTRUCT(size_t, -1))
+	    if(res == RHOCONSTRUCT(size_t, -1))
 		error("invalid character in current multibyte locale");
 	} else
 	    asciiStr[0] = char( ascii);
@@ -1647,7 +1647,7 @@ static BBOX RenderBar(SEXP expr, int draw, mathContext *mc,
 }
 
 static struct {
-    CXXRCONST char *name;
+    RHOCONST char *name;
     int code;
 }
 AccentTable[] = {

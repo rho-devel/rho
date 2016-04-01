@@ -2,11 +2,11 @@
  *   R : A Computer Language for Statistical Data Analysis
  *   Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ static char *rmspace(char *s)
    return "" on an error condition.
  */
 
-static CXXRCONST char *subterm(char *s)
+static RHOCONST char *subterm(char *s)
 {
     char *p, *q;
 
@@ -77,7 +77,7 @@ static CXXRCONST char *subterm(char *s)
     } else q = nullptr;
     p = getenv(s);
     if(p && strlen(p)) return p; /* variable was set and non-empty */
-    return q ? subterm(q) : CXXRNOCAST(char *) "";
+    return q ? subterm(q) : RHO_NO_CAST(char *) "";
 }
 
 /* skip along until we find an unmatched right brace */
@@ -100,7 +100,7 @@ static char *findRbrace(char *s)
 }
 
 #define BUF_SIZE 10000
-static CXXRCONST char *findterm(CXXRCONST char *s)
+static RHOCONST char *findterm(RHOCONST char *s)
 {
     char *p, *q;
     const char* ss=s;
@@ -131,7 +131,7 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
     return ans;
 }
 
-static void Putenv(char *a, CXXRCONST char *b)
+static void Putenv(char *a, RHOCONST char *b)
 {
     char *buf, *value, *q, quote='\0';
     const char *p;
@@ -319,7 +319,7 @@ void process_user_Renviron()
     process_Renviron(s);
 }
 
-SEXP attribute_hidden do_readEnviron(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* path_)
+SEXP attribute_hidden do_readEnviron(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
 {
     SEXP x = path_;
     if (Rf_length(x) != 1 || !isString(x))

@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,33 +20,33 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-#include "CXXR/jit/llvm.hpp"
+#include "rho/jit/llvm.hpp"
 
 #define R_NO_REMAP
-#include "CXXR/jit/Compiler.hpp"
+#include "rho/jit/Compiler.hpp"
 
-#include "CXXR/jit/CompilationException.hpp"
-#include "CXXR/jit/FrameDescriptor.hpp"
-#include "CXXR/jit/MCJITMemoryManager.hpp"
-#include "CXXR/jit/Runtime.hpp"
-#include "CXXR/jit/TypeBuilder.hpp"
+#include "rho/jit/CompilationException.hpp"
+#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/jit/MCJITMemoryManager.hpp"
+#include "rho/jit/Runtime.hpp"
+#include "rho/jit/TypeBuilder.hpp"
 
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Closure.h"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/Environment.h"
-#include "CXXR/Expression.h"
-#include "CXXR/FunctionBase.h"
-#include "CXXR/RObject.h"
-#include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/StringVector.h"
-#include "CXXR/Symbol.h"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Closure.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/Environment.hpp"
+#include "rho/Expression.hpp"
+#include "rho/FunctionBase.hpp"
+#include "rho/RObject.hpp"
+#include "rho/SEXP_downcast.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
 
 using llvm::BasicBlock;
 using llvm::PHINode;
 using llvm::Value;
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 Compiler::Compiler(CompilerContext* context)
@@ -460,7 +460,7 @@ Value* Compiler::emitInlinedAssign(const Expression* expression)
           // Complex assignment.
           emitSetVisibility(false);
           auto applydefine =
-              Runtime::getDeclaration("cxxr_runtime_applydefine", this);
+              Runtime::getDeclaration("rho_runtime_applydefine", this);
           assert(applydefine != nullptr);
           auto call_ptr = emitConstantPointer(expression);
           auto applydefine_ptr =
@@ -794,4 +794,4 @@ PHINode* Compiler::emitRethrowException()
 }
 
 } // namespace JIT
-} // namespace CXXR
+} // namespace rho

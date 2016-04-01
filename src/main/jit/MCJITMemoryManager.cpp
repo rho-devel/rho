@@ -1,10 +1,10 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,18 +20,18 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-#include "CXXR/jit/llvm.hpp"
+#include "rho/jit/llvm.hpp"
 
 #define R_NO_REMAP
-#include "CXXR/jit/MCJITMemoryManager.hpp"
+#include "rho/jit/MCJITMemoryManager.hpp"
 
-#include "CXXR/jit/TypeBuilder.hpp"
-#include "CXXR/BuiltInFunction.h"
-#include "CXXR/Symbol.h"
+#include "rho/jit/TypeBuilder.hpp"
+#include "rho/BuiltInFunction.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace llvm;
 
-namespace CXXR {
+namespace rho {
 namespace JIT {
 
 static inline bool startsWith(const std::string& text,
@@ -39,9 +39,9 @@ static inline bool startsWith(const std::string& text,
     return (text.compare(0, prefix.size(), prefix) == 0);
 }
 
-static const std::string symbol_prefix = "cxxr.symbol.";
-static const std::string primitive_prefix = "cxxr.primitive.";
-static const std::string internal_prefix = "cxxr.internal.";
+static const std::string symbol_prefix = "rho.symbol.";
+static const std::string primitive_prefix = "rho.primitive.";
+static const std::string internal_prefix = "rho.internal.";
 
 MCJITMemoryManager::MCJITMemoryManager(Module* module)
     : m_module(module) { }
@@ -117,7 +117,7 @@ GlobalVariable* MCJITMemoryManager::addGlobal(Type* type, void* address,
 {
     std::string name = prefix;
     if (prefix.empty()) {
-	prefix = "cxxr.global";
+	prefix = "rho.global";
 	name = addCounter(prefix);
     }
     // Find a unique name in the global table.
@@ -144,4 +144,4 @@ GlobalVariable* MCJITMemoryManager::addGlobal(Type* type, void* address,
 }
 
 }  // namespace JIT
-}  // namespace CXXR
+}  // namespace rho

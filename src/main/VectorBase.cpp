@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,18 +27,18 @@
  * @brief Implementation of class VectorBase and related functions.
  */
 
-#include "CXXR/VectorBase.h"
+#include "rho/VectorBase.hpp"
 
-#include "CXXR/IntVector.h"
-#include "CXXR/ListVector.h"
-#include "CXXR/PairList.h"
-#include "CXXR/StringVector.h"
-#include "CXXR/Symbol.h"
-#include "CXXR/errors.h"
+#include "rho/IntVector.hpp"
+#include "rho/ListVector.hpp"
+#include "rho/PairList.hpp"
+#include "rho/StringVector.hpp"
+#include "rho/Symbol.hpp"
+#include "rho/errors.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
-namespace CXXR {
+namespace rho {
     namespace ForceNonInline {
 	R_xlen_t (*XLENGTHptr)(SEXP x) = XLENGTH;
 	void (*SET_XTRUELENGTHptr)(SEXP x, R_xlen_t v) = SET_XTRUELENGTH;
@@ -165,7 +165,7 @@ Rboolean Rf_isVector(SEXP s)
 
 void SETLENGTH(SEXP x, int v)
 {
-    CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
+    rho::VectorBase* vb = dynamic_cast<rho::VectorBase*>(x);
     if (!vb)
 	Rf_error("SETLENGTH invoked for a non-vector.");
     vb->decreaseSizeInPlace(VectorBase::size_type(v));

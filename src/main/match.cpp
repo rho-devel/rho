@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,12 +51,12 @@
 #endif
 
 #include "Defn.h"
-#include "CXXR/ArgMatcher.hpp"
-#include "CXXR/DottedArgs.hpp"
-#include "CXXR/FunctionContext.hpp"
-#include "CXXR/StringVector.h"
+#include "rho/ArgMatcher.hpp"
+#include "rho/DottedArgs.hpp"
+#include "rho/FunctionContext.hpp"
+#include "rho/StringVector.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 /* used in subscript.c and subassign.c */
 Rboolean Rf_NonNullStringMatch(SEXP s, SEXP t)
@@ -91,7 +91,7 @@ Rboolean Rf_pmatch(SEXP formal, SEXP tag, Rboolean exact)
 {
     const char *f, *t;
     const void *vmax = vmaxget();
-    Rboolean res;  // In CXXR this must be declared outside the span of the gotos
+    Rboolean res;  // In rho this must be declared outside the span of the gotos
     switch (TYPEOF(formal)) {
     case SYMSXP:
 	f = CHAR(PRINTNAME(formal));
@@ -285,7 +285,7 @@ SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
 	    } else {
 		for (b = supplied, i = 1; b != R_NilValue; b = CDR(b), i++) {
 		    if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
-			Rf_pmatch(TAG(f), TAG(b), CXXRCONSTRUCT(Rboolean, seendots))) {
+			Rf_pmatch(TAG(f), TAG(b), RHOCONSTRUCT(Rboolean, seendots))) {
 			if (ARGUSED(b))
 			    Rf_error(_("argument %d matches multiple formal arguments"), i);
 			if (fargused[arg_i] == 1)

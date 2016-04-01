@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@
 /** @file StdFrame.cpp
  *
  *
- * @brief Implementation of class CXXR:StdFrame.
+ * @brief Implementation of class rho:StdFrame.
  */
 
-#include "CXXR/StdFrame.hpp"
+#include "rho/StdFrame.hpp"
 
 #include <cmath>
 #include <boost/bind.hpp>
@@ -36,12 +36,12 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/Symbol.h"
+#include "rho/GCStackRoot.hpp"
+#include "rho/SEXP_downcast.hpp"
+#include "rho/Symbol.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 // We want to be able to determine quickly if a symbol is *not*
 // defined in an frame, so that we can carry on working up the

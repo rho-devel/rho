@@ -4,11 +4,11 @@
  *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2002--2009  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,9 +33,9 @@
 #include <float.h>  /* for DBL_MAX */
 #include <Graphics.h>
 #include <Print.h>
-#include "CXXR/GCStackRoot.hpp"
+#include "rho/GCStackRoot.hpp"
 
-using namespace CXXR;
+using namespace rho;
 
 #include <Rmath.h> // for Rexp10, imax2
 
@@ -77,7 +77,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	umin = usr[0];
 	umax = usr[1];
 	if (umin > umax) {
-	    reversed = CXXRCONSTRUCT(Rboolean, (axp[0] > axp[1]));
+	    reversed = RHOCONSTRUCT(Rboolean, (axp[0] > axp[1]));
 	    if (reversed) {
 		/* have *reversed* log axis -- whereas
 		 * the switch(n) { .. } below assumes *increasing* values

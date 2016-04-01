@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997-2015   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,15 +47,15 @@
 #include <stdexcept>
 #include <Defn.h>
 #include <Internal.h>
-#include "CXXR/ComplexVector.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Promise.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/Subscripting.hpp"
+#include "rho/ComplexVector.hpp"
+#include "rho/ExpressionVector.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Promise.hpp"
+#include "rho/RawVector.hpp"
+#include "rho/Subscripting.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* JMC convinced MM that this was not a good idea: */
 #undef _S4_subsettable
@@ -179,7 +179,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 		RAW(result)[i] = Rbyte( 0);
 	    break;
 	default:
-	    errorcall(call, R_MSG_ob_nonsub, type2char(CXXRCONSTRUCT(SEXPTYPE, mode)));
+	    errorcall(call, R_MSG_ob_nonsub, type2char(RHOCONSTRUCT(SEXPTYPE, mode)));
 	}
     }
     return result;
@@ -235,7 +235,7 @@ static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
 	errorcall(call, R_MSG_ob_nonsub, type2char(SEXPTYPE(mode)));
     }
 
-    // If we get to here, this must be a LANGSXP.  In CXXR, this case
+    // If we get to here, this must be a LANGSXP.  In rho, this case
     // needs special handling, not least because Expression doesn't
     // inherit from VectorBase.  What follows is legacy CR code,
     // bodged as necessary.

@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,17 +30,17 @@
  *
  * @brief A ragbag.
  *
- * As CXXR development proceeds, the type definitions, many function
+ * As rho development proceeds, the type definitions, many function
  * prototypes etc. defined in this header file will disappear, because
- * the relevant functionality will have been absorbed into the CXXR
+ * the relevant functionality will have been absorbed into the rho
  * core, and declared within the appropriate header file in the
- * <tt>src/include/CXXR</tt> directory.
+ * <tt>src/include/rho</tt> directory.
  *
  * In a few cases, a declaration within this file is repeated in a
- * header file under <tt>src/include/CXXR</tt>; this is because source
- * files within the CXXR core never <tt>\#include</tt>s
+ * header file under <tt>src/include/rho</tt>; this is because source
+ * files within the rho core never <tt>\#include</tt>s
  * <tt>Defn.h</tt> itself (nor <tt>Rinternals.h</tt>.  In such a case
- * the relevant CXXR header file is <tt>\#include</tt>d back into
+ * the relevant rho header file is <tt>\#include</tt>d back into
  * <tt>Defn.h</tt>, so that the compiler can detect any inconsistency
  * between the two declarations.
  */
@@ -57,7 +57,7 @@
 #endif
 
 /* In CR, extern0 is defined as attribute_hidden if this file is
- * #included from main.c, and as extern otherwise.  In CXXR it always
+ * #included from main.c, and as extern otherwise.  In rho it always
  * maps to extern attribute_hidden.
  */
 # define extern0 extern attribute_hidden
@@ -68,8 +68,8 @@
 #include <R_ext/Complex.h>
 
 #ifdef __cplusplus
-#include "CXXR/ArgList.hpp"
-#include "CXXR/Frame.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/Frame.hpp"
 extern "C" {
 #endif
 
@@ -275,7 +275,7 @@ extern int putenv(char *string);
 
 /* Vector Heap Structure */
 /* sizeof(VECREC) is used for some backwards-compatibility purposes in
-   CXXR, and that's all.
+   rho, and that's all.
 */
 typedef struct {
 	union {
@@ -425,12 +425,12 @@ extern void 	R_setupHistory(void);
 /* Warnings/Errors */
 extern0 int	R_CollectWarnings INI_as(0);	/* the number of warnings */
 #ifdef __cplusplus
-  extern CXXR::GCRoot<CXXR::ListVector> R_Warnings;  /* the warnings and their calls */
+  extern rho::GCRoot<rho::ListVector> R_Warnings;  /* the warnings and their calls */
 #endif
 extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
 #ifdef __cplusplus
-extern CXXR::GCRoot<> R_HandlerStack;	/* Condition handler stack */
-extern CXXR::GCRoot<> R_RestartStack;	/* Stack of available restarts */
+extern rho::GCRoot<> R_HandlerStack;	/* Condition handler stack */
+extern rho::GCRoot<> R_RestartStack;	/* Stack of available restarts */
 #endif
 extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
@@ -525,7 +525,7 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 /*--- FUNCTIONS ------------------------------------------------------ */
 
 /* These Rf_ macros are retained for backwards compatibility, but
- * their use is deprecated within CXXR.  In particular CXXR's own
+ * their use is deprecated within rho.  In particular rho's own
  * header files should always use the Rf_ prefix explicitly, and not
  * rely on these macros to paste it in.
  */
@@ -773,9 +773,9 @@ void R_InitialData(void);
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
 int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
-		      CXXR::MissingArgHandling, int);
+		      rho::MissingArgHandling, int);
 
-R_xlen_t get_object_length(CXXR::RObject* object, CXXR::Environment* rho);
+R_xlen_t get_object_length(rho::RObject* object, rho::Environment* rho);
 extern "C" {
 #endif
 
@@ -851,7 +851,7 @@ const char *sexptype2char(SEXPTYPE type);
 void Rf_sortVector(SEXP, Rboolean);
 void Rf_SrcrefPrompt(const char *, SEXP);
 #ifdef __cplusplus
-void Rf_ssort(CXXR::StringVector*,int);
+void Rf_ssort(rho::StringVector*,int);
 #endif
 SEXP Rf_strmat2intmat(SEXP, SEXP, SEXP);
 SEXP Rf_substituteList(SEXP, SEXP);

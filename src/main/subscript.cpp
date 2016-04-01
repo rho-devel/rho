@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,11 +42,11 @@
 
 #include <Defn.h>
 
-#include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Subscripting.hpp"
+#include "rho/GCStackRoot.hpp"
+#include "rho/Subscripting.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* We might get a call with R_NilValue from subassignment code */
 #define ECALL(call, yy)     if(call == R_NilValue) error(yy);    else errorcall(call, yy);

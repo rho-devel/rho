@@ -3,11 +3,11 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
+ *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
- *  CXXR is not part of the R project, and bugs and other issues should
+ *  Rho is not part of the R project, and bugs and other issues should
  *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  to the Rho website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,12 +34,12 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "CXXR/Browser.hpp"
-#include "CXXR/ClosureContext.hpp"
-#include "CXXR/CommandTerminated.hpp"
+#include "rho/Browser.hpp"
+#include "rho/ClosureContext.hpp"
+#include "rho/CommandTerminated.hpp"
 
 using namespace std;
-using namespace CXXR;
+using namespace rho;
 
 /* R_sysframe - look back up the context stack until the */
 /* nth closure context and return that cloenv. */
@@ -94,7 +94,7 @@ int attribute_hidden R_sysparent(int n, ClosureContext *cptr)
     }
     if (!cptr)
 	return 0;
-    // Foll. 3 lines probably soon redundant in CXXR:
+    // Foll. 3 lines probably soon redundant in rho:
     s = cptr->callEnvironment();
     if(s == R_GlobalEnv)
 	return 0;
@@ -135,7 +135,7 @@ SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
 	Rf_error(_("not that many frames on the stack"));
     while (cptr) {
 	if (n == 0) {
-	    PROTECT(result = shallow_duplicate(const_cast<CXXR::Expression*>(cptr->call())));
+	    PROTECT(result = shallow_duplicate(const_cast<rho::Expression*>(cptr->call())));
 	    if (cptr->sourceLocation())
 		setAttrib(result, R_SrcrefSymbol,
 			  duplicate(cptr->sourceLocation()));
@@ -172,7 +172,7 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
-SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::RObject* n_)
+SEXP attribute_hidden do_sysbrowser(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_)
 {
     int n;
 
@@ -221,7 +221,7 @@ SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP attribute_hidden do_sys(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sys(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
@@ -297,7 +297,7 @@ SEXP attribute_hidden do_sys(/*const*/ CXXR::Expression* call, const CXXR::Built
     }
 }
 
-SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parentframe(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     int n;
     SEXP t;
@@ -418,7 +418,7 @@ R_tryEval(SEXP e, SEXP env, int *ErrorOccurred)
 SEXP R_tryEvalSilent(SEXP e, SEXP env, int *ErrorOccurred)
 {
     SEXP val;
-    Rboolean oldshow = CXXRCONSTRUCT(Rboolean, R_ShowErrorMessages);
+    Rboolean oldshow = RHOCONSTRUCT(Rboolean, R_ShowErrorMessages);
     R_ShowErrorMessages = FALSE;
     val = R_tryEval(e, env, ErrorOccurred);
     R_ShowErrorMessages = oldshow;
