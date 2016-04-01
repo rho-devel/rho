@@ -10,10 +10,10 @@ install install-strip: install-R-framework
 		@(sed 's|^LIBR =.*|LIBR = -F$(R_FRAMEWORK_DIR)/.. -framework R|' \
 		  $(top_builddir)/etc/Makeconf > "$(rhome)/etc${R_ARCH}/Makeconf")
 		@(sed 's/Versions\/$(FW_VERSION)\/Resources/Resources/' \
-		  "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/R" > \
+		  "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/rho" > \
 		  "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/RR")
-		@(mv "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/RR" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/R")
-		@(chmod a+x "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/R")
+		@(mv "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/RR" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/rho")
+		@(chmod a+x "$(DESTDIR)$(R_FRAMEWORK_DIR)/Resources/bin/rho")
 		@(chmod -R g+w "$(DESTDIR)$(R_FRAMEWORK_DIR)")
 
 
@@ -73,10 +73,10 @@ install-R-framework:
 	  mkdir "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/Current/PrivateHeaders${R_ARCH}" && \
 	  cp src/include/config.h "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/Current/PrivateHeaders${R_ARCH}/config.h"; \
 	  chmod a+r "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/Current/PrivateHeaders${R_ARCH}/config.h"; \
-	  sed -e "s|R_ARCH=${R_ARCH}|R_ARCH=/\`arch\`|" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/R" \
+	  sed -e "s|R_ARCH=${R_ARCH}|R_ARCH=/\`arch\`|" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/rho" \
 	  > "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/.tmp.R" && \
 	  chmod a+x "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/.tmp.R" && \
-	  mv "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/.tmp.R" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/R"; \
+	  mv "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/.tmp.R" "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/bin/rho"; \
 	  if [ "${R_ARCH}" != /ppc -a "${R_ARCH}" != /i386 -a "${R_ARCH}" != /ppc64 -a "${R_ARCH}" != /x86_64 -a "${R_ARCH}" != /arm ]; then \
 	    $(ECHO) "\
 	*** WARNING: The architecture name is incompatible with Apple's naming~              convention. This may prevent applications from using the R~              framework. Please use i386, x86_64, ppc, ppc64 or arm as architecture~              names to allow universal builds."|sed 'y/~/\n/' >&2; \
@@ -87,6 +87,6 @@ install-R-framework:
 	    done; \
 	  fi; \
 	fi )
-	@( rm -f "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/R" && \
-	   ln -s bin/R "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/R" )
+	@( rm -f "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/rho" && \
+	   ln -s bin/rho "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/rho" )
 	@( $(ECHO) "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">~<plist version=\"1.0\">~<dict>~ <key>CFBundleIdentifier</key>~ <string>org.r-project.R-framework</string>~ <key>CFBundleInfoDictionaryVersion</key>~ <string>6.0</string>~ <key>CFBundleName</key>~ <string>R</string>~ <key>CFBundlePackageType</key>~ <string>FMWK</string>~ <key>CFBundleVersion</key>~ <string>$(VERSION)</string>~</dict>~</plist>" |sed -e 'y/~/\n/' > "$(DESTDIR)$(R_FRAMEWORK_DIR)/Versions/$(FW_VERSION)/Resources/Info.plist")
