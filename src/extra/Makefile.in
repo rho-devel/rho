@@ -70,9 +70,8 @@ distclean: clean
 maintainer-clean: distclean
 
 install install-strip:
-	@for d in $(SUBDIRS); do \
-	  (cd $${d} && $(MAKE) $@) || exit 1; \
-	done
+	# blas has a modified 'install' target that installs into R_HOME.
+	@$(MAKE) -C blas $@
 
 uninstall TAGS info dvi check:
 

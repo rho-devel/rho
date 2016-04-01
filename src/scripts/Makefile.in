@@ -48,6 +48,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 R: $(SCRIPTS_B) R.fe
 	@$(MAKE) rhome=$(top_builddir) install-cmds
 	@$(INSTALL_SCRIPT) R.fe $(top_builddir)/bin/R
+	@$(INSTALL_SCRIPT) R.fe $(top_builddir)/bin/rho
 
 ## <NOTE>
 ## Seems we need target rules for creating FOO from FOO.in: pattern
@@ -103,15 +104,17 @@ $(top_builddir)/libtool:
 	@(cd $(@D); $(MAKE) $(@F))
 
 install: installdirs install-cmds
-	@rm -f $(DESTDIR)$(bindir)/R
+	@rm -f $(DESTDIR)$(bindir)/rho
 	@(d=`$(ECHO) '$(rhome)' | sed 's,/,\\\/,g';`; \
 	  d2=`$(ECHO) '$(rsharedir)' | sed 's,/,\\\/,g';`; \
 	  d3=`$(ECHO) '$(rincludedir)' | sed 's,/,\\\/,g';`; \
 	  d4=`$(ECHO) '$(rdocdir)' | sed 's,/,\\\/,g';`; \
 	  sed -e "1,/R_HOME_DIR=/s/\\(R_HOME_DIR=\\).*/\\1$${d}/;" -e "s/\\(R_SHARE_DIR=\\).*/\\1$${d2}/;" -e  "s/\\(R_INCLUDE_DIR=\\).*/\\1$${d3}/;" -e "s/\\(R_DOC_DIR=\\).*/\\1$${d4}/;"\
-	  < R.fe > "$(DESTDIR)$(Rexecbindir)/R")
-	@$(INSTALL_SCRIPT)  "$(DESTDIR)$(Rexecbindir)/R" "$(DESTDIR)$(bindir)/R"
-	@chmod 755 "$(DESTDIR)$(bindir)/R" "$(DESTDIR)$(Rexecbindir)/R"
+	  < R.fe > "$(DESTDIR)$(Rexecbindir)/rho")
+	@cp "$(DESTDIR)$(Rexecbindir)/rho" "$(DESTDIR)$(Rexecbindir)/R"
+	@$(INSTALL_SCRIPT)  "$(DESTDIR)$(Rexecbindir)/rho" "$(DESTDIR)$(bindir)/rho"
+	@chmod 755 "$(DESTDIR)$(bindir)/rho" "$(DESTDIR)$(Rexecbindir)/rho" \
+          "$(DESTDIR)$(Rexecbindir)/R"
 ## why of all the scripts does this alone chmod just one copy?
 installdirs:
 	@$(MKINSTALLDIRS) $(DESTDIR)$(bindir)
@@ -132,10 +135,10 @@ install-cmds:
 install-strip:
 	@$(MAKE) INSTALL_PROGRAM="${INSTALL_PROGRAM} -s" install
 uninstall:
-	@for f in $(SCRIPTS_S) $(SCRIPTS_B) libtool R; do \
+	@for f in $(SCRIPTS_S) $(SCRIPTS_B) libtool R rho; do \
 	  rm -f "$(DESTDIR)$(Rexecbindir)/$${f}"; \
 	done
-	@rm -f $(DESTDIR)$(bindir)/R
+	@rm -f $(DESTDIR)$(bindir)/rho
 
 mostlyclean: clean
 clean:

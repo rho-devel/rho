@@ -158,7 +158,7 @@ mandir = @mandir@
 ## used for installation of standalone Rmath headers
 includedir = @includedir@
 
-rhome = ${libdir}/R
+rhome = ${libdir}/rho
 rsharedir = @rsharedir@
 rincludedir = @rincludedir@
 rdocdir = @rdocdir@

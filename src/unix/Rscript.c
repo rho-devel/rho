@@ -25,12 +25,12 @@
 
 /* This is intended to be used in scripts like
 
-#! /path/to/Rscript --vanilla
+#! /path/to/rhoscript --vanilla
 commandArgs(TRUE)
 q(status=7)
 
-This invokes R with a command line like
-R --slave --no-restore --vanilla --file=foo [script_args]
+This invokes rho with a command line like
+rho --slave --no-restore --vanilla --file=foo [script_args]
 
 */
 
@@ -105,7 +105,7 @@ void usage(void)
     fprintf(stderr, "  --default-packages=list\n");
     fprintf(stderr, "                      Where 'list' is a comma-separated set\n");
     fprintf(stderr, "                        of package names, or 'NULL'\n");
-    fprintf(stderr, "or options to R, in addition to --slave --no-restore, such as\n");
+    fprintf(stderr, "or options to rho, in addition to --slave --no-restore, such as\n");
     fprintf(stderr, "  --save              Do save workspace at the end of the session\n");
     fprintf(stderr, "  --no-environ        Don't read the site and user environment files\n");
     fprintf(stderr, "  --no-site-file      Don't read the site-wide Rprofile\n");
@@ -115,7 +115,7 @@ void usage(void)
     fprintf(stderr, "                        --no-init-file and --no-environ\n");
     fprintf(stderr, "\n'file' may contain spaces but not shell metacharacters\n");
     fprintf(stderr, "Expressions (one or more '-e <expr>') may be used *instead* of 'file'\n");
-    fprintf(stderr, "See also  ?Rscript  from within R\n");
+    fprintf(stderr, "See also  ?Rscript  from within rho\n");
 }
 
 
@@ -151,11 +151,11 @@ int main(int argc, char *argv[])
 #else
     if(!(p && *p)) p = rhome;
     /* avoid snprintf here */
-    if(strlen(p) + 6 > PATH_MAX) {
+    if(strlen(p) + 8 > PATH_MAX) {
 	fprintf(stderr, "impossibly long path for RHOME\n");
 	exit(1);
     }
-    snprintf(cmd, PATH_MAX+1, "%s/bin/R", p);
+    snprintf(cmd, PATH_MAX+1, "%s/bin/rho", p);
 #endif
     av[ac++] = cmd;
     av[ac++] = "--slave";
@@ -168,10 +168,10 @@ int main(int argc, char *argv[])
 	}
 	if(strcmp(argv[1], "--version") == 0) {
 	    if(strlen(R_STATUS) == 0)
-		fprintf(stderr, "R scripting front-end version %s.%s (%s-%s-%s)\n",
+		fprintf(stderr, "rho scripting front-end version %s.%s (%s-%s-%s)\n",
 			R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
 	    else
-		fprintf(stderr, "R scripting front-end version %s.%s %s (%s-%s-%s r%s)\n",
+		fprintf(stderr, "rho scripting front-end version %s.%s %s (%s-%s-%s r%s)\n",
 			R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
 			R_GIT_REVISION);
 	    exit(0);
@@ -265,13 +265,13 @@ int main(int argc, char *argv[])
     }
 #ifndef _WIN32
     res = execv(cmd, av); /* will not return if R is launched */
-    perror("Rscript execution error");
+    perror("rhoscript execution error");
 #else
     AppMain(ac, av);
 #endif
     return res;
 #else /* No execv*/
-    fprintf(stderr, "Rscript is not supported on this system");
+    fprintf(stderr, "rhoscript is not supported on this system");
     exit(1);
 #endif
 }
