@@ -77,13 +77,7 @@ stamp-java : etc/javaconf $(srcdir)/src/scripts/javareconf.in
 javaconf: R
 	@$(MAKE) stamp-java
 
-install install-strip:
-	@echo "rho is currently in an immature state."
-	@echo "Installing it would overwrite your installation of standard R;"
-	@echo "consequently, installation is currently disabled."
-	@false
-
-rho-install rho-install-strip: installdirs gitonly
+install install-strip: installdirs gitonly
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) $@) || exit 1; \
 	done

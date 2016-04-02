@@ -11,7 +11,7 @@ subdir = tests/rho2
 
 R = $(top_builddir)/bin/R --vanilla --quiet
 RDIFF = $(top_builddir)/bin/R CMD Rdiff
-REXEC= $(top_builddir)/bin/exec/R
+REXEC= $(top_builddir)/bin/exec/rho
 
 include $(top_builddir)/Makeconf
 

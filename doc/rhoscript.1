@@ -1,11 +1,11 @@
-.TH Rscript "1" "April 2007" "R scripting" FSF
+.TH Rscript "1" "April 2007" "rho scripting" FSF
 .SH NAME
-Rscript \- front end for scripting with R
+rhoscript \- front end for scripting with rho
 .SH SYNOPSIS
-.B Rscript
+.B rhoscript
 [\fI--options\fR] [\fI-e expr\fR] \fIfile \fR[\fIargs\fR]
 .SH DESCRIPTION
-A binary front-end to R, for use in scripting applications.
+A binary front-end to rho, for use in scripting applications.
 .TP
 \fBexpr\fR
 An optional expression to be evaluated, used in place of \fBexpr\fR.
@@ -15,7 +15,7 @@ Input file of R expressions
 .TP
 \fBargs\fR
 Optional further arguments to be processed by \fIcommandArgs\fR
-in the R interpreter.
+in the rho VM.
 .SH OPTIONS
 \fB\-\-options\fR accepted are
 .TP
@@ -32,7 +32,7 @@ Print information on progress
 Where 'list' is a comma-separated set
 of package names, or 'NULL'
 .PP
-and also options to R (in addition to \fB\-\-slave\fR \fB\-\-no\-restore\fR),
+and also options to rho (in addition to \fB\-\-slave\fR \fB\-\-no\-restore\fR),
 such as
 .TP
 \fB\-\-save\fR

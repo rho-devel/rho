@@ -29,16 +29,15 @@
 #define SEXP_DOWNCAST_HPP 1
 
 #include "rho/RObject.hpp"
+#include "R_ext/Error.h"  // For NORET
+#include <type_traits>
 
 namespace rho {
-#ifdef __GNUC__
-    __attribute__((noreturn))
-#endif
     /** @brief Not for general use.
      *
      * (Used by SEXP_downcast() to report an erroneous cast.)
      */
-    void SEXP_downcast_error(const char* given, const char* wanted);
+    NORET void SEXP_downcast_error(const char* given, const char* wanted);
 
     /** Down cast within the RObject class tree.
      *
@@ -57,12 +56,13 @@ namespace rho {
      *
      * @return The cast pointer.
      */
-#ifdef UNCHECKED_SEXP_DOWNCAST
+#ifndef CHECKED_SEXP_DOWNCAST
     template <typename PtrOut, typename PtrIn>
     inline PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
 	if (!s && !allow_null) {
-	    SEXP_downcast_error("NULL", PtrOut::staticTypeName());
+	    SEXP_downcast_error("NULL",
+                                std::remove_pointer<PtrOut>::type::staticTypeName());
 	}
 	return static_cast<PtrOut>(s);
     }
@@ -74,7 +74,8 @@ namespace rho {
 	if (!s) {
 	    if (allow_null)
 		return nullptr;
-	    else SEXP_downcast_error("NULL", ans->staticTypeName());
+	    else SEXP_downcast_error("NULL",
+                                     std::remove_pointer<PtrOut>::type::staticTypeName());
 	}
 	ans = dynamic_cast<PtrOut>(s);
 	if (!ans)

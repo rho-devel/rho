@@ -16,9 +16,9 @@ if test "${R_HOME_DIR}" = "@prefix@/@LIBnn@/R"; then
           libnn_fallback=lib64
         ;;
      esac
-     if [ -x "@prefix@/${libnn}/R/bin/exec/R" ]; then
+     if [ -x "@prefix@/${libnn}/R/bin/exec/rho" ]; then
         R_HOME_DIR="@prefix@/${libnn}/R"
-     elif [ -x "@prefix@/${libnn_fallback}/R/bin/exec/R" ]; then
+     elif [ -x "@prefix@/${libnn_fallback}/R/bin/exec/rho" ]; then
         R_HOME_DIR="@prefix@/${libnn_fallback}/R"
      ## else -- leave alone (might be a sub-arch)
      fi
@@ -237,7 +237,7 @@ done
 
 . "${R_HOME}/etc${R_ARCH}/ldpaths"
 
-R_binary="${R_HOME}/bin/exec${R_ARCH}/R"
+R_binary="${R_HOME}/bin/exec${R_ARCH}/rho"
 export R_ARCH
 
 case "${gui}" in
