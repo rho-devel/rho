@@ -1,6 +1,6 @@
 Name,Country,City,URL,Host,Maintainer,OK,CountryCode,Comment
-"0-Cloud [https]",0-Cloud,0-Cloud,https://cran.rstudio.com/,"Rstudio, automatic redirection to servers worldwide","winston # stdout.org",1,us,"secure_mirror_from_master"
-0-Cloud,0-Cloud,0-Cloud,http://cran.rstudio.com/,"Rstudio, automatic redirection to servers worldwide","winston # stdout.org",1,us,"secure_mirror_from_master"
+"0-Cloud [https]",0-Cloud,0-Cloud,https://cloud.r-project.org/,"Automatic redirection to servers worldwide, currently sponsored by Rstudio","winston # stdout.org",1,us,"secure_mirror_from_master"
+0-Cloud,0-Cloud,0-Cloud,http://cloud.r-project.org/,"Automatic redirection to servers worldwide, currently sponsored by Rstudio","winston # stdout.org",1,us,"secure_mirror_from_master"
 Algeria,Algeria,Algiers,http://cran.usthb.dz/,"University of Science and Technology Houari Boumediene","Boukala m c <mboukala # usthb.dz>",1,dz
 "Argentina (La Plata)",Argentina,"La Plata",http://mirror.fcaglp.unlp.edu.ar/CRAN/,"Universidad Nacional de La Plata","esuarez # Fcaglp.unlp.edu.ar",1,ar
 "Australia (Canberra)",Australia,Canberra,http://cran.csiro.au/,CSIRO,"Bill.Venables # CSIRO.au, ServiceDesk2 # CSIRO.au",1,au
@@ -8,6 +8,7 @@ Algeria,Algeria,Algiers,http://cran.usthb.dz/,"University of Science and Technol
 "Austria [https]",Austria,Wien,https://cran.wu.ac.at/,"Wirtschaftsuniversität Wien","CRAN # R-project.org",1,at
 Austria,Austria,Wien,http://cran.wu.ac.at/,"Wirtschaftsuniversität Wien","CRAN # R-project.org",1,at
 "Belgium (Antwerp)",Belgium,Antwerp,http://www.freestatistics.org/cran/,"K.U.Leuven Association","patrick # wessa.net",1,be
+"Belgium (Ghent) [https]",Belgium,Ghent,https://lib.ugent.be/CRAN/,"Ghent University Library","Patrick Hochstenbach <Patrick.Hochstenbach # UGent.be>",1,be
 "Belgium (Ghent)",Belgium,Ghent,http://lib.ugent.be/CRAN/,"Ghent University Library","Patrick Hochstenbach <Patrick.Hochstenbach # UGent.be>",1,be
 "Brazil (BA)",Brazil,Ilheus,http://nbcgib.uesc.br/mirrors/cran/,"Center for Comp. Biol. at Universidade Estadual de Santa Cruz","eduardo # nbcgib.uesc.br",1,br
 "Brazil (PR)",Brazil,Curitiba,http://cran-r.c3sl.ufpr.br/,"Universidade Federal do Parana","Paulo Justiniano Ribeiro Junior <paulojus # ufpr.br>",1,br
@@ -32,7 +33,7 @@ Chile,Chile,Santiago,http://dirichlet.mat.puc.cl/,"Pontificia Universidad Catoli
 Ecuador,Ecuador,Guayaquil,http://cran.espol.edu.ec/,"Escuela Superior Politecnica del Litoral","jrodrig # espol.edu.ec",1,ec,"secure_mirror_from_master"
 "El Salvador","El Salvador","San Salvador",http://cran.salud.gob.sv/,"Ministry of Health (Ministerio de Salud)","mirror # salud.gob.sv",1,sv
 "Estonia",Estonia,Tartu,http://ftp.eenet.ee/pub/cran/,"EENet","eenet # eenet.ee",1,ee,"secure_mirror_from_master"
-"France (Lyon 1)",France,Lyon,http://cran.univ-lyon1.fr/,"Dept. of Biometry & Evol. Biology, University of Lyon","Jean Thioulouse <Jean.Thioulouse # univ-lyon1.fr>",1,fr
+"France (Lyon 1) [https]",France,Lyon,https://pbil.univ-lyon1.fr/CRAN/,"Dept. of Biometry & Evol. Biology, University of Lyon","Jean Thioulouse <Jean.Thioulouse # univ-lyon1.fr>",1,fr,"secure_mirror_from_master"
 "France (Lyon 2) [https]",France,Lyon,https://mirror.ibcp.fr/pub/CRAN/,"CNRS IBCP, Lyon","alexis.michon # ibcp.fr",1,fr,"secure_mirror_from_master"
 "France (Lyon 2)",France,Lyon,http://mirror.ibcp.fr/pub/CRAN/,"CNRS IBCP, Lyon","alexis.michon # ibcp.fr",1,fr,"secure_mirror_from_master"
 "France (Marseille)",France,Marseille,"http://cran.biotools.fr/","IBDM, Marseille","andrew.saurin # univ-amu.fr",1,fr

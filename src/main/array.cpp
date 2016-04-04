@@ -352,19 +352,27 @@ SEXP attribute_hidden do_length(/*const*/ rho::Expression* call, const rho::Buil
     return ScalarInteger(length(x));
 }
 
-R_xlen_t get_object_length(RObject* x, Environment* rho)
+R_len_t attribute_hidden dispatch_length(RObject* x, Expression* call,
+                                         Environment* rho) {
+    R_xlen_t len = dispatch_xlength(x, call, rho);
+#ifdef LONG_VECTOR_SUPPORT
+    if (len > INT_MAX) return R_BadLongVector(x, __FILE__, __LINE__);
+#endif
+    return (R_len_t) len;
+}
+
+R_xlen_t attribute_hidden dispatch_xlength(RObject* x, Expression* /*call*/,
+                                           Environment* rho)
 {
     static BuiltInFunction* length_op
 	= BuiltInFunction::obtainPrimitive("length");
-    // Create a call to length(x)
-    static Symbol* length = Symbol::obtain("length");
-    static Symbol* x_sym = Symbol::obtain("x");
-    static GCRoot<Expression> call = new Expression(length, new PairList(x_sym));
+    static GCRoot<Expression> length_call = SEXP_downcast<Expression*>(
+        Rf_lang2(Rf_install("length"), Rf_install("x")));
 
     if (isObject(x))
     {
 	auto dispatched = length_op->InternalDispatch(
-	    call, rho, 1, &x, call->getArgs());
+	    length_call, rho, 1, &x, length_call->getArgs());
 	if (dispatched.first) {
 	    RObject* len = dispatched.second;
 	    return (R_xlen_t)
@@ -374,26 +382,11 @@ R_xlen_t get_object_length(RObject* x, Environment* rho)
     return(xlength(x));
 }
 
-static SEXP dispatch_subset2(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
-    static SEXP bracket_op = NULL;
-    SEXP args, x_elt;
-    if (isObject(x)) {
-        if (bracket_op == NULL)
-            bracket_op = R_Primitive("[[");
-        PROTECT(args = list2(x, ScalarReal(i + 1)));
-        x_elt = do_subset2(call, bracket_op, args, rho);
-        UNPROTECT(1);
-    } else {
-        x_elt = VECTOR_ELT(x, i);
-    }
-    return(x_elt);
-}
-
 // auxiliary for do_lengths_*(), i.e., R's lengths()
-static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call,
+static R_xlen_t getElementLength(RObject* x, R_xlen_t i, Expression* call,
 				 Environment* rho) {
     SEXP x_elt = dispatch_subset2(x, i, call, rho);
-    return(get_object_length(x_elt, rho));
+    return(dispatch_xlength(x_elt, call, rho));
 }
 
 static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
@@ -402,7 +395,7 @@ static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
     R_xlen_t x_len, i;
     double *ans_elt;
 
-    x_len = get_object_length(x, rho);
+    x_len = dispatch_xlength(x, call, rho);
     PROTECT(ans = allocVector(REALSXP, x_len));
     for (i = 0, ans_elt = REAL(ans); i < x_len; i++, ans_elt++) {
         *ans_elt = getElementLength(x, i, call, rho);
@@ -418,7 +411,7 @@ SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::Bui
     int *ans_elt;
     int useNames = asLogical(args[1]);
     if (useNames == NA_LOGICAL)
-	error(_("invalid '%s' value"), "USE.NAMES");
+	error(_("invalid '%s' value"), "use.names");
     bool isList = isVectorList(x) || isS4(x);
     if(!isList) switch(TYPEOF(x)) {
 	case NILSXP:
@@ -433,7 +426,7 @@ SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::Bui
 	default:
 	    error(_("'%s' must be a list or atomic vector"), "x");
     }
-    x_len = get_object_length(x, rho);
+    x_len = dispatch_xlength(x, call, rho);
     PROTECT(ans = allocVector(INTSXP, x_len));
     if(isList) {
 	for (i = 0, ans_elt = INTEGER(ans); i < x_len; i++, ans_elt++) {

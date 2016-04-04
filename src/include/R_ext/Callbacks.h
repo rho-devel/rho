@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-2 The R Core Team.
+ *  Copyright (C) 2001-2016 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the Rho Project Authors.
  *
@@ -78,8 +78,8 @@ R_ToplevelCallbackEl* Rf_addTaskCallback(R_ToplevelCallback cb, void *data, void
   separate package on Omegahat and these declarations allow the package
   to interface to the internal R code.
   
-  See http://developer.r-project.org/RObjectTables.pdf,
-  http://www.omegahat.org/RObjectTables/
+  See https://developer.r-project.org/RObjectTables.pdf,
+  http://www.omegahat.net/RObjectTables/
 */
 
 typedef struct  _R_ObjectTable R_ObjectTable;

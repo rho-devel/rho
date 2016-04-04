@@ -470,12 +470,38 @@ static void R_ReplConsole(SEXP rho, int savestack)
 
 static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 
+static void check_session_exit()
+{
+    if (! R_Interactive) {
+        /* If an error occurs while we are exiting due to an error,
+           then call R_Suicide()
+        */
+	static bool exiting = false;
+	if (exiting)
+	    R_Suicide(_("error during cleanup\n"));
+        if (GetOption1(install("error")) != R_NilValue)
+            return;
+
+        exiting = true;
+        REprintf(_("Execution halted\n"));
+        R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
+    }
+}
+
 void R_ReplDLLinit(void)
 {
-    R_IoBufferWriteReset(&R_ConsoleIob);
-    prompt_type = 1;
-    DLLbuf[0] = DLLbuf[CONSOLE_BUFFER_SIZE] = '\0';
-    DLLbufp = DLLbuf;
+    while(true) {
+        try {
+            R_IoBufferWriteReset(&R_ConsoleIob);
+            prompt_type = 1;
+            DLLbuf[0] = DLLbuf[CONSOLE_BUFFER_SIZE] = '\0';
+            DLLbufp = DLLbuf;
+            break;
+        } catch (CommandTerminated) {
+            check_session_exit();
+            continue;
+        }
+    }
 }
 
 /* FIXME: this should be re-written to use Rf_ReplIteration
@@ -743,8 +769,10 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 		if(ConsoleBuf[0] == '4') R_CleanUp(SA_SAVE, 71, 0);
 	    }
 	}
+	REprintf("R is aborting now ...\n");
     }
-    REprintf("aborting ...\n");
+    else // non-interactively :
+	REprintf("An irrecoverable exception occurred. R is aborting now ...\n");
     R_CleanTempDir();
     /* now do normal behaviour, e.g. core dump */
     signal(signum, SIG_DFL);
@@ -816,6 +844,7 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 	    R_ReplFile(fp, env);
 	}
 	catch (CommandTerminated) {
+          check_session_exit();
 	}
 	fclose(fp);
     }
@@ -982,9 +1011,7 @@ void setup_Rmainloop(void)
 	R_ReplFile(fp, baseEnv);
     }
     catch (CommandTerminated) {
-	// The foll. reproduces CR behaviour, but is probably unnecessary:
-	if (R_SignalHandlers)
-	    init_signal_handlers();
+        check_session_exit();
     }
     fclose(fp);
 #endif
@@ -1020,6 +1047,7 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
+      check_session_exit();
     }
 
     if (strcmp(R_GUIType, "Tk") == 0) {
@@ -1068,6 +1096,7 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
+      check_session_exit();
     }
 
     /* Try to invoke the .First.sys function, which loads the default packages.
@@ -1088,6 +1117,7 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
+        check_session_exit();
     }
 
     {
@@ -1122,16 +1152,16 @@ void run_Rmainloop(void)
 {
     /* Here is the real R read-eval-loop. */
     /* We handle the console until end-of-file. */
-    bool redo;
-    do {
-	redo = false;
+    while (true) {
 	try {
 	    R_ReplConsole(R_GlobalEnv, 0);
+            break;
 	}
 	catch (CommandTerminated) {
-	    redo = true;
+            check_session_exit();
+            continue;
 	}
-    } while (redo);
+    }
     end_Rmainloop(); /* must go here */
 }
 

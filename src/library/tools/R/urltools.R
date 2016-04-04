@@ -97,16 +97,6 @@ function(db)
 url_db_from_package_metadata <-
 function(meta)
 {
-    gregexec_at_pos <- function(pattern, v, m, pos) {
-        unlist(lapply(regmatches(v, m),
-                      function(e)
-                          do.call(rbind,
-                                  regmatches(e,
-                                             regexec(pattern, e)))[, 3L]
-                      ),
-               use.names = FALSE)
-    }
-
     urls <- character()
     fields <- c("URL", "BugReports")
     for(v in meta[fields]) {
@@ -114,11 +104,11 @@ function(meta)
         pattern <-
             "<(URL: *)?((https?|ftp)://[^[:space:],]*)[[:space:]]>"
         m <- gregexpr(pattern, v)
-        urls <- c(urls, gregexec_at_pos(pattern, v, m, 3L))
+        urls <- c(urls, .gregexec_at_pos(pattern, v, m, 3L))
         regmatches(v, m) <- ""
         pattern <- "(^|[^>\"])((https?|ftp)://[^[:space:],]*)"
         m <- gregexpr(pattern, v)
-        urls <- c(urls, gregexec_at_pos(pattern, v, m, 3L))
+        urls <- c(urls, .gregexec_at_pos(pattern, v, m, 3L))
     }
 
     url_db(urls, rep.int("DESCRIPTION", length(urls)))
@@ -180,8 +170,9 @@ function(dir, installed = FALSE)
 {
     urls <- path <- character()
     rfile <- Filter(file.exists,
-                    c(if(!installed) file.path("inst", "README.md"),
-                      "README.md"))[1L]
+                    c(if(!installed)
+                          file.path(dir, "inst", "README.md"),
+                      file.path(dir, "README.md")))[1L]
     if(!is.na(rfile) && nzchar(Sys.which("pandoc"))) {
         path <- .file_path_relative_to_dir(rfile, dir)
         tfile <- tempfile("README", fileext = ".html")
@@ -199,8 +190,9 @@ function(dir, installed = FALSE)
 {
     urls <- path <- character()
     nfile <- Filter(file.exists,
-                    c(if(!installed) file.path("inst", "NEWS.md"),
-                      "NEWS.md"))[1L]
+                    c(if(!installed)
+                          file.path(dir, "inst", "NEWS.md"),
+                      file.path(dir, "NEWS.md")))[1L]
     if(!is.na(nfile) && nzchar(Sys.which("pandoc"))) {
         path <- .file_path_relative_to_dir(nfile, dir)
         tfile <- tempfile("NEWS", fileext = ".html")
@@ -382,8 +374,9 @@ function(db, verbose = FALSE)
         ## A mis-configured site
         if (s == "503" && any(grepl("www.sciencedirect.com", c(u, newLoc))))
             s <- "405"
-        cran <- grepl("https?://cran.r-project.org/web/packages/[.[:alnum:]]+(|/|/index.html)$",
-                      u, ignore.case = TRUE)
+        cran <- (grepl("https?://cran.r-project.org/web/packages/[.[:alnum:]]+(|/|/index.html)$",
+                       u, ignore.case = TRUE) ||
+                 any(substring(tolower(u), 1L, nchar(mirrors)) == mirrors))
         spaces <- grepl(" ", u)
         c(s, msg, newLoc, if(cran) u else "", if(spaces) u else "")
     }
@@ -391,6 +384,14 @@ function(db, verbose = FALSE)
     bad <- .gather()
 
     if(!NROW(db)) return(bad)
+
+    ## Could also use utils::getCRANmirrors(local.only = TRUE).
+    mirrors <- c(utils::read.csv(file.path(R.home("doc"),
+                                           "CRAN_mirrors.csv"),
+                                 as.is = TRUE, encoding = "UTF-8")$URL,
+                 "http://cran.rstudio.com/",
+                 "https://cran.rstudio.com/")
+    mirrors <- tolower(sub("/$", "", mirrors))
 
     parents <- split(db$Parent, db$URL)
     urls <- names(parents)

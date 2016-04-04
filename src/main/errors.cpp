@@ -849,14 +849,6 @@ static void jump_to_top_ex(Rboolean traceback,
 	    }
 	}
 
-	if ( !R_Interactive && !haveHandler
-	     /* only bail out if at session top level, not in R_tryEval calls */
-	     // rho FIXME: this test not yet implemented in rho:
-	     /*&& R_ToplevelContext == R_SessionContext*/ ) {
-	    REprintf(_("Execution halted\n"));
-	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
-	}
-
 	throw CommandTerminated();
     }
     catch (...) {

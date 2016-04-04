@@ -382,6 +382,8 @@ extern0 Rboolean R_CBoundsCheck	INI_as(FALSE);	/* options(CBoundsCheck) */
 extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
 extern0 int	R_nwarnings	INI_as(50);
 extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
+extern uintptr_t R_OldCStackLimit INI_as((uintptr_t)0); /* Old value while 
+							   handling overflow */
 extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern int	R_CStackDir	INI_as(1);	/* C stack direction */
 
@@ -747,6 +749,7 @@ SEXP Rf_deparse1w(SEXP,Rboolean,int);
 SEXP Rf_deparse1line(SEXP,Rboolean);
 SEXP Rf_deparse1s(SEXP call);
 int Rf_DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
+SEXP dispatch_subset2(SEXP, R_xlen_t, SEXP, SEXP);
 SEXP duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated3(SEXP, SEXP, Rboolean);
@@ -775,7 +778,10 @@ std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
 int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
 		      rho::MissingArgHandling, int);
 
-R_xlen_t get_object_length(rho::RObject* object, rho::Environment* rho);
+R_xlen_t dispatch_xlength(rho::RObject* object, rho::Expression* call,
+                          rho::Environment* rho);
+R_len_t dispatch_length(rho::RObject* object, rho::Expression* call,
+                        rho::Environment* rho);
 extern "C" {
 #endif
 
