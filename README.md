@@ -1,6 +1,7 @@
 <img src="share/logo/rho_logo.png?raw=true" alt="Rho logo" width="130" height="100"/>
 
 [![Build Status](https://travis-ci.org/rho-devel/rho.svg?branch=master)](https://travis-ci.org/rho-devel/rho)
+[![codecov.io](https://codecov.io/github/rho-devel/rho/coverage.svg?branch=master)](https://codecov.io/github/rho-devel/rho?branch=master)
 
 # Rho
 

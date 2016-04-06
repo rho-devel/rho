@@ -39,3 +39,5 @@ script:
           --with-llvm=/usr/bin/llvm-config-3.5
         - travis_wait 60 make -j 2
         - travis_wait 60 make -j 2 check
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
