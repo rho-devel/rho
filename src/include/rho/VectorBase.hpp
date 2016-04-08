@@ -382,7 +382,7 @@ extern "C" {
      *
      * @deprecated May be withdrawn in the future.
      */
-    inline void SET_XTRUELENGTH(SEXP x, R_xlen_t v)
+    inline void SET_TRUELENGTH(SEXP x, R_xlen_t v)
     {
 	using namespace rho;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);

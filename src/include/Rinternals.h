@@ -202,8 +202,6 @@ R_len_t NORET R_BadLongVector(SEXP, const char *, int);
 # define IS_LONG_VEC(x) 0
 #endif
 
-#define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
-
 #define CHAR(x)		R_CHAR(x)
 const char *(R_CHAR)(SEXP x);
 
