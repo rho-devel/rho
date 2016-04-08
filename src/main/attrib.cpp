@@ -1380,7 +1380,7 @@ static void check_slot_assign(SEXP obj, SEXP input, SEXP value, SEXP env)
     SEXP
 	valueClass = PROTECT(R_data_class(value, FALSE)),
 	objClass   = PROTECT(R_data_class(obj, FALSE));
-    static SEXP checkAt = NULL;
+    static GCRoot<> checkAt = NULL;
     // 'methods' may *not* be in search() ==> do as if calling  methods::checkAtAssignment(..)
     if(!isMethodsDispatchOn()) { // needed?
 	SEXP e = PROTECT(lang1(install("initMethodDispatch")));
