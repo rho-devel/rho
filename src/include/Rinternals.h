@@ -297,8 +297,8 @@ void (UNSET_S4_OBJECT)(SEXP x);
 /* Vector Access Functions */
 int  (LENGTH)(SEXP x);
 int  (TRUELENGTH)(SEXP x);
-void (SETLENGTH)(SEXP x, int v);
-void (SET_TRUELENGTH)(SEXP x, int v);
+void (SETLENGTH)(SEXP x, R_xlen_t v);
+void (SET_TRUELENGTH)(SEXP x, R_xlen_t v);
 R_xlen_t  (XLENGTH)(SEXP x);
 R_xlen_t  (XTRUELENGTH)(SEXP x);
 int  (IS_LONG_VEC)(SEXP x);
