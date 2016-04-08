@@ -163,7 +163,7 @@ Rboolean Rf_isVector(SEXP s)
     }
 }
 
-void SETLENGTH(SEXP x, int v)
+void SETLENGTH(SEXP x, R_xlen_t v)
 {
     rho::VectorBase* vb = dynamic_cast<rho::VectorBase*>(x);
     if (!vb)
