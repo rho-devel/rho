@@ -57,6 +57,11 @@ public:
 
     llvm::Value* emitCallOrInvoke(llvm::Function* function,
 				  llvm::ArrayRef<llvm::Value*> args);
+    llvm::Value* emitCallOrInvoke(llvm::Function* function,
+                                  std::initializer_list<llvm::Value*> args) {
+      return emitCallOrInvoke(function,
+                              llvm::ArrayRef<llvm::Value*>(args));
+    }
 
     template<class T>
     llvm::Type* getType();
