@@ -36,6 +36,11 @@ For development builds, it is useful to define
 `-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
 in order to find bugs more easily. 
 
+## Notable Known Issues
+
+* Currently rho doesn't support packages that contain native code that uses the `USE_RINTERNALS` macro.  This includes Rcpp, rJava, data.table, xts and all the packages that depend on them.
+* Our testing on different platforms and compilers is currently very limited.  Building with clang 3.5 on ubuntu trusty should always work.  OSX, other linux distros and recent versions of clang and gcc are also supported, but aren't regularly tested.
+
 ## Rho Discussion Mailing List.
 
 https://groups.google.com/forum/#!forum/rho-devel
