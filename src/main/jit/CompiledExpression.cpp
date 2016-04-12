@@ -60,8 +60,35 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // Create a module to compile the code in.  MCJIT requires that each
     // separate invocation of the JIT compiler uses its own module.
     llvm::LLVMContext& context = llvm::getGlobalContext();
-    Module* module = Runtime::createModule(context);
+    std::unique_ptr<Module> module = Runtime::createModule(context);
 
+    // Create a function with signature RObject* (*f)(Environment* environment)
+    llvm::Function* function = llvm::Function::Create(
+	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
+	llvm::Function::ExternalLinkage,
+	"anonymous_function", // TODO: give it a useful name
+	module.get());
+    Value* environment = &*(function->getArgumentList().begin());
+    environment->setName("environment");
+
+    // Setup the compiler and generate code.
+    std::unique_ptr<MCJITMemoryManager> memory_manager(
+        new MCJITMemoryManager(module.get()));
+    CompilerContext compiler_context(closure, environment, function,
+				     memory_manager.get());
+    Compiler compiler(&compiler_context);
+    Value* return_value = compiler.emitEval(body);
+
+    if (!return_value->hasName())
+	return_value->setName("return_value");
+    compiler.CreateRet(return_value);
+
+    // function->dump(); // So we can see what's going on while developing.
+    llvm::verifyFunction(*function);
+
+    // TODO: add optimization passes and re-verify.
+
+    // The IR is now complete.  Compile to native code.
     module->setTargetTriple(llvm::sys::getProcessTriple());
 
     llvm::TargetOptions options;
@@ -70,43 +97,20 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
-    MCJITMemoryManager* memory_manager = new MCJITMemoryManager(module);
-    m_engine.reset(llvm::EngineBuilder(module)
+    m_engine.reset(
+#if (LLVM_VERSION < 306)
+                   llvm::EngineBuilder(module.release())
+		   .setMCJITMemoryManager(memory_manager.release())
 		   .setUseMCJIT(true)
-		   .setMCJITMemoryManager(memory_manager)
+#else
+                   llvm::EngineBuilder(std::move(module))
+		   .setMCJITMemoryManager(std::move(memory_manager))
+#endif
 		   .setOptLevel(llvm::CodeGenOpt::None)
                    .setTargetOptions(options)
                    .setMCPU(llvm::sys::getHostCPUName())
 		   .create());
     assert(m_engine);
-
-    module->setDataLayout(
-        m_engine->getDataLayout()->getStringRepresentation());
-
-    // Create a function with signature RObject* (*f)(Environment* environment)
-    llvm::Function* function = llvm::Function::Create(
-	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
-	llvm::Function::ExternalLinkage,
-	"anonymous_function", // TODO: give it a useful name
-	module);
-    Value* environment = &*(function->getArgumentList().begin());
-    environment->setName("environment");
-
-    // Setup the compiler and generate code.
-    CompilerContext compiler_context(closure, environment, function,
-				     memory_manager);
-    Compiler compiler(&compiler_context);
-    Value* return_value = compiler.emitEval(body);
-
-    if (!return_value->hasName())
-	return_value->setName("return_value");
-    compiler.CreateRet(return_value);
-
-    // The IR is now complete.  Compile to native code.
-    // function->dump(); // So we can see what's going on while developing.
-    llvm::verifyFunction(*function);
-
-    // TODO: add optimization passes and re-verify.
 
     m_engine->finalizeObject();
     auto ptr = m_engine->getFunctionAddress(function->getName());
