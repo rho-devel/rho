@@ -99,8 +99,8 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 
     m_engine.reset(
 #if (LLVM_VERSION < 306)
-                   llvm::EngineBuilder(module.get())
-		   .setMCJITMemoryManager(memory_manager.get())
+                   llvm::EngineBuilder(module.release())
+		   .setMCJITMemoryManager(memory_manager.release())
 		   .setUseMCJIT(true)
 #else
                    llvm::EngineBuilder(std::move(module))
