@@ -20,7 +20,7 @@ Compiling rho requires a GCC or Clang compiler with C++ 11 support and fortran s
    * libedit
 
 Compilation of the LLVM JIT requires clang 3.4 or later and the matching
-version of the LLVM library.
+version of the LLVM library.  We haven't tested versions later than 3.6.
 
 Rho has been tested to compile on both Linux and Mac OSX systems.
 
@@ -34,7 +34,7 @@ To build with the LLVM JIT enabled:
    ```
 For development builds, it is useful to define
 `-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
-in order to find bugs more easily. 
+in order to find bugs more easily. (If using clang >= 3.6, either remove the `-fsanitize=address`, or define `ASAN_OPTIONS="detect_leaks=0"` to disable memory leak checking.)
 
 ## Notable Known Issues
 
