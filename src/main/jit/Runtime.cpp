@@ -275,18 +275,19 @@ static void cleanupRuntimeModule(Module* module)
     }
 }
 
-static Module* createRuntimeModule(LLVMContext& context)
+static std::unique_ptr<Module> createRuntimeModule(LLVMContext& context)
 {
     std::string module_filename = std::string(R_Home) + "/jit/RuntimeImpl.bc";
 
     llvm::SMDiagnostic err;
-    Module* runtime_module = llvm::ParseIRFile(module_filename, err, context);
+    std::unique_ptr<Module> runtime_module
+        = llvm::parseIRFile(module_filename, err, context);
     if (!runtime_module) {
 	// TODO(kmillar): better error handling
 	printf("parse failed\n");
 	exit(1);
     }
-    cleanupRuntimeModule(runtime_module);
+    cleanupRuntimeModule(runtime_module.get());
 
     return runtime_module;
 }
@@ -294,13 +295,13 @@ static Module* createRuntimeModule(LLVMContext& context)
 static Module* getRuntimeModule(LLVMContext& context)
 {
     // TODO(kmillar): need multiple modules if we have multiple contexts.
-    static Module* runtime_module = createRuntimeModule(context);
+    static Module* runtime_module = createRuntimeModule(context).release();
     return runtime_module;
 }
 
-llvm::Module* createModule(llvm::LLVMContext& context)
+std::unique_ptr<llvm::Module> createModule(llvm::LLVMContext& context)
 {
-    return new Module("anonymous_module", context);
+    return std::unique_ptr<Module>(new Module("anonymous_module", context));
 }
 
 void linkInRuntimeModule(llvm::Module* module)
