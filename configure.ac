@@ -2371,12 +2371,12 @@ R_SYS_POSIX_LEAPSECONDS
 gl_STAT_TIME
 
 ## LLVM
-want_llvm_jit = no
+want_llvm_jit=no
 if test "${enable_llvm_jit}" = yes; then
   if `${CC} --version | grep -q clang`; then
     AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
     AC_DEFINE(ENABLE_LLVM_JIT, 1, [Define this to enable the LLVM JIT compiler])
-    want_llvm_jit = yes
+    want_llvm_jit=yes
   else
     AC_MSG_WARN("clang compiler needed for llvm-jit")
   fi

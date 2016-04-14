@@ -38184,7 +38184,7 @@ fi
 
 
 ## LLVM
-want_llvm_jit = no
+want_llvm_jit=no
 if test "${enable_llvm_jit}" = yes; then
   if `${CC} --version | grep -q clang`; then
 
@@ -38306,7 +38306,7 @@ $as_echo "#define HAVE_LLVM /**/" >>confdefs.h
 
 $as_echo "#define ENABLE_LLVM_JIT 1" >>confdefs.h
 
-    want_llvm_jit = yes
+    want_llvm_jit=yes
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"clang compiler needed for llvm-jit\"" >&5
 $as_echo "$as_me: WARNING: \"clang compiler needed for llvm-jit\"" >&2;}
