@@ -2371,12 +2371,18 @@ R_SYS_POSIX_LEAPSECONDS
 gl_STAT_TIME
 
 ## LLVM
+want_llvm_jit = no
 if test "${enable_llvm_jit}" = yes; then
-   AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
-   AC_DEFINE(ENABLE_LLVM_JIT, 1, [Define this to enable the LLVM JIT compiler])
+  if `${CC} --version | grep -q clang`; then
+    AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
+    AC_DEFINE(ENABLE_LLVM_JIT, 1, [Define this to enable the LLVM JIT compiler])
+    want_llvm_jit = yes
+  else
+    AC_MSG_WARN("clang compiler needed for llvm-jit")
+  fi
 fi
 AC_SUBST(ENABLE_LLVM_JIT)
-AM_CONDITIONAL(BUILD_LLVM_JIT, [test "${enable_llvm_jit}" = yes])
+AM_CONDITIONAL(BUILD_LLVM_JIT, [test "${want_llvm_jit}" = yes])
 
 ## rho provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
@@ -2950,6 +2956,9 @@ fi
 
 if test "${want_provenance_tracking}" = yes; then
   R_SH_VAR_ADD(rho_options, [Provenance Tracking], [, ])
+fi
+if test "${enable_llvm_jit}" = yes; then
+  R_SH_VAR_ADD(rho_options, [LLVM JIT compiler], [, ])
 fi
 
 AC_MSG_RESULT(
