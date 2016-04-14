@@ -50407,6 +50407,14 @@ if test -z "${rho_options}"; then
 else
   rho_options="${rho_options}${separator}LLVM JIT compiler"
 fi
+else
+  separator=", "
+test -z "${separator}" && separator=" "
+if test -z "${r_no_options}"; then
+  r_no_options="LLVM JIT compiler"
+else
+  r_no_options="${r_no_options}${separator}LLVM JIT compiler"
+fi
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result:

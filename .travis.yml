@@ -1,29 +1,12 @@
 sudo: required
 dist: trusty
 language: cpp
-compiler:
-        - clang
-        - gcc
-env:
-  global:
-    # By default, rho uses its own implementation of tar written in R.
-    # It's really slow, so use system tar instead.
-    - TAR=/bin/tar
-    - R_BUILD_TAR=/bin/tar
-    - R_INSTALL_TAR=/bin/tar
-matrix:
-  allow_failures:
-    - compiler: gcc
-install:
-        - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
+
 addons:
   apt:
         sources:
         - ubuntu-toolchain-r-test
         packages:
-        - llvm-3.5-dev
-        - gcc-4.9
-        - g++-4.9
         - gfortran
         - libboost-all-dev
         - zlib1g-dev
@@ -32,10 +15,95 @@ addons:
         - libpcre3-dev
         - libedit-dev
 
+env:
+  global:
+    # By default, rho uses its own implementation of tar written in R.
+    # It's really slow, so use system tar instead.
+    - TAR=/bin/tar
+    - R_BUILD_TAR=/bin/tar
+    - R_INSTALL_TAR=/bin/tar
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+      env: CC=gcc-4.9 CXX=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5.0
+            - g++-5.0
+      env: CC=gcc-5.0 CXX=g++-5.0
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.4
+            - llvm-3.4-dev
+      env: CC=clang-3.4 CXX=clang++-3.4 LLVM_CONFIG=/usr/bin/llvm-config-3.4
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.5
+            - llvm-3.5-dev
+      env: CC=clang-3.5 CXX=clang++-3.5 LLVM_CONFIG=/usr/bin/llvm-config-3.5
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.6
+            - llvm-3.6-dev
+      env: CC=clang-3.6 CXX=clang++-3.6 LLVM_CONFIG=/usr/bin/llvm-config-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.7
+            - llvm-3.7-dev
+      env: CC=clang-3.7 CXX=clang++-3.7 LLVM_CONFIG=/usr/bin/llvm-config-3.7
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.8
+            - llvm-3.8-dev
+      env: CC=clang-3.8 CXX=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8
+    # With address sanitizer enabled.
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-3.5
+            - llvm-3.5-dev
+      env: CC=clang-3.5 CXX=clang++-3.5 LLVM_CONFIG=/usr/bin/llvm-config-3.5 ASAN_OPTIONS="detect_leaks=0" CFLAGS="-g -O1 -fsanitize=address" CXXFLAGS="${CFLAGS}"
+
 script:
         - tools/rsync-recommended
         - ./configure
           --enable-llvm-jit=yes
-          --with-llvm=/usr/bin/llvm-config-3.5
+          --with-llvm=$LLVM_CONFIG
         - travis_wait 60 make -j 2
+        # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check

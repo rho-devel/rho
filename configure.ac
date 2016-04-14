@@ -2959,6 +2959,8 @@ if test "${want_provenance_tracking}" = yes; then
 fi
 if test "${want_llvm_jit}" = yes; then
   R_SH_VAR_ADD(rho_options, [LLVM JIT compiler], [, ])
+else
+  R_SH_VAR_ADD(r_no_options, [LLVM JIT compiler], [, ])
 fi
 
 AC_MSG_RESULT(
