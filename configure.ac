@@ -2957,7 +2957,7 @@ fi
 if test "${want_provenance_tracking}" = yes; then
   R_SH_VAR_ADD(rho_options, [Provenance Tracking], [, ])
 fi
-if test "${enable_llvm_jit}" = yes; then
+if test "${want_llvm_jit}" = yes; then
   R_SH_VAR_ADD(rho_options, [LLVM JIT compiler], [, ])
 fi
 

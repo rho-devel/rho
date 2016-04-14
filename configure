@@ -50399,7 +50399,7 @@ else
   rho_options="${rho_options}${separator}Provenance Tracking"
 fi
 fi
-if test "${enable_llvm_jit}" = yes; then
+if test "${want_llvm_jit}" = yes; then
   separator=", "
 test -z "${separator}" && separator=" "
 if test -z "${rho_options}"; then
