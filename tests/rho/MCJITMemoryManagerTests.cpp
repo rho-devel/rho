@@ -33,6 +33,7 @@
 using namespace rho;
 using namespace rho::JIT;
 using namespace llvm;
+using rho::JIT::MCJITMemoryManager;
 
 class MCJITMemoryManagerTest : public ::testing::Test
 {

@@ -93,8 +93,6 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 
     llvm::TargetOptions options;
     // TODO(kmillar): set options dynamically.
-    options.JITEmitDebugInfo = true;
-    options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
     m_engine.reset(
