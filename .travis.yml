@@ -4,6 +4,13 @@ language: cpp
 compiler:
         - clang
         - gcc
+env:
+  global:
+    # By default, rho uses its own implementation of tar written in R.
+    # It's really slow, so use system tar instead.
+    - TAR=/bin/tar
+    - R_BUILD_TAR=/bin/tar
+    - R_INSTALL_TAR=/bin/tar
 matrix:
   allow_failures:
     - compiler: gcc

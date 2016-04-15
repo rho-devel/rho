@@ -83,7 +83,7 @@ MKINSTALLDIRS = @R_SHELL@ $(top_srcdir)/src/scripts/mkinstalldirs.in
 NOTANGLE = @NOTANGLE@
 R_ARCH = @R_ARCH@
 R_DYLIB_EXT = @R_DYLIB_EXT@
-R_FRAMEWORK_DIR = $(prefix)/R.framework
+R_FRAMEWORK_DIR = $(prefix)/rho.framework
 R_GZIPCMD = @R_GZIPCMD@
 ## needed for AIX only
 @USE_EXPORTFILES_TRUE@ R_HOME = $(top_builddir)
@@ -158,7 +158,7 @@ mandir = @mandir@
 ## used for installation of standalone Rmath headers
 includedir = @includedir@
 
-rhome = ${libdir}/R
+rhome = ${libdir}/rho
 rsharedir = @rsharedir@
 rincludedir = @rincludedir@
 rdocdir = @rdocdir@

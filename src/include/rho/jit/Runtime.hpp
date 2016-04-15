@@ -81,7 +81,7 @@ llvm::Function* getDeclaration(const std::string& name, Compiler* compiler);
 FunctionId getFunctionId(llvm::Function* function);
 
 // Return a module that has been setup to work with the runtime.
-llvm::Module* createModule(llvm::LLVMContext& context);
+std::unique_ptr<llvm::Module> createModule(llvm::LLVMContext& context);
 
 // Links any needed runtime functions and definitions into the module.
 void linkInRuntimeModule(llvm::Module* module);

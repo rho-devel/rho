@@ -34,11 +34,11 @@
  * the autoconf-generated <tt>configure</tt> script: for information
  * on these see <tt>./configure --help</tt>.
  *
- * As distributed, this file represents a configuration suitable for
+ * As distributed this file represents a configuration suitable for speed.
  * development, with numerous facilities enable for checking and
  * debugging.  For maximum speed, it is recommended that this file be
  * modified by enabling the definitions of NDEBUG and
- * UNCHECKED_SEXP_DOWNCAST, and disabling all other definitions.
+ * disabling all other definitions.
  */
 
 #ifndef RHO_CONFIG_HPP
@@ -96,20 +96,17 @@
 #define RARE_GC
 #endif
 
-/** @def UNCHECKED_SEXP_DOWNCAST
+/** @def CHECKED_SEXP_DOWNCAST
  *
- * @brief Don't check downcasts within the rho::RObject class hierarchy.
+ * @brief Check downcasts within the rho::RObject class hierarchy.
  *
- * By default, rho implements the templated function
+ * If enabled, rho implements the templated function
  * rho::SEXP_downcast<PtrOut, PtrIn>() using
  * <code>dynamic_cast</code>, to verify that the argument object is of
- * an appropriate type for the requested cast. If
- * UNCHECKED_SEXP_DOWNCAST is defined, rho uses instead a
- * <code>static_cast</code>, i.e. it in effect assumes that the
- * downcast is legal. Not recommended during development.
+ * an appropriate type for the requested cast.
  */
 #ifdef DOXYGEN
-#define UNCHECKED_SEXP_DOWNCAST
+#define CHECKED_SEXP_DOWNCAST
 #endif
 
 #ifdef __GNUC__

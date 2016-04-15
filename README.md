@@ -10,25 +10,36 @@ Currently the rho codebase is based off R-devel.
 
 ## Build Requirements
 
-Compiling rho requires a GCC or Clang compiler with C++ 11 support and fortran support.  In addition, boost 1.48.0 or later must be installed.
+Compiling rho requires a GCC or Clang compiler with C++ 11 support and fortran support.  In addition the following libraries must be installed:
+   * boost >= 1.48.0
+   * libcurl >= 7.28.0
+   * zlib >= 1.2.5
+   * libbzip2 >= 1.0.6
+   * liblzma >= 5.0.3
+   * pcre >= 8.10
+   * libedit
 
-Compilation of the LLVM JIT requires a Clang compiler and LLVM version 3.4 as well. On debian libedit has to be installed additionally.  (GCC should also be supported in the future.)
+Compilation of the LLVM JIT requires clang 3.4 or later and the matching
+version of the LLVM library.  We haven't tested versions later than 3.6.
 
 Rho has been tested to compile on both Linux and Mac OSX systems.
 
 ## Configuration and Compilation
 
-To build a development build with the LLVM JIT enabled:
+To build with the LLVM JIT enabled:
   ```
    configure --enable-llvm-jit --enable-maintainer-mode 
    make
    make check
    ```
-It is useful to additionally define `-Wall -DNO_CELLPOOLS -fsanitize=address -O1` in order to find bugs more easily. 
+For development builds, it is useful to define
+`-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
+in order to find bugs more easily. (If using clang >= 3.6, either remove the `-fsanitize=address`, or define `ASAN_OPTIONS="detect_leaks=0"` to disable memory leak checking.)
 
-For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined.
+## Notable Known Issues
 
-Currently `make install` is disabled for rho.  It can be run directly from the build directory as `bin/R` however.  This will be re-enabled in the near future.
+* Currently rho doesn't support packages that contain native code that uses the `USE_RINTERNALS` macro.  This includes Rcpp, rJava, data.table, xts and all the packages that depend on them.
+* Our testing on different platforms and compilers is currently very limited.  Building with clang 3.5 on ubuntu trusty should always work.  OSX, other linux distros and recent versions of clang and gcc are also supported, but aren't regularly tested.
 
 ## Rho Discussion Mailing List.
 
