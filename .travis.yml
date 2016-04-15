@@ -1,9 +1,6 @@
 sudo: required
 dist: trusty
 language: cpp
-before_install:
-  - sudo apt-get -y remove clang
-  - sudo apt-get -y install clang-3.4
 env:
   global:
     # By default, rho uses its own implementation of tar written in R.
@@ -48,22 +45,23 @@ matrix:
             - g++-5
       env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
 
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gfortran
-            - libboost-all-dev
-            - zlib1g-dev
-            - libbz2-dev
-            - liblzma-dev
-            - libpcre3-dev
-            - libedit-dev
-            - clang-3.4
-            - llvm-3.4-dev
-      env: C_COMPILER=clang CXX_COMPILER=clang++ LLVM_CONFIG=/usr/bin/llvm-config-3.4
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - gfortran
+    #         - libboost-all-dev
+    #         - zlib1g-dev
+    #         - libbz2-dev
+    #         - liblzma-dev
+    #         - libpcre3-dev
+    #         - libedit-dev
+    #         - clang-3.4
+    #         - llvm-3.4-dev
+    #   env: C_COMPILER=clang CXX_COMPILER=clang++ LLVM_CONFIG=/usr/bin/llvm-config-3.4
+
     # With address sanitizer enabled.
     - compiler: clang
       addons:
