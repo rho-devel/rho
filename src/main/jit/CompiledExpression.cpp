@@ -94,8 +94,6 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // TODO: add optimization passes and re-verify.
 
     // The IR is now complete.  Compile to native code.
-    module->setTargetTriple(llvm::sys::getProcessTriple());
-
     llvm::TargetOptions options;
     // TODO(kmillar): set options dynamically.
     options.EnableFastISel = true;
@@ -111,7 +109,6 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 #endif
 		   .setOptLevel(llvm::CodeGenOpt::None)
                    .setTargetOptions(options)
-                   .setMCPU(llvm::sys::getHostCPUName())
 		   .create());
     assert(m_engine);
 

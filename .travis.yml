@@ -1,19 +1,8 @@
 sudo: required
 dist: trusty
 language: cpp
-
-addons:
-  apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - gfortran
-        - libboost-all-dev
-        - zlib1g-dev
-        - libbz2-dev
-        - liblzma-dev
-        - libpcre3-dev
-        - libedit-dev
+before_install:
+  - apt-get remove clang-3.5
 env:
   global:
     # By default, rho uses its own implementation of tar written in R.
@@ -161,7 +150,7 @@ script:
         - ${CXX_COMPILER} --version
         - CC=${C_COMPILER} CXX=${CXX_COMPILER} ./configure
           --enable-llvm-jit=yes
-          --with-llvm=$LLVM_CONFIG
+          --with-llvm=$LLVM_CONFIG || cat config.log
         - travis_wait 60 make -j 2
         # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check
