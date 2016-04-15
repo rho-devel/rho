@@ -30,6 +30,7 @@
 #include "rho/jit/CompilerContext.hpp"
 #include "rho/jit/Globals.hpp"
 #include "rho/jit/MCJITMemoryManager.hpp"
+#include "rho/jit/Optimization.hpp"
 #include "rho/jit/Runtime.hpp"
 #include "rho/jit/TypeBuilder.hpp"
 
@@ -86,19 +87,10 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
 
-    // Run some optimization passes and re-verify.
-    // TODO(arunchauhan): Use make_unique when we move to C++-14.
-    std::unique_ptr<llvm::FunctionPassManager> pass_manager(
-        new llvm::FunctionPassManager(module));
-    // Provide basic AliasAnalysis support for GVN.
-    pass_manager->add(llvm::createBasicAliasAnalysisPass());
-    pass_manager->add(llvm::createInstructionCombiningPass());
-    pass_manager->add(llvm::createReassociatePass());
-    pass_manager->add(llvm::createGVNPass());
-    pass_manager->add(llvm::createCFGSimplificationPass());
-    pass_manager->run(*function);
-    llvm::verifyFunction(*function);
-    // function->dump(); // So we can see what's going on while developing.
+    // Run some optimization passes.
+    RemoveRedundantCallsToSetVisibility(module.get(), function);
+    // TODO(ArunChauhan): Uncomment the following when it's more effective.
+    // BasicIntraProceduralOptimizations(module.get(), function);
 
     // The IR is now complete.  Compile to native code.
     module->setTargetTriple(llvm::sys::getProcessTriple());

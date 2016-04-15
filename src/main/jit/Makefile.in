@@ -34,7 +34,7 @@ SOURCES_CXX = \
 	CompiledExpression.cpp CompiledFrame.cpp \
 	Compiler.cpp CompilerContext.cpp \
 	FrameDescriptor.cpp \
-	Globals.cpp MCJITMemoryManager.cpp Runtime.cpp \
+	Globals.cpp MCJITMemoryManager.cpp Optimization.cpp Runtime.cpp \
 	TypeBuilder.cpp
 
 EXTRA_SOURCES_CXX = RuntimeImpl.cpp
