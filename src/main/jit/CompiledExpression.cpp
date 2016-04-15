@@ -68,9 +68,6 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 	llvm::Function::ExternalLinkage,
 	"anonymous_function", // TODO: give it a useful name
 	module.get());
-#if (LLVM_VERSION > 306)
-    function->setPersonalityFn(Runtime::getExceptionPersonalityFunction());
-#endif
 
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
@@ -81,6 +78,10 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     CompilerContext compiler_context(closure, environment, function,
 				     memory_manager.get());
     Compiler compiler(&compiler_context);
+#if (LLVM_VERSION > 306)
+    function->setPersonalityFn(
+        Runtime::getExceptionPersonalityFunction(&compiler));
+#endif
     Value* return_value = compiler.emitEval(body);
 
     if (!return_value->hasName())

@@ -191,7 +191,7 @@ LandingPadInst* emitLandingPad(Compiler* compiler)
 {
   return compiler->CreateLandingPad(exceptionInfoType(compiler),
 #if (LLVM <= 306)
-                                    getExceptionPersonalityFunction(),
+                                    getExceptionPersonalityFunction(compiler),
 #endif
       0);
 }
