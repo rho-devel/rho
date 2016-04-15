@@ -45,6 +45,7 @@ matrix:
             - g++-5
       env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
 
+    # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
     #   addons:
     #     apt:
@@ -62,7 +63,10 @@ matrix:
     #         - llvm-3.4-dev
     #   env: C_COMPILER=clang CXX_COMPILER=clang++ LLVM_CONFIG=/usr/bin/llvm-config-3.4
 
-    # With address sanitizer enabled.
+    # With address sanitizer enabled.  Use the most recent supported verison
+    # of clang, to get the best error detection.
+    # TODO: enable leak detection.
+    # TODO: enable initialization order checking.
     - compiler: clang
       addons:
         apt:
@@ -76,9 +80,28 @@ matrix:
             - liblzma-dev
             - libpcre3-dev
             - libedit-dev
-            - clang-3.5
-            - llvm-3.5-dev
-      env: C_COMPILER=clang-3.5 CXX_COMPILER=clang++-3.5 LLVM_CONFIG=/usr/bin/llvm-config-3.5 ASAN_OPTIONS="detect_leaks=0" CFLAGS="-g -O1 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+            - clang-3.8
+            - llvm-3.8-dev
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0" CFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+
+    # With undefined behaviour sanitizer enabled.  Use the most recent
+    # supported verison of clang, to get the best error detection.
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.8
+            - llvm-3.8-dev
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1" CFLAGS="-g -O1 -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
     - compiler: clang
       addons:
@@ -149,6 +172,10 @@ matrix:
             - clang-3.8
             - llvm-3.8-dev
       env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8
+
+  allow_failures:
+    # Building with llvm 3.7 currently segfaults.  Needs investigating.
+    - env: C_COMPILER=clang-3.7 CXX_COMPILER=clang++-3.7 LLVM_CONFIG=/usr/bin/llvm-config-3.7  
 
 script:
         - tools/rsync-recommended
