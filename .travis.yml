@@ -3,7 +3,7 @@ dist: trusty
 language: cpp
 before_install:
   - sudo apt-get -y remove clang
-  - sudo apt-get install clang-3.4
+  - sudo apt-get -y install clang-3.4
 env:
   global:
     # By default, rho uses its own implementation of tar written in R.
