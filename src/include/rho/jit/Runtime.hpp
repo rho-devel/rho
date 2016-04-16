@@ -137,6 +137,7 @@ void emitIncrementNamed(llvm::Value* value, Compiler* compiler);
 // Exception handling code.
 // These functions currently don't have FunctionIds assigned.
 llvm::Type* exceptionInfoType(Compiler* compiler);
+llvm::Function* getExceptionPersonalityFunction(Compiler* compiler);
 llvm::LandingPadInst* emitLandingPad(Compiler* compiler);
 
 llvm::Value* emitBeginCatch(llvm::Value* exception_reference,

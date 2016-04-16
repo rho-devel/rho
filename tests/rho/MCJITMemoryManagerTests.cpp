@@ -40,11 +40,11 @@ protected:
     MCJITMemoryManagerTest()
 	: m_context(getGlobalContext()),
 	  m_module(new Module("mcjit_mm_test", m_context)),
-	  m_manager(new MCJITMemoryManager(m_module.get())) { }
+	  m_manager(new rho::JIT::MCJITMemoryManager(m_module.get())) { }
 
     LLVMContext& m_context;
     std::unique_ptr<Module> m_module;
-    std::unique_ptr<MCJITMemoryManager> m_manager;
+    std::unique_ptr<rho::JIT::MCJITMemoryManager> m_manager;
 };
 
 
