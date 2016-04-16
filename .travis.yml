@@ -1,9 +1,6 @@
 sudo: required
 dist: trusty
 language: cpp
-compiler:
-        - clang
-        - gcc
 env:
   global:
     # By default, rho uses its own implementation of tar written in R.
@@ -11,31 +8,185 @@ env:
     - TAR=/bin/tar
     - R_BUILD_TAR=/bin/tar
     - R_INSTALL_TAR=/bin/tar
+
 matrix:
-  allow_failures:
+  include:
     - compiler: gcc
-install:
-        - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-addons:
-  apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - llvm-3.5-dev
-        - gcc-4.9
-        - g++-4.9
-        - gfortran
-        - libboost-all-dev
-        - zlib1g-dev
-        - libbz2-dev
-        - liblzma-dev
-        - libpcre3-dev
-        - libedit-dev
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-4.9
+            - g++-4.9
+      env: C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
+
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-5
+            - g++-5
+      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+
+    # TODO: work out how to use clang 3.4 on travis.
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - gfortran
+    #         - libboost-all-dev
+    #         - zlib1g-dev
+    #         - libbz2-dev
+    #         - liblzma-dev
+    #         - libpcre3-dev
+    #         - libedit-dev
+    #         - clang-3.4
+    #         - llvm-3.4-dev
+    #   env: C_COMPILER=clang CXX_COMPILER=clang++ LLVM_CONFIG=/usr/bin/llvm-config-3.4
+
+    # With address sanitizer enabled.  Use the most recent supported verison
+    # of clang, to get the best error detection.
+    # TODO: enable leak detection.
+    # TODO: enable initialization order checking.
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - debian-sid
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.8
+            - llvm-3.8-dev
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+
+    # With undefined behaviour sanitizer enabled.  Use the most recent
+    # supported verison of clang, to get the best error detection.
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - debian-sid
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.8
+            - llvm-3.8-dev
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.5
+            - llvm-3.5-dev
+      env: C_COMPILER=clang-3.5 CXX_COMPILER=clang++-3.5 LLVM_CONFIG=/usr/bin/llvm-config-3.5
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.6
+            - llvm-3.6-dev
+      env: C_COMPILER=clang-3.6 CXX_COMPILER=clang++-3.6 LLVM_CONFIG=/usr/bin/llvm-config-3.6
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - debian-sid
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.7
+            - llvm-3.7-dev
+      env: C_COMPILER=clang-3.7 CXX_COMPILER=clang++-3.7 LLVM_CONFIG=/usr/bin/llvm-config-3.7
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - debian-sid
+          packages:
+            - gfortran
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - clang-3.8
+            - llvm-3.8-dev
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8
+
+  allow_failures:
+    # Building with llvm 3.7 currently segfaults.  Needs investigating.
+    - env: C_COMPILER=clang-3.7 CXX_COMPILER=clang++-3.7 LLVM_CONFIG=/usr/bin/llvm-config-3.7  
+    # Likewise for the ubsan run.
+    - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
 script:
         - tools/rsync-recommended
-        - ./configure
+        - ${CXX_COMPILER} --version
+        - CC=${C_COMPILER} CXX=${CXX_COMPILER} ./configure
           --enable-llvm-jit=yes
-          --with-llvm=/usr/bin/llvm-config-3.5
+          --with-llvm=$LLVM_CONFIG || cat config.log
         - travis_wait 60 make -j 2
+        # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check
