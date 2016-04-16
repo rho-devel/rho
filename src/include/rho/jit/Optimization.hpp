@@ -29,19 +29,19 @@
 namespace rho {
 namespace JIT {
 
-// Runs some basic optimization passes.
+// Eliminates redundant calls to rho_runtime_setVisibility.  Any call that is
+// postdominated by another is redundant.
 //
-// TODO(ArunChauhan): Not particularly used in rho for R-level code, but
-// might still be useful for optimizing code from C/C++.
+// TODO(ArunChauhan): The function only removes redundant calls within
+// individual basic blocks.  This should be extended to remove redundancies
+// across basic blocks using intra-procedural data flow analysis.
 void RemoveRedundantCallsToSetVisibility(llvm::Module* module,
                                          llvm::Function* function);
 
-// Eliminates redundant calls to rho_runtime_setVisibility.  If there is a
-// contiguous sequence of calls to rhos_runtime_setVisibility then all the
-// calls, except the last one, are redundant.
+// Runs some basic optimization passes.
 //
-// TODO(ArunChauhan): We might be able to eliminate more redundant calls if we
-// know more about the other functions called within "function."
+// TODO(ArunChauhan): Not particularly useful in rho for R-level code at this
+// point, but might still be useful for optimizing code from C/C++.
 void BasicIntraProceduralOptimizations(llvm::Module* module,
                                        llvm::Function* function);
 

@@ -31,7 +31,7 @@
 namespace rho {
 namespace JIT {
 namespace {
-static const std::string kSetVisibilityFuncName("rho_runtime_setVisibility");
+const std::string kSetVisibilityFuncName("rho_runtime_setVisibility");
 }  // namespace
 
 void RemoveRedundantCallsToSetVisibility(llvm::Module* module,
@@ -41,13 +41,11 @@ void RemoveRedundantCallsToSetVisibility(llvm::Module* module,
   for (auto& block : function->getBasicBlockList()) {
     for (auto r_iter = block.rbegin(); r_iter != block.rend(); ++r_iter) {
       auto call_inst = dynamic_cast<llvm::CallInst*>(&(*r_iter));
-      if (call_inst == nullptr ||
-          call_inst->getCalledFunction()->getName() != kSetVisibilityFuncName) {
-        seen_call_to_setVisibility = false;
-        continue;
+      if (call_inst != nullptr &&
+          call_inst->getCalledFunction()->getName() == kSetVisibilityFuncName) {
+        if (seen_call_to_setVisibility) calls_to_delete.emplace_back(call_inst);
+        seen_call_to_setVisibility = true;
       }
-      if (seen_call_to_setVisibility) calls_to_delete.emplace_back(call_inst);
-      seen_call_to_setVisibility = true;
     }
   }
   for (llvm::CallInst* call_to_delete : calls_to_delete) {
