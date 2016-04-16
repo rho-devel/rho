@@ -20,7 +20,7 @@ Compiling rho requires a GCC or Clang compiler with C++ 11 support and fortran s
    * libedit
 
 Compilation of the LLVM JIT requires clang 3.4 or later and the matching
-version of the LLVM library.  We haven't tested versions later than 3.6.
+version of the LLVM library (except building on clang 3.7 is currently broken).
 
 Rho has been tested to compile on both Linux and Mac OSX systems.
 
@@ -39,7 +39,7 @@ in order to find bugs more easily. (If using clang >= 3.6, either remove the `-f
 ## Notable Known Issues
 
 * Currently rho doesn't support packages that contain native code that uses the `USE_RINTERNALS` macro.  This includes Rcpp, rJava, data.table, xts and all the packages that depend on them.
-* Our testing on different platforms and compilers is currently very limited.  Building with clang 3.5 on ubuntu trusty should always work.  OSX, other linux distros and recent versions of clang and gcc are also supported, but aren't regularly tested.
+* Our testing on different platforms is currently very limited.  We currently test on Ubuntu trusty with gcc 4.9, gcc 5.0, clang-3.5, clang-3.6 and clang-3.8, so those should always work.  OSX and other linux distros are also supported, but aren't regularly tested.
 
 ## Rho Discussion Mailing List.
 
