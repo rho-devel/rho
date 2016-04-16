@@ -83,7 +83,7 @@ matrix:
             - libedit-dev
             - clang-3.8
             - llvm-3.8-dev
-      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
     # With undefined behaviour sanitizer enabled.  Use the most recent
     # supported verison of clang, to get the best error detection.
@@ -103,7 +103,7 @@ matrix:
             - libedit-dev
             - clang-3.8
             - llvm-3.8-dev
-      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1" CFLAGS="-g -O1 -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
     - compiler: clang
       addons:
