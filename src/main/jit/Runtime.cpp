@@ -183,14 +183,19 @@ Type* exceptionInfoType(Compiler* compiler)
 				 nullptr);
 }
 
+Function* getExceptionPersonalityFunction(Compiler* compiler) {
+  return getDeclaration("__gxx_personality_v0", compiler);
+}
+
 LandingPadInst* emitLandingPad(Compiler* compiler)
 {
-  Function* exception_personality_function
-      = getDeclaration("__gxx_personality_v0", compiler);
   return compiler->CreateLandingPad(exceptionInfoType(compiler),
-                                    exception_personality_function, 0);
+#if (LLVM_VERSION <= 306)
+                                    getExceptionPersonalityFunction(compiler),
+#endif
+      0);
 }
- 
+
 Value* emitBeginCatch(Value* exception_reference,
 		      Compiler* compiler)
 {
