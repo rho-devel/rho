@@ -28,6 +28,7 @@ matrix:
             - g++-4.9
       env: C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
+    # gcc 5.0 with code coverage.
     - compiler: gcc
       addons:
         apt:
@@ -43,7 +44,7 @@ matrix:
             - libedit-dev
             - gcc-5
             - g++-5
-      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O0 --coverage" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
@@ -181,6 +182,9 @@ matrix:
     # Likewise for the ubsan run.
     - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
+before_install:
+  - pip install --user codecov
+
 script:
         - tools/rsync-recommended
         - ${CXX_COMPILER} --version
@@ -190,3 +194,6 @@ script:
         - travis_wait 60 make -j 2
         # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check
+        
+after_success:
+  - if [ -n "$COVERAGE" ]; then codecov; fi
