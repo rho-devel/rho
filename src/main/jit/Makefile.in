@@ -72,21 +72,20 @@ libjit.a: $(libjit_a_OBJECTS)
 	$(AR) cr $@ $(libjit_a_OBJECTS)
 	$(RANLIB) $@
 
-# Build the bytecode for the runtime module.  This is only enabled in
-# maintainer mode and requires CXX to be clang.
+# Build the bytecode for the runtime module.  This requires CXX to be clang
+# (checked in configure).
 #
 # This target doesn't really depend on RuntimeImpl.o, only the source files,
 # but since we generate dependency information for the object file, we use that
 # as a proxy for the source files.
 #
 # TODO(kmillar): -fno-use-cxa-atexit is needed due to LLVM bug #18062
-# TODO(kmillar): gracefully handle non-clang compilers.
-RuntimeImpl.bc: @MAINTAINER_MODE_TRUE@ RuntimeImpl.o
+RuntimeImpl.bc: RuntimeImpl.o
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
 	  -emit-llvm -c $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
 
 # This exists to create a human-readable version of the runtime IR code.
-RuntimeImpl.ll: @MAINTAINER_MODE_TRUE@ RuntimeImpl.o
+RuntimeImpl.ll: RuntimeImpl.o
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
 	  -emit-llvm -S $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
 

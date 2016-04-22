@@ -69,6 +69,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 	llvm::Function::ExternalLinkage,
 	"anonymous_function", // TODO: give it a useful name
 	module.get());
+
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
 
@@ -78,6 +79,10 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     CompilerContext compiler_context(closure, environment, function,
 				     memory_manager.get());
     Compiler compiler(&compiler_context);
+#if (LLVM_VERSION > 306)
+    function->setPersonalityFn(
+        Runtime::getExceptionPersonalityFunction(&compiler));
+#endif
     Value* return_value = compiler.emitEval(body);
 
     if (!return_value->hasName())
@@ -93,12 +98,8 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // BasicIntraProceduralOptimizations(module.get(), function);
 
     // The IR is now complete.  Compile to native code.
-    module->setTargetTriple(llvm::sys::getProcessTriple());
-
     llvm::TargetOptions options;
     // TODO(kmillar): set options dynamically.
-    options.JITEmitDebugInfo = true;
-    options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
     m_engine.reset(
@@ -112,7 +113,6 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 #endif
 		   .setOptLevel(llvm::CodeGenOpt::None)
                    .setTargetOptions(options)
-                   .setMCPU(llvm::sys::getHostCPUName())
 		   .create());
     assert(m_engine);
 

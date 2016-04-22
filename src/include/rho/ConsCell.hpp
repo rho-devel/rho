@@ -106,17 +106,21 @@ namespace rho {
 		return m_cc;
 	    }
 
-	    ConsCell& operator++()
+	    iterator operator++()
 	    {
 		advance();
-		return *m_cc;
+		return *this;
 	    }
 
-	    ConsCell& operator++(int)
+	    iterator operator++(int)
 	    {
-		ConsCell& ans = *m_cc;
+		iterator ans = *this;
 		advance();
 		return ans;
+	    }
+
+	    bool operator==(ConsCell::iterator other) const {
+		return m_cc == other.m_cc;
 	    }
 	private:
 	    ConsCell* m_cc;
@@ -148,17 +152,21 @@ namespace rho {
 		return m_cc;
 	    }
 
-	    const ConsCell& operator++()
+	    const_iterator operator++()
 	    {
 		advance();
-		return *m_cc;
+		return *this;
 	    }
 
-	    const ConsCell& operator++(int)
+	    const_iterator operator++(int)
 	    {
-		const ConsCell& ans = *m_cc;
+		const_iterator ans = *this;
 		advance();
 		return ans;
+	    }
+
+	    bool operator==(ConsCell::const_iterator other) const {
+		return m_cc == other.m_cc;
 	    }
 	private:
 	    const ConsCell* m_cc;
@@ -345,20 +353,9 @@ namespace rho {
 	static void checkST(SEXPTYPE st);
     };
 
-    inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
-    {
-	return &(*l) == &(*r);
-    }
-
     inline bool operator!=(ConsCell::iterator l, ConsCell::iterator r)
     {
 	return !(l == r);
-    }
-
-    inline bool operator==(ConsCell::const_iterator l,
-			   ConsCell::const_iterator r)
-    {
-	return &(*l) == &(*r);
     }
 
     inline bool operator!=(ConsCell::const_iterator l,
