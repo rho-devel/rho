@@ -17,7 +17,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
@@ -26,7 +25,8 @@ matrix:
             - libedit-dev
             - gcc-4.9
             - g++-4.9
-      env: C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
+            - gfortran-4.9
+      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
     # gcc 5.0 with code coverage.
     - compiler: gcc
@@ -35,7 +35,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran
+            - gfortran-5
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
@@ -44,7 +44,7 @@ matrix:
             - libedit-dev
             - gcc-5
             - g++-5
-      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
+      env: F77=gfortran-5 FCC=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
