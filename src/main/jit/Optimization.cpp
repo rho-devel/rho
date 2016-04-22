@@ -36,9 +36,9 @@ const std::string kSetVisibilityFuncName("rho_runtime_setVisibility");
 
 void RemoveRedundantCallsToSetVisibility(llvm::Module* module,
                                          llvm::Function* function) {
-  bool seen_call_to_setVisibility = false;
   std::vector<llvm::CallInst*> calls_to_delete;  // Pointed insts not owned.
   for (auto& block : function->getBasicBlockList()) {
+    bool seen_call_to_setVisibility = false;
     for (auto r_iter = block.rbegin(); r_iter != block.rend(); ++r_iter) {
       auto call_inst = dynamic_cast<llvm::CallInst*>(&(*r_iter));
       if (call_inst != nullptr &&
