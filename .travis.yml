@@ -44,7 +44,7 @@ matrix:
             - libedit-dev
             - gcc-5
             - g++-5
-      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O0 --coverage" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}" COVERAGE=1
+      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O0 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
