@@ -1,6 +1,7 @@
 #ifndef RHO_JIT_LLVM_HPP
 #define RHO_JIT_LLVM_HPP
 
+#include <memory>
 #include <llvm/Config/llvm-config.h>
 
 #define LLVM_VERSION ((100 * LLVM_VERSION_MAJOR) + (LLVM_VERSION_MINOR))
@@ -50,6 +51,16 @@
 #include "llvm/IR/Verifier.h"
 #else
 #include "llvm/Analysis/Verifier.h"
+#endif
+
+#if (LLVM_VERSION < 306)
+namespace llvm {
+inline
+std::unique_ptr<Module> parseIRFile(StringRef filename, SMDiagnostic& err,
+                                    LLVMContext& context) {
+  return std::unique_ptr<Module>(ParseIRFile(filename, err, context));
+}
+}
 #endif
 
 #endif //RHO_JIT_LLVM_HPP

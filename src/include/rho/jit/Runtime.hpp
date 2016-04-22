@@ -81,7 +81,7 @@ llvm::Function* getDeclaration(const std::string& name, Compiler* compiler);
 FunctionId getFunctionId(llvm::Function* function);
 
 // Return a module that has been setup to work with the runtime.
-llvm::Module* createModule(llvm::LLVMContext& context);
+std::unique_ptr<llvm::Module> createModule(llvm::LLVMContext& context);
 
 // Links any needed runtime functions and definitions into the module.
 void linkInRuntimeModule(llvm::Module* module);
@@ -137,6 +137,7 @@ void emitIncrementNamed(llvm::Value* value, Compiler* compiler);
 // Exception handling code.
 // These functions currently don't have FunctionIds assigned.
 llvm::Type* exceptionInfoType(Compiler* compiler);
+llvm::Function* getExceptionPersonalityFunction(Compiler* compiler);
 llvm::LandingPadInst* emitLandingPad(Compiler* compiler);
 
 llvm::Value* emitBeginCatch(llvm::Value* exception_reference,
