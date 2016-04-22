@@ -735,6 +735,9 @@
 
       \item \code{View()} now displays nested data frames in a more
       friendly way.  (Request with patch in \PR{15915}.)
+
+      \item New \code{.traceback()} returns the stack trace which
+      \code{traceback()} prints.
     }
   }
 

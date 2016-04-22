@@ -57,8 +57,6 @@
  MDIset
  MDIsize
  MainThread
- PRIMFUN
- PRIMVAL
  NO_SPECIAL_SYMBOLS
  PrintUsage
  ProfileEvent
@@ -436,9 +434,9 @@
  SET_BASE_SYM_CACHED
  SET_BYTES
  SET_CACHED
+ SET_CXTAIL
  SET_HASHASH
  SET_LATIN1
- SET_PRIMFUN
  SET_NO_SPECIAL_SYMBOLS
  SET_PRIMOFFSET
  SET_SPECIAL_SYMBOL
@@ -575,6 +573,7 @@
  do_abs
  do_addCondHands
  do_addRestart
+ do_addTryHandlers
  do_addhistory
  do_address
  do_adist
@@ -652,6 +651,7 @@
  do_delayed
  do_deparse
  do_detach
+ do_devAskNewPage
  do_devsize
  do_dfltStop
  do_dfltWarn
@@ -814,7 +814,6 @@
  do_logic2
  do_logic3
  do_ls
- do_machine
  do_makelazy
  do_makelist
  do_makenames
@@ -925,6 +924,7 @@
  do_rep_len
  do_repeat
  do_resetCondHands
+ do_restart
  do_retracemem
  do_return
  do_returnValue
@@ -1040,6 +1040,7 @@
  do_unsetenv
  do_untracemem
  do_unz
+ do_unzip
  do_updateform
  do_url
  do_usemethod
