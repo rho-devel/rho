@@ -17,7 +17,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
@@ -26,15 +25,17 @@ matrix:
             - libedit-dev
             - gcc-4.9
             - g++-4.9
-      env: C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
+            - gfortran-4.9
+      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
+    # gcc 5.0 with code coverage.
     - compiler: gcc
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran
+            - gfortran-5
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
@@ -43,7 +44,7 @@ matrix:
             - libedit-dev
             - gcc-5
             - g++-5
-      env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+      env: F77=gfortran-5 FCC=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
@@ -181,6 +182,9 @@ matrix:
     # Likewise for the ubsan run.
     - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
+before_install:
+  - pip install --user codecov
+
 script:
         - tools/rsync-recommended
         - ${CXX_COMPILER} --version
@@ -190,3 +194,6 @@ script:
         - travis_wait 60 make -j 2
         # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check
+        
+after_success:
+  - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash) -x gcov-5 -g src/extra -g tests -X coveragepy ; fi
