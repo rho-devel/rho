@@ -34,27 +34,50 @@ namespace {
 const std::string kSetVisibilityFuncName("rho_runtime_setVisibility");
 }  // namespace
 
+//------------------------------------------------------------------------------
+// Implementation of BasicFunctionPass.
+
 bool BasicFunctionPass::runOnFunction(llvm::Function& function) {
-  std::vector<llvm::CallInst*> calls_to_delete;  // Pointed insts not owned.
+  RemoveRedundantCallsToSetVisibility optimize_set_visibility;
+  bool changed = false;
   for (auto& block : function.getBasicBlockList()) {
-    bool seen_call_to_setVisibility = false;
-    for (auto r_iter = block.rbegin(); r_iter != block.rend(); ++r_iter) {
-      auto call_inst = dynamic_cast<llvm::CallInst*>(&(*r_iter));
-      if (call_inst != nullptr &&
-          call_inst->getCalledFunction()->getName() == kSetVisibilityFuncName) {
-        if (seen_call_to_setVisibility) calls_to_delete.emplace_back(call_inst);
-        seen_call_to_setVisibility = true;
-      }
-    }
+    bool block_changed = optimize_set_visibility.runOnBasicBlock(block);
+    changed = changed || block_changed;
   }
-  for (llvm::CallInst* call_to_delete : calls_to_delete) {
-    call_to_delete->eraseFromParent();
-  }
-  return calls_to_delete.size() > 0;  // True if the function was modified.
+  return changed;
 }
 
 // LLVM uses the address of the following variable, the value is unimportant.
 char BasicFunctionPass::pass_id = 0;
+
+//------------------------------------------------------------------------------
+// Impelementation of RemoveRedundantCallsToSetVisibility.
+
+bool RemoveRedundantCallsToSetVisibility::runOnBasicBlock(
+    llvm::BasicBlock& block) {
+  // Collect all calls to kSetVisibilityFuncName.
+  std::vector<llvm::CallInst*> calls_to_delete;  // Pointed insts not owned.
+  for (llvm::Instruction& instr : block) {
+    llvm::CallInst* call_inst = dynamic_cast<llvm::CallInst*>(&instr);
+    if (call_inst != nullptr &&
+        call_inst->getCalledFunction()->getName() == kSetVisibilityFuncName) {
+      calls_to_delete.emplace_back(call_inst);
+    }
+  }
+  // Finally, remove all calls, except the last one.
+  if (calls_to_delete.size() > 1) {
+    calls_to_delete.pop_back();
+    for (llvm::CallInst* call_to_delete : calls_to_delete) {
+      call_to_delete->eraseFromParent();
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// LLVM uses the address of the following variable, the value is unimportant.
+char RemoveRedundantCallsToSetVisibility::pass_id = 0;
 
 }  // namespace JIT
 }  // namespace rho
