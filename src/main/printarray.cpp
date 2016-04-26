@@ -41,6 +41,7 @@
 #include "Defn.h"
 #include "Print.h"
 
+#include <numeric>
 #include <stdlib.h> /* for div() */
 #include "rho/GCStackRoot.hpp"
 #include "rho/StringVector.hpp"
