@@ -76,14 +76,20 @@ PairList* VectorBase::resizeAttributes(const PairList* attributes,
     PairList* op = ans;
     for (const PairList* ip = attributes; ip; ip = ip->tail()) {
 	const RObject* tag = ip->tag();
+	RObject* value = ip->car();
+
 	if (tag == NamesSymbol) {
-	    const StringVector* names
-		= SEXP_downcast<const StringVector*>(ip->car());
-	    op->setTail(PairList::cons(VectorBase::resize(names, new_size),
-				       nullptr, tag));
-	    op = op->tail();
-	} else if (tag != DimSymbol && tag != DimNamesSymbol) {
-	    op->setTail(PairList::cons(ip->car(), nullptr, tag));
+	    StringVector* names
+		= SEXP_downcast<StringVector*>(value);
+	    size_t old_size = names->size();
+	    names = VectorBase::resize(names, new_size);
+	    // resize() pads with NA, but we want blank strings instead.
+	    for (size_t i = old_size; i < new_size; i++)
+		(*names)[i] = String::blank();
+	    value = names;
+	}
+	if (tag != DimSymbol && tag != DimNamesSymbol) {
+	    op->setTail(PairList::cons(value, nullptr, tag));
 	    op = op->tail();
 	}
     }
