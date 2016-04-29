@@ -192,6 +192,8 @@ script:
           --enable-llvm-jit=yes
           --with-llvm=$LLVM_CONFIG || cat config.log
         - travis_wait 60 make -j 2
+        # Needed to prevent asan builds running out of memory.
+        - sudo sh -c 'echo 1 > /proc/sys/vm/overcommit_memory'
         # TODO: upgrade to check-devel.
         - travis_wait 60 make -j 2 check
         
