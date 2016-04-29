@@ -1418,3 +1418,39 @@ stopifnot(
 stopifnot(c("round.Date", "round.POSIXt") %in% as.character(methods(round)))
 ## round.POSIXt suppressed in R <= 3.2.x
 
+
+## approxfun(*, method="constant")
+Fn <- ecdf(1:5)
+t <- c(NaN, NA, 1:5)
+stopifnot(all.equal(Fn(t), t/5))
+## In R <= 3.2.3,  NaN values resulted in something like (n-1)/n.
+
+
+## tar() default (i.e. "no files") behaviour:
+dir.create(td <- tempfile("tar-experi"))
+setwd(td)
+dfil <- "base_Desc"
+file.copy(system.file("DESCRIPTION"), dfil)
+## tar w/o specified files
+tar("ex.tar")# all files, i.e. 'dfil'
+unlink(dfil)
+stopifnot(grepl(dfil, untar("ex.tar", list = TRUE)))
+untar("ex.tar")
+myF2 <- c(dfil, "ex.tar")
+stopifnot(identical(list.files(), myF2))
+unlink(myF2)
+## produced an empty tar file in R < 3.3.0, PR#16716
+
+
+## format.POSIXlt() of Jan.1 if  1941 or '42 is involved:
+tJan1 <- function(n1, n2)
+    strptime(paste0(n1:n2,"/01/01"), "%Y/%m/%d", tz="CET")
+wDSTJan1 <- function(n1, n2)
+    which("CEST" == sub(".* ", '', format(tJan1(n1,n2), usetz=TRUE)))
+(w8 <- wDSTJan1(1801, 2300))
+(w9 <- wDSTJan1(1901, 2300))
+stopifnot(identical(w8, 141:142),# exactly 1941:1942 had CEST on Jan.1
+          identical(w9,  41: 42))
+## for R-devel Jan.2016 to Mar.14 -- *AND* for R 3.2.4 -- the above gave
+## integer(0)  and  c(41:42, 99:100, ..., 389:390)  respectively
+

@@ -28,6 +28,8 @@ package.dependencies(x, check = FALSE,
   running version of R.  In the future we might add checks for
   inter-package dependencies.
 }
+\value{
+}
 \seealso{
   \code{\link{update.packages}}
 }

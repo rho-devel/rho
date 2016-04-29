@@ -191,7 +191,6 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args);
     Stderr = CAR(args);
     
- 
     if (CharacterMode == RGui) {
 	/* This is a rather conservative approach: if
 	   Rgui is launched from a console window it does have

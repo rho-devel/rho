@@ -1666,8 +1666,7 @@ set the value of the @env{LD_LIBRARY_PATH} (or equivalent) environment
 variable, but that the secondary object is automatically resolved.
 Another example is when a package installs support files that are
 required at run time, and their location is substituted into an @R{}
-data structure at installation time. (This happens with the Java Archive
-files in the Omegahat @pkg{SJava} package.)
+data structure at installation time.
 @vindex R_LIBRARY_DIR
 @vindex R_PACKAGE_DIR
 @vindex R_PACKAGE_NAME
@@ -3739,11 +3738,6 @@ which makes the @R{} variables corresponding to the FORTRAN symbols
 @code{F_bkde} and so on, and so avoid clashes with @R{} code in the
 namespace.
 
-
-@c More information about this symbol lookup, along with some approaches
-@c for customizing it, is available from
-@c @uref{http://www.omegahat.org/@/examples/@/RDotCall}.
-
 @node An example, Namespaces with S4 classes and methods, useDynLib, Package namespaces
 @subsection An example
 
@@ -4224,15 +4218,20 @@ all linkers allow a space after @option{-L} .
 The @command{ar} utility is often used in makefiles to make static
 libraries.  Its modifier @code{u} is defined by POSIX but is disabled in
 GNU @command{ar} on some recent Linux distributions which use
-`deterministic mode'.  The safe way to make a static library is to first
+`deterministic mode'.  The safest way to make a static library is to first
 remove any existing file of that name then use @command{ar -cr} and then
 @command{ranlib} if needed (which is system-dependent: on most
 systems@footnote{some versions of OS X did not.} @command{ar} always
-maintains a symbol table).
+maintains a symbol table).  The POSIX standard says options should be
+preceded by a hyphen (as in @option{-cr}), although most OSes accept
+them without.
+@c flowWorkspace failed on OS X in Mar 2016 because a wildcard spec was empty
+Note that on some systems @command{ar -cr} must have at least one file
+specified.
 
 @item
 Some people have a need to set a locale.  Locale names are not portable,
-and e.g.@: @samp{fr_FR.utf8} is common used on Linux but not accepted on
+and e.g.@: @samp{fr_FR.utf8} is commonly used on Linux but not accepted on
 either Solaris or OS X.  @samp{fr_FR.UTF-8} is more portable, being
 accepted on recent Linux, AIX, FreeBSD, OS X and Solaris (at least).
 However, some Linux distributions micro-package, so locales defined by
@@ -4488,6 +4487,9 @@ A not-uncommonly-seen problem is to mistakenly call @code{floor(x/y)} or
 @code{x/y} does integer division, the result is an @code{int} and
 `overloading ambiguity' may be reported.
 
+A surprising common misuse is things like @code{pow(10, -3)}: this
+should be the constant @code{1e-3}.
+
 @item
 Function @code{fabs} is defined only for floating-point types, except in
 C++11 which has overloads for @code{std::fabs} in @file{<cmath>} for
@@ -4495,7 +4497,7 @@ integer types.  Function @code{abs} is defined in C99's
 @file{<stdlib.h>} for @code{int} and in C++98's @file{<cstdlib>} for
 integer types, overloaded in @file{<cmath>} for floating-point types.
 C++11 has additional overloads for @code{std::abs} in @file{<cmath>} for
-integer types.  The effect of calling @code{abs} for a floating-point
+integer types.  The effect of calling @code{abs} with a floating-point
 type is implementation-specific: it may truncate to an integer.
 
 @item
@@ -6087,7 +6089,7 @@ expert form), the following could be used:
 
 @example
 \if@{html@}@{\figure@{Rlogo.svg@}@{options: width=100 alt="R logo"@}@}
-\if@{latex@}@{\figure@{logo.jpg@}@{options: width=0.5in@}@}
+\if@{latex@}@{\figure@{Rlogo.pdf@}@{options: width=0.5in@}@}
 @end example
 
 The files containing the figures should be stored in the directory
@@ -8934,14 +8936,6 @@ methods can contain
 	    .C(C_pansari, as.integer(length(q)), p = as.double(q),
 		as.integer(m), as.integer(n))$p
 @end example
-
-
-@c These tools are not currently operational.
-@c Additionally, there are (experimental) tools that can be used to
-@c automate the generation of the code to register the routines for a
-@c collection of C files. See the @code{GccTranslationUnit} module on the
-@c Omegahat Web site at @uref{http://www.omegahat.org/GccTranslationUnit/}
-@c for more information.
 
 @menu
 * Speed considerations::        
@@ -13808,9 +13802,9 @@ which works with @R{} packages to support transfer of data to and from
 Recent versions have usage restrictions.
 
 @item
-Another (D)COM server, @code{RDCOMServer}, is available from
-@uref{http://www.omegahat.org/}.  Its philosophy is discussed in
-@uref{http://www.omegahat.org/@/RDCOMServer/@/Docs/@/Paradigm.html} and is
+Another (D)COM server, @code{RDCOMServer}, may be available from Omegahat,
+@uref{http://www.omegahat.net/}.  Its philosophy is discussed in
+@uref{http://www.omegahat.net/@/RDCOMServer/@/Docs/@/Paradigm.html} and is
 very different from the purpose of this section.
 @end itemize
 @node Calling R.dll directly, Finding R_HOME, Using (D)COM, Embedding R under Windows

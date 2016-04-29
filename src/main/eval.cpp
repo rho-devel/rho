@@ -926,10 +926,11 @@ SEXP attribute_hidden do_for_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 	val = ans;
     }
 
-    if (Rf_isList(val) || Rf_isNull(val))
+    if (Rf_isList(val) || Rf_isNull(val)) {
 	n = length(val);
-    else
+    } else {
 	n = LENGTH(val);
+    }
 
     val_type = TYPEOF(val);
 
@@ -970,36 +971,35 @@ SEXP attribute_hidden do_for_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    break;
 
 	default:
-
-	    switch (val_type) {
-	    case LGLSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		LOGICAL(v)[0] = LOGICAL(val)[i];
-		break;
-	    case INTSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		INTEGER(v)[0] = INTEGER(val)[i];
-		break;
-	    case REALSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		REAL(v)[0] = REAL(val)[i];
-		break;
-	    case CPLXSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		COMPLEX(v)[0] = COMPLEX(val)[i];
-		break;
-	    case STRSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		SET_STRING_ELT(v, 0, STRING_ELT(val, i));
-		break;
-	    case RAWSXP:
-		v = ALLOC_LOOP_VAR(v, val_type);
-		RAW(v)[0] = RAW(val)[i];
-		break;
-	    default:
-		Rf_errorcall(call, _("invalid for() loop sequence"));
-	    }
-	    Rf_defineVar(sym, v, rho);
+                switch (val_type) {
+                case LGLSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    LOGICAL(v)[0] = LOGICAL(val)[i];
+                    break;
+                case INTSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    INTEGER(v)[0] = INTEGER(val)[i];
+                    break;
+                case REALSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    REAL(v)[0] = REAL(val)[i];
+                    break;
+                case CPLXSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    COMPLEX(v)[0] = COMPLEX(val)[i];
+                    break;
+                case STRSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    SET_STRING_ELT(v, 0, STRING_ELT(val, i));
+                    break;
+                case RAWSXP:
+                    v = ALLOC_LOOP_VAR(v, val_type);
+                    RAW(v)[0] = RAW(val)[i];
+                    break;
+                default:
+                    Rf_errorcall(call, _("invalid for() loop sequence"));
+                }
+            Rf_defineVar(sym, v, rho);
 	}
 	try {
 	    BailoutContext bcntxt;
