@@ -14,8 +14,7 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in
 
 ## subdirectories of R_HOME/share
-SUBDIRS_WITH_NO_BUILD = R dictionaries encodings logo licenses make sh texmf \
-	java Rd
+SUBDIRS_WITH_NO_BUILD = R dictionaries encodings licenses make sh texmf java Rd
 
 all: Makefile R
 
@@ -38,7 +37,6 @@ installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/encodings"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/java"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/licenses"
-	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/logo"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/make"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/Rd"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rsharedir)/Rd/macros"
@@ -64,9 +62,6 @@ install-sources: installdirs  @BUILD_TZONE_TRUE@ install-zoneinfo
 	done
 	@for f in $(srcdir)/licenses/*; do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rsharedir)/licenses"; \
-	done
-	@for f in $(srcdir)/logo/*; do \
-	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rsharedir)/logo"; \
 	done
 	@for f in $(srcdir)/make/*.mk; do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rsharedir)/make"; \

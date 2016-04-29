@@ -41,7 +41,7 @@ using namespace rho;
 namespace rho {
     namespace ForceNonInline {
 	R_xlen_t (*XLENGTHptr)(SEXP x) = XLENGTH;
-	void (*SET_XTRUELENGTHptr)(SEXP x, R_xlen_t v) = SET_XTRUELENGTH;
+	void (*SET_TRUELENGTHptr)(SEXP x, R_xlen_t v) = SET_TRUELENGTH;
 	R_xlen_t (*XTRUELENGTHptr)(SEXP x) = XTRUELENGTH;
     }
 }
@@ -169,7 +169,7 @@ Rboolean Rf_isVector(SEXP s)
     }
 }
 
-void SETLENGTH(SEXP x, int v)
+void SETLENGTH(SEXP x, R_xlen_t v)
 {
     rho::VectorBase* vb = dynamic_cast<rho::VectorBase*>(x);
     if (!vb)
