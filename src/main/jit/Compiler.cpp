@@ -48,6 +48,11 @@ using llvm::Value;
 
 namespace rho {
 namespace JIT {
+namespace {
+llvm::MDNode* CreateBranchWeights(llvm::LLVMContext& context) {
+  return llvm::MDBuilder(context).createBranchWeights(1000, 1);
+}
+}  // namespace
 
 Compiler::Compiler(CompilerContext* context)
     : IRBuilder<>(context->getLLVMContext()), m_context(context)
@@ -413,9 +418,8 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 				    llvm::TypeBuilder<FunctionBase*, false>::get(getContext()));
     Value* is_expected_builtin = CreateICmpEQ(resolved_function,
 					      likely_fn_value);
-    CreateCondBr(is_expected_builtin,
-		 inlined_builtin_block,
-		 fallback_block); // TODO(kmillar): set branch weights
+    CreateCondBr(is_expected_builtin, inlined_builtin_block, fallback_block,
+                 CreateBranchWeights(m_context->getLLVMContext()));
 
     // If the function isn't the one we expected, fall back to the interpreter.
     // TODO(kmillar): do OSR or similar on guard failure to improve fast

@@ -17,6 +17,7 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IRReader/IRReader.h"
 
@@ -27,6 +28,8 @@
 #include "llvm/Transforms/Utils/Cloning.h"
 
 #include "llvm/ADT/ArrayRef.h"
+
+#include "llvm/PassManager.h"
 
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/DynamicLibrary.h"
