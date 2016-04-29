@@ -1869,6 +1869,7 @@ SEXP R_Unserialize(R_inpstream_t stream)
     int writer_version, release_version;
     SEXP obj, ref_table;
 
+    lastname[0] = '\0';
     InFormat(stream);
 
     /* Read the version numbers */

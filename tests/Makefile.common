@@ -93,7 +93,7 @@ FORCE:
 .R.Rout:
 	@rm -f $@ $@.fail $@.log
 	@$(ECHO) $(ECHO_N) "running code in '$<' ...$(ECHO_C)" > $@.log
-	@$(R) < $< > $@.fail 2>&1 || (cat $@.log && rm $@.log && exit 1)
+	@$(R) < $< > $@.fail 2>&1 || (cat $@.log && cat $@.fail && rm $@.log && exit 1)
 	@$(ECHO) "$(ECHO_T) OK" >> $@.log
 	@if test -f $(srcdir)/$@.save ; then \
 	  $(ECHO) $(ECHO_N) \

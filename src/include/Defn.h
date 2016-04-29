@@ -267,7 +267,6 @@ extern int putenv(char *string);
 # define LONGJMP(x,i) longjmp(x,i)
 #endif
 
-#ifdef __cplusplus
 
 /* There is much more in Rinternals.h, including function versions
  * of the Promise and Hasking groups.
@@ -284,8 +283,14 @@ typedef struct {
 	} u;
 } VECREC, *VECP;
 
+
+/* Primitive Access Macros */
+unsigned int PRIMVAL(SEXP x);
+const char* PRIMNAME(SEXP x);
+
 /* Vector Heap Macros */
 
+#ifdef __cplusplus
 inline size_t BYTE2VEC(int n)
 {
     return (n > 0) ? (std::size_t(n) - 1)/sizeof(VECREC) + 1 : 0;
@@ -310,10 +315,6 @@ inline size_t PTR2VEC(int n)
 {
     return (n > 0) ? (std::size_t(n)*sizeof(SEXP) - 1)/sizeof(VECREC) + 1 : 0;
 }
-
-#else /* if not __cplusplus */
-
-typedef SEXP R_bcstack_t;
 
 #endif // __cplusplus
 

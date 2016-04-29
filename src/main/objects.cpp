@@ -1292,7 +1292,10 @@ SEXP do_set_prim_method(SEXP op, const char *code_string, SEXP fundef,
     else if(code == NO_METHODS && prim_generics[offset]) {
 	R_ReleaseObject(prim_generics[offset]);
 	prim_generics[offset] = nullptr;
-	prim_mlist[offset] = nullptr;
+        if (prim_mlist[offset]) {
+          R_ReleaseObject(prim_mlist[offset]);
+          prim_mlist[offset] = nullptr;
+        }
     }
     else if(fundef && !Rf_isNull(fundef) && !prim_generics[offset]) {
 	if(TYPEOF(fundef) != CLOSXP)
