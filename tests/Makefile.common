@@ -154,9 +154,8 @@ R-valgrind = $(R) --debugger="valgrind --tool=memcheck"
 	  cat $< $(srcdir)/gct-foot.R) | $(R-valgrind) > $@ 2>&1
 	grep "==[0-9]*==" $@
 
-# TODO(kmillar): add testr to all-basic-tests once it passes.
 ## The definitions for Internet are in Makefile.{in,win}.
-all-basic-tests = rho rho2 Examples Specific Reg Internet
+all-basic-tests = rho rho2 testr Examples Specific Reg Internet
 test-all-basics: $(addprefix test-, $(all-basic-tests))
 
 ## if you change this, also edit Makefile.install
