@@ -371,7 +371,7 @@ extern "C" {
      * @deprecated May be withdrawn in future.  Currently used in
      * library/stats/src/isoreg.c , and possibly in packages.
      */
-    void SETLENGTH(SEXP x, int v);
+    void SETLENGTH(SEXP x, R_xlen_t v);
 
     /**
      * Set 'true length' of vector.
@@ -382,7 +382,7 @@ extern "C" {
      *
      * @deprecated May be withdrawn in the future.
      */
-    inline void SET_XTRUELENGTH(SEXP x, R_xlen_t v)
+    inline void SET_TRUELENGTH(SEXP x, R_xlen_t v)
     {
 	using namespace rho;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);

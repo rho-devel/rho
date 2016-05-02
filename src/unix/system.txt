@@ -160,7 +160,6 @@
  *
  *    SEXP do_getenv(SEXP call, SEXP op, SEXP args, SEXP rho)
  *    SEXP do_interactive(SEXP call, SEXP op, SEXP args, SEXP rho)
- *    SEXP do_machine(SEXP call, SEXP op, SEXP args, SEXP rho)
  *    SEXP do_proctime(SEXP call, SEXP op, SEXP args, SEXP rho)
  *    SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
  *

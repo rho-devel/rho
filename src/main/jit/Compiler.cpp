@@ -470,12 +470,12 @@ Value* Compiler::emitInlinedAssign(const Expression* expression)
           auto applydefine =
               Runtime::getDeclaration("rho_runtime_applydefine", this);
           assert(applydefine != nullptr);
-          auto call_ptr = emitConstantPointer(expression);
-          auto applydefine_ptr =
+          Value* call_ptr = emitConstantPointer(expression);
+          Value* applydefine_ptr =
               emitConstantPointer(BuiltInFunction::obtainPrimitive(
                   SEXP_downcast<const Symbol*>(expression->getFunction())));
           assert(applydefine_ptr != nullptr);
-          auto args_ptr = emitConstantPointer(expression->getArgs());
+          Value* args_ptr = emitConstantPointer(expression->getArgs());
           assert(args_ptr != nullptr);
           assert(m_context->getEnvironment() != nullptr);
           return emitCallOrInvoke(applydefine,

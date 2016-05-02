@@ -158,7 +158,8 @@ public:
 };
 
 Executor* Executor::InterpreterExecutor() {
-    return new class InterpreterExecutor();
+    static class InterpreterExecutor executor;
+    return &executor;
 }
 
 class CompilingExecutor : public Executor {
@@ -199,7 +200,8 @@ public:
 };
 
 Executor* Executor::JITExecutor() {
-    return new class JITExecutor();
+    static class JITExecutor executor;
+    return &executor;
 }
 #else
 
