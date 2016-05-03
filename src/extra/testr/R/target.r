@@ -40,7 +40,8 @@ RunTests <- function(root,
                      display.code.on.error = testr.option('display.code.on.error'), 
                      test.listener = NULL, 
                      clean.wd = FALSE,
-                     use.rcov = FALSE) {
+                     use.rcov = FALSE,
+		     blacklist = NULL) {
   if (!missing(test.listener)) 
     if (!IsTestListener(test.listener))
     stop("Invalid function supported as a test listener.")
@@ -64,11 +65,16 @@ RunTests <- function(root,
   } else {
     files <- root
   }
+  if (!is.null(blacklist)) {
+    blacklist.files <- readLines(blacklist)
+    files <- files[!(basename(files) %in% blacklist.files)]
+  }
+
   if (verbose)
     cat(sprintf("%-80s", "Name"),"Result\n---------------------------------------------------------------------------------------\n")
   # process every file
   for (filename in files) {
-    cat(filename,"...\n")
+    if (verbose) cat(filename,"...\n")
     cache$tests <- list(c("Test Name","Result", "Comments", "Id"))
     cache$fails <- 0
     cache$passes <- 0
@@ -77,7 +83,13 @@ RunTests <- function(root,
     if (!is.null(test.listener))
       for (t in cache$tests[-1])
         test.listener(t[[4]], t[[1]], t[[2]], filename, t[[3]])
+    if (verbose)
     cat("  (pass = ", cache$passes,", fail = ", cache$fails, ", total = ", cache$passes + cache$fails, ")\n", sep = "")
+    else {
+       if (cache$fails != 0) {
+            cat(filename, " pass = ", cache$passes,", fail = ", cache$fails, ", total = ", cache$passes + cache$fails, ")\n", sep = "")
+       }
+    }
     totalFails <- totalFails + cache$fails
     totalPasses <- totalPasses + cache$passes
     if (file.summary == TRUE) {

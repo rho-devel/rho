@@ -15,7 +15,7 @@ R = $(top_builddir)/bin/R --vanilla --quiet
 include $(top_builddir)/Makeconf
 
 check:
-	$(R) -e "source('$(testr_dir)/R/options.R'); .onLoad();source('$(testr_dir)/R/target.r'); pass <- RunTests('$(testcase_dir)'); quit(status = !pass)" 
+	$(R) -e "source('$(testr_dir)/R/options.R'); .onLoad();source('$(testr_dir)/R/target.r'); pass <- RunTests('$(testcase_dir)', blacklist='$(testr_dir)/blacklist', verbose = TRUE); quit(status = !pass)" > $@.log 2>&1 || (cat $@.log && exit 1)
 
 Makefile : $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
