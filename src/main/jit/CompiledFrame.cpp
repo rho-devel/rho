@@ -74,7 +74,7 @@ Frame::Binding* CompiledFrame::v_obtainBinding(const Symbol* symbol)
 	return m_bindings + location;
     }
     if (!m_overflow) {
-	m_overflow = new std::map<const Symbol*, Binding>();
+	m_overflow = new map();
     }
     return &((*m_overflow)[symbol]);
 }
