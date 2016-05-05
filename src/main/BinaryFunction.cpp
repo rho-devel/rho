@@ -28,7 +28,7 @@
  */
 
 #include "rho/BinaryFunction.hpp"
-
+#include "rho/PairList.hpp"
 #include "rho/Symbol.hpp"
 
 using namespace rho;

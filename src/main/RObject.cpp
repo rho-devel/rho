@@ -60,6 +60,7 @@ namespace rho {
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
 	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*UNSET_S4_OBJECTptr)(SEXP x) = UNSET_S4_OBJECT;
+	auto attributesPtr = &RObject::attributes;
     }
 }
 
@@ -80,11 +81,6 @@ RObject::RObject(const RObject& pattern)
 {
     m_attrib = clone(pattern.m_attrib.get());
     maybeTraceMemory(&pattern);
-}
-
-const PairList* RObject::attributes() const
-{
-    return m_attrib;
 }
 
 void RObject::clearAttributes()

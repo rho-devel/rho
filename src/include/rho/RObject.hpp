@@ -169,16 +169,12 @@ namespace rho {
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
-	 *
-	 * @note Callers should beware that derived classes may
-	 * override this function with one that gives rise to garbage
-	 * collection.
 	 */
-	virtual const PairList* attributes() const;
+	const PairList* attributes() const;
 
 	/** @brief Remove all attributes.
 	 */
-	virtual void clearAttributes();
+	void clearAttributes();
 
 	/** @brief Return pointer to a copy of this object.
 	 *
@@ -270,24 +266,15 @@ namespace rho {
 	 *
 	 * @return pointer to the value of the attribute with \a name,
 	 * or a null pointer if there is no such attribute.
-	 *
-	 * @note Implementers of derived classes should ensure that
-	 * any function overriding this <em>will not</em> give rise to
-	 * garbage collection.
 	 */
-	virtual RObject* getAttribute(const Symbol* name) const;
+	RObject* getAttribute(const Symbol* name) const;
 
 	/** @brief Has this object any attributes?
 	 *
 	 * @return true iff this object has any attributes.
-	 *
-	 * @note Implementers of derived classes should ensure that
-	 * any function overriding this <em>will not</em> give rise to
-	 * garbage collection.
 	 */
-	virtual bool hasAttributes() const
-	{
-	    return RObject::attributes() != nullptr;
+	bool hasAttributes() const {
+	    return attributes();
 	}
 
 	/** @brief Has this object the class attribute?
@@ -439,7 +426,7 @@ namespace rho {
 	 *          assume ownership of \a value, which should
 	 *          therefore not be subsequently altered externally.
 	 */
-	virtual void setAttribute(const Symbol* name, RObject* value);
+	void setAttribute(const Symbol* name, RObject* value);
 
 	/** @brief Replace the attributes of an object.
 	 *

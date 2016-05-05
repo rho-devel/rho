@@ -297,7 +297,8 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 
 namespace rho {
     namespace VectorOps {
-	void checkOperandsConformable(const VectorBase* vl, const VectorBase* vr)
+	namespace internal {
+	void checkOperandsConformable_full(const VectorBase* vl, const VectorBase* vr)
 	{
 	    // Temporary kludge:
 	    VectorBase* vlnc = const_cast<VectorBase*>(vl);
@@ -313,5 +314,7 @@ namespace rho {
 	    } else if (isTs(vrnc) && vl->size() > vr->size())
 		Rf_error(_("time-series/vector length mismatch"));
 	}
+
+	} // namespace internal
     } // namespace VectorOps
 } // namespace rho  

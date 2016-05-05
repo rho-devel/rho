@@ -42,6 +42,10 @@ namespace rho {
      * matrices and arrays.
      */
     namespace VectorOps {
+	namespace internal {
+	    void checkOperandsConformable_full(const VectorBase*,
+					       const VectorBase*);
+	}
 	/** @brief Are binary operands consistent?
 	 *
 	 * This function checks the operands of a binary vector
@@ -66,8 +70,11 @@ namespace rho {
 	 *
 	 * @param vr Non-null pointer to the second operand.
 	 */
-	void checkOperandsConformable(const VectorBase* vl,
-				      const VectorBase* vr);
+	inline void checkOperandsConformable(const VectorBase* vl,
+				      const VectorBase* vr) {
+	    if (vl->hasAttributes() || vr->hasAttributes())
+		internal::checkOperandsConformable_full(vl, vr);
+	}
 
 	/** @brief Control attribute copying for binary functions.
 	 *
