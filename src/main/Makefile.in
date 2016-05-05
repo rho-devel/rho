@@ -53,7 +53,7 @@ SOURCES_CXX = \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
 	StackChecker.cpp \
-        StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
+        String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

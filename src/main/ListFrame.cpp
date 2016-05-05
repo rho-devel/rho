@@ -40,12 +40,19 @@
 using namespace std;
 using namespace rho;
 
-ListFrame::ListFrame(size_t size)
+ListFrame::ListFrame(size_t size, bool check_list_size)
 {
-    m_bindings = new Binding[size];
-    m_bindings_size = size;
     m_used_bindings_size = 0;
     m_overflow = nullptr;
+
+    if (check_list_size && size > kMaxListSize) {
+	size_t overflow_size = size - kMaxListSize;
+	m_overflow = new map(overflow_size);
+	size = kMaxListSize;
+    }
+
+    m_bindings = new Binding[size];
+    m_bindings_size = size;
 }
 
 ListFrame::ListFrame(const ListFrame &pattern)
@@ -174,7 +181,7 @@ Frame::Binding* ListFrame::v_obtainBinding(const Symbol* symbol)
 
     // Otherwise go to the overflow.
     if (!m_overflow) {
-	m_overflow = new std::map<const Symbol*, Binding>();
+	m_overflow = new map;
     }
     return &((*m_overflow)[symbol]);
 }

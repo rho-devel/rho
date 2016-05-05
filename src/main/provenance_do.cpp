@@ -46,7 +46,6 @@
 #include <boost/math/special_functions/nonfinite_num_facets.hpp>
 
 #include "rho/Provenance.hpp"
-#include "rho/StdFrame.hpp"
 
 // Try to get rid of this:
 #include "Defn.h"

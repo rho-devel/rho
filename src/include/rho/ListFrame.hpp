@@ -56,7 +56,8 @@ namespace rho {
      */
     class ListFrame : public Frame {
     public:
-	explicit ListFrame(size_t list_size = 16);
+	explicit ListFrame(size_t list_size = kDefaultListSize,
+			   bool check_list_size = true);
 	ListFrame(const ListFrame &pattern);
 	
         // Virtual functions of Frame (qv):
@@ -76,9 +77,21 @@ namespace rho {
 	size_t m_bindings_size;
 	size_t m_used_bindings_size;
 	
+	// The default size of the array to create.
+	static const size_t kDefaultListSize = 16;
+	// The largest array to create.  Since the array must be searched
+	// with a linear scan, we don't want to allow it to get too big.
+	static const size_t kMaxListSize = 64;
+
 	// Used to store any bindings that don't fit in m_bindings.
 	// Usually this is nullptr.
-	std::map<const Symbol*, Binding>* m_overflow;
+	typedef std::unordered_map<const Symbol*, Binding,
+				   std::hash<const Symbol*>,
+				   std::equal_to<const Symbol*>,
+				   rho::Allocator<std::pair<const Symbol* const,
+							    Binding>>>
+	    map;
+	map* m_overflow;
 
 	// Declared protected to ensure that ListFrame objects are
 	// created only using 'new':

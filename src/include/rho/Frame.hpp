@@ -46,7 +46,7 @@ namespace rho {
      * objects to (pointers to) arbitrary objects of classes derived
      * from RObject.  A Frame is usually, but not necessarily,
      * associated with an Frame object.  Frame itself is an
-     * abstract class; for most purposes its embodiment StdFrame
+     * abstract class; for most purposes its embodiment ListFrame
      * should be used.
      */
     class Frame : public GCNode {

@@ -39,7 +39,6 @@
 #include "rho/BuiltInFunction.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/ListFrame.hpp"
-#include "rho/StdFrame.hpp"
 #include "rho/StringVector.hpp"
 #include "rho/Symbol.hpp"
 #include "sparsehash/dense_hash_map"
@@ -187,13 +186,13 @@ Environment::Cache* Environment::createSearchPathCache()
 
 Environment* Environment::createEmptyEnvironment()
 {
-    GCStackRoot<Frame> empty_frame(new ListFrame);
+    GCStackRoot<Frame> empty_frame(new ListFrame(1));
     return new Environment(0, empty_frame);
 }
 
 Environment* Environment::createBaseEnvironment()
 {
-    GCStackRoot<Frame> base_frame(new StdFrame);
+    GCStackRoot<Frame> base_frame(new ListFrame(1));
     GCStackRoot<Environment> base(new Environment(empty(), base_frame));
     BuiltInFunction::addPrimitivesToEnvironment(base);
     return base;
@@ -201,7 +200,7 @@ Environment* Environment::createBaseEnvironment()
 
 Environment* Environment::createGlobalEnvironment()
 {
-    GCStackRoot<Frame> global_frame(new StdFrame);
+    GCStackRoot<Frame> global_frame(new ListFrame(64));
     return new Environment(base(), global_frame);
 }
 

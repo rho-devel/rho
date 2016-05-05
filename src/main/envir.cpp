@@ -103,10 +103,10 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "rho/ClosureContext.hpp"
+#include "rho/ListFrame.hpp"
 #include "rho/ListVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
-#include "rho/StdFrame.hpp"
 #include "rho/StringVector.hpp"
 
 using namespace rho;
@@ -201,7 +201,7 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     int nsize = asInteger(size);
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
-    GCStackRoot<Frame> frame(new StdFrame(nsize));
+    GCStackRoot<Frame> frame(new ListFrame);
     return new Environment(enc, frame);
 }
 
@@ -1168,7 +1168,7 @@ SEXP attribute_hidden do_attach(/*const*/ rho::Expression* call, const rho::Buil
     StringVector* name = SEXP_downcast<StringVector*>(name_);
 
     if (isNewList(what_)) {
-	GCStackRoot<Frame> frame(new StdFrame);
+	GCStackRoot<Frame> frame(new ListFrame);
 	GCStackRoot<Environment> newenv(new Environment(nullptr, frame));
 
 	const ListVector* elements = SEXP_downcast<ListVector*>(what_);

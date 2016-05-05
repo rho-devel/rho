@@ -20,9 +20,9 @@
 #include <iostream>
 #include "rho/Environment.hpp"
 #include "rho/IntVector.hpp"
+#include "rho/ListFrame.hpp"
 #include "rho/PairList.hpp"
 #include "rho/RealVector.hpp"
-#include "rho/StdFrame.hpp"
 
 using namespace std;
 using namespace rho;
@@ -38,7 +38,7 @@ int main() {
 	 << "\nsizeof(RealVector): " << sizeof(RealVector)
 	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
 	 << "\nsizeof(Frame): " << sizeof(Frame)
-	 << "\nsizeof(StdFrame): " << sizeof(StdFrame)
+	 << "\nsizeof(ListFrame): " << sizeof(ListFrame)
 	 << "\nsizeof(Environment): " << sizeof(Environment) << '\n';
     return 0;
 }
