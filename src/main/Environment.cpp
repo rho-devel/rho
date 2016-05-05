@@ -125,11 +125,12 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
     bool cache_miss = false;
     Environment* env = this;
 #ifdef CHECK_CACHE
-    Frame::Binding cache_binding = 0;
+    Frame::Binding* cache_binding = 0;
 #endif
     Cache* search_path_cache = searchPathCache();
     while (env) {
 	if (env->isSearchPathCachePortal()) {
+	    // TODO: the cache isn't effective for S3 methods.
 	    Cache::iterator it = search_path_cache->find(symbol);
 	    if (it == search_path_cache->end())
 		cache_miss = true;
