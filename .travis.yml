@@ -26,7 +26,7 @@ matrix:
             - gcc-4.9
             - g++-4.9
             - gfortran-4.9
-      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
+      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9 CPPFLAGS="-DAGGRESSIVE_GC -DNO_CELLPOOLS"
 
     # gcc 5.0 with code coverage.
     - compiler: gcc
@@ -84,7 +84,7 @@ matrix:
             - libedit-dev
             - clang-3.8
             - llvm-3.8-dev
-      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CPPFLAGS="-DAGGRESSIVE_GC -DNO_CELLPOOLS" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CPPFLAGS="-DNO_CELLPOOLS" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
     # With undefined behaviour sanitizer enabled.  Use the most recent
     # supported verison of clang, to get the best error detection.
