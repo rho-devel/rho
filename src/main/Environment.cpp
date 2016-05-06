@@ -39,7 +39,6 @@
 #include "rho/BuiltInFunction.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/ListFrame.hpp"
-#include "rho/StdFrame.hpp"
 #include "rho/StringVector.hpp"
 #include "rho/Symbol.hpp"
 #include "sparsehash/dense_hash_map"
@@ -126,11 +125,12 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
     bool cache_miss = false;
     Environment* env = this;
 #ifdef CHECK_CACHE
-    Frame::Binding cache_binding = 0;
+    Frame::Binding* cache_binding = 0;
 #endif
     Cache* search_path_cache = searchPathCache();
     while (env) {
 	if (env->isSearchPathCachePortal()) {
+	    // TODO: the cache isn't effective for S3 methods.
 	    Cache::iterator it = search_path_cache->find(symbol);
 	    if (it == search_path_cache->end())
 		cache_miss = true;
@@ -187,13 +187,13 @@ Environment::Cache* Environment::createSearchPathCache()
 
 Environment* Environment::createEmptyEnvironment()
 {
-    GCStackRoot<Frame> empty_frame(new ListFrame);
+    GCStackRoot<Frame> empty_frame(new ListFrame(1));
     return new Environment(0, empty_frame);
 }
 
 Environment* Environment::createBaseEnvironment()
 {
-    GCStackRoot<Frame> base_frame(new StdFrame);
+    GCStackRoot<Frame> base_frame(new ListFrame(1));
     GCStackRoot<Environment> base(new Environment(empty(), base_frame));
     BuiltInFunction::addPrimitivesToEnvironment(base);
     return base;
@@ -201,7 +201,7 @@ Environment* Environment::createBaseEnvironment()
 
 Environment* Environment::createGlobalEnvironment()
 {
-    GCStackRoot<Frame> global_frame(new StdFrame);
+    GCStackRoot<Frame> global_frame(new ListFrame(64));
     return new Environment(base(), global_frame);
 }
 

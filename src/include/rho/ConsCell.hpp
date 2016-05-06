@@ -581,6 +581,11 @@ namespace rho {
     {
 	return m_tail;
     }
+
+    inline const rho::PairList* rho::RObject::attributes() const {
+	return m_attrib;
+    }
+
 } // namespace rho
 
 extern "C" {

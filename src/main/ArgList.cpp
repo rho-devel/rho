@@ -112,11 +112,11 @@ RObject* ArgList::evaluateSingleArgument(const RObject* arg,
 	    if (allow_missing == MissingArgHandling::Keep)
 		return Symbol::missingArgument();
 	    else Rf_error(_("argument %d is empty"), arg_number);
-	} else if (isMissingArgument(sym, env->frame())) {
-	    if (allow_missing == MissingArgHandling::Keep)
-		return Symbol::missingArgument();
-	    else Rf_error(_("argument \"%s\" is missing, with no default"),
-			  sym->name()->c_str());
+	} else if (allow_missing == MissingArgHandling::Keep
+		   && isMissingArgument(sym, env->frame())) {
+	    return Symbol::missingArgument();
+	    // allow_missing = false && isMissingArgument() is handled in
+	    // evaluate() below.
 	}
     }
     return Evaluator::evaluate(const_cast<RObject*>(arg), env);
@@ -279,13 +279,6 @@ void ArgList::wrapInForcedPromises(Environment* env,
     }
 
     m_status = PROMISED;
-}
-
-ArgList::const_iterator::const_iterator(ConsCell* args, Environment* env)
-    : m_arg(args), m_dots(nullptr), m_env(env)
-{
-    if (args && env && args->car() == DotsSymbol)
-	handleDots();
 }
 
 void ArgList::const_iterator::handleDots()

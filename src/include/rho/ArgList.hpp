@@ -116,7 +116,12 @@ namespace rho {
 	private:
 	    friend class ArgList;
 
-	    const_iterator(ConsCell* arg, Environment* env);
+	    const_iterator(ConsCell* arg, Environment* env)
+	        : m_arg(arg), m_dots(nullptr), m_env(env)
+	    {
+		if (arg && env && arg->car() == DotsSymbol)
+		    handleDots();
+	    }
 
 	    ConsCell* m_arg;
 	    ConsCell* m_dots;

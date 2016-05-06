@@ -25,13 +25,12 @@
 
 #include "rho/jit/CompiledFrame.hpp"
 #include "rho/jit/FrameDescriptor.hpp"
-#include "rho/StdFrame.hpp"
 
 namespace rho {
 namespace JIT {
 
 CompiledFrame::CompiledFrame(const FrameDescriptor* descriptor)
-    : ListFrame(descriptor->getNumberOfSymbols())
+    : ListFrame(descriptor->getNumberOfSymbols(), false)
 {
     m_descriptor = descriptor;
     m_used_bindings_size = m_bindings_size;
@@ -75,7 +74,7 @@ Frame::Binding* CompiledFrame::v_obtainBinding(const Symbol* symbol)
 	return m_bindings + location;
     }
     if (!m_overflow) {
-	m_overflow = new std::map<const Symbol*, Binding>();
+	m_overflow = new map();
     }
     return &((*m_overflow)[symbol]);
 }

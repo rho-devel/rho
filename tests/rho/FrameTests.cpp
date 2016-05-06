@@ -25,7 +25,6 @@
 #include "rho/Frame.hpp"
 #include "rho/ListFrame.hpp"
 #include "rho/RealVector.hpp"
-#include "rho/StdFrame.hpp"
 
 #ifdef ENABLE_LLVM_JIT
 #include "rho/jit/CompiledFrame.hpp"
@@ -179,15 +178,8 @@ TEST_P(FrameTest, DotSymbols) {
 
 // TODO(kmillar): add more tests.
 
-static Frame* MakeStdFrame() {
-    return new StdFrame();
-}
-INSTANTIATE_TEST_CASE_P(StdFrameTest,
-			FrameTest,
-			::testing::Values(MakeStdFrame));
-
 static Frame* MakeListFrame() {
-    return new StdFrame();
+    return new ListFrame();
 }
 INSTANTIATE_TEST_CASE_P(ListFrameTest,
 			FrameTest,

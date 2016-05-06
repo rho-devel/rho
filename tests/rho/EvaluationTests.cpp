@@ -27,8 +27,8 @@
 #include "rho/Closure.hpp"
 #include "rho/CommandTerminated.hpp"
 #include "rho/Evaluator.hpp"
+#include "rho/ListFrame.hpp"
 #include "rho/ListVector.hpp"
-#include "rho/StdFrame.hpp"
 #include "Defn.h"
 #include "Parse.h"
 
@@ -114,7 +114,7 @@ Environment* Executor::newTestEnv()
     // Every evaluation is done in a freshly created environment, so that
     // side effects don't propogate.
     // Only the base environment is visible from this environment.
-    GCStackRoot<Frame> frame(new StdFrame());
+    GCStackRoot<Frame> frame(new ListFrame());
     return new Environment(Environment::base(), frame);
 }
 
