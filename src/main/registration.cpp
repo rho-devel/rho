@@ -75,6 +75,7 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_addTaskCallback, 4),
     CALLDEF(R_getTaskCallbackNames, 0),
     CALLDEF(R_removeTaskCallback, 1),
+    CALLDEF(allocstats, 0),
 
     {nullptr, nullptr, 0}
 };

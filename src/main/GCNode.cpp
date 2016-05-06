@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <unordered_map>
 #include "rho/AddressSanitizer.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/GCRoot.hpp"
@@ -43,6 +44,7 @@
 #include "rho/ProtectStack.hpp"
 #include "rho/RAllocStack.hpp"
 #include "rho/WeakRef.hpp"
+#include "rho/ListVector.hpp"
 #include "gc.h"
 extern "C" {
 #  include "private/gc_priv.h"
@@ -68,6 +70,13 @@ static const int kRedzoneSize = 16;
 #else
 static const int kRedzoneSize = 0;
 #endif  // HAVE_ADDRESS_SANITIZER
+
+#define ALLOC_STATS
+#ifdef ALLOC_STATS
+// Allocation and free frequency tables for profiling the allocator.
+static unordered_map<size_t, size_t> alloc_freq;
+static unordered_map<size_t, size_t> free_freq;
+#endif
 
 static void* offset(void* p, size_t bytes) {
     return static_cast<char*>(p) + bytes;
@@ -101,6 +110,11 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes)
     MemoryBank::notifyAllocation(bytes);
     void *result;
 
+#ifdef ALLOC_STATS
+    size_t &freq = alloc_freq[bytes];
+    freq += 1;
+#endif
+
 #ifdef HAVE_ADDRESS_SANITIZER
     result = asan_allocate(bytes);
 #else
@@ -126,6 +140,12 @@ GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(0) {
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
+
+#ifdef ALLOC_STATS
+    size_t &freq = free_freq[bytes];
+    freq += 1;
+#endif
+
 #ifdef HAVE_ADDRESS_SANITIZER
     asan_free(p);
 #else
@@ -438,3 +458,34 @@ static void asan_free(void* object) {
 }
 
 #endif  // HAVE_ADDRESS_SANITIZER
+
+#ifdef ALLOC_STATS
+
+// Returns a vector list with columns 'size', 'alloc', 'free' representing alloc and free stats.
+extern "C"
+SEXP allocstats(void) {
+    // Create copies of frequency tables to avoid concurrent modifications affecting result.
+    unordered_map<size_t, size_t> allocs(alloc_freq);
+    unordered_map<size_t, size_t> frees(free_freq);
+
+    GCStackRoot<ListVector> ans(ListVector::create(3));
+    GCStackRoot<IntVector> size_column(IntVector::create(allocs.size()));
+    GCStackRoot<IntVector> alloc_column(IntVector::create(allocs.size()));
+    GCStackRoot<IntVector> free_column(IntVector::create(allocs.size()));
+
+    // Iterate the allocation table because its key set is a superset of the free table key set.
+    int i = 0;
+    for (auto iter = allocs.begin(); iter != allocs.end(); ++iter) {
+        size_t size = iter->first;
+        (*size_column)[i] = size;
+        (*alloc_column)[i] = iter->second;
+        (*free_column)[i] = frees[size];
+        i += 1;
+    }
+    (*ans)[0] = size_column.get();
+    (*ans)[1] = alloc_column.get();
+    (*ans)[2] = free_column.get();
+    return ans;
+}
+
+#endif // ALLOC_STATS
