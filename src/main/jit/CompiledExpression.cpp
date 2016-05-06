@@ -30,6 +30,7 @@
 #include "rho/jit/CompilerContext.hpp"
 #include "rho/jit/Globals.hpp"
 #include "rho/jit/MCJITMemoryManager.hpp"
+#include "rho/jit/Optimization.hpp"
 #include "rho/jit/Runtime.hpp"
 #include "rho/jit/TypeBuilder.hpp"
 
@@ -91,7 +92,9 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
 
-    // TODO: add optimization passes and re-verify.
+    // Perform some basic intra-procedural optimization.
+    BasicFunctionPass().runOnFunction(*function);
+    llvm::verifyFunction(*function);
 
     // The IR is now complete.  Compile to native code.
     llvm::TargetOptions options;
