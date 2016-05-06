@@ -1057,7 +1057,7 @@ SEXP C_axis(SEXP args)
 	}
 	/* Tickmark labels. */
 	gpptr(dd)->col = gpptr(dd)->colaxis;
-	gap = GStrWidth("m", -1, NFC, dd);	/* FIXUP x/y distance */
+	gap = GStrWidth("m", CE_ANY, NFC, dd);	/* FIXUP x/y distance */
 	tlast = -1.0;
 	if (!R_FINITE(hadj)) {
 	    if (gpptr(dd)->las == 2 || gpptr(dd)->las == 3) {
