@@ -244,12 +244,11 @@ namespace rho {
          * passed to the delete operator, causing inconsistent statistics for
          * free counts.
          *
-         * @param original The logged freed block size.
+         * @param original The previously logged freed block size.
          *
-         * @param change The change needed to update the freed block size to
-         * the actual size.
+         * @param actual The actual size of the freed block.
          */
-	static void adjustFreedSize(size_t original, size_t change);
+	static void adjustFreedSize(size_t original, size_t actual);
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode

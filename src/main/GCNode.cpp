@@ -109,9 +109,10 @@ static bool test_allocated_bit(void* allocation) {
 // Computes the bin to update in an allocation frequency table.
 static int get_bin_number(size_t bytes) {
     size_t bin;
+    assert(bytes >= 8);
     if (bytes >= 32 * 8) {
         bin = 31;
-    } else if (bytes >= 8) {
+    } else {
         bin = (31 & (bytes / 8)) - 1;
     }
     return bin;
@@ -165,11 +166,12 @@ void GCNode::operator delete(void* p, size_t bytes)
 #endif
 }
 
-void GCNode::adjustFreedSize(size_t original, size_t change)
+void GCNode::adjustFreedSize(size_t original, size_t actual)
 {
+    MemoryBank::adjustBytesAllocated(original - actual);
 #ifdef ALLOC_STATS
     free_counts[get_bin_number(original)] -= 1;
-    free_counts[get_bin_number(original + change)] += 1;
+    free_counts[get_bin_number(actual)] += 1;
 #endif
 }
 
@@ -505,6 +507,7 @@ SEXP allocstats(void) {
     (*ans)[1] = alloc_column.get();
     (*ans)[2] = free_column.get();
     return ans;
-
+#else
+    return nullptr;
 #endif // ALLOC_STATS
 }
