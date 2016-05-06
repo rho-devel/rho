@@ -215,6 +215,7 @@ namespace rho {
 	    // this object, so account for it here.
 	    size_t bytes = (size() - 1) * sizeof(T);
 	    MemoryBank::adjustBytesAllocated(-bytes);
+            GCNode::adjustFreedSize(sizeof(FixedVector), bytes);
 	}
 
 	// Virtual function of GCNode:

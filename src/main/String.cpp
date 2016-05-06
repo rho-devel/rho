@@ -111,6 +111,7 @@ String::~String()
     // object, so account for it here.
     size_t bytes = size() + 1;
     MemoryBank::adjustBytesAllocated(-bytes);
+    GCNode::adjustFreedSize(sizeof(String), bytes);
 }
 
 namespace {

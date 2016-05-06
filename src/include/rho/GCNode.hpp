@@ -238,6 +238,18 @@ namespace rho {
 	// Otherwise returns nullptr.
 	static GCNode* asGCNode(void* candidate_pointer);
 
+        /** @brief Adjust the freed block statistics.
+         *
+         * This should be used when the entire size of a freed block is not
+         * passed to the delete operator, causing inconsistent statistics for
+         * free counts.
+         *
+         * @param original The logged freed block size.
+         *
+         * @param change The change needed to update the freed block size to
+         * the actual size.
+         */
+	static void adjustFreedSize(size_t original, size_t change);
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
