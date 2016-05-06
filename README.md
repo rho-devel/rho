@@ -37,6 +37,9 @@ For development builds, it is useful to define
 `-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
 in order to find bugs more easily. (If using clang >= 3.6, either remove the `-fsanitize=address`, or define `ASAN_OPTIONS="detect_leaks=0"` to disable memory leak checking.)
 
+The configure call may complain about missing recommended packages. These can be obtained by using
+running the `tools/rsync-recommended` script.
+
 ## Notable Known Issues
 
 * Currently rho doesn't support packages that contain native code that uses the `USE_RINTERNALS` macro.  This includes Rcpp, rJava, data.table, xts and all the packages that depend on them.
