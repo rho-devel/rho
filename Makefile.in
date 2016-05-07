@@ -60,7 +60,7 @@ docs: R FORCE
 	-@(cd src/library && $(MAKE) $@)
 
 doxygen: FORCE
-	doxygen docs/doxygen/doxygen.conf
+	doxygen $(srcdir)/doc/doxygen/doxygen.conf
 
 FORCE:
 
