@@ -469,7 +469,7 @@ namespace {
 
 static SEXP
 findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
-	     Rboolean doGet)
+             bool doGet)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
@@ -875,7 +875,7 @@ SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltIn
 	error(_("invalid '%s' argument"), "inherits");
 
     /* Search for the object */
-    rval = findVar1mode(t1, genv, gmode, ginherits, RHOCONSTRUCT(Rboolean, op->variant()));
+    rval = findVar1mode(t1, genv, gmode, ginherits, op->variant());
     if (rval == R_MissingArg)
 	error(_("argument \"%s\" is missing, with no default"),
 	      CHAR(PRINTNAME(t1)));
@@ -923,7 +923,7 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
     t1 = install(name);
 
     /* Search for the object - last arg is 1 to 'get' */
-    rval = findVar1mode(t1, env, mode, inherits, RHO_TRUE);
+    rval = findVar1mode(t1, env, mode, inherits, true);
 
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {

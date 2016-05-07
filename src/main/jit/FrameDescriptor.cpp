@@ -133,9 +133,11 @@ FrameDescriptor::FrameDescriptor(const Closure* closure)
 {
     // Assign slots for the formal parameters.
     const PairList* formals = closure->matcher()->formalArgs();
-    for (const ConsCell& formal : *formals) {
-	const RObject* tag = formal.tag();
-	m_local_vars.push_back(SEXP_downcast<const Symbol*>(tag));
+    if (formals) {
+        for (const ConsCell& formal : *formals) {
+            const RObject* tag = formal.tag();
+            m_local_vars.push_back(SEXP_downcast<const Symbol*>(tag));
+        }
     }
     m_num_formals = m_local_vars.size();
 

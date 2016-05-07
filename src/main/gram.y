@@ -76,7 +76,7 @@ static FILE *fp_parse;
 static int (*ptr_getc)(void);
 
 static int	SavedToken;
-static SEXP	SavedLval;
+static rho::GCRoot<>	SavedLval;
 
 #define yyconst const
 
@@ -213,7 +213,7 @@ static int	xxungetc(int);
 static int	xxcharcount, xxcharsave;
 static int	xxlinesave, xxbytesave, xxcolsave, xxparsesave;
 
-static SEXP	SrcRefs;
+static rho::GCRoot<>	SrcRefs;
 static SrcRefState ParseState;
 static PROTECT_INDEX srindex;
 

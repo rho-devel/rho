@@ -1351,7 +1351,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
     int tlen, i, quote;
     const char *strp;
     char *buff = 0, hex[64]; // 64 is more than enough
-    Rboolean surround = FALSE, allNA, addL = TRUE;
+    Rboolean surround = FALSE, addL = TRUE;
+    bool allNA;
 
     tlen = length(vector);
     if( isString(vector) )
@@ -1393,17 +1394,17 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		print2buff(strp, d);
 	} else {
 	    addL = RHOCONSTRUCT(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
-	    allNA = RHOCONSTRUCT(Rboolean, (d->opts & KEEPNA) || addL);
+	    allNA = (d->opts & KEEPNA) || addL;
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
-		    allNA = FALSE;
+                    allNA = false;
 		    break;
 		}
 	    if((d->opts & KEEPINTEGER && (d->opts & S_COMPAT))) {
 		surround = TRUE;
 		print2buff("as.integer(", d);
 	    }
-	    allNA = RHOCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
+	    allNA = allNA && !(d->opts & S_COMPAT);
 	    if(tlen > 1) print2buff("c(", d);
 	    for (i = 0; i < tlen; i++) {
 		if(allNA && tmp[i] == NA_INTEGER) {
@@ -1421,11 +1422,11 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(surround) print2buff(")", d);
 	}
     } else {
-	allNA = RHOCONSTRUCT(Rboolean, d->opts & KEEPNA);
+	allNA = d->opts & KEEPNA;
 	if((d->opts & KEEPNA) && TYPEOF(vector) == REALSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(!ISNA(REAL(vector)[i])) {
-		    allNA = FALSE;
+		    allNA = false;
 		    break;
 		}
 	    if(allNA && (d->opts & S_COMPAT)) {
@@ -1436,7 +1437,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    Rcomplex *tmp = COMPLEX(vector);
 	    for(i = 0; i < tlen; i++) {
 		if( !ISNA(tmp[i].r) && !ISNA(tmp[i].i) ) {
-		    allNA = FALSE;
+                    allNA = false;
 		    break;
 		}
 	    }
@@ -1447,7 +1448,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	} else if((d->opts & KEEPNA) && TYPEOF(vector) == STRSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(STRING_ELT(vector, i) != NA_STRING) {
-		    allNA = FALSE;
+		    allNA = false;
 		    break;
 		}
 	    if(allNA && (d->opts & S_COMPAT)) {
@@ -1459,7 +1460,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    print2buff("as.raw(", d);
 	}
 	if(tlen > 1) print2buff("c(", d);
-	allNA = RHOCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
+	allNA = allNA && !(d->opts & S_COMPAT);
 	for (i = 0; i < tlen; i++) {
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {

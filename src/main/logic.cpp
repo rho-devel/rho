@@ -212,7 +212,7 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 #define _OP_ALL 1
 #define _OP_ANY 2
 
-static int checkValues(int op, int na_rm, int *x, R_xlen_t n)
+static Logical checkValues(int op, int na_rm, int *x, R_xlen_t n)
 {
     R_xlen_t i;
     int has_na = 0;
@@ -220,19 +220,19 @@ static int checkValues(int op, int na_rm, int *x, R_xlen_t n)
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
         if (!na_rm && x[i] == NA_LOGICAL) has_na = 1;
         else {
-            if (x[i] == TRUE && op == _OP_ANY) return TRUE;
-            if (x[i] == FALSE && op == _OP_ALL) return FALSE;
+            if (x[i] == TRUE && op == _OP_ANY) return true;
+            if (x[i] == FALSE && op == _OP_ALL) return false;
 	}
     }
     switch (op) {
     case _OP_ANY:
-        return has_na ? NA_LOGICAL : FALSE;
+        return has_na ? Logical::NA() : false;
     case _OP_ALL:
-        return has_na ? NA_LOGICAL : TRUE;
+        return has_na ? Logical::NA() : true;
     default:
         error("bad op value for do_logic3");
     }
-    return NA_LOGICAL; /* -Wall */
+    return Logical::NA(); /* -Wall */
 }
 
 /* all, any */
@@ -244,7 +244,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
        all(logical(0)) -> TRUE
        any(logical(0)) -> FALSE
      */
-    Rboolean val = PRIMVAL(op) == _OP_ALL ? TRUE : FALSE;
+    Logical val = PRIMVAL(op) == _OP_ALL ? true : false;
 
     PROTECT(args = fixup_NaRm(args));
     PROTECT(call2 = shallow_duplicate(call));
@@ -280,17 +280,17 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 			    type2char(TYPEOF(t)));
 	    t = coerceVector(t, LGLSXP);
 	}
-	val = RHOCONSTRUCT(Rboolean, checkValues(PRIMVAL(op), narm, LOGICAL(t), XLENGTH(t)));
-        if (val != NA_LOGICAL) {
-            if ((PRIMVAL(op) == _OP_ANY && val)
-                || (PRIMVAL(op) == _OP_ALL && !val)) {
-                has_na = 0;
-                break;
-            }
-        } else has_na = 1;
+	val = checkValues(PRIMVAL(op), narm, LOGICAL(t), XLENGTH(t));
+	if (!val.isNA()) {
+            if ((PRIMVAL(op) == _OP_ANY && val.isTrue())
+                || (PRIMVAL(op) == _OP_ALL && val.isFalse())) {
+		has_na = 0;
+		break;
+	    }
+	} else has_na = 1;
     }
     UNPROTECT(2);
-    return has_na ? ScalarLogical(NA_LOGICAL) : ScalarLogical(val);
+    return LogicalVector::createScalar(has_na ? Logical::NA() : val);
 }
 #undef _OP_ALL
 #undef _OP_ANY

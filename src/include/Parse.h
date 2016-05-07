@@ -31,28 +31,26 @@
 #include <R_ext/Parse.h>
 #include <IOStuff.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Public interface */
 /* SEXP R_ParseVector(SEXP, int, ParseStatus *, SEXP); in R_ext/Parse.h */
 
-/* Private interface */
-
 typedef struct SrcRefState SrcRefState;
+
+/* Private interface */
+#ifdef __cplusplus
+#include "rho/GCRoot.hpp"
 
 struct SrcRefState {
 
     Rboolean keepSrcRefs;	/* Whether to attach srcrefs to objects as they are parsed */
     Rboolean didAttach;		/* Record of whether a srcref was attached */
-    SEXP SrcFile;		/* The srcfile object currently being parsed */
-    SEXP Original;		/* The underlying srcfile object */
+    rho::GCRoot<> SrcFile;     	/* The srcfile object currently being parsed */
+    rho::GCRoot<> Original;    	/* The underlying srcfile object */
     PROTECT_INDEX SrcFileProt;	/* The SrcFile may change */
     PROTECT_INDEX OriginalProt; /* ditto */
-    SEXP data;			/* Detailed info on parse */
-    SEXP text;
-    SEXP ids;
+    rho::GCRoot<> data;	       	/* Detailed info on parse */
+    rho::GCRoot<> text;
+    rho::GCRoot<> ids;
     int data_count;
     				/* Position information about the current parse */
     int xxlineno;		/* Line number according to #line directives */
@@ -62,6 +60,9 @@ struct SrcRefState {
     
     SrcRefState* prevState;
 };
+
+extern "C" {
+#endif  // __cplusplus
 
 void InitParser(void);
 

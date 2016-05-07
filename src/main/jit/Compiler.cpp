@@ -527,8 +527,11 @@ Value* Compiler::emitInlinedBegin(const Expression* expression)
     // 'begin' is the '{' builtin.  It evaluates each argument and returns the
     // result of the last one.
     llvm::Value* value = nullptr;
-    for (const ConsCell& argument : *expression->tail()) {
-	value = emitEval(argument.car());
+    const PairList* args = expression->tail();
+    if (args) {
+        for (const ConsCell& argument : *args) {
+            value = emitEval(argument.car());
+        }
     }
     return value ? value : emitNullValue();
 }
