@@ -110,7 +110,7 @@ String::~String()
     // GCNode::~GCNode doesn't know about the string storage space in this
     // object, so account for it here.
     size_t bytes = size() + 1;
-    GCNode::adjustFreedSize(sizeof(String), sizeof(String) + bytes);
+    MemoryBank::adjustFreedSize(sizeof(String), sizeof(String) + bytes);
 }
 
 namespace {

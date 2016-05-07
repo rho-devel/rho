@@ -35,16 +35,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <iterator>
 #include "rho/AddressSanitizer.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/GCRoot.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
-#include "rho/GCStackRoot.hpp"
 #include "rho/ProtectStack.hpp"
 #include "rho/RAllocStack.hpp"
 #include "rho/WeakRef.hpp"
-#include "rho/ListVector.hpp"
 #include "gc.h"
 extern "C" {
 #  include "private/gc_priv.h"
@@ -70,15 +67,6 @@ static const int kRedzoneSize = 16;
 #else
 static const int kRedzoneSize = 0;
 #endif  // HAVE_ADDRESS_SANITIZER
-
-#define ALLOC_STATS // Make this a configure option?
-#ifdef ALLOC_STATS
-// Allocation and free frequency tables for profiling the allocator.
-// Allocation stats are collected into 8-byte bins, allocations > 256 bytes are
-// counted in the 256 byte bin.
-static size_t alloc_counts[32];
-static size_t free_counts[32];
-#endif
 
 static void* offset(void* p, size_t bytes) {
     return static_cast<char*>(p) + bytes;
@@ -106,27 +94,11 @@ static bool test_allocated_bit(void* allocation) {
     return GC_is_marked(allocation);
 }
 
-// Computes the bin to update in an allocation frequency table.
-static int get_bin_number(size_t bytes) {
-    size_t bin;
-    assert(bytes >= 8);
-    if (bytes >= 32 * 8) {
-        bin = 31;
-    } else {
-        bin = (31 & (bytes / 8)) - 1;
-    }
-    return bin;
-}
-
 HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
     GCManager::maybeGC();
     MemoryBank::notifyAllocation(bytes);
     void *result;
-
-#ifdef ALLOC_STATS
-    alloc_counts[get_bin_number(bytes)] += 1;
-#endif
 
 #ifdef HAVE_ADDRESS_SANITIZER
     result = asan_allocate(bytes);
@@ -154,24 +126,11 @@ void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
 
-#ifdef ALLOC_STATS
-    free_counts[get_bin_number(bytes)] += 1;
-#endif
-
 #ifdef HAVE_ADDRESS_SANITIZER
     asan_free(p);
 #else
     clear_allocated_bit(p);
     GC_free(p);
-#endif
-}
-
-void GCNode::adjustFreedSize(size_t original, size_t actual)
-{
-    MemoryBank::adjustBytesAllocated(original - actual);
-#ifdef ALLOC_STATS
-    free_counts[get_bin_number(original)] -= 1;
-    free_counts[get_bin_number(actual)] += 1;
 #endif
 }
 
@@ -479,35 +438,3 @@ static void asan_free(void* object) {
 }
 
 #endif  // HAVE_ADDRESS_SANITIZER
-
-// Returns a vector list with columns 'size', 'alloc', 'free' representing alloc and free stats.
-extern "C"
-SEXP allocstats(void) {
-#ifdef ALLOC_STATS
-
-    // Copy frequency tables to avoid concurrent modifications affecting result.
-    size_t allocs[32];
-    size_t frees[32];
-    std::copy(std::begin(alloc_counts), std::end(alloc_counts), std::begin(allocs));
-    std::copy(std::begin(free_counts), std::end(free_counts), std::begin(frees));
-
-    GCStackRoot<ListVector> ans(ListVector::create(3));
-    GCStackRoot<IntVector> size_column(IntVector::create(32));
-    GCStackRoot<IntVector> alloc_column(IntVector::create(32));
-    GCStackRoot<IntVector> free_column(IntVector::create(32));
-
-    // Iterate the allocation table because its key set is a superset of the free table key set.
-    for (int i = 0; i < 32; ++i) {
-        size_t size = (i + 1) * 8;
-        (*size_column)[i] = size;
-        (*alloc_column)[i] = allocs[i];
-        (*free_column)[i] = frees[i];
-    }
-    (*ans)[0] = size_column.get();
-    (*ans)[1] = alloc_column.get();
-    (*ans)[2] = free_column.get();
-    return ans;
-#else
-    return nullptr;
-#endif // ALLOC_STATS
-}

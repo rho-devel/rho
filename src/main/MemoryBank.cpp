@@ -27,10 +27,13 @@
  * Implementation of class MemoryBank
  */
 
+#include "rho/GCStackRoot.hpp"
+#include "rho/ListVector.hpp"
 #include "rho/MemoryBank.hpp"
 
 #include <iostream>
 #include <limits>
+#include <iterator>
 
 using namespace std;
 using namespace rho;
@@ -68,6 +71,38 @@ const unsigned char MemoryBank::s_pooltab[]
    7, 7, 7, 7,              // 96
    8, 8, 8, 8,              // 128
    9, 9, 9, 9, 9, 9, 9, 9}; // 192
+
+#define ALLOC_STATS // Make this a configure option?
+#ifdef ALLOC_STATS
+// Allocation and free frequency tables for profiling the allocator.
+// Allocation stats are collected into 8-byte bins, allocations > 256 bytes are
+// counted in the 256 byte bin.
+static size_t alloc_counts[32];
+static size_t free_counts[32];
+#endif
+
+// Computes the bin to update in an allocation frequency table.
+static int get_bin_number(size_t bytes) {
+    if (bytes >= 32 * 8) {
+        // Allocations of size >= 256 are mapped to the 256-byte bin.
+        return 31;
+    } else if (bytes >= 8) {
+        // Allocations of size n*8 to n*8-1 are mapped to the n-byte bin.
+        return (31 & (bytes / 8)) - 1;
+    } else {
+        // Allocations of size < 8 are mapped to the 8-byte bin.
+        return 0;
+    }
+}
+
+void MemoryBank::adjustFreedSize(size_t original, size_t actual)
+{
+    adjustBytesAllocated(original - actual);
+#ifdef ALLOC_STATS
+    free_counts[get_bin_number(original)] -= 1;
+    free_counts[get_bin_number(actual)] += 1;
+#endif
+}
 
 void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
@@ -118,6 +153,27 @@ void MemoryBank::initialize()
 #endif
 }
 
+void MemoryBank::notifyAllocation(size_t bytes)
+{
+#ifdef R_MEMORY_PROFILING
+    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
+#endif
+    ++s_blocks_allocated;
+    s_bytes_allocated += bytes;
+#ifdef ALLOC_STATS
+    alloc_counts[get_bin_number(bytes)] += 1;
+#endif
+}
+
+void MemoryBank::notifyDeallocation(size_t bytes)
+{
+    s_bytes_allocated -= bytes;
+    --s_blocks_allocated;
+#ifdef ALLOC_STATS
+    free_counts[get_bin_number(bytes)] += 1;
+#endif
+}
+
 #ifdef R_MEMORY_PROFILING
 void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 {
@@ -126,3 +182,33 @@ void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 	= (monitor ? threshold : numeric_limits<size_t>::max());
 }
 #endif
+
+// Returns a vector list with columns 'size', 'alloc', 'free' representing alloc and free stats.
+extern "C"
+SEXP allocstats(void) {
+#ifdef ALLOC_STATS
+
+    // Copy frequency tables to avoid concurrent modifications affecting result.
+    size_t allocs[32];
+    size_t frees[32];
+    std::copy(std::begin(alloc_counts), std::end(alloc_counts), std::begin(allocs));
+    std::copy(std::begin(free_counts), std::end(free_counts), std::begin(frees));
+
+    GCStackRoot<ListVector> ans(ListVector::create(3));
+    GCStackRoot<IntVector> size_column(IntVector::create(32));
+    GCStackRoot<IntVector> alloc_column(IntVector::create(32));
+    GCStackRoot<IntVector> free_column(IntVector::create(32));
+
+    for (int i = 0; i < 32; ++i) {
+        (*size_column)[i] = (i + 1) * 8;
+        (*alloc_column)[i] = allocs[i];
+        (*free_column)[i] = frees[i];
+    }
+    (*ans)[0] = size_column.get();
+    (*ans)[1] = alloc_column.get();
+    (*ans)[2] = free_column.get();
+    return ans;
+#else
+    return nullptr;
+#endif // ALLOC_STATS
+}
