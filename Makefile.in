@@ -58,6 +58,10 @@ R: Makefile gitonly
 docs: R FORCE
 	-@(cd doc && $(MAKE) $@)
 	-@(cd src/library && $(MAKE) $@)
+
+doxygen: FORCE
+	doxygen docs/doxygen/doxygen.conf
+
 FORCE:
 
 stamp-recommended: R docs
