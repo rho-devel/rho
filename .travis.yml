@@ -26,7 +26,7 @@ matrix:
             - gcc-4.9
             - g++-4.9
             - gfortran-4.9
-      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9 CPPFLAGS="-DAGGRESSIVE_GC -DNO_CELLPOOLS"
+      env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
     # gcc 5.0 with code coverage.
     - compiler: gcc
