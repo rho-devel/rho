@@ -27,8 +27,6 @@
  * Implementation of class MemoryBank
  */
 
-#include "rho/GCStackRoot.hpp"
-#include "rho/ListVector.hpp"
 #include "rho/MemoryBank.hpp"
 
 #include <iostream>
@@ -72,13 +70,12 @@ const unsigned char MemoryBank::s_pooltab[]
    8, 8, 8, 8,              // 128
    9, 9, 9, 9, 9, 9, 9, 9}; // 192
 
-#define ALLOC_STATS // Make this a configure option?
 #ifdef ALLOC_STATS
 // Allocation and free frequency tables for profiling the allocator.
 // Allocation stats are collected into 8-byte bins, allocations > 256 bytes are
 // counted in the 256 byte bin.
-static size_t alloc_counts[32];
-static size_t free_counts[32];
+size_t alloc_counts[32];
+size_t free_counts[32];
 #endif
 
 // Computes the bin to update in an allocation frequency table.
@@ -182,33 +179,3 @@ void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 	= (monitor ? threshold : numeric_limits<size_t>::max());
 }
 #endif
-
-// Returns a vector list with columns 'size', 'alloc', 'free' representing alloc and free stats.
-extern "C"
-SEXP allocstats(void) {
-#ifdef ALLOC_STATS
-
-    // Copy frequency tables to avoid concurrent modifications affecting result.
-    size_t allocs[32];
-    size_t frees[32];
-    std::copy(std::begin(alloc_counts), std::end(alloc_counts), std::begin(allocs));
-    std::copy(std::begin(free_counts), std::end(free_counts), std::begin(frees));
-
-    GCStackRoot<ListVector> ans(ListVector::create(3));
-    GCStackRoot<IntVector> size_column(IntVector::create(32));
-    GCStackRoot<IntVector> alloc_column(IntVector::create(32));
-    GCStackRoot<IntVector> free_column(IntVector::create(32));
-
-    for (int i = 0; i < 32; ++i) {
-        (*size_column)[i] = (i + 1) * 8;
-        (*alloc_column)[i] = allocs[i];
-        (*free_column)[i] = frees[i];
-    }
-    (*ans)[0] = size_column.get();
-    (*ans)[1] = alloc_column.get();
-    (*ans)[2] = free_column.get();
-    return ans;
-#else
-    return nullptr;
-#endif // ALLOC_STATS
-}

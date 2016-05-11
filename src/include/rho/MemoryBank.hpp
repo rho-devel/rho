@@ -35,6 +35,8 @@
 #include "rho/CellPool.hpp"
 #include "rho/SEXPTYPE.hpp"
 
+#define ALLOC_STATS // TODO(joqvist): Make this a configure option?
+
 namespace rho {
     /** @brief Class to manage memory allocation and deallocation for rho.
      * 
