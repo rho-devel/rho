@@ -35,6 +35,8 @@
 #include "rho/CellPool.hpp"
 #include "rho/SEXPTYPE.hpp"
 
+#define ALLOC_STATS // TODO(joqvist): Make this a configure option?
+
 namespace rho {
     /** @brief Class to manage memory allocation and deallocation for rho.
      * 
@@ -142,23 +144,26 @@ namespace rho {
 #endif
 
 	friend class GCNode;
-	static void notifyAllocation(size_t bytes)
-	{
-#ifdef R_MEMORY_PROFILING
-	    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
-#endif
-	    ++s_blocks_allocated;
-	    s_bytes_allocated += bytes;
-	}
+	static void notifyAllocation(size_t bytes);
 
-	static void notifyDeallocation(size_t bytes) {
-	    s_bytes_allocated -= bytes;
-	    --s_blocks_allocated;
-	}
+	static void notifyDeallocation(size_t bytes);
 
 	friend class String;
 	template<typename, SEXPTYPE, typename>
 	friend class FixedVector;
+
+        /** @brief Adjust the freed block statistics.
+         *
+         * This should be used when the entire size of a freed block is not
+         * passed to the delete operator, causing inconsistent statistics for
+         * free counts.
+         *
+         * @param original The previously logged freed block size.
+         *
+         * @param actual The actual size of the freed block.
+         */
+	static void adjustFreedSize(size_t original, size_t actual);
+
 	static void adjustBytesAllocated(size_t bytes) {
 	    s_bytes_allocated += bytes;
 	}

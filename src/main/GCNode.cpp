@@ -39,7 +39,6 @@
 #include "rho/GCManager.hpp"
 #include "rho/GCRoot.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
-#include "rho/GCStackRoot.hpp"
 #include "rho/ProtectStack.hpp"
 #include "rho/RAllocStack.hpp"
 #include "rho/WeakRef.hpp"
@@ -131,6 +130,7 @@ GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(s_decinc_refcount[1
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
+
 #ifdef HAVE_ADDRESS_SANITIZER
     asan_free(p);
 #else

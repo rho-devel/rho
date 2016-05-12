@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <limits>
+#include <iterator>
 
 using namespace std;
 using namespace rho;
@@ -68,6 +69,37 @@ const unsigned char MemoryBank::s_pooltab[]
    7, 7, 7, 7,              // 96
    8, 8, 8, 8,              // 128
    9, 9, 9, 9, 9, 9, 9, 9}; // 192
+
+#ifdef ALLOC_STATS
+// Allocation and free frequency tables for profiling the allocator.
+// Allocation stats are collected into 8-byte bins, allocations > 256 bytes are
+// counted in the 256 byte bin.
+size_t alloc_counts[32];
+size_t free_counts[32];
+#endif
+
+// Computes the bin to update in an allocation frequency table.
+static int get_bin_number(size_t bytes) {
+    if (bytes >= 32 * 8) {
+        // Allocations of size >= 256 are mapped to the 256-byte bin.
+        return 31;
+    } else if (bytes >= 8) {
+        // Allocations of size n*8 to n*8-1 are mapped to the n-byte bin.
+        return (31 & (bytes / 8)) - 1;
+    } else {
+        // Allocations of size < 8 are mapped to the 8-byte bin.
+        return 0;
+    }
+}
+
+void MemoryBank::adjustFreedSize(size_t original, size_t actual)
+{
+    adjustBytesAllocated(original - actual);
+#ifdef ALLOC_STATS
+    free_counts[get_bin_number(original)] -= 1;
+    free_counts[get_bin_number(actual)] += 1;
+#endif
+}
 
 void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
@@ -115,6 +147,27 @@ void MemoryBank::initialize()
     s_pools[7].initialize(12, 42);
     s_pools[8].initialize(16, 31);
     s_pools[9].initialize(24, 21);
+#endif
+}
+
+void MemoryBank::notifyAllocation(size_t bytes)
+{
+#ifdef R_MEMORY_PROFILING
+    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
+#endif
+    ++s_blocks_allocated;
+    s_bytes_allocated += bytes;
+#ifdef ALLOC_STATS
+    alloc_counts[get_bin_number(bytes)] += 1;
+#endif
+}
+
+void MemoryBank::notifyDeallocation(size_t bytes)
+{
+    s_bytes_allocated -= bytes;
+    --s_blocks_allocated;
+#ifdef ALLOC_STATS
+    free_counts[get_bin_number(bytes)] += 1;
 #endif
 }
 

@@ -237,7 +237,6 @@ namespace rho {
 	// returns the pointer to that node.
 	// Otherwise returns nullptr.
 	static GCNode* asGCNode(void* candidate_pointer);
-
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
