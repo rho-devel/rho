@@ -1,5 +1,6 @@
 # Builds benchmark report.
 
+library(methods)
 library(ggplot2)
 
 read.stats <- function(id, version) {
@@ -32,4 +33,15 @@ for (v in versions$V1) {
 
 cols <- c('benchmark', 'id', 'version', 'time')
 report <- rbind(cr[cols], cr.jit[cols], rho[cols], rho.jit[cols])
-ggplot(report, aes(x=version, y=time)) + geom_bar(aes(fill=id), position='dodge', stat='identity')
+ggplot(report, aes(x=version, y=time)) + geom_bar(aes(fill=id), position='dodge', stat='identity') + labs(title='Totals')
+
+single_report <- function(bm) {
+    ggplot(subset(report, benchmark == bm), aes(x=version, y=time)) + geom_bar(aes(fill=id), position='dodge', stat='identity') + labs(title=bm)
+}
+single_report('crt.R')
+single_report('fib.R')
+single_report('fib_rec.R')
+single_report('gcd.R')
+single_report('gcd_rec.R')
+single_report('prime.R')
+single_report('ForLoopAdd.R')
