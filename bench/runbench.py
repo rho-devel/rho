@@ -52,7 +52,6 @@ benchmarks = [
         { 'name': 'benchmarks/scalar/gcd/gcd_rec.R', 'warmup_rep': 2000, 'bench_rep': 5000 },
         { 'name': 'benchmarks/scalar/prime/prime.R', 'warmup_rep': 2, 'bench_rep': 3 },
         { 'name': 'benchmarks/scalar/ForLoopAdd/ForLoopAdd.R', 'warmup_rep': 2, 'bench_rep': 3 },
-        { 'name': 'benchmarks/scalar/ForLoopAdd/ForLoopAdd.R', 'warmup_rep': 2, 'bench_rep': 3 },
         ]
 
 def parse_args():
@@ -72,13 +71,13 @@ def parse_args():
 # Set up RVM parameters to run Gnu R.
 def use_cr(jit):
     if jit:
-        return { 'name': 'R-bytecode', 'id': 'cr-jit', 'jit': True }
+        return { 'name': 'R-bytecode', 'id': 'cr-jit' }
     else:
-        return { 'name': 'R', 'id': 'cr', 'jit': False }
+        return { 'name': 'R', 'id': 'cr' }
 
 def build_rho(args, jit, build=True):
     bench_dir = os.getcwd()
-    rvm = { 'name': 'Rho', 'jit': jit }
+    rvm = { 'name': 'Rho' }
     if jit:
         rvm['id'] = 'rho-jit'
     else:
@@ -104,10 +103,11 @@ def build_rho(args, jit, build=True):
         os.chdir(bench_dir)
     # Create a new config file because the benchmark suite is not aware of our
     # Rho build.
-    rvm['cfg_file'] = write_config(args, rvm)
+    rvm['cfg_file'] = write_config(args, rvm, jit)
     return rvm
 
-def write_config(args, rvm):
+# Write custom config file for running Rho in the benchmark suite.
+def write_config(args, rvm, jit):
     config = ConfigParser.RawConfigParser()
     config.add_section('GENERAL')
     config.set('GENERAL', 'WARMUP_REP', 2)
@@ -116,17 +116,15 @@ def write_config(args, rvm):
     config.set('GENERAL', 'PERF_REP', 1)
     config.set('GENERAL', 'PERF_CMD', 'perf stat -r %(PERF_REP)s -x, -o %(PERF_TMP)s --append')
     config.add_section('Rho')
-    if rvm['jit']:
+    if jit:
         config.set('Rho', 'ENV', 'R_COMPILE_PKGS=1 R_ENABLE_JIT=2')
-        config.set('Rho', 'HARNESS_ARGS', 'TRUE')
     else:
         config.set('Rho', 'ENV', 'R_COMPILE_PKGS=0 R_ENABLE_JIT=0')
-        config.set('Rho', 'HARNESS_ARGS', 'FALSE')
-#HOME=
     config.set('Rho', 'HOME', os.path.realpath('%s/bin' % args.build_dir))
     config.set('Rho', 'CMD', 'Rscript')
     config.set('Rho', 'ARGS', '--vanilla')
     config.set('Rho', 'HARNESS', 'r_harness.R')
+    config.set('Rho', 'HARNESS_ARGS', 'FALSE')
     cfg_file = normpath('%s/rho.cfg' % args.result_dir)
     with open(cfg_file, 'wb') as f:
         config.write(f)
@@ -161,6 +159,9 @@ def main():
     # Also run CR to get a baseline for performance.
     bench(args, use_cr(jit=False))
     bench(args, use_cr(jit=True))
+    # Update version list file to add newly benchmarked version:
+    with open(os.path.join(args.result_dir, 'versions'), 'a') as f:
+        print >>f, args.gitref
 
 if __name__ == "__main__":
 	main()
