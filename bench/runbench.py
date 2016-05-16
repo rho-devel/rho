@@ -55,7 +55,8 @@ benchmarks = [
         { 'name': 'benchmarks/shootout/nbody/nbody.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/shootout/fannkuch-redux/fannkuch-redux.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/shootout/spectral-norm/spectral-norm.R', 'warmup_rep': 0, 'bench_rep': 1 },
-        { 'name': 'benchmarks/shootout/mandelbrot/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        # Skip mandelbrot.R to avoid duplicate benchmark IDs (conflicts with riposte/mandelbrot.R).
+        #{ 'name': 'benchmarks/shootout/mandelbrot/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/shootout/pidigits/pidigits.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/black_scholes.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/cleaning.R', 'warmup_rep': 0, 'bench_rep': 1 },
@@ -68,7 +69,8 @@ benchmarks = [
         { 'name': 'benchmarks/riposte/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/pca.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/pca-blocked.R', 'warmup_rep': 0, 'bench_rep': 1 },
-        { 'name': 'benchmarks/riposte/qr.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        # Skip qr.R because it fails to run (missing strip function).
+        #{ 'name': 'benchmarks/riposte/qr.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/raysphere.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/sample_builtin.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/riposte/sample.R', 'warmup_rep': 0, 'bench_rep': 1 },
