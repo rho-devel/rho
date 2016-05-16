@@ -52,11 +52,33 @@ benchmarks = [
         { 'name': 'benchmarks/scalar/gcd/gcd_rec.R', 'warmup_rep': 2000, 'bench_rep': 5000 },
         { 'name': 'benchmarks/scalar/prime/prime.R', 'warmup_rep': 2, 'bench_rep': 3 },
         { 'name': 'benchmarks/scalar/ForLoopAdd/ForLoopAdd.R', 'warmup_rep': 2, 'bench_rep': 3 },
+        { 'name': 'benchmarks/shootout/nbody/nbody.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/shootout/fannkuch-redux/fannkuch-redux.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/shootout/spectral-norm/spectral-norm.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/shootout/mandelbrot/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/shootout/pidigits/pidigits.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/black_scholes.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/cleaning.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/example.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/filter1d.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/histogram.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/kmeans.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/lr_test.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/lr.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/pca.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/pca-blocked.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/qr.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/raysphere.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/sample_builtin.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/sample.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/smv_builtin.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        { 'name': 'benchmarks/riposte/smv.R', 'warmup_rep': 0, 'bench_rep': 1 },
         ]
 
 def parse_args():
     parser = argparse.ArgumentParser(description='''Runs R benchmarks for a specific version of Rho.''')
-    parser.add_argument('gitref', help='The Rho git reference to benchmark')
+    parser.add_argument('gitref', nargs='+', help='The Rho git reference to benchmark')
     parser.add_argument(
             '--repository', default='git@github.com:rho-devel/rho',
             help='The git repository to clone from')
@@ -75,7 +97,7 @@ def use_cr(jit):
     else:
         return { 'name': 'R', 'id': 'cr' }
 
-def build_rho(args, jit, build=True):
+def build_rho(gitref, args, jit, build=True):
     bench_dir = os.getcwd()
     rvm = { 'name': 'Rho' }
     if jit:
@@ -88,7 +110,7 @@ def build_rho(args, jit, build=True):
             # Clone Rho into the local directory.
             exit_code = subprocess.call(['git', 'clone', args.repository, '.'])
         # Clean and switch to the selected revision.
-        subprocess.call(['git', 'reset', '--hard', args.gitref])
+        subprocess.call(['git', 'reset', '--hard', gitref])
         # Build with JIT enabled.
         subprocess.call(['git', 'clean', '-fd', 'HEAD'])
         subprocess.call(['git', 'clean', '-fX', 'HEAD'])
@@ -105,6 +127,15 @@ def build_rho(args, jit, build=True):
     # Rho build.
     rvm['cfg_file'] = write_config(args, rvm, jit)
     return rvm
+
+# Returns the timestamp for a Git reference.
+def get_timestamp(gitref, args):
+    bench_dir = os.getcwd()
+    try:
+        os.chdir(args.build_dir)
+        return subprocess.check_output(['git', 'show', '-s', '--format=%ci', gitref])
+    finally:
+        os.chdir(bench_dir)
 
 # Write custom config file for running Rho in the benchmark suite.
 def write_config(args, rvm, jit):
@@ -130,7 +161,7 @@ def write_config(args, rvm, jit):
         config.write(f)
     return cfg_file
 
-def bench(args, rvm):
+def bench(gitref, args, rvm):
     for bm in benchmarks:
         bench_cmd = [
                 'python', normpath('benchmarks/utility/rbench.py'),
@@ -139,29 +170,47 @@ def bench(args, rvm):
                 '--warmup_rep', "%d" % bm['warmup_rep'],
                 '--bench_rep', "%d" % bm['bench_rep'],
                 '--timingfile',
-                normpath('%s/%s-%s.csv' % (args.result_dir, rvm['id'], args.gitref))]
+                normpath('%s/%s-%s.csv' % (args.result_dir, rvm['id'], gitref))]
         if 'cfg_file' in rvm:
             bench_cmd = bench_cmd + ['--config', rvm['cfg_file']]
         subprocess.call(bench_cmd)
 
+# Set up the benchmark suite. Generates input data for the benchmarks that need input data.
+def setup_benchmarks():
+    # Clone the benchmark suite.
+    subprocess.call(['git', 'clone', 'git@github.com:llbit/rbenchmarks.git', 'benchmarks'])
+    bench_dir = os.getcwd()
+    try:
+        # Generate benchmark input data.
+        os.chdir(normpath('benchmarks/riposte'))
+        subprocess.call(['curl', 'https://cran.r-project.org/src/contrib/clusterGeneration_1.3.4.tar.gz', '-o', 'clusterGeneration_1.3.4.tar.gz'])
+        subprocess.call(['R', 'CMD', 'INSTALL', 'clusterGeneration_1.3.4.tar.gz'])
+        os.mkdir('data')
+        subprocess.call(['Rscript', 'gen_kmeans.R'])
+        subprocess.call(['Rscript', 'gen_lr.R'])
+        subprocess.call(['Rscript', 'gen_pca.R'])
+    finally:
+        os.chdir(bench_dir)
+
+
 def main():
     args = parse_args()
     if not os.path.isdir('benchmarks'):
-        # Clone the benchmark suite.
-        subprocess.call(['git', 'clone', 'git@github.com:llbit/rbenchmarks.git', 'benchmarks'])
+        setup_benchmarks()
     if not os.path.isdir(args.build_dir):
         os.mkdir(args.build_dir)
     if not os.path.isdir(args.result_dir):
         os.mkdir(args.result_dir)
-    # Build and benchmark Rho.
-    bench(args, build_rho(args, jit=False))
-    bench(args, build_rho(args, jit=True))
-    # Also run CR to get a baseline for performance.
-    bench(args, use_cr(jit=False))
-    bench(args, use_cr(jit=True))
-    # Update version list file to add newly benchmarked version:
-    with open(os.path.join(args.result_dir, 'versions'), 'a') as f:
-        print >>f, args.gitref
+    for gitref in args.gitref:
+        # Build and benchmark Rho.
+        bench(gitref, args, build_rho(gitref, args, jit=False))
+        bench(gitref, args, build_rho(gitref, args, jit=True))
+        # Also run CR to get a baseline for performance.
+        bench(gitref, args, use_cr(jit=False))
+        bench(gitref, args, use_cr(jit=True))
+        # Update version list file to add newly benchmarked version:
+        with open(os.path.join(args.result_dir, 'versions'), 'a') as f:
+            print >>f, '%s, %s' % (gitref, get_timestamp(gitref, args))
 
 if __name__ == "__main__":
 	main()
