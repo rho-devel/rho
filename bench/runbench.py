@@ -178,7 +178,7 @@ def bench(gitref, args, rvm):
 # Set up the benchmark suite. Generates input data for the benchmarks that need input data.
 def setup_benchmarks():
     # Clone the benchmark suite.
-    subprocess.call(['git', 'clone', 'git@github.com:llbit/rbenchmarks.git', 'benchmarks'])
+    subprocess.call(['git', 'clone', 'git@github.com:rho-devel/benchmarks.git', 'benchmarks'])
     bench_dir = os.getcwd()
     try:
         # Generate benchmark input data.
