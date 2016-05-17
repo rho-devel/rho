@@ -1,12 +1,42 @@
-# Builds benchmark report.
+#  R : A Computer Language for Statistical Data Analysis
+#  Copyright (C) 2016 and onwards the Rho Project Authors.
+#
+#  Rho is not part of the R project, and bugs and other issues should
+#  not be reported via r-bugs or other R project channels; instead refer
+#  to the Rho website.
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, a copy is available at
+#  https://www.R-project.org/Licenses/
+
+# This script generates benchmark reports.
+# The output directory to use can be supplied as the first argument on the command line.
 
 library(methods)
 library(ggplot2)
 library(grid)
 library(gridExtra)
 
+args <- commandArgs(trailingOnly=T)
+
+outdir <- 'out'
+
+if (length(args) > 0) {
+    outdir <- args[1]
+}
+
 read.stats <- function(id, version, timestamp) {
-    filename <- paste('out/', id, '-', version, '.csv', sep='')
+    filename <- paste(outdir, '/', id, '-', version, '.csv', sep='')
     df <- read.csv(filename)
     df$id <- id
     df$version <- version
@@ -22,7 +52,7 @@ merge.stats <- function(prev, id, version, timestamp) {
     }
 }
 
-versions <- read.csv('out/versions', header=F)
+versions <- read.csv(paste(outdir, '/versions', sep=''), header=F)
 colnames(versions) <- c('commit', 'timestamp')
 cr <- NA
 cr.jit <- NA
@@ -45,36 +75,23 @@ report <- report[order(report$timestamp),]
 report$version <- factor(report$version, unique(report$version))
 
 pdf('report.pdf')
-
 ggplot(report, aes(x=version, y=time)) +
     geom_bar(aes(fill=id), position='dodge', stat='identity') +
     labs(title='Totals')
-
-single_report <- function(bm) {
-    ggplot(subset(report, benchmark == bm), aes(x=version, y=time)) +
+for (bm in levels(report$benchmark)) {
+    print(paste('Graph', bm))
+    report.subset <- subset(report, benchmark == bm)
+    print(ggplot(report.subset, aes(x=version, y=time)) +
         geom_bar(aes(fill=id), position='dodge', stat='identity') +
-        labs(title=bm)
+        labs(title=bm))
 }
-single_report('crt.R')
-single_report('fib.R')
-single_report('fib_rec.R')
-single_report('gcd.R')
-single_report('gcd_rec.R')
-single_report('prime.R')
-single_report('ForLoopAdd.R')
 invisible(dev.off())
 
 pdf('tables.pdf')
-single_table <- function(bm) {
+for (bm in levels(report$benchmark)) {
+    print(paste('Table', bm))
     report.subset <- subset(report[c('benchmark', 'id', 'version', 'time')], benchmark == bm)
     grid.table(reshape(report.subset, timevar='id', idvar=c('benchmark', 'version'), direction='wide'))
     grid.newpage()
 }
-single_table('crt.R')
-single_table('fib.R')
-single_table('fib_rec.R')
-single_table('gcd.R')
-single_table('gcd_rec.R')
-single_table('prime.R')
-single_table('ForLoopAdd.R')
 invisible(dev.off())
