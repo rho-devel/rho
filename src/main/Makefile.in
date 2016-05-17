@@ -32,7 +32,7 @@ SOURCES_C = complex.c inlined.c radixsort.c \
 
 SOURCES_CXX = \
 	allocstats.cpp ArgList.cpp ArgMatcher.cpp \
-	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp \
+	BinaryFunction.cpp BlockPool.cpp Browser.cpp BuiltInFunction.cpp \
 	CellPool.cpp Closure.cpp \
 	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
 	ComplexVector.cpp ConsCell.cpp \
