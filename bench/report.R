@@ -35,20 +35,20 @@ if (length(args) > 0) {
     outdir <- args[1]
 }
 
-read.stats <- function(id, version, timestamp) {
-    filename <- paste(outdir, '/', id, '-', version, '.csv', sep='')
+read.stats <- function(rvm, version, timestamp) {
+    filename <- paste(outdir, '/', rvm, '-', version, '.csv', sep='')
     df <- read.csv(filename)
-    df$id <- id
+    df$rvm <- rvm
     df$version <- version
     df$timestamp <- strptime(timestamp, "%Y-%m-%d %H:%M:%S")
     df
 }
 
-merge.stats <- function(prev, id, version, timestamp) {
+merge.stats <- function(prev, rvm, version, timestamp) {
     if (is.data.frame(prev)) {
-        rbind(prev, read.stats(id, version, timestamp))
+        rbind(prev, read.stats(rvm, version, timestamp))
     } else {
-        read.stats(id, version, timestamp)
+        read.stats(rvm, version, timestamp)
     }
 }
 
@@ -67,31 +67,40 @@ for (i in seq_len(nrow(versions))) {
     rho.jit <- merge.stats(rho.jit, 'rho-jit', commit, timestamp)
 }
 
-cols <- c('benchmark', 'id', 'version', 'timestamp', 'time')
+cols <- c('benchmark', 'rvm', 'version', 'timestamp', 'time')
 report <- rbind(cr[cols], cr.jit[cols], rho[cols], rho.jit[cols])
 
 # Sort versions by timestamp.
 report <- report[order(report$timestamp),]
 report$version <- factor(report$version, unique(report$version))
 
+# Convert millis to seconds.
+report$time <- report$time / 1000
+
 pdf('report.pdf')
-ggplot(report, aes(x=version, y=time)) +
-    geom_bar(aes(fill=id), position='dodge', stat='identity') +
-    labs(title='Totals')
+geom.mean = function(x) exp(sum(log(x)) / length(x))
+report.gm <- aggregate(report$time, by=list(version=report$version, rvm=report$rvm), FUN=geom.mean)
+ggplot(report.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
+    geom_line() +
+    geom_point(aes(shape=rvm)) +
+    expand_limits(y=0) +
+    labs(title='Totals', y='time (seconds)')
 for (bm in levels(report$benchmark)) {
     print(paste('Graph', bm))
     report.subset <- subset(report, benchmark == bm)
-    print(ggplot(report.subset, aes(x=version, y=time)) +
-        geom_bar(aes(fill=id), position='dodge', stat='identity') +
-        labs(title=bm))
+    print(ggplot(report.subset, aes(x=version, y=time, group=rvm, color=rvm)) +
+        geom_line() +
+        geom_point(aes(shape=rvm)) +
+        expand_limits(y=0) +
+        labs(title=bm, y='time (seconds)'))
 }
 invisible(dev.off())
 
 pdf('tables.pdf')
 for (bm in levels(report$benchmark)) {
     print(paste('Table', bm))
-    report.subset <- subset(report[c('benchmark', 'id', 'version', 'time')], benchmark == bm)
-    grid.table(reshape(report.subset, timevar='id', idvar=c('benchmark', 'version'), direction='wide'))
+    report.subset <- subset(report[c('benchmark', 'rvm', 'version', 'time')], benchmark == bm)
+    grid.table(reshape(report.subset, timevar='rvm', idvar=c('benchmark', 'version'), direction='wide'))
     grid.newpage()
 }
 invisible(dev.off())
