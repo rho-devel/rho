@@ -693,7 +693,7 @@ static double MT_genrand(void)
 #define is_odd(x)  ((x)&1)          /* units bit of x */
 static void ran_array(long aa[],int n)    /* put n new random numbers in aa */
 {
-  register int i,j;
+  int i,j;
   for (j=0;j<KK;j++) aa[j]=ran_x[j];
   for (;j<n;j++) aa[j]=mod_diff(aa[j-KK],aa[j-LL]);
   for (i=0;i<LL;i++,j++) ran_x[i]=mod_diff(aa[j-KK],aa[j-LL]);
@@ -726,9 +726,9 @@ static long ran_arr_cycle(void)
 
 static void ran_start(long seed)
 {
-  register int t,j;
+  int t,j;
   long x[KK+KK-1];              /* the preparation buffer */
-  register long ss=(seed+2)&(MM-2);
+  long ss=(seed+2)&(MM-2);
   for (j=0;j<KK;j++) {
     x[j]=ss;                      /* bootstrap the buffer */
     ss<<=1; if (ss>=MM) ss-=MM-2; /* cyclic shift 29 bits */
