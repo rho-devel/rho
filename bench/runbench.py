@@ -114,8 +114,8 @@ def build_rho(gitref, args, jit, build=True):
         # Clean and switch to the selected revision.
         subprocess.call(['git', 'reset', '--hard', gitref])
         # Build with JIT enabled.
-        subprocess.call(['git', 'clean', '-fd', 'HEAD'])
-        subprocess.call(['git', 'clean', '-fX', 'HEAD'])
+        subprocess.call(['git', 'clean', '-fd'])
+        subprocess.call(['git', 'clean', '-fX'])
         if build:
             subprocess.call(['tools/rsync-recommended'])
             if jit:
