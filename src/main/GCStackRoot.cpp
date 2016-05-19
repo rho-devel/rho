@@ -50,13 +50,17 @@ namespace rho {
     }
 }
 
-// TODO: should only be defined if we have asan.
+#ifdef HAVE_ADDRESS_SANITIZER
 extern "C"
 const char* __asan_default_options()
 {
+    // Disables leak detection and ASAN signal segv handler.
     // R installs it's own signal handlers.
-    return "--allow_user_segv_handler=1";
+    // Need to set both allow_user_segv_handler and handle_segv because
+    // different ASAN versions have different options for this.
+    return "allow_user_segv_handler=1:handle_segv=0:detect_leaks=0";
 }
+#endif
 
 extern "C"
 void R_GetStackLimits();
