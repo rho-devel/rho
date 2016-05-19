@@ -66,14 +66,12 @@ matrix:
 
     # With address sanitizer enabled.  Use the most recent supported verison
     # of clang, to get the best error detection.
-    # TODO: enable leak detection.
     # TODO: enable initialization order checking.
     - compiler: clang
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
-            - debian-sid
+            - llvm-toolchain-trusty-3.8
           packages:
             - gfortran
             - libboost-all-dev
@@ -92,8 +90,7 @@ matrix:
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
-            - debian-sid
+            - llvm-toolchain-trusty-3.8
           packages:
             - gfortran
             - libboost-all-dev
@@ -144,8 +141,7 @@ matrix:
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
-            - debian-sid
+            - llvm-toolchain-trusty-3.7
           packages:
             - gfortran
             - libboost-all-dev
@@ -162,8 +158,7 @@ matrix:
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
-            - debian-sid
+            - llvm-toolchain-trusty-3.8
           packages:
             - gfortran
             - libboost-all-dev
