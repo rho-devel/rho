@@ -11,6 +11,7 @@ env:
 
 matrix:
   include:
+    # gcc 4.9
     - compiler: gcc
       addons:
         apt:
@@ -28,23 +29,95 @@ matrix:
             - gfortran-4.9
       env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
-    # gcc 5.0 with code coverage.
+    # gcc 5.0
     - compiler: gcc
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran-5
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
             - liblzma-dev
             - libpcre3-dev
             - libedit-dev
-            - gcc-5
-            - g++-5
-      env: F77=gfortran-5 FCC=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
+            - gcc-5=5.0.*
+            - g++-5=5.0.*
+            - gfortran-5=5.0.*
+      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+
+    # gcc 5.1
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-5=5.1.*
+            - g++-5=5.1.*
+            - gfortran-5=5.1.*
+      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+
+    # gcc 5.2
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-5=5.2.*
+            - g++-5=5.2.*
+            - gfortran-5=5.2.*
+      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+
+    # gcc 5.3
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-5=5.3.*
+            - g++-5=5.3.*
+            - gfortran-5=5.3.*
+      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+
+    # gcc 6.1 with code coverage.
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gfortran-6
+            - libboost-all-dev
+            - zlib1g-dev
+            - libbz2-dev
+            - liblzma-dev
+            - libpcre3-dev
+            - libedit-dev
+            - gcc-6
+            - g++-6
+      env: F77=gfortran-6 FCC=gfortran-6 C_COMPILER=gcc-6 CXX_COMPILER=g++-6 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
     # - compiler: clang
@@ -141,7 +214,7 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.7
+            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main"
           packages:
             - gfortran
             - libboost-all-dev
@@ -158,7 +231,7 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.8
+            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
