@@ -29,60 +29,6 @@ matrix:
             - gfortran-4.9
       env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
-    # gcc 5.0
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libboost-all-dev
-            - zlib1g-dev
-            - libbz2-dev
-            - liblzma-dev
-            - libpcre3-dev
-            - libedit-dev
-            - gcc-5=5.0.*
-            - g++-5=5.0.*
-            - gfortran-5=5.0.*
-      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
-
-    # gcc 5.1
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libboost-all-dev
-            - zlib1g-dev
-            - libbz2-dev
-            - liblzma-dev
-            - libpcre3-dev
-            - libedit-dev
-            - gcc-5=5.1.*
-            - g++-5=5.1.*
-            - gfortran-5=5.1.*
-      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
-
-    # gcc 5.2
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - libboost-all-dev
-            - zlib1g-dev
-            - libbz2-dev
-            - liblzma-dev
-            - libpcre3-dev
-            - libedit-dev
-            - gcc-5=5.2.*
-            - g++-5=5.2.*
-            - gfortran-5=5.2.*
-      env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
-
     # gcc 5.3
     - compiler: gcc
       addons:
@@ -108,15 +54,15 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gfortran-6
             - libboost-all-dev
             - zlib1g-dev
             - libbz2-dev
             - liblzma-dev
             - libpcre3-dev
             - libedit-dev
-            - gcc-6
-            - g++-6
+            - gcc-6=6.1.*
+            - g++-6=6.1.*
+            - gfortran-6=6.1.*
       env: F77=gfortran-6 FCC=gfortran-6 C_COMPILER=gcc-6 CXX_COMPILER=g++-6 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.
@@ -144,7 +90,7 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.8
+            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
@@ -155,7 +101,7 @@ matrix:
             - libedit-dev
             - clang-3.8
             - llvm-3.8-dev
-      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 ASAN_OPTIONS="detect_leaks=0 allow_user_segv_handler=true" CPPFLAGS="-DNO_CELLPOOLS" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
+      env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 CPPFLAGS="-DNO_CELLPOOLS" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
 
     # With undefined behaviour sanitizer enabled.  Use the most recent
     # supported verison of clang, to get the best error detection.
@@ -163,7 +109,7 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.8
+            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
