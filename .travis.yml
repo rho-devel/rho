@@ -90,7 +90,7 @@ matrix:
       addons:
         apt:
           sources:
-            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
+            - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
@@ -109,7 +109,7 @@ matrix:
       addons:
         apt:
           sources:
-            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
+            - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
@@ -160,7 +160,7 @@ matrix:
       addons:
         apt:
           sources:
-            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main"
+            - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main"
           packages:
             - gfortran
             - libboost-all-dev
@@ -177,7 +177,7 @@ matrix:
       addons:
         apt:
           sources:
-            - "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
+            - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
           packages:
             - gfortran
             - libboost-all-dev
