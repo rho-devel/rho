@@ -212,4 +212,4 @@ script:
         - travis_wait 60 make -j 2 check
         
 after_success:
-  - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash) -x gcov-5 -g src/extra -g tests -X coveragepy ; fi
+  - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash) -x gcov-6 -g src/extra -g tests -X coveragepy ; fi
