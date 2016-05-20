@@ -650,7 +650,8 @@ AC_ARG_VAR([PKGCONF], [path to pkg-config utility])
 AC_ARG_VAR([PKG_CONFIG_PATH], [directories to add to pkg-config's search path])
 AC_ARG_VAR([PKG_CONFIG_LIBDIR], [path overriding pkg-config's default search path])
 
-AC_PROG_CC
+# Prefer the clang compiler if it's available.
+AC_PROG_CC([clang gcc icc cc cl cl.exe])
 
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_CPP
@@ -955,6 +956,7 @@ AC_LANG_POP(Fortran 77)
 
 ### *** C++ compiler.
 
+AC_PROG_CXX([clang++ g++ icc c++ cl cl.exe])
 R_PROG_CXX_MAKEFRAG
 
 AC_LANG_PUSH(C++)
