@@ -265,7 +265,15 @@ namespace rho {
 	 */
 	class Marker : public const_visitor {
 	public:
-	    Marker()
+	    // Virtual function of const_visitor:
+	    void operator()(const GCNode* node) override;
+	};
+
+	/** Marker that counts the number of nodes marked.
+	 */
+	class CountingMarker : public Marker {
+	public:
+	    CountingMarker()
 		: m_marks_applied(0)
 	    {}
 
@@ -274,7 +282,6 @@ namespace rho {
 		return m_marks_applied;
 	    }
 
-	    // Virtual function of const_visitor:
 	    void operator()(const GCNode* node) override;
 	private:
 	    unsigned int m_marks_applied;
