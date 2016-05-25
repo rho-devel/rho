@@ -41,6 +41,7 @@ unit_test_sources = \
 	FrameTests.cpp \
 	GCRootTest.cpp \
 	GCStackFrameBoundaryTests.cpp \
+	LogicalTests.cpp \
 	NodeStackTests.cpp \
 	PairListTests.cpp \
 	SubassignTests.cpp \
