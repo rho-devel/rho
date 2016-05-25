@@ -332,8 +332,16 @@ void GCNode::Marker::operator()(const GCNode* node)
     // Update mark  Beware ~ promotes to unsigned int.
     node->m_rcmms &= static_cast<unsigned char>(~s_mark_mask);
     node->m_rcmms |= s_mark;
-    ++m_marks_applied;
     node->visitReferents(this);
+}
+
+void GCNode::CountingMarker::operator()(const GCNode* node)
+{
+    if (node->isMarked()) {
+	return;
+    }
+    Marker::operator()(node);
+    m_marks_applied += 1;
 }
 
 void rho::initializeMemorySubsystem()

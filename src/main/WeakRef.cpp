@@ -215,7 +215,7 @@ void WeakRef::markThru()
     {
 	unsigned int marks_applied;
 	do {
-	    GCNode::Marker marker;
+	    GCNode::CountingMarker marker;
 	    WRList::iterator lit = live->begin();
 	    while (lit != live->end()) {
 		WeakRef* wr = *lit++;
