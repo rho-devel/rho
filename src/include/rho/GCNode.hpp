@@ -376,9 +376,12 @@ namespace rho {
 
 	void clearOnStackBit() const {
 	    m_rcmms = m_rcmms & static_cast<unsigned char>(~s_on_stack_mask);
-	    if ((m_rcmms &
-		 (s_refcount_mask | s_on_stack_mask| s_moribund_mask)) == 0)
-		makeMoribund();
+	    if ((m_rcmms & (s_refcount_mask | s_moribund_mask)) == 0) {
+                // Clearing stack bits only happens when removing a stack barrier, so
+                // the object still exists on the stack and we can only add it to the
+                // moribund list here.
+                addToMoribundList();
+            }
 	}
 
 	bool isOnStackBitSet() const {
@@ -419,8 +422,11 @@ namespace rho {
 	    return (m_rcmms & s_mark_mask) == s_mark;
 	}
 
-	// Mark this node as moribund:
+	/** @brief Mark this node as moribund or delete if the stack bit is correct.
+         */
 	void makeMoribund() const HOT_FUNCTION;
+
+	void addToMoribundList() const HOT_FUNCTION;
 
 	/** @brief Carry out the mark phase of garbage collection.
 	 */
