@@ -422,7 +422,8 @@ namespace rho {
 	    return (m_rcmms & s_mark_mask) == s_mark;
 	}
 
-	// Mark this node as moribund:
+	/** @brief Mark this node as moribund or delete if the stack bit is correct.
+         */
 	void makeMoribund() const HOT_FUNCTION;
 
 	void addToMoribundList() const HOT_FUNCTION;
