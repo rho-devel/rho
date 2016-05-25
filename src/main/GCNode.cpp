@@ -239,9 +239,14 @@ void GCNode::makeMoribund() const
 	// In this case, the node can be deleted immediately.
 	delete this;
     } else {
-	m_rcmms |= s_moribund_mask;
-	s_moribund->push_back(this);
+        addToMoribundList();
     }
+}
+
+void GCNode::addToMoribundList() const
+{
+    m_rcmms |= s_moribund_mask;
+    s_moribund->push_back(this);
 }
 
 void GCNode::mark()
