@@ -28,17 +28,50 @@ Rho has been tested to compile on both Linux and Mac OSX systems.
 ## Configuration and Compilation
 
 To build with the LLVM JIT enabled:
-  ```
-   configure --enable-llvm-jit --enable-maintainer-mode 
-   make
-   make check
-   ```
-For development builds, it is useful to define
+
+    ./configure --enable-llvm-jit --enable-maintainer-mode
+    make
+    make check
+
+
+For development builds, it is useful to set `CFLAGS` and `CXXFLAGS` to
 `-Wall -DNO_CELLPOOLS -DCHECKED_SEXP_DOWNCAST -fsanitize=address -O1`
 in order to find bugs more easily.
 
-The configure call may complain about missing recommended packages. These can be obtained by using
-running the `tools/rsync-recommended` script.
+The configure call may complain about missing recommended packages. The
+recommended packages can be obtained by running the script `tools/rsync-recommended`.
+
+## Building on OSX
+
+It is tricky to build rho with JIT support on OSX. The following steps show how
+to build without JIT support.
+
+First, you will need the XCode command line tools which provide clang and
+clang++. Additional dependencies you need are:
+
+* Fortran compiler
+* XZ library (liblzma)
+* PCRE library
+* Boost C++ library
+
+The above dependencies can be installed with e.g. Homebrew:
+
+    brew install gcc # Provides gfortran.
+    brew install xz
+    brew install pcre
+    brew install boost
+
+After fetching the dependencies you should be able to build. If your Homebrew
+folder is in your home directory you will need to add `~/homebrew/include` and
+`~/homebrew/lib` as include/library directories:
+
+    CC=clang CXX=clang++ \
+        CFLAGS='-I/Users/me/homebrew/include -g -O2' \
+        CXXFLAGS='-I/Users/me/homebrew/include -g -O2' \
+        CPPFLAGS='-I/Users/me/homebrew/include' \
+        LDFLAGS='-L/Users/me/homebrew/lib' \
+        ./configure --with-x=no
+
 
 ## Notable Known Issues
 
