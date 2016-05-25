@@ -54,7 +54,8 @@ benchmarks = [
         { 'name': 'benchmarks/scalar/ForLoopAdd/ForLoopAdd.R', 'warmup_rep': 2, 'bench_rep': 3 },
         { 'name': 'benchmarks/shootout/nbody/nbody.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/shootout/fannkuch-redux/fannkuch-redux.R', 'warmup_rep': 0, 'bench_rep': 1 },
-        { 'name': 'benchmarks/shootout/spectral-norm/spectral-norm.R', 'warmup_rep': 0, 'bench_rep': 1 },
+        # Skip spectral-norm.R because it takes too long for incremental benchmarking.
+        #{ 'name': 'benchmarks/shootout/spectral-norm/spectral-norm.R', 'warmup_rep': 0, 'bench_rep': 1 },
         # Skip mandelbrot.R to avoid duplicate benchmark IDs (conflicts with riposte/mandelbrot.R).
         #{ 'name': 'benchmarks/shootout/mandelbrot/mandelbrot.R', 'warmup_rep': 0, 'bench_rep': 1 },
         { 'name': 'benchmarks/shootout/pidigits/pidigits.R', 'warmup_rep': 0, 'bench_rep': 1 },
@@ -111,6 +112,9 @@ def build_rho(gitref, args, jit, build=True):
         if not os.path.isdir('.git'):
             # Clone Rho into the local directory.
             exit_code = subprocess.call(['git', 'clone', args.repository, '.'])
+        else:
+            # Fetch latest commits.
+            subprocess.call(['git', 'fetch', 'origin'])
         # Clean and switch to the selected revision.
         subprocess.call(['git', 'reset', '--hard', gitref])
         # Build with JIT enabled.
@@ -135,7 +139,7 @@ def get_timestamp(gitref, args):
     bench_dir = os.getcwd()
     try:
         os.chdir(args.build_dir)
-        return subprocess.check_output(['git', 'show', '-s', '--format=%ci', gitref])
+        return subprocess.check_output(['git', 'show', '-s', '--format=%ci', gitref, '--'])
     finally:
         os.chdir(bench_dir)
 

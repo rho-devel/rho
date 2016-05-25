@@ -19,8 +19,16 @@
 #  along with this program; if not, a copy is available at
 #  https://www.R-project.org/Licenses/
 
-# Simple script to run nightly and benchmark a small number of commits.  The
-# number of commits to benchmark can be specified as the first command line
+# Simple script to decide which commits to bechmark nightly.  This script only
+# writes the commit hashes for commits to benchmark to an output file. The
+# output needs to be passed to runbench.py.  This script should not not run the
+# runbench.py script because the R environment variables would be inherited by
+# the process and affect benchmark running.
+#
+# Example usage of this script:
+# $ Rscript incremental.R 4 && cat commits | xargs python runbench.py
+#
+# The number of commits to benchmark can be specified as the first command line
 # argument, the default is 3 commits.
 
 num_commit <- 3 # Limits number of commits to be benchmarked.
@@ -40,12 +48,14 @@ if (file.exists('out/versions')) {
 	commits <- read.csv('out/versions', header=F)$V1
 }
 
+out <- c()
 for (rev in revs) {
 	if (num_commit == 0) {
 		break
 	} else if (!(rev %in% commits)) {
-		print(paste('Benchmarking commit', rev))
-		revs <- system2('python', c('runbench.py', rev))
+		print(paste("Selected commit", rev))
+		out <- c(out, rev)
 		num_commit <- num_commit - 1
 	}
 }
+write(file='commits', out)
