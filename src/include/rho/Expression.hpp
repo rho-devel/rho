@@ -50,6 +50,11 @@ namespace rho {
      * list.  (Any of these pointers may be null.)  A Expression
      * object is considered to 'own' its car, its tag, and all its
      * successors.
+     *
+     * Most expressions should be represented using the CachingExpression class,
+     * instead of this, as it has better performance.  This class is primarily
+     * useful for expressions that are only evaluated once, where the function
+     * is known to be a primitive and for SET_TYPEOF.
      */
     class Expression : public ConsCell {
     public:
@@ -67,16 +72,11 @@ namespace rho {
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
-        explicit Expression(RObject* function,
-                            std::initializer_list<RObject*> unnamed_args);
-
 	/** @brief Copy constructor.
 	 *
 	 * @param pattern Expression to be copied.
 	 */
-	Expression(const Expression& pattern)
-	    : ConsCell(pattern)
-	{}
+	Expression(const Expression& pattern) = default;
 
         const RObject* getFunction() const {
             return car();
@@ -146,12 +146,8 @@ namespace rho {
         RObject* evaluate(Environment* env) override;
 	const char* typeName() const override;
 
-	// For GCNode
-	void visitReferents(const_visitor* v) const override;
     protected:
-	void detachReferents() override;
-    private:
-	// Declared private to ensure that Expression objects are
+	// Declared protected to ensure that Expression objects are
 	// allocated only using 'new':
 	~Expression() {}
 
@@ -193,11 +189,62 @@ namespace rho {
                                          Frame* newframe);
         static Environment* getMethodCallingEnv();
 
-	void matchArgsIntoEnvironment(const Closure* func,
-				      Environment* calling_env,
-				      ArgList* arglist,
-				      Environment* execution_env) const;
+	virtual void matchArgsIntoEnvironment(const Closure* func,
+					      Environment* calling_env,
+					      ArgList* arglist,
+					      Environment* execution_env) const;
 
+	Expression& operator=(const Expression&) = delete;
+    };
+
+    /** @brief Singly linked list representing an R expression.
+     *
+     * R expression, represented as a LISP-like singly-linked list,
+     * each element containing pointers to a 'car' object and to a
+     * 'tag' object, as well as a pointer to the next element of the
+     * list.  (Any of these pointers may be null.)  A Expression
+     * object is considered to 'own' its car, its tag, and all its
+     * successors.
+     *
+     * Unlike the regular Expression class, this class caches the results of
+     * parameter matching to closure calls for improved performance.
+     */
+    class CachingExpression : public Expression {
+    public:
+	/**
+	 * @param cr Pointer to the 'car' of the element to be
+	 *           constructed.
+	 *
+	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
+	 *           to be constructed.
+	 *
+	 * @param tg Pointer to the 'tag' of the element to be constructed.
+	 */
+	explicit CachingExpression(RObject* cr = nullptr,
+				   PairList* tl = nullptr,
+				   const RObject* tg = nullptr)
+	    : Expression(cr, tl, tg)
+	{}
+
+	CachingExpression(RObject* function,
+			  std::initializer_list<RObject*> unnamed_args);
+
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern CachingExpression to be copied.
+	 */
+	CachingExpression(const CachingExpression& pattern) = default;
+	CachingExpression(const Expression& pattern) : Expression(pattern)
+	{}
+
+	// Virtual functions of RObject:
+	CachingExpression* clone() const override;
+
+	// For GCNode
+	void visitReferents(const_visitor* v) const override;
+    protected:
+	void detachReferents() override;
+    private:
 	// Object used for recording details from previous evaluations of
 	// this expression, for the purpose of optimizing future evaluations.
 	// In the future, this will likely include type recording as well.
@@ -206,8 +253,19 @@ namespace rho {
             const ArgMatchInfo* m_arg_match_info;
 	} m_cache;
 
-	Expression& operator=(const Expression&) = delete;
+	void matchArgsIntoEnvironment(const Closure* func,
+				      Environment* calling_env,
+				      ArgList* arglist,
+				      Environment* execution_env)
+	    const override;
+
+	// Declared private to ensure that CachingExpression objects are
+	// allocated only using 'new':
+	~CachingExpression() {}
+
+	CachingExpression& operator=(const CachingExpression&) = delete;
     };
+
 } // namespace rho
 
 /** @brief Pointer to expression currently being evaluated.

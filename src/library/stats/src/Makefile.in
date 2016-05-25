@@ -52,7 +52,8 @@ DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d)
 OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o) $(SOURCES_F:.f=.o)
 
 # need config.h
-PKG_CPPFLAGS = -I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H
+PKG_CPPFLAGS = -I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H \
+	-DCOMPILING_RHO
 PKG_CFLAGS = @R_OPENMP_CFLAGS@ $(C_VISIBILITY)
 PKG_FFLAGS = $(F77_VISIBILITY)
 

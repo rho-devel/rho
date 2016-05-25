@@ -164,7 +164,7 @@ SEXP Rf_allocSExp(SEXPTYPE t)
 	ans = new PairList;
 	break;
     case LANGSXP:
-	ans = new Expression;
+	ans = new CachingExpression;
 	break;
     case DOTSXP:
 	ans = new DottedArgs;

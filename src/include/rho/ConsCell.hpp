@@ -351,6 +351,8 @@ namespace rho {
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
+
+	friend void ::SET_TYPEOF(SEXP, SEXPTYPE);
     };
 
     inline bool operator!=(ConsCell::iterator l, ConsCell::iterator r)
@@ -513,6 +515,12 @@ namespace rho {
 	unsigned int packGPBits() const override;
 	const char* typeName() const override;
 	void unpackGPBits(unsigned int gpbits) override;
+
+    protected:
+	// Declared protected to ensure that PairList objects are
+	// allocated only using 'new':
+	virtual ~PairList() HOT_FUNCTION;
+
     private:
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor
@@ -521,10 +529,6 @@ namespace rho {
 	PairList(const PairList& pattern, int)
 	    : ConsCell(pattern, 0)
 	{}
-
-	// Declared private to ensure that PairList objects are
-	// allocated only using 'new':
-	~PairList() HOT_FUNCTION;
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:

@@ -54,6 +54,16 @@ using namespace VectorOps;
 static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2);
 
 namespace {
+    inline bool operator==(const Rcomplex& l, const Rcomplex& r)
+    {
+	return (l.r == r.r) && (l.i == r.i);
+    }
+    
+    inline bool operator!=(const Rcomplex& l, const Rcomplex& r)
+    {
+	return !(l==r);
+    }
+
     bool isNaOrNaN(Logical value) { return isNA(value); }
     bool isNaOrNaN(int value)     { return isNA(value); }
     bool isNaOrNaN(double value)  { return std::isnan(value); }

@@ -47,6 +47,7 @@
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
+#include "rho/Expression.hpp"
 #include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/Promise.hpp"
@@ -1537,7 +1538,7 @@ SEXP attribute_hidden do_ascall(/*const*/ rho::Expression* call, const rho::Buil
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = new Expression(nullptr, tl));
+	    PROTECT(ap = ans = new CachingExpression(nullptr, tl));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, VECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -1553,7 +1554,7 @@ SEXP attribute_hidden do_ascall(/*const*/ rho::Expression* call, const rho::Buil
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = new Expression(nullptr, tl));
+	    PROTECT(ap = ans = new CachingExpression(nullptr, tl));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, XVECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))

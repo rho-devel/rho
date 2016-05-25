@@ -363,6 +363,13 @@ GCNode* GCNode::asGCNode(void* candidate_pointer)
     return nullptr;
 }
 
+GCNode::InternalData GCNode::storeInternalData() const {
+    return m_rcmms;
+}
+
+void GCNode::restoreInternalData(InternalData data) {
+    m_rcmms = data;
+}
 
 #ifdef HAVE_ADDRESS_SANITIZER
 

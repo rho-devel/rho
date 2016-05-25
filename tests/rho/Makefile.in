@@ -44,6 +44,7 @@ unit_test_sources = \
 	LogicalTests.cpp \
 	NodeStackTests.cpp \
 	PairListTests.cpp \
+	SetTypeofTests.cpp \
 	SubassignTests.cpp \
 	VisibilityTests.cpp \
 	@BUILD_LLVM_JIT_TRUE@ MCJITMemoryManagerTests.cpp

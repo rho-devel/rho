@@ -25,7 +25,7 @@ SHLIB = $(pkg)@SHLIB_EXT@
 
 # need Defn.h etc, and config.h
 PKG_CPPFLAGS =-I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H \
-  -I$(top_srcdir)/src/main
+  -I$(top_srcdir)/src/main -DCOMPILING_RHO
 
 
 all: Makedeps

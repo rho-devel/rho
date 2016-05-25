@@ -32,6 +32,8 @@
 
 #include "rho/ListVector.hpp"
 #include "rho/ExpressionVector.hpp"
+#include "rho/String.hpp"
+#include "Rinternals.h"
 
 using namespace rho;
 
@@ -67,5 +69,34 @@ SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v)
     } else {
 	error("%s() can only be applied to a '%s', not a '%s'",
 	      "SET_VECTOR_ELT", "list", Rf_type2char(TYPEOF(x)));
+    }
+}
+
+SEXP * NORET (VECTOR_PTR)(SEXP x)
+{
+  Rf_error(_("not safe to return vector pointer"));
+}
+
+extern "C"
+void* DATAPTR(SEXP x) {
+    switch (TYPEOF(x)) {
+    case CHARSXP:
+	return const_cast<char*>(SEXP_downcast<String*>(x)->c_str());
+    case LGLSXP:
+	return LOGICAL(x);
+    case INTSXP:
+	return INTEGER(x);
+    case REALSXP:
+	return REAL(x);
+    case CPLXSXP:
+	return COMPLEX(x);
+    case RAWSXP:
+	return REAL(x);
+    case STRSXP:
+	return STRING_PTR(x);
+    case VECSXP:
+	return VECTOR_PTR(x);
+    default:
+	Rf_error("Unsupported type to DATAPTR()");
     }
 }

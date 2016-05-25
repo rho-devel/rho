@@ -110,7 +110,7 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 static SEXP makeErrorCall(SEXP fun)
 {
     SEXP call;
-    PROTECT(call = new Expression);
+    PROTECT(call = new CachingExpression);
     SETCAR(call, fun);
     UNPROTECT(1);
     return call;

@@ -131,10 +131,6 @@ inline SEXP STRING_ELT(SEXP x, R_xlen_t i)
 }
 #endif
 
-#ifdef COMPILING_RADIXSORT
-SEXP* StringVectorDataPtr(SEXP string_vector);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

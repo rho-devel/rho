@@ -79,15 +79,17 @@ typedef int R_len_t;
 typedef ptrdiff_t R_xlen_t;
 #define R_XLEN_T_MAX PTRDIFF_MAX
 
-#ifdef __cplusplus
+#if defined(COMPILING_RHO) && defined(__cplusplus)
 namespace rho {
     class RObject;
 }
 typedef rho::RObject* SEXP;
-
-extern "C" {
 #else
 typedef struct SEXPREC* SEXP;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
     /* Comment from CR code:
@@ -116,8 +118,17 @@ typedef struct SEXPREC* SEXP;
      * function despatch etc.  However, a ::SEXPTYPE field is retained
      * within each rho::RObject for backwards compatibility, and indeed
      * efficiency.
+     *
+     * Note: when not compiling rho, SEXPTYPE is a typedef for unsigned int.
+     * This is done to support C++ packages that expect implicit int to
+     * SEXPTYPE conversions.
      */
-    typedef enum {
+#ifndef COMPILING_RHO
+    typedef unsigned int SEXPTYPE;
+#else
+    typedef
+#endif
+    enum {
 	NILSXP	    = 0,    /**< NULL. In rho no rho::RObject has
 			     * this type, but for backward
 			     * compatibility TYPEOF will return ::NILSXP
@@ -182,7 +193,11 @@ typedef struct SEXPREC* SEXP;
 
 	FUNSXP	    = 99    /**< Closure or Builtin.  No rho::RObject has
 			       this type. */
-    } SEXPTYPE;
+    }
+#ifdef COMPILING_RHO
+	SEXPTYPE
+#endif
+	;
 
 /* These are also used with the write barrier on, in attrib.c and util.c */
 #define TYPE_BITS 5
@@ -284,6 +299,9 @@ Rboolean (OBJECT)(SEXP x);
 int  (MARK)(SEXP x);
 SEXPTYPE (TYPEOF)(SEXP x);
 int  (NAMED)(SEXP x);
+// int  (REFCNT)(SEXP x);
+void (SET_OBJECT)(SEXP x, int v);
+void SET_TYPEOF(SEXP x, SEXPTYPE v);
 void (SET_NAMED)(SEXP x, int v);
 void SET_ATTRIB(SEXP x, SEXP v);
 void DUPLICATE_ATTRIB(SEXP to, SEXP from);
@@ -314,6 +332,8 @@ SEXP (STRING_ELT)(SEXP x, R_xlen_t i);
 SEXP (VECTOR_ELT)(SEXP x, R_xlen_t i);
 void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
+SEXP *(STRING_PTR)(SEXP x);
+SEXP * NORET (VECTOR_PTR)(SEXP x);
 
 // Extract an item from an Expression (EXPRSXP, rho::ExpressionVector)
 SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
@@ -355,6 +375,8 @@ int  (RTRACE)(SEXP x);
 void (SET_RDEBUG)(SEXP x, Rboolean v);
 void (SET_RSTEP)(SEXP x, int v);
 void (SET_RTRACE)(SEXP x, int v);
+// void SET_FORMALS(SEXP x, SEXP v);
+// void SET_BODY(SEXP x, SEXP v);
 void SET_CLOENV(SEXP x, SEXP v);
 
 /* Symbol Access Functions */
@@ -370,17 +392,30 @@ void SET_INTERNAL(SEXP x, SEXP v);
 /* Environment Access Functions */
 SEXP (FRAME)(SEXP x);
 SEXP (ENCLOS)(SEXP x);
+SEXP (HASHTAB)(SEXP x);
+// int  (ENVFLAGS)(SEXP x);
+// void (SET_ENVFLAGS)(SEXP x, int v);
+// void SET_FRAME(SEXP x, SEXP v);
+// void SET_ENCLOS(SEXP x, SEXP v);
+// void SET_HASHTAB(SEXP x, SEXP v);
 
 /* Promise Access Functions */
 /* First five have macro versions in Defn.h */
 SEXP (PRCODE)(SEXP x);
 SEXP (PRENV)(SEXP x);
 SEXP (PRVALUE)(SEXP x);
+// int  (PRSEEN)(SEXP x);
+// void (SET_PRSEEN)(SEXP x, int v);
+// void SET_PRENV(SEXP x, SEXP v);
 void SET_PRVALUE(SEXP x, SEXP v);
+// void SET_PRCODE(SEXP x, SEXP v);
 void SET_PRSEEN(SEXP x, int v);
 
 /* Hashing Functions */
+// int  (HASHASH)(SEXP x);
 int  (HASHVALUE)(SEXP x);
+// void (SET_HASHASH)(SEXP x, int v);
+// void (SET_HASHVALUE)(SEXP x, int v);
 
 /* External pointer access macros */
 /* (only for backwards compatibility in rho) */
@@ -389,9 +424,14 @@ int  (HASHVALUE)(SEXP x);
 #define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
 /* Bytecode access macros */
+// #define BCODE_CODE(x)	CAR(x)
+// #define BCODE_CONSTS(x) CDR(x)
+// #define BCODE_EXPR(x)	TAG(x)
 #define isByteCode(x) (0)
 
 /* Pointer Protection and Unprotection */
+typedef size_t PROTECT_INDEX;
+
 #ifdef DISABLE_PROTECT_MACROS
   /* Danger!  You almost certainly don't need to use DISABLE_PROTECT_MACROS for
    * your code.
@@ -440,10 +480,15 @@ LibExtern SEXP	R_Srcref;           /* Current srcref, for debuggers */
 /* Note that NULL will in turn typically expand to (void*)0 in C, and
  *  simply to 0 in C++.
  */
-#define R_NilValue NULL
+#if defined(COMPILING_RHO) && defined(__cplusplus)
+#define R_NilValue nullptr
+#else
+#define R_NilValue ((SEXP)NULL)
+#endif
 
 LibExtern SEXP	R_UnboundValue;	    /* Unbound marker */
 LibExtern SEXP	R_MissingArg;	    /* Missing argument marker */
+// SEXP	R_RestartToken;     /* Marker for restarted function calls */
 
 /* Symbol Table Shortcuts */
 LibExtern SEXP	R_baseSymbol; // <-- backcompatible version of:
@@ -540,6 +585,7 @@ void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
 void Rf_copyVector(SEXP, SEXP);
+// int Rf_countContexts(int, int);
 SEXP Rf_CreateTag(SEXP);
 void Rf_defineVar(SEXP, SEXP, SEXP);
 SEXP Rf_dimgets(SEXP, SEXP);
@@ -620,8 +666,6 @@ void Rf_unprotect(int);
 #endif
 void Rf_unprotect_ptr(SEXP);
 
-typedef size_t PROTECT_INDEX;
-
 // void NORET R_signal_protect_error(void);
 // void NORET R_signal_unprotect_error(void);
 // void NORET R_signal_reprotect_error(PROTECT_INDEX i);
@@ -639,7 +683,7 @@ SEXP Rf_asS4(SEXP, Rboolean, int);
 SEXP Rf_S3Class(SEXP);
 int Rf_isBasicClass(const char *);
 
-Rboolean R_cycle_detected(SEXP, SEXP);
+Rboolean R_cycle_detected(SEXP s, SEXP child);
 
 typedef enum {
     CE_NATIVE = 0,
@@ -691,6 +735,14 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit);
 SEXP R_WeakRefKey(SEXP w);
 SEXP R_WeakRefValue(SEXP w);
 void R_RunWeakRefFinalizer(SEXP w);
+
+SEXP R_PromiseExpr(SEXP);
+SEXP R_ClosureExpr(SEXP);
+// void R_initialize_bcode(void);
+// SEXP R_bcEncode(SEXP);
+// SEXP R_bcDecode(SEXP);
+#define PREXPR(e) R_PromiseExpr(e)
+#define BODY_EXPR(e) R_ClosureExpr(e)
 
 /* Protected evaluation */
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data);
@@ -877,6 +929,7 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define allocVector3		Rf_allocVector3
 #define any_duplicated		Rf_any_duplicated
 #define any_duplicated3		Rf_any_duplicated3
+#define applyClosure		Rf_applyClosure
 #define arraySubscript		Rf_arraySubscript
 #define asChar			Rf_asChar
 #define asCharacterFactor	Rf_asCharacterFactor
@@ -893,6 +946,7 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib
 #define copyVector		Rf_copyVector
+#define countContexts		Rf_countContexts
 #define CreateTag		Rf_CreateTag
 #define defineVar		Rf_defineVar
 #define dimgets			Rf_dimgets
@@ -971,10 +1025,11 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define lcons			Rf_lcons
 
 #ifndef __cplusplus
-/* Under gcc, this macro can play havoc with some standard C++ header
+/* In C++, this macro can play havoc with some standard C++ header
  * files.  Consequently, the alternative approach is taken of defining
- * length as an inline function within the namespace rho.  The
- * relevant definition is at the end of this file.
+ * length as an inline function within the namespace rho (where it can be
+ * found via argument-dependent lookup).  The relevant definition is at the
+ * end of this file.
  */
 #define length                  Rf_length
 #endif
@@ -1124,21 +1179,23 @@ void R_Reprotect(SEXP, PROTECT_INDEX);
 SEXP R_FixupRHS(SEXP x, SEXP y);
 #endif
 
+#ifdef USE_RINTERNALS
+void* DATAPTR(SEXP x);
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 
-namespace rho {
-    /** @brief Shorthand for Rf_length().
-     *
-     * @deprecated This is provided only for use in code inherited
-     * from CR, and is a workaround for the problems that CR's length
-     * macro can cause with C++ header files.  New code should invoke
-     * Rf_length() explicitly.
-     */
-    inline R_xlen_t length(RObject* s)
-    {
-	return Rf_length(s);
-    }
+/** @brief Shorthand for Rf_length().
+ *
+ * @deprecated This is provided only for use in code inherited
+ * from CR, and is a workaround for the problems that CR's length
+ * macro can cause with C++ header files.  New code should invoke
+ * Rf_length() explicitly.
+ */
+inline R_xlen_t length(SEXP s)
+{
+    return Rf_length(s);
 }
 #endif
 

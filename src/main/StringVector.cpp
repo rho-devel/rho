@@ -92,8 +92,8 @@ void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v)
     (*sv)[i] = s;
 }
 
-extern "C"
-SEXP* attribute_hidden StringVectorDataPtr(SEXP string_vector) {
+SEXP* STRING_PTR(SEXP x) {
+    // Evil, but it happens to work for now.
     return reinterpret_cast<SEXP*>(
-	&(*(SEXP_downcast<StringVector*>(string_vector)->begin())));
+	&*SEXP_downcast<StringVector*>(x)->begin());
 }

@@ -237,6 +237,7 @@ namespace rho {
 	// returns the pointer to that node.
 	// Otherwise returns nullptr.
 	static GCNode* asGCNode(void* candidate_pointer);
+
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
@@ -429,6 +430,12 @@ namespace rho {
 
 	friend class GCEdgeBase;
 	friend class GCTestHelper;
+
+    protected:
+	// Used by methods implementing SET_TYPEOF.
+	typedef unsigned InternalData;
+	InternalData storeInternalData() const;
+	void restoreInternalData(InternalData data);
     };
 
     /** @brief Initialize the entire memory subsystem.

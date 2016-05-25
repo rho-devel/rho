@@ -280,6 +280,8 @@ namespace rho {
 	// Helper functions for visitReferents():
 	void visitElements(const_visitor*v, std::true_type) const;
 	void visitElements(const_visitor*v, std::false_type) const {}
+
+	friend class RObject;
     };
 
     // VectorTypeFor<T>::type is the type of vector that can hold elements of
