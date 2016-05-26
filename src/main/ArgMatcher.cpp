@@ -276,8 +276,29 @@ ArgMatchInfoCache createMatchInfoCache() {
 
 }  // namespace
 
-ArgMatchInfo::ArgMatchInfo(int num_formals)
-    : m_num_formals(num_formals), m_values(num_formals, -1) { }
+ArgMatchInfo::ArgMatchInfo(int num_formals, const PairList* args)
+    : m_num_formals(num_formals), m_values(num_formals, -1)
+ {
+    for (const PairList* arg = args; arg; arg = arg->tail()) {
+	m_tags.push_back(SEXP_downcast<const Symbol*>(arg->tag()));
+    }
+}
+
+bool ArgMatchInfo::arglistTagsMatch(const PairList* args) const {
+    const PairList* arg = args;
+    size_t index;
+    for (index = 0; index < m_tags.size() && arg != nullptr;
+	 ++index, arg = arg->tail()) {
+	if (m_tags[index] != args->tag())
+	    return false;
+    }
+    if (index != m_tags.size() || arg != nullptr) {
+	return false;
+    }
+    return true;
+}
+
+
 
 const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
     static ArgMatchInfoCache s_interned_match_infos = createMatchInfoCache();
@@ -285,7 +306,7 @@ const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
     if (args->has3Dots())
 	return nullptr;
 
-    ArgMatchInfo* matching = new ArgMatchInfo(numFormals());
+    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), args->list());
     RecordArgMatchInfoCallback callback(matching);
     match(args, &callback);
 

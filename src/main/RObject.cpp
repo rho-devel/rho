@@ -38,7 +38,9 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "Rinternals.h"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
+#include "rho/LogicalVector.hpp"
 #include "rho/PairList.hpp"
 #include "rho/Symbol.hpp"
 
@@ -234,6 +236,12 @@ void SET_ATTRIB(SEXP x, SEXP v)
     x->setAttributes(pl);
 }
 
+void SET_OBJECT(SEXP, int)
+{
+    // This is a no-op in rho.  The object bit is set based on the class
+    // attribute.
+}
+
 void maybeTraceMemory1(SEXP dest, SEXP src)
 {
 #ifdef R_MEMORY_PROFILING
@@ -246,4 +254,176 @@ void maybeTraceMemory2(SEXP dest, SEXP src1, SEXP src2)
 #ifdef R_MEMORY_PROFILING
     dest->maybeTraceMemory(src1, src2);
 #endif
+}
+
+
+/*
+ * Evil lurks here.
+ *
+ * To support SET_TYPEOF (which is unbelievably nasty, but unfortunately
+ * required by some important packages), we need to turn objects of one type
+ * into another, in-place.
+ *
+ * The way that this is done is to store the contents of the object, including
+ * GC related state, into local variables, explicitly destroy the object
+ * and then use placement new to create an object of the new type in its place.
+ * Finally, the values are restored.
+ *
+ * This scheme is somewhat brittle -- changes to the way that objects are
+ * represented may require rewriting parts of this code.
+ */
+void RObject::Transmute(RObject* source,
+			std::function<RObject*(void*)> constructor)
+{
+    // Store RObject properties.
+    bool named = source->m_named;
+    bool isS4 = source->isS4Object();
+#ifdef R_MEMORY_PROFILING
+    bool memory_traced = source->memoryTraced();
+#endif
+    bool missing = source->m_missing;
+    bool active_binding = source->m_active_binding;
+    bool binding_locked = source->m_binding_locked;
+    const PairList* attributes = source->attributes();
+    auto gc_data = source->storeInternalData();
+
+    // Destroy the object and create the new type in it's place.
+    void* location = source;
+    source->~RObject();
+    RObject* dest = constructor(location);
+
+    // Restore the RObject properties.
+    dest->restoreInternalData(gc_data);
+    dest->setAttributes(attributes);
+
+    dest->m_named = named;
+    dest->setS4Object(isS4);
+#ifdef R_MEMORY_PROFILING
+    dest->setMemoryTracing(memory_traced);
+#endif
+    dest->m_missing = missing;
+    dest->m_active_binding = active_binding;
+    dest->m_binding_locked = binding_locked;
+}
+
+namespace {
+
+/* This code is complicated by the fact that PairList and CachingExpression
+ * are two different sizes.
+ * In order to make in-place conversion possible, we have created a
+ * PaddedPairList object the same size as a CachingExpression, and a
+ * (less efficient) Expression object the same size as a PairList.
+ * Conversions then go between objects of the same size.
+ */
+class PaddedPairList : public PairList {
+public:
+    PaddedPairList() {}
+protected:
+    virtual ~PaddedPairList() {}
+
+    void* m_unused_padding_1;
+    void* m_unused_padding_2;
+};
+
+}  // anonymous namespace
+
+void RObject::TransmuteConsCell(ConsCell* object, SEXPTYPE dest_type)
+{
+    static_assert(sizeof(CachingExpression) == sizeof(PaddedPairList),
+		  "Expected PaddedPairList and CachingExpression to be the "
+		  "same size");
+    static_assert(sizeof(PairList) == sizeof(Expression),
+		  "Expected PairList and Expression to be the same size");
+
+    // Store the fields from the object.
+    RObject* car = object->car();
+    PairList* tail = object->tail();
+    const RObject* tag = object->tag();
+
+    // Transmute the object.
+    std::function<ConsCell*(void*)> constructor;
+    if (dest_type == LANGSXP) {
+	constructor = dynamic_cast<PaddedPairList*>(object)
+	    ? [](void* p) -> ConsCell* { return new(p) CachingExpression; }
+	    : [](void* p) -> ConsCell* { return new(p) Expression; };
+    } else {
+	constructor = dynamic_cast<CachingExpression*>(object)
+	    ? [](void* p) -> ConsCell* { return new(p) PaddedPairList; }
+	    : [](void* p) -> ConsCell* { return new(p) PairList; };
+    }
+
+    RObject::Transmute(object, constructor);
+
+    // Restore the values.
+    object->setCar(car);
+    object->setTail(tail);
+    object->setTag(tag);
+}
+
+void RObject::TransmuteLogicalToInt(RObject* x)
+{
+    LogicalVector* object = SEXP_downcast<LogicalVector*>(x);
+
+    size_t length = object->size();
+    size_t truelength = XTRUELENGTH(object);
+
+    // Store any data values that fall within the memory range of the
+    // object.
+    static const int STORAGE_SIZE = 4;
+    Logical storage[STORAGE_SIZE];
+
+    Logical* data_start = object->begin();
+    Logical* data_end = object->end();
+    Logical* object_end = reinterpret_cast<Logical*>(object + 1);
+    bool data_start_is_in_object
+	= (void*)object <= data_start && data_start <= object_end;
+
+    Logical* embedded_data_end = std::min(data_end, object_end);
+    ptrdiff_t stored_length = embedded_data_end - data_start;
+
+    // Sanity checking.
+    assert(data_start_is_in_object);
+    assert(stored_length <= STORAGE_SIZE);
+    if (!data_start_is_in_object || stored_length > STORAGE_SIZE) {
+	Rf_error("Unexpected LogicalVector layout in SET_TYPEOF");
+    }
+
+    std::copy(data_start, embedded_data_end, storage);
+
+    // Replace the original LogicalVector an IntVector in the same memory
+    // location.
+    RObject::Transmute(object,
+		       [=](void* p) { return new(p) IntVector(length); });
+
+    // Restore the truelength and stored values.
+    SET_TRUELENGTH(object, truelength);
+    std::copy(storage, storage + stored_length, data_start);
+}
+
+void SET_TYPEOF(SEXP x, SEXPTYPE dest_type) {
+    SEXPTYPE source_type = x->sexptype();
+    if (source_type == dest_type)
+	return;
+
+    switch(dest_type) {
+    case LANGSXP:
+    case LISTSXP:
+	if (source_type == LANGSXP || source_type == LISTSXP) {
+	    RObject::TransmuteConsCell(SEXP_downcast<ConsCell*>(x), dest_type);
+	    return;
+	}
+    case INTSXP:
+	if (source_type == LGLSXP) {
+	    RObject::TransmuteLogicalToInt(SEXP_downcast<LogicalVector*>(x));
+	    return;
+	}
+    default:
+	break;
+    }
+
+    Rf_error(
+	"Calling SET_TYPEOF to convert from type %s to type %s is not "
+	"supported in rho",
+	Rf_type2char(source_type),
+	Rf_type2char(dest_type));
 }

@@ -42,6 +42,7 @@
  * rho is a project to refactorize the R interpreter into C++.
  */
 namespace rho {
+    class ConsCell;
     class Environment;
     class PairList;
     class Symbol;
@@ -588,7 +589,13 @@ namespace rho {
 	// memory profiling is enabled.
 	void traceMemory(const RObject* src1, const RObject* src2,
 			 const RObject* src3);
-#endif	
+#endif
+
+	friend void ::SET_TYPEOF(SEXP, SEXPTYPE);
+	static void Transmute(RObject* source,
+			      std::function<RObject*(void*)> constructor);
+	static void TransmuteConsCell(ConsCell* object, SEXPTYPE dest_type);
+	static void TransmuteLogicalToInt(RObject* object);
     };
 
     namespace ElementTraits {

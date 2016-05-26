@@ -24,10 +24,8 @@
 #include <config.h>
 #endif
 
-#define COMPILING_RADIXSORT
+#define USE_RINTERNALS
 #include "rho/StringVector.hpp"
-#undef COMPILING_RADIXSORT
-
 #include <Defn.h>
 #include <Internal.h>
 
@@ -1560,21 +1558,6 @@ static void dsort(double *x, int *o, int n)
 	dinsert((unsigned long long *)x, o, n);
     } else {
 	dradix((unsigned char *) x, (o[0] != -1) ? newo : o, n);
-    }
-}
-
-static void* DATAPTR(SEXP x) {
-    switch (TYPEOF(x)) {
-    case INTSXP:
-	return INTEGER(x);
-    case LGLSXP:
-	return LOGICAL(x);
-    case REALSXP:
-	return REAL(x);
-    case STRSXP:
-	return StringVectorDataPtr(x);
-    default:
-	Error("Bad type to radixsort");
     }
 }
 

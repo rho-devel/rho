@@ -69,7 +69,7 @@ GCRoot<> R_CurrentExpr;
 
 Expression* Expression::clone() const
 {
-    return new Expression(*this);
+    return new CachingExpression(*this);
 }
 
 FunctionBase* Expression::getFunction(Environment* env) const
@@ -301,43 +301,12 @@ RObject* Expression::invokeClosure(const Closure* func,
                                        method_bindings); });
 }
 
-static bool argListTagsMatch(const PairList* args1,
-			     const PairList* args2) {
-    while (args1 != nullptr && args2 != nullptr) {
-	if (args1->tag() != args2->tag())
-	    return false;
-	args1 = args1->tail();
-	args2 = args2->tail();
-    }
-    return args1 == args2;
-}
-
 void Expression::matchArgsIntoEnvironment(const Closure* func,
-                                          Environment* calling_env,
-                                          ArgList* arglist,
-                                          Environment* execution_env) const
+					      Environment* calling_env,
+					      ArgList* arglist,
+					      Environment* execution_env) const
 {
     const ArgMatcher* matcher = func->matcher();
-
-    if (!m_cache.m_function) {
-	// TODO: Don't cache the matching the first time that the function is
-	// called.  This eliminates additional work and storage for
-	// functions that are only called once.
-	ArgList args(getArgs(), ArgList::RAW);
-	m_cache.m_arg_match_info = matcher->createMatchInfo(&args);
-	m_cache.m_function = func;
-    }
-
-    if (m_cache.m_function == func
-	&& m_cache.m_arg_match_info
-	&& argListTagsMatch(arglist->list(), getArgs()))
-    {
-	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
-	return;
-    }
-
-    // We weren't able to cache a matching, probably because getArgs()
-    // contains '...'.  Run the full matching algorithm instead.
     ClosureContext context(this, calling_env, func, func->environment(),
 			   arglist->list());
     matcher->match(execution_env, arglist);
@@ -395,24 +364,61 @@ Environment* Expression::getMethodCallingEnv() {
   return (fctxt ? fctxt->callEnvironment() : Environment::global());
 }
 
-void Expression::visitReferents(const_visitor* v) const
-{
-    const GCNode* function = m_cache.m_function.get();
-    ConsCell::visitReferents(v);
-    if (function)
-	(*v)(function);
-}
-
-void Expression::detachReferents()
-{
-    m_cache.m_function = nullptr;
-    ConsCell::detachReferents();
-}
-
 const char* Expression::typeName() const
 {
     return staticTypeName();
 }
+
+CachingExpression* CachingExpression::clone() const
+{
+    return new CachingExpression(*this);
+}
+
+void CachingExpression::visitReferents(const_visitor* v) const
+{
+    const GCNode* function = m_cache.m_function.get();
+    Expression::visitReferents(v);
+    if (function)
+	(*v)(function);
+}
+
+void CachingExpression::detachReferents()
+{
+    m_cache.m_function = nullptr;
+    Expression::detachReferents();
+}
+
+void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
+                                          Environment* calling_env,
+                                          ArgList* arglist,
+                                          Environment* execution_env) const
+{
+    const ArgMatcher* matcher = func->matcher();
+
+    if (!m_cache.m_function) {
+	// TODO: Don't cache the matching the first time that the function is
+	// called.  This eliminates additional work and storage for
+	// functions that are only called once.
+	ArgList args(getArgs(), ArgList::RAW);
+	m_cache.m_arg_match_info = matcher->createMatchInfo(&args);
+	m_cache.m_function = func;
+    }
+
+    if (m_cache.m_function == func
+	&& m_cache.m_arg_match_info
+	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist->list()))
+    {
+	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
+	return;
+    }
+
+    // We weren't able to cache a matching, probably because getArgs()
+    // contains '...'.  Run the full matching algorithm instead.
+    ClosureContext context(this, calling_env, func, func->environment(),
+			   arglist->list());
+    matcher->match(execution_env, arglist);
+}
+
 
 // ***** C interface *****
 
@@ -425,7 +431,7 @@ SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
     GCStackRoot<> crr(cr);
     GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-    return new Expression(crr, tlr);
+    return new CachingExpression(crr, tlr);
 }
 
 void Rf_setCurrentExpression(SEXP e)

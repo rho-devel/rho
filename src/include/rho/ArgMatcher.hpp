@@ -362,7 +362,9 @@ namespace rho {
 
     class ArgMatchInfo {
     public:
-	ArgMatchInfo(int num_formals);
+	ArgMatchInfo(int num_formals, const PairList* args);
+
+	bool arglistTagsMatch(const PairList* args) const;
 
 	int getSindex(int findex) const {
 	    return m_values[findex];
@@ -375,7 +377,8 @@ namespace rho {
 
 	bool operator==(const ArgMatchInfo& other) const {
 	    return (m_num_formals == other.m_num_formals
-		    && m_values == other.m_values);
+		    && m_values == other.m_values
+		    && m_tags == other.m_tags);
 	}
 
 	struct Hash;
@@ -383,6 +386,7 @@ namespace rho {
 	// TODO: This should be private.
 	int m_num_formals;
 	std::vector<int> m_values;
+	std::vector<const Symbol*> m_tags;
 
     	// TODO: ArgMatchers and ArgLists are good candidates
     	//   for interning, which would likely save significant memory.

@@ -39,16 +39,6 @@ typedef struct {
 
 
 #ifdef  __cplusplus
-inline bool operator==(const Rcomplex& l, const Rcomplex& r)
-{
-    return (l.r == r.r) && (l.i == r.i);
-}
-
-inline bool operator!=(const Rcomplex& l, const Rcomplex& r)
-{
-    return !(l==r);
-}
-
 }  // extern "C"
 #endif // __cplusplus
 

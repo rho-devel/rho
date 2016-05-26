@@ -388,6 +388,11 @@ namespace rho {
     }
 }
 
+SEXP HASHTAB(SEXP x) {
+    Rf_error("HASHTAB not supported in rho.");
+    return R_NilValue;
+}
+
 // Utility intended to be called from a debugger.  Prints out the
 // names of the Symbols in an Environment, together with the addresses
 // the Symbols are bound to.

@@ -41,8 +41,10 @@ unit_test_sources = \
 	FrameTests.cpp \
 	GCRootTest.cpp \
 	GCStackFrameBoundaryTests.cpp \
+	LogicalTests.cpp \
 	NodeStackTests.cpp \
 	PairListTests.cpp \
+	SetTypeofTests.cpp \
 	SubassignTests.cpp \
 	VisibilityTests.cpp \
 	@BUILD_LLVM_JIT_TRUE@ MCJITMemoryManagerTests.cpp

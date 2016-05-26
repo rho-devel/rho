@@ -36,7 +36,7 @@ OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o)
 
 # need config.h
 PKG_CPPFLAGS = -I../../../include -I$(top_srcdir)/src/include \
-  -DHAVE_CONFIG_H -I$(top_srcdir)/src/main
+  -DHAVE_CONFIG_H -I$(top_srcdir)/src/main -DCOMPILING_RHO
 PKG_CFLAGS = $(C_VISIBILITY)
 
 SHLIB = $(pkg)@SHLIB_EXT@

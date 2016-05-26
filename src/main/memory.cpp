@@ -351,7 +351,7 @@ SEXP allocVector3(SEXPTYPE type, R_xlen_t length, void*)
 	    if (length > R_SHORT_LEN_MAX) error("invalid length for pairlist");
 #endif
 	    GCStackRoot<PairList> tl(PairList::make(length - 1));
-	    s = new Expression(nullptr, tl);
+	    s = new CachingExpression(nullptr, tl);
 	    break;
 	}
     case LISTSXP:

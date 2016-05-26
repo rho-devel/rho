@@ -41,6 +41,7 @@
 #include <ctype.h>		/* for isspace */
 #include "rho/BuiltInFunction.hpp"
 #include "rho/DottedArgs.hpp"
+#include "rho/Expression.hpp"
 #include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/ListFrame.hpp"
@@ -522,7 +523,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	s = new PairList;
 	break;
     case LANGSXP:
-	s = new Expression;
+	s = new CachingExpression;
 	break;
     case CLOSXP:
     case PROMSXP:
@@ -1250,7 +1251,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	/*UNPROTECT(1);*/
 	break;
     case LANGSXP:
-	PROTECT(s = new Expression);
+	PROTECT(s = new CachingExpression);
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));

@@ -600,7 +600,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    size_t len = LENGTH(ax);
 	    if (len > 0) {
 		GCStackRoot<PairList> tl(PairList::make(len - 1));
-		ans = new Expression(nullptr, tl);
+		ans = new CachingExpression(nullptr, tl);
 	    }
 	}
 	int i = 0;

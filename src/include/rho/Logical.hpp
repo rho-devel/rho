@@ -48,6 +48,7 @@ namespace rho {
 	explicit Logical(int i) : m_value(i) {
 	    assert(i == 0 || i == 1 || i == NA_LOGICAL);
 	}
+
 	/*implicit*/ Logical(bool b) : m_value(b ? 1 : 0) {}
 	
 	explicit operator int() const { return m_value; }
@@ -86,6 +87,9 @@ namespace rho {
     private:
 	// The value.  Allowed values are TRUE, FALSE and NA_LOGICAL.
 	int m_value;
+
+	/*implicit*/
+	Logical(float prevent_implicit_int_to_Logical_conversions);
     };
 
     namespace ElementTraits

@@ -1567,7 +1567,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case LANGSXP:
-	PROTECT(s = new Expression);
+	PROTECT(s = new CachingExpression);
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);

@@ -23,6 +23,7 @@
 #include "rho/ListFrame.hpp"
 #include "rho/PairList.hpp"
 #include "rho/RealVector.hpp"
+#include "rho/Expression.hpp"
 
 using namespace std;
 using namespace rho;
@@ -36,6 +37,7 @@ int main() {
 	 << "\nsizeof(VectorBase): " << sizeof(VectorBase)
 	 << "\nsizeof(IntVector): " << sizeof(IntVector)
 	 << "\nsizeof(RealVector): " << sizeof(RealVector)
+	 << "\nsizeof(Expression): " << sizeof(Expression)
 	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
 	 << "\nsizeof(Frame): " << sizeof(Frame)
 	 << "\nsizeof(ListFrame): " << sizeof(ListFrame)
