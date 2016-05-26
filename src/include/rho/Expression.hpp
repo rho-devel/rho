@@ -72,6 +72,9 @@ namespace rho {
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
+	Expression(RObject* function,
+		   std::initializer_list<RObject*> unnamed_args);
+
 	/** @brief Copy constructor.
 	 *
 	 * @param pattern Expression to be copied.
@@ -233,7 +236,14 @@ namespace rho {
 	 *
 	 * @param pattern CachingExpression to be copied.
 	 */
-	CachingExpression(const CachingExpression& pattern) = default;
+	CachingExpression(const CachingExpression& pattern)
+	    : Expression(pattern) {
+	    // Don't copy the cache, as the new expression may be about to get
+	    // modified.
+	    // TODO: is there a way we can automatically detect modifications
+	    //   of *this and invalidate the cache?
+	}
+
 	CachingExpression(const Expression& pattern) : Expression(pattern)
 	{}
 

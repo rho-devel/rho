@@ -301,17 +301,6 @@ RObject* Expression::invokeClosure(const Closure* func,
                                        method_bindings); });
 }
 
-static bool argListTagsMatch(const PairList* args1,
-			     const PairList* args2) {
-    while (args1 != nullptr && args2 != nullptr) {
-	if (args1->tag() != args2->tag())
-	    return false;
-	args1 = args1->tail();
-	args2 = args2->tail();
-    }
-    return args1 == args2;
-}
-
 void Expression::matchArgsIntoEnvironment(const Closure* func,
 					      Environment* calling_env,
 					      ArgList* arglist,
@@ -417,7 +406,7 @@ void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
 
     if (m_cache.m_function == func
 	&& m_cache.m_arg_match_info
-	&& argListTagsMatch(arglist->list(), getArgs()))
+	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist->list()))
     {
 	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
 	return;
