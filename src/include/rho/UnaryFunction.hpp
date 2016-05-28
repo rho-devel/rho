@@ -121,10 +121,14 @@ namespace rho {
 	template<typename Op, typename AttributeCopier,
 		 typename InputType,
 		 typename OutputType = VectorOpReturnType<Op, InputType>>
-	OutputType* applyUnaryOperator(const Op& op,
+	OutputType* applyUnaryOperator(Op op,
 				       AttributeCopier attribute_copier,
 				       const InputType* input)
 	{
+	    size_t size = input->size();
+	    if (size == 1 && !input->hasAttributes()) {
+		return OutputType::createScalar(op((*input)[0]));
+	    }
 	    OutputType* result = OutputType::create(input->size());
 	    std::transform(input->begin(), input->end(), result->begin(),
 			   op);
