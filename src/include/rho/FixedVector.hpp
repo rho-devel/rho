@@ -111,7 +111,7 @@ namespace rho {
 	 *
 	 * @param value The value to store in the vector.
 	 */
-	template<class U>
+	template<typename U>
 	static FixedVector* createScalar(const U& value) {
 	    FixedVector* result = create(1);
 	    (*result)[0] = value;

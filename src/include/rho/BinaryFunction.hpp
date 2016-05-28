@@ -222,6 +222,9 @@ namespace rho {
 		   the result is zero length. */
 		size = 0;
 	    }
+	    if (size == 1 && !lhs->hasAttributes() && !rhs->hasAttributes()) {
+		return OutputType::createScalar(op((*lhs)[0], (*rhs)[0]));
+	    }
 	    OutputType* result = OutputType::create(size);
 	    if (size == 1) {
 		(*result)[0] = op((*lhs)[0], (*rhs)[0]);

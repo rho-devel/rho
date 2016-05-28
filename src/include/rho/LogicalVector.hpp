@@ -46,6 +46,13 @@ namespace rho {
     struct VectorTypeFor<Logical> {
       typedef LogicalVector type;
     };
+
+    template<>
+    template<typename U>
+    LogicalVector* LogicalVector::createScalar(const U& value) {
+	int value_as_int = static_cast<int>(Logical(value));
+	return static_cast<LogicalVector*>(Rf_ScalarLogical(value_as_int));
+    }
 }  // namespace rho
 
 extern "C" {
