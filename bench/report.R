@@ -84,7 +84,41 @@ ggplot(report.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
     geom_line() +
     geom_point(aes(shape=rvm)) +
     expand_limits(y=0) +
-    labs(title='Totals', y='time (seconds)')
+    labs(title='All benchmarks [Type I & II]', y='Geometric mean of execution times') +
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+
+shootout <- c('nbody.R', 'fannkuch-redux.R', 'pidigits.R')
+report.shootout <- subset(report, benchmark %in% shootout)
+shootout.gm <- aggregate(report.shootout$time, by=list(version=report.shootout$version, rvm=report.shootout$rvm), FUN=geom.mean)
+ggplot(shootout.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
+    geom_line() +
+    geom_point(aes(shape=rvm)) +
+    expand_limits(y=0) +
+    labs(title='Shootout [Type I]', y='Geometric mean of execution times') +
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+
+scalar <- c('crt.R', 'fib.R', 'fib_rec.R', 'gcd.R', 'gcd_rec.R', 'prime.R', 'ForLoopAdd.R')
+report.scalar <- subset(report, benchmark %in% scalar)
+scalar.gm <- aggregate(report.scalar$time, by=list(version=report.scalar$version, rvm=report.scalar$rvm), FUN=geom.mean)
+ggplot(scalar.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
+    geom_line() +
+    geom_point(aes(shape=rvm)) +
+    expand_limits(y=0) +
+    labs(title='Scalar [Type I]', y='Geometric mean of execution times') +
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+
+riposte <- c('black_scholes.R', 'cleaning.R', 'example.R', 'filter1d.R', 'histogram.R',
+        'kmeans.R', 'lr_test.R', 'lr.R', 'mandelbrot.R', 'pca.R', 'pca-blocked.R',
+        'raysphere.R', 'sample_builtin.R', 'sample.R', 'smv_builtin.R', 'smv.R')
+report.riposte <- subset(report, benchmark %in% riposte)
+riposte.gm <- aggregate(report.riposte$time, by=list(version=report.riposte$version, rvm=report.riposte$rvm), FUN=geom.mean)
+ggplot(riposte.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
+    geom_line() +
+    geom_point(aes(shape=rvm)) +
+    expand_limits(y=0) +
+    labs(title='Riposte [Type II]', y='Geometric mean of execution times') +
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+
 for (bm in levels(report$benchmark)) {
     print(paste('Graph', bm))
     report.subset <- subset(report, benchmark == bm)
@@ -92,15 +126,16 @@ for (bm in levels(report$benchmark)) {
         geom_line() +
         geom_point(aes(shape=rvm)) +
         expand_limits(y=0) +
-        labs(title=bm, y='time (seconds)'))
+        labs(title=bm, y='time (seconds)') +
+        theme(axis.text.x=element_text(angle=90, hjust=1)))
 }
 invisible(dev.off())
 
-pdf('tables.pdf')
-for (bm in levels(report$benchmark)) {
-    print(paste('Table', bm))
-    report.subset <- subset(report[c('benchmark', 'rvm', 'version', 'time')], benchmark == bm)
-    grid.table(reshape(report.subset, timevar='rvm', idvar=c('benchmark', 'version'), direction='wide'))
-    grid.newpage()
-}
-invisible(dev.off())
+#pdf('tables.pdf')
+#for (bm in levels(report$benchmark)) {
+#    print(paste('Table', bm))
+#    report.subset <- subset(report[c('benchmark', 'rvm', 'version', 'time')], benchmark == bm)
+#    grid.table(reshape(report.subset, timevar='rvm', idvar=c('benchmark', 'version'), direction='wide'))
+#    grid.newpage()
+#}
+#invisible(dev.off())
