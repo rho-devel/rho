@@ -139,7 +139,7 @@ namespace rho {
 	 */
 	const T& operator[](size_type index) const
 	{
-	    return reinterpret_cast<T*>(const_cast<char*>(m_data))[index];
+	    return reinterpret_cast<const T*>(m_data)[index];
 	}
 
 	/** @brief Iterator designating first element.
@@ -159,7 +159,7 @@ namespace rho {
 	 */
 	const_iterator begin() const
 	{
-	    return reinterpret_cast<T*>(const_cast<char*>(m_data));
+	    return reinterpret_cast<const T*>(m_data);
 	}
 
 	/** @brief One-past-the-end iterator.
