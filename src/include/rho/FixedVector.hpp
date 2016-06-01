@@ -127,7 +127,7 @@ namespace rho {
 	 */
 	T& operator[](size_type index)
 	{
-	    return m_data[index];
+	    return reinterpret_cast<T*>(m_data)[index];
 	}
 
 	/** @brief Read-only element access.
@@ -139,7 +139,7 @@ namespace rho {
 	 */
 	const T& operator[](size_type index) const
 	{
-	    return m_data[index];
+	    return reinterpret_cast<T*>(const_cast<char*>(m_data))[index];
 	}
 
 	/** @brief Iterator designating first element.
@@ -149,7 +149,7 @@ namespace rho {
 	 */
 	iterator begin()
 	{
-	    return m_data;
+	    return reinterpret_cast<T*>(m_data);
 	}
 
 	/** @brief Const iterator designating first element.
@@ -159,7 +159,7 @@ namespace rho {
 	 */
 	const_iterator begin() const
 	{
-	    return m_data;
+	    return reinterpret_cast<T*>(const_cast<char*>(m_data));
 	}
 
 	/** @brief One-past-the-end iterator.
@@ -222,9 +222,8 @@ namespace rho {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	T* m_data;  // pointer to the vector's data block.
-
-	alignas(T) char m_first_element_storage[sizeof(T)];
+        /** @brief dynamic sized storage for vector data. */
+	alignas(T) char m_data[sizeof(T)];
 
 	/** @brief Create a vector, leaving its contents
 	 *         uninitialized (for POD types) or default
@@ -234,8 +233,7 @@ namespace rho {
 	 *          permissible.
 	 */
 	FixedVector(size_type sz)
-	    : VectorBase(ST, sz),
-	      m_data(reinterpret_cast<T*>(m_first_element_storage))
+	    : VectorBase(ST, sz)
 	{
 	    constructElementsIfNeeded();
 	    Initializer::initialize(this);
@@ -301,8 +299,7 @@ namespace rho {
 template <typename T, SEXPTYPE ST, typename Initr>
 rho::FixedVector<T, ST, Initr>::FixedVector(
     const FixedVector<T, ST, Initr>& pattern)
-    : VectorBase(pattern),
-      m_data(reinterpret_cast<T*>(m_first_element_storage))
+    : VectorBase(pattern)
 {
     constructElementsIfNeeded();
 
