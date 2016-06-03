@@ -1865,6 +1865,7 @@ typedef enum {
 } ULocDataLocaleType ;
 
 
+extern "C"
 const char* ucol_getLocaleByType(const UCollator *coll,
 				 ULocDataLocaleType type,
 				 UErrorCode *status);
