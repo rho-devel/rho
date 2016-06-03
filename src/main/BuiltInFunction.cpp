@@ -55,7 +55,7 @@ namespace rho {
 
 // BuiltInFunction::getFunctionTable() is in names.cpp
 
-unsigned int BuiltInFunction::TableEntry::s_next_offset = 0;
+unsigned int BuiltInFunction::s_next_offset = 0;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -84,10 +84,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset,
 				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+    : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
     m_function = cfun;
@@ -118,10 +117,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset,
 				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+    : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
     m_function = nullptr;
@@ -135,10 +133,9 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset,
 				 const char* first_arg_name,
 				 DispatchType dispatch)
-    : BuiltInFunction(name, variant, flags, arity, ppinfo, offset,
+    : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
     m_function = nullptr;
@@ -154,11 +151,10 @@ BuiltInFunction::BuiltInFunction(const char* name,
 				 unsigned int flags,
 				 int arity,
 				 PPinfo ppinfo,
-				 unsigned int offset,
 				 const char* first_arg_name,
 				 DispatchType dispatch)
     : FunctionBase(flags % 10 ? BUILTINSXP : SPECIALSXP),
-      m_offset(offset), m_name(name), m_variant(variant),
+      m_offset(s_next_offset++), m_name(name), m_variant(variant),
       m_via_dot_internal((flags%100)/10 == 1), m_arity(arity),
       m_first_arg_name(first_arg_name), m_dispatch_type(dispatch),
       m_gram(ppinfo)

@@ -471,18 +471,16 @@ namespace rho {
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset,
-			const char* first_arg_name,
-			DispatchType dispatch);
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE);
 	BuiltInFunction(const char*,
 			QuickInvokeFunction,
 			unsigned int,
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset,
-			const char* first_arg_name,
-			DispatchType dispatch);
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE);
 
 	template<typename... Args>
 	BuiltInFunction(const char* name,
@@ -492,11 +490,10 @@ namespace rho {
 			unsigned int flags,
 			int arity,
 			PPinfo ppinfo,
-			unsigned int offset,
-			const char* first_arg_name,
-			DispatchType dispatch)
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE)
 	    : BuiltInFunction(name, reinterpret_cast<FixedArityFnStorage>(cfun),
-			      variant, flags, arity, ppinfo, offset,
+			      variant, flags, arity, ppinfo,
 			      first_arg_name, dispatch) {
 	    assert(arity == sizeof...(Args));
 	};
@@ -507,35 +504,19 @@ namespace rho {
 			unsigned int flags,
 			int arity,
 			PPinfo ppinfo,
-			unsigned int offset,
-			const char* first_arg_name,
-			DispatchType dispatch);
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE);
 	BuiltInFunction(const char*,
 			unsigned int,
 			unsigned int,
 			int,
 			PPinfo,
-			unsigned int offset,
-			const char* first_arg_name,
-			DispatchType dispatch);
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE);
 
-	struct TableEntry {
-	    template<typename FUNCTION>
-	    TableEntry(const char* name, FUNCTION function,
-		       unsigned int variant, unsigned int flags, int arity,
-		       PPinfo ppinfo,
-		       const char* first_arg_name = nullptr,
-		       DispatchType dispatch = DispatchType::NONE)
-		: function(new BuiltInFunction(name, function, variant,
-					       flags, arity, ppinfo,
-					       s_next_offset++,
-					       first_arg_name, dispatch))
-	    {}
-	    BuiltInFunction* function;
-	    static unsigned int s_next_offset;
-	};
+	static unsigned int s_next_offset;
 
-	static const std::vector<TableEntry>& getFunctionTable();
+	static const std::vector<BuiltInFunction*>& getFunctionTable();
 
 	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
         static std::pair<map*, map*> getLookupTables();
