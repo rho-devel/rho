@@ -169,7 +169,7 @@ Value* Compiler::emitEval(const RObject* object)
 	// Any subsequent code is dead.  Create a dummy basic block for it.
 	SetInsertPoint(createBasicBlock("dead_code"));
 
-	if (dynamic_cast<llvm::TerminatorInst*>(result)) {
+	if (llvm::isa<llvm::TerminatorInst>(result)) {
 	    // There is no current value either.  Use undef as a placeholder.
 	    return llvm::UndefValue::get(getType<RObject*>());
 	}
@@ -237,7 +237,7 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
 	resolved_function = emitFunctionLookup(symbol, &likely_function);
 	// Check that the lookup succeeded, unless the function was resolved
 	// at compile time.
-	if (!dynamic_cast<llvm::Constant*>(resolved_function)) {
+	if (!llvm::isa<llvm::Constant>(resolved_function)) {
 	    emitErrorUnless(resolved_function,
 			    _("could not find function \"%s\""),
 			    emitConstantPointer(symbol->name()->c_str()));
@@ -378,7 +378,7 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 	return nullptr;
     }
 
-    if (dynamic_cast<llvm::Constant*>(resolved_function)) {
+    if (llvm::isa<llvm::Constant>(resolved_function)) {
 	// When the resolved function is a compile-time constant, everything is
 	// simple.
 	return (this->*emit_builtin)(expression);

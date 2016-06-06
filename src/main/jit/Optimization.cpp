@@ -58,7 +58,7 @@ bool RemoveRedundantCallsToSetVisibility::runOnBasicBlock(
   // Collect all calls to kSetVisibilityFuncName.
   std::vector<llvm::CallInst*> calls_to_delete;  // Pointed insts not owned.
   for (llvm::Instruction& instr : block) {
-    llvm::CallInst* call_inst = dynamic_cast<llvm::CallInst*>(&instr);
+    llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(&instr);
     if (call_inst != nullptr &&
         call_inst->getCalledFunction()->getName() == kSetVisibilityFuncName) {
       calls_to_delete.emplace_back(call_inst);
