@@ -194,7 +194,7 @@ R: Makedeps
 	(cd $(@D); $(MAKE) $(@F))
 
 $(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(LIBR0) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
 	-@mkdir libs

@@ -1008,7 +1008,7 @@ SEXP attribute_hidden do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 #ifdef USE_INTERNAL_MKTIME
-const char *getTZinfo(void)
+extern "C" const char *getTZinfo(void)
 {
     const char *p = getenv("TZ");
     if(p) return p;
@@ -1865,13 +1865,13 @@ typedef enum {
 } ULocDataLocaleType ;
 
 
+extern "C"
 const char* ucol_getLocaleByType(const UCollator *coll,
 				 ULocDataLocaleType type,
 				 UErrorCode *status);
 
 #define U_ZERO_ERROR 0
 #define U_FAILURE(x) ((x)>U_ZERO_ERROR)
-#define ULOC_ACTUAL_LOCALE 0
 
 #else
 #include <unicode/utypes.h>
