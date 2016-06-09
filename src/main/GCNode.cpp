@@ -313,13 +313,16 @@ static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
     size_t object_size = block_header->hb_sz;
     char *start = block->hb_body;
     char* end = start + HBLKSIZE - object_size + 1;
-    
-    for (char* allocation = start; allocation < end; allocation += object_size)
-    {
+    char* allocation = start;
+    // Note: we have to do at least one iteration.
+    // HBLKSIZE can be less than the actual size for large blocks, but there is
+    // always at least one object in the block.
+    do {
 	if (test_allocated_bit(allocation)) {
 	    (*function)(getNodePointerFromAllocation(allocation));
 	}
-    }
+        allocation += object_size;
+    } while (allocation < end);
 }
 
 void GCNode::applyToAllAllocatedNodes(std::function<void(GCNode*)> f)
