@@ -1329,7 +1329,7 @@ static void SET_TEMPVARLOC_FROM_CAR(Frame::Binding* loc, PairList* lhs) {
    object. */
 #define FIXUP_RHS_NAMED(r) do { \
 	SEXP __rhs__ = (r); \
-	if (NAMED(__rhs__) && NAMED(__rhs__) != 2) \
+	if (NAMED(__rhs__)) \
 	    SET_NAMED(__rhs__, 2); \
     } while (0)
 
