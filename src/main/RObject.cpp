@@ -113,8 +113,7 @@ void RObject::copyAttributes(const RObject* source, Duplicate deep)
 
 RObject* RObject::evaluate(Environment* env)
 {
-    if (NAMED(this) != 2)
-	SET_NAMED(this, 2);
+    SET_NAMED(this, 2);
     return this;
 }
 
@@ -276,12 +275,12 @@ void RObject::Transmute(RObject* source,
 			std::function<RObject*(void*)> constructor)
 {
     // Store RObject properties.
-    bool named = source->m_named;
+    unsigned char named = source->m_named;
     bool isS4 = source->isS4Object();
 #ifdef R_MEMORY_PROFILING
     bool memory_traced = source->memoryTraced();
 #endif
-    bool missing = source->m_missing;
+    unsigned missing = source->m_missing;
     bool active_binding = source->m_active_binding;
     bool binding_locked = source->m_binding_locked;
     const PairList* attributes = source->attributes();
