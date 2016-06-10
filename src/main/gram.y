@@ -1852,24 +1852,18 @@ static SEXP mkComplex(const char *s)
 
 static SEXP mkNA(void)
 {
-    SEXP t = allocVector(LGLSXP, 1);
-    LOGICAL(t)[0] = NA_LOGICAL;
-    return t;
+    return ScalarLogical(NA_LOGICAL);
 }
 
 attribute_hidden
 SEXP mkTrue(void)
 {
-    SEXP s = allocVector(LGLSXP, 1);
-    LOGICAL(s)[0] = 1;
-    return s;
+    return ScalarLogical(TRUE);
 }
 
 SEXP mkFalse(void)
 {
-    SEXP s = allocVector(LGLSXP, 1);
-    LOGICAL(s)[0] = 0;
-    return s;
+    return ScalarLogical(FALSE);
 }
 
 static void yyerror(const char *s)
