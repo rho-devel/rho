@@ -129,16 +129,16 @@ def build_rho(gitref, args, jit, build=True):
                 subprocess.call(['git', 'clean', '-fd'])
                 subprocess.call(['git', 'clean', '-fX'])
             subprocess.call(['tools/rsync-recommended'])
+            # Use Clang to build (needed for the LLVM JIT build).
+            env = os.environ.copy()
+            env['CC'] = 'clang'
+            env['CXX'] = 'clang++'
             if jit:
                 # Build with JIT enabled.
-                # Need to use Clang for JIT build.
-                env = os.environ.copy()
-                env['CC'] = 'clang'
-                env['CXX'] = 'clang++'
                 # Requires llvm-config to be on PATH.
                 subprocess.call(['./configure', '--with-blas', '--with-lapack', '--enable-llvm-jit'], env=env)
             else:
-                subprocess.call(['./configure', '--with-blas', '--with-lapack'])
+                subprocess.call(['./configure', '--with-blas', '--with-lapack'], env=env)
             subprocess.call(['make', '-j2'])
     finally:
         os.chdir(bench_dir)
