@@ -37,6 +37,7 @@ import os
 import subprocess
 import argparse
 import ConfigParser
+import re
 
 from os.path import normpath
 
@@ -84,12 +85,18 @@ def parse_args():
     parser.add_argument('gitref', nargs='+', help='The Rho git reference to benchmark')
     parser.add_argument(
             '--repository', default='git@github.com:rho-devel/rho',
-            help='The git repository to clone from')
+            help='The git repository to clone from.')
     parser.add_argument(
             '--build_dir', default='rho',
             help='The directory to build Rho in. The Rho repository is cloned into this directory.')
     parser.add_argument('--result_dir', default='out',
-            help='The output directory to store benchmark results in')
+            help='The output directory to store benchmark results in.')
+    parser.add_argument('--skip-cr', dest='skip_cr', action='store_true',
+            help='Skips benchmarking CR as baseline.')
+    parser.add_argument('--skip-jit', dest='skip_jit', action='store_true',
+            help='Skips benchmarking the JIT variants.')
+    parser.add_argument('--no-clean', dest='no_clean', action='store_true',
+            help='The build directory is not cleaned before building each Rho revision. This speeds up the benchmarking process but may affect accuracy.')
     args = parser.parse_args()
     return args
 
@@ -117,13 +124,19 @@ def build_rho(gitref, args, jit, build=True):
             subprocess.call(['git', 'fetch', 'origin'])
         # Clean and switch to the selected revision.
         subprocess.call(['git', 'reset', '--hard', gitref])
-        # Build with JIT enabled.
-        subprocess.call(['git', 'clean', '-fd'])
-        subprocess.call(['git', 'clean', '-fX'])
         if build:
+            if not args.no_clean:
+                subprocess.call(['git', 'clean', '-fd'])
+                subprocess.call(['git', 'clean', '-fX'])
             subprocess.call(['tools/rsync-recommended'])
             if jit:
-                subprocess.call(['./configure', '--with-blas', '--with-lapack', '--enable-llvm-jit'])
+                # Build with JIT enabled.
+                # Need to use Clang for JIT build.
+                env = os.environ.copy()
+                env['CC'] = 'clang'
+                env['CXX'] = 'clang++'
+                # Requires llvm-config to be on PATH.
+                subprocess.call(['./configure', '--with-blas', '--with-lapack', '--enable-llvm-jit'], env=env)
             else:
                 subprocess.call(['./configure', '--with-blas', '--with-lapack'])
             subprocess.call(['make', '-j2'])
@@ -168,6 +181,7 @@ def write_config(args, rvm, jit):
     return cfg_file
 
 def bench(gitref, args, rvm):
+    print('Starting benchmark runs for commit %s with RVM %s.' % (gitref, rvm['name']))
     for bm in benchmarks:
         bench_cmd = [
                 'python', normpath('benchmarks/utility/rbench.py'),
@@ -179,7 +193,14 @@ def bench(gitref, args, rvm):
                 normpath('%s/%s-%s.csv' % (args.result_dir, rvm['id'], gitref))]
         if 'cfg_file' in rvm:
             bench_cmd = bench_cmd + ['--config', rvm['cfg_file']]
-        subprocess.call(bench_cmd)
+        output = subprocess.check_output(bench_cmd)
+        for line in output.splitlines():
+            if line.startswith('[rbench]benchmarks'):
+                print(line)
+            elif line.startswith('nan,time'):
+                print(line)
+            elif re.match(r'\d+.*,time', line):
+                print(line)
 
 # Set up the benchmark suite. Generates input data for the benchmarks that need input data.
 def setup_benchmarks():
@@ -210,10 +231,13 @@ def main():
     for gitref in args.gitref:
         # Build and benchmark Rho.
         bench(gitref, args, build_rho(gitref, args, jit=False))
-        bench(gitref, args, build_rho(gitref, args, jit=True))
+        if not args.skip_jit:
+            bench(gitref, args, build_rho(gitref, args, jit=True))
         # Also run CR to get a baseline for performance.
-        bench(gitref, args, use_cr(jit=False))
-        bench(gitref, args, use_cr(jit=True))
+        if not args.skip_cr:
+            bench(gitref, args, use_cr(jit=False))
+            if not args.skip_jit:
+                bench(gitref, args, use_cr(jit=True))
         # Update version list file to add newly benchmarked version:
         with open(os.path.join(args.result_dir, 'versions'), 'a') as f:
             print >>f, '%s, %s' % (gitref, get_timestamp(gitref, args))
