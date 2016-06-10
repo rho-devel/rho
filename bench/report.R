@@ -37,11 +37,13 @@ if (length(args) > 0) {
 
 read.stats <- function(rvm, version, timestamp) {
     filename <- paste(outdir, '/', rvm, '-', version, '.csv', sep='')
-    df <- read.csv(filename)
-    df$rvm <- rvm
-    df$version <- version
-    df$timestamp <- strptime(timestamp, "%Y-%m-%d %H:%M:%S")
-    df
+    if (file.exists(filename)) {
+        df <- read.csv(filename)
+        df$rvm <- rvm
+        df$version <- version
+        df$timestamp <- strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+        df
+    }
 }
 
 merge.stats <- function(prev, rvm, version, timestamp) {
