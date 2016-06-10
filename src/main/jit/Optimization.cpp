@@ -23,7 +23,10 @@
 
 #include "rho/jit/Optimization.hpp"
 
+#include <deque>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "rho/jit/llvm.hpp"
@@ -38,11 +41,40 @@ const std::string kSetVisibilityFuncName("rho_runtime_setVisibility");
 // Implementation of BasicFunctionPass.
 
 bool BasicFunctionPass::runOnFunction(llvm::Function& function) {
+  using TreeNode = llvm::DomTreeNodeBase<llvm::BasicBlock>;
+  using QEntry = std::pair<TreeNode*, bool>;
+  using NodeQ = std::deque<QEntry>;
+
+  llvm::PostDominatorTree post_domtree;
+  post_domtree.runOnFunction(function);
+  std::set<llvm::BasicBlock*> covered_blocks;
   RemoveRedundantCallsToSetVisibility optimize_set_visibility;
-  bool changed = false;
+  NodeQ nodes;
+  for (const auto root : post_domtree.DT->getRoots()) {
+    nodes.push_back(QEntry(post_domtree.DT->getNode(root),
+                           /* leave_one= */ true));
+  }
+
+  // Traverse the postdom tree to remove all post-dominated calls.
+  while (!nodes.empty()) {
+    TreeNode* node;
+    bool leave_one;
+    std::tie(node, leave_one) = nodes.front();
+    covered_blocks.insert(node->getBlock());
+    nodes.pop_front();
+    bool leave_one_in_children = optimize_set_visibility.RemoveRedundantCalls(
+                                     *node->getBlock(), leave_one) == 0 &&
+                                 leave_one;
+    for (auto child : node->getChildren()) {
+      nodes.push_back(QEntry(child, leave_one_in_children));
+    }
+  }
+
+  // Remove reundancies in any remaining basic blocks, not in the postdom tree.
+  bool changed = covered_blocks.size() > 0;
   for (auto& block : function.getBasicBlockList()) {
-    bool block_changed = optimize_set_visibility.runOnBasicBlock(block);
-    changed = changed || block_changed;
+    if (covered_blocks.find(&block) != covered_blocks.end()) continue;
+    changed = optimize_set_visibility.runOnBasicBlock(block) || changed;
   }
   return changed;
 }
@@ -53,8 +85,8 @@ char BasicFunctionPass::pass_id = 0;
 //------------------------------------------------------------------------------
 // Impelementation of RemoveRedundantCallsToSetVisibility.
 
-bool RemoveRedundantCallsToSetVisibility::runOnBasicBlock(
-    llvm::BasicBlock& block) {
+int RemoveRedundantCallsToSetVisibility::RemoveRedundantCalls(
+    llvm::BasicBlock& block, bool leave_one) {
   // Collect all calls to kSetVisibilityFuncName.
   std::vector<llvm::CallInst*> calls_to_delete;  // Pointed insts not owned.
   for (llvm::Instruction& instr : block) {
@@ -64,16 +96,14 @@ bool RemoveRedundantCallsToSetVisibility::runOnBasicBlock(
       calls_to_delete.emplace_back(call_inst);
     }
   }
-  // Finally, remove all calls, except the last one.
-  if (calls_to_delete.size() > 1) {
-    calls_to_delete.pop_back();
-    for (llvm::CallInst* call_to_delete : calls_to_delete) {
-      call_to_delete->eraseFromParent();
-    }
-    return true;
-  } else {
-    return false;
+  int count = calls_to_delete.size();
+  if (count > 0 && leave_one) {
+    calls_to_delete.pop_back();  // Don't delete the last call.
   }
+  for (llvm::CallInst* call_to_delete : calls_to_delete) {
+    call_to_delete->eraseFromParent();
+  }
+  return count;
 }
 
 // LLVM uses the address of the following variable, the value is unimportant.

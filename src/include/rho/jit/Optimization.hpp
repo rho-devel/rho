@@ -26,6 +26,8 @@
 
 #include "rho/jit/llvm.hpp"
 
+#include "llvm/Analysis/PostDominators.h"
+
 namespace rho {
 namespace JIT {
 
@@ -67,9 +69,21 @@ class RemoveRedundantCallsToSetVisibility : public llvm::BasicBlockPass {
       RemoveRedundantCallsToSetVisibility&& other) = default;
   ~RemoveRedundantCallsToSetVisibility() = default;
 
-  // Eliminates redundant calls to rho_runtime_setVisibility.  Any call that is
-  // postdominated by another is redundant.
-  bool runOnBasicBlock(llvm::BasicBlock& basic_block) override;
+  // Eliminates redundant calls to kSetVisibilityFuncName and returns true if
+  // basic_block was changed.
+  bool runOnBasicBlock(llvm::BasicBlock& basic_block) override {
+    return RemoveRedundantCalls(basic_block) > 1;
+  }
+
+  // Eliminates redundant calls to kSetVisibilityFuncName.  Any call that is
+  // postdominated by another is redundant, thus all except the last one are
+  // removed.  Returns the total number of calls (not just redundant ones) found
+  // in the basic_block.  The returned value is useful in determining if the
+  // basic blocks post-dominated by basic_block should be cleared of all the
+  // calls to kSetVisibilityFuncName.  If leave_one is false then it removes all
+  // the calls, including the last one.
+  int RemoveRedundantCalls(llvm::BasicBlock& basic_block,
+                           bool leave_one = true);
 
  private:
   static char pass_id;  // LLVM uses the address of this variable as the ID.
