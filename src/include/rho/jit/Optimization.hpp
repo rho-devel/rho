@@ -80,10 +80,9 @@ class RemoveRedundantCallsToSetVisibility : public llvm::BasicBlockPass {
   // removed.  Returns the total number of calls (not just redundant ones) found
   // in the basic_block.  The returned value is useful in determining if the
   // basic blocks post-dominated by basic_block should be cleared of all the
-  // calls to kSetVisibilityFuncName.  If leave_one is false then it removes all
+  // calls to kSetVisibilityFuncName.  If keep_one is false then it removes all
   // the calls, including the last one.
-  int RemoveRedundantCalls(llvm::BasicBlock& basic_block,
-                           bool leave_one = true);
+  int RemoveRedundantCalls(llvm::BasicBlock& basic_block, bool keep_one = true);
 
  private:
   static char pass_id;  // LLVM uses the address of this variable as the ID.
