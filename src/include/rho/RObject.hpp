@@ -151,17 +151,6 @@ namespace rho {
      */
     class RObject : public GCNode {
     public:
-	/** @brief Class of function object that does nothing to an RObject.
-	 *
-	 * This struct is typically used as a default template
-	 * parameter, for example in FixedVector.
-	 */
-	struct DoNothing {
-	    /** @brief Does nothing.
-	     */
-	    static void initialize(RObject*)
-	    {}
-	};
 
 	enum class Duplicate {
 	    DEEP, SHALLOW
