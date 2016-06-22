@@ -31,7 +31,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 
 R:
 	@$(MKINSTALLDIRS) $(top_builddir)/library
-	@for pkg in profile translations base tools; do \
+	@for pkg in profile translations base tools compiler; do \
 	  (cd $${pkg} && $(MAKE) all) || exit 1; \
 	done
 	for pkg in base tools; do \
@@ -71,7 +71,7 @@ docs:
 	@touch stamp-docs
 
 # fix the order to make best use of parallel builds
-RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdts datasets.Rdts grid.Rdts tools.Rdts tcltk.Rdts splines.Rdts stats4.Rdts parallel.Rdts
+RD-TS = base.Rdts stats.Rdts utils.Rdts methods.Rdts graphics.Rdts grDevices.Rdts datasets.Rdts grid.Rdts tools.Rdts tcltk.Rdts splines.Rdts stats4.Rdts compiler.Rdts parallel.Rdts
 # RD-TS = $(R_PKGS_BASE:=.Rdts)
 
 .inn.Rdts:
