@@ -1031,7 +1031,7 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
  * found via argument-dependent lookup).  The relevant definition is at the
  * end of this file.
  */
-#define length                  Rf_length
+#define length(x)               Rf_length(x)
 #endif
 
 #define lengthgets		Rf_lengthgets
