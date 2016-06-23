@@ -389,8 +389,25 @@ namespace rho {
 }
 
 SEXP HASHTAB(SEXP x) {
-    Rf_error("HASHTAB not supported in rho.");
+    Rf_error("HASHTAB is not supported in rho.");
     return R_NilValue;
+}
+
+void SET_HASHTAB(SEXP x, SEXP table) {
+    if (table != R_NilValue) {
+	Rf_error("SET_HASHTAB is not supported in rho.");
+    }
+}
+
+void SET_FRAME(SEXP x, SEXP frame) {
+    if (frame != R_NilValue) {
+	Rf_error("SET_FRAME is not supported in rho.");
+    }
+}
+
+void SET_ENCLOS(SEXP x, SEXP v) {
+    SEXP_downcast<Environment*>(x)->setEnclosingEnvironment(
+	SEXP_downcast<Environment*>(v));
 }
 
 // Utility intended to be called from a debugger.  Prints out the

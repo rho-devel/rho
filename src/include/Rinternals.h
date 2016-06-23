@@ -375,8 +375,8 @@ int  (RTRACE)(SEXP x);
 void (SET_RDEBUG)(SEXP x, Rboolean v);
 void (SET_RSTEP)(SEXP x, int v);
 void (SET_RTRACE)(SEXP x, int v);
-// void SET_FORMALS(SEXP x, SEXP v);
-// void SET_BODY(SEXP x, SEXP v);
+void SET_FORMALS(SEXP x, SEXP v);
+void SET_BODY(SEXP x, SEXP v);
 void SET_CLOENV(SEXP x, SEXP v);
 
 /* Symbol Access Functions */
@@ -395,16 +395,16 @@ SEXP (ENCLOS)(SEXP x);
 SEXP (HASHTAB)(SEXP x);
 // int  (ENVFLAGS)(SEXP x);
 // void (SET_ENVFLAGS)(SEXP x, int v);
-// void SET_FRAME(SEXP x, SEXP v);
-// void SET_ENCLOS(SEXP x, SEXP v);
-// void SET_HASHTAB(SEXP x, SEXP v);
+void SET_FRAME(SEXP x, SEXP v);
+void SET_ENCLOS(SEXP x, SEXP v);
+void SET_HASHTAB(SEXP x, SEXP v);
 
 /* Promise Access Functions */
 /* First five have macro versions in Defn.h */
 SEXP (PRCODE)(SEXP x);
 SEXP (PRENV)(SEXP x);
 SEXP (PRVALUE)(SEXP x);
-// int  (PRSEEN)(SEXP x);
+int  (PRSEEN)(SEXP x);
 // void (SET_PRSEEN)(SEXP x, int v);
 // void SET_PRENV(SEXP x, SEXP v);
 void SET_PRVALUE(SEXP x, SEXP v);
@@ -979,9 +979,6 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define installS3Signature	Rf_installS3Signature
 #define isArray			Rf_isArray
 #define isBasicClass            Rf_isBasicClass
-#define isComplex		Rf_isComplex
-#define isEnvironment		Rf_isEnvironment
-#define isExpression		Rf_isExpression
 #define isFactor		Rf_isFactor
 #define isFrame			Rf_isFrame
 #define isFree			Rf_isFree
@@ -989,20 +986,15 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define isInteger		Rf_isInteger
 #define isLanguage		Rf_isLanguage
 #define isList			Rf_isList
-#define isLogical		Rf_isLogical
-#define isSymbol		Rf_isSymbol
 #define isMatrix		Rf_isMatrix
 #define isNewList		Rf_isNewList
-#define isNull			Rf_isNull
 #define isNumeric		Rf_isNumeric
 #define isNumber		Rf_isNumber
 #define isObject		Rf_isObject
 #define isOrdered		Rf_isOrdered
 #define isPairList		Rf_isPairList
 #define isPrimitive		Rf_isPrimitive
-#define isReal			Rf_isReal
 #define isS4			Rf_isS4
-#define isString		Rf_isString
 #define isTs			Rf_isTs
 #define isUnmodifiedSpecSym	Rf_isUnmodifiedSpecSym
 #define isUnordered		Rf_isUnordered
@@ -1031,7 +1023,7 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
  * found via argument-dependent lookup).  The relevant definition is at the
  * end of this file.
  */
-#define length                  Rf_length
+#define length(x)               Rf_length(x)
 #endif
 
 #define lengthgets		Rf_lengthgets
@@ -1095,6 +1087,18 @@ void R_orderVector1(int *indx, int n, SEXP x,       Rboolean nalast, Rboolean de
 #define xlength(x)		Rf_xlength(x)
 #define xlengthgets		Rf_xlengthgets
 #endif /* R_NO_REMAP */
+
+#if (!defined(R_NO_REMAP) || defined(USE_RINTERNALS))
+#define isNull			Rf_isNull
+#define isSymbol		Rf_isSymbol
+#define isLogical		Rf_isLogical
+#define isReal			Rf_isReal
+#define isComplex		Rf_isComplex
+#define isExpression		Rf_isExpression
+#define isEnvironment		Rf_isEnvironment
+#define isString		Rf_isString
+#define isObject		Rf_isObject
+#endif
 
 /** @brief Create a rho::Expression with a specified car and tail.
  *

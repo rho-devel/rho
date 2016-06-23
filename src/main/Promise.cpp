@@ -165,3 +165,10 @@ void SET_PRVALUE(SEXP x, SEXP v)
     Promise* prom = SEXP_downcast<Promise*>(x);
     prom->setValue(v);
 }
+
+int PRSEEN(SEXP x) {
+    Promise* prom = SEXP_downcast<Promise*>(x);
+    return prom->m_under_evaluation
+	|| prom->m_interrupted
+	|| prom->m_environment == R_NilValue;
+}

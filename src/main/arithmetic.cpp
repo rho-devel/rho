@@ -166,6 +166,7 @@ Rboolean R_IsNaN(double x)
 namespace rho {
     namespace ForceNonInline{
 	Rboolean (*R_finitep)(double) = R_finite;
+        auto R_isnancppPtr = &R_isnancpp;
     }
 }
 

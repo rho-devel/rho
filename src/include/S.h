@@ -43,10 +43,6 @@
 # define longint int
 #endif
 
-#ifdef __cplusplus
-# error S.h can not be used from C++ code: use R.h instead
-#endif
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -58,6 +54,13 @@
 #include <R_ext/Constants.h>
 #include <R_ext/Memory.h>	/* S_alloc */
 
+#include <R_ext/RS.h>
+/* for PROBLEM ... Calloc, Realloc, Free, Memcpy, F77_xxxx */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* subset of those in Random.h */
 extern void seed_in(long *);
 extern void seed_out(long *);
@@ -65,9 +68,6 @@ extern double unif_rand(void);
 extern double norm_rand(void);
 
 /* Macros for S/R Compatibility */
-
-#include <R_ext/RS.h>
-/* for PROBLEM ... Calloc, Realloc, Free, Memcpy, F77_xxxx */
 
 /* S4 uses macros equivalent to */
 #define Salloc(n,t) (t*)S_alloc(n, sizeof(t))
@@ -87,6 +87,10 @@ typedef struct {
 /* Not quite full compatibility: beware! */
 /* void	call_R(char*, long, void**, char**, long*, char**, long, char**);*/
 #define call_S call_R
+#endif
+
+#ifdef __cplusplus
+}  // extern "C"
 #endif
 
 #endif /* !R_S_H */

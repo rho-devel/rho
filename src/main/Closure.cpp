@@ -160,6 +160,26 @@ const char* Closure::typeName() const
     return staticTypeName();
 }
 
+void Closure::setEnvironment(Environment* new_env) {
+    m_environment = new_env;
+    invalidateCompiledCode();
+}
+
+void Closure::setFormals(PairList* formals) {
+    m_matcher = new ArgMatcher(formals);
+    invalidateCompiledCode();
+}
+
+void Closure::setBody(RObject* body) {
+    m_body = body;
+    invalidateCompiledCode();
+}
+
+void Closure::invalidateCompiledCode() {
+    m_num_invokes = 0;
+    m_compiled_body = nullptr;
+}
+
 void Closure::visitReferents(const_visitor* v) const
 {
     const ArgMatcher* matcher = m_matcher;
@@ -176,4 +196,13 @@ void Closure::visitReferents(const_visitor* v) const
 	(*v)(environment);
     if (compiled_body)
 	(*v)(compiled_body);
+}
+
+void SET_FORMALS(SEXP closure, SEXP formals) {
+    SEXP_downcast<Closure*>(closure)->setFormals(
+	SEXP_downcast<PairList*>(formals));
+}
+
+void SET_BODY(SEXP closure, SEXP body) {
+    SEXP_downcast<Closure*>(closure)->setBody(body);
 }

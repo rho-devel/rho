@@ -106,7 +106,12 @@ extern "C" {
 #define LOGICAL_POINTER(x)	LOGICAL(x)
 #define INTEGER_POINTER(x)	INTEGER(x)
 #define NUMERIC_POINTER(x)	REAL(x)
+#define CHARACTER_POINTER(x)	STRING_PTR(x)
 #define COMPLEX_POINTER(x)	COMPLEX(x)
+/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
+   This is probably unused.
+*/
+#define LIST_POINTER(x)                VECTOR_PTR(x)
 #define RAW_POINTER(x)		RAW(x)
 
 /* The following are not defined in `Programming with Data' but are
@@ -121,7 +126,14 @@ extern "C" {
 #define INTEGER_DATA(x)		(INTEGER(x))
 #define DOUBLE_DATA(x)		(REAL(x))
 #define NUMERIC_DATA(x)		(REAL(x))
+#define CHARACTER_DATA(x)	(STRING_PTR(x))
 #define COMPLEX_DATA(x)		(COMPLEX(x))
+/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
+   VECTOR_DATA seems unused, and RECURSIVE_DATA is used only in
+   the Expat part of XML.
+*/
+#define RECURSIVE_DATA(x)      (VECTOR_PTR(x))
+#define VECTOR_DATA(x)         (VECTOR_PTR(x))
 
 #define LOGICAL_VALUE(x)	Rf_asLogical(x)
 #define INTEGER_VALUE(x)	Rf_asInteger(x)

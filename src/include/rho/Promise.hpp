@@ -192,6 +192,7 @@ namespace rho {
 	void setValue(RObject* val);
 
 	friend void ::SET_PRVALUE(SEXP x, SEXP v);  // Needs setValue().
+	friend int ::PRSEEN(SEXP x);
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

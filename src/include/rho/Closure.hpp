@@ -173,10 +173,20 @@ namespace rho {
 	 *          considered as the environment of this Closure.  A
 	 *          null pointer is not permissible (not checked).
 	 */
-	void setEnvironment(Environment* new_env)
-	{
-	    m_environment = new_env;
-	}
+	void setEnvironment(Environment* new_env);
+
+ 	/** @brief Replace the formals of the closure.
+	 *
+	 * @param formals Pointer to a pairlist containing the new
+	 *          formal arguments to use for this closure.
+	 */
+	void setFormals(PairList* formals);
+
+	/** @brief Replace the body of the closure.
+	 *
+	 * @param body Pointer to the new body to use for this closure.
+	 */
+	void setBody(RObject* body);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -265,6 +275,9 @@ namespace rho {
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
         static bool s_debugging_enabled;
+
+	// If a JIT compiled version of this closure exists, invalidate it.
+	void invalidateCompiledCode();
 
 	// Declared private to ensure that Closure objects are
 	// created only using 'new':
