@@ -34,12 +34,10 @@
 #include <config.h>
 #endif
 
+#include <R_ext/RS.h>
 #include <Defn.h> /* => Utils.h with the protos from here */
 #include <Internal.h>
 #include <Rmath.h>
-
-#include <R_ext/RS.h>
-
 
 #ifdef LONG_VECTOR_SUPPORT
 static void R_qsort_R(double *v, double *I, size_t i, size_t j);

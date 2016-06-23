@@ -833,6 +833,7 @@ static SEXP match_transform(SEXP s, SEXP env)
 }
 
 // workhorse of R's match() and hence also  " ix %in% itable "
+extern "C"  // Used by the fastmatch package.
 SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 {
     SEXP ans, x, table;

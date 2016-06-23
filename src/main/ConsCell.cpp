@@ -48,6 +48,7 @@ namespace rho {
 	SEXP (*CARp)(SEXP e) = CAR;
 	SEXP (*TAGp)(SEXP e) = TAG;
 	SEXP (*allocSExpp)(SEXPTYPE t) = Rf_allocSExp;
+        auto SET_MISSINGptr = &SET_MISSING;
    }
 }
 

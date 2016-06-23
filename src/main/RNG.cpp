@@ -32,6 +32,7 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/Random.h>
+#include <S.h>
 
 /* Normal generator is not actually set here but in nmath/snorm.c */
 #define RNG_DEFAULT MERSENNE_TWISTER
