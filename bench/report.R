@@ -124,11 +124,16 @@ ggplot(riposte.gm, aes(x=version, y=x, group=rvm, color=rvm)) +
 for (bm in levels(report$benchmark)) {
     print(paste('Graph', bm))
     report.subset <- subset(report, benchmark == bm)
+    if (bm %in% riposte) {
+	    bm.type <- '[Type II]'
+    } else {
+	    bm.type <- '[Type I]'
+    }
     print(ggplot(report.subset, aes(x=version, y=time, group=rvm, color=rvm)) +
         geom_line() +
         geom_point(aes(shape=rvm)) +
         expand_limits(y=0) +
-        labs(title=bm, y='time (seconds)') +
+        labs(title=paste(bm, bm.type), y='time (seconds)') +
         theme(axis.text.x=element_text(angle=90, hjust=1)))
 }
 invisible(dev.off())
