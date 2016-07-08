@@ -70,18 +70,17 @@ SEXP attribute_hidden do_rawToChar(/*const*/ rho::Expression* call, const rho::B
 	    SET_STRING_ELT(ans, i, mkChar(buf));
 	}
 	/* do we want to copy e.g. names here? */
+	UNPROTECT(1);
+	return ans;
     } else {
 	int i, j, nc = LENGTH(x);
 	/* String is not necessarily 0-terminated and may contain nuls.
 	   Strip trailing nuls */
 	for (i = 0, j = -1; i < nc; i++) if(RAW(x)[i]) j = i;
 	nc = j + 1;
-	PROTECT(ans = allocVector(STRSXP, 1));
-	SET_STRING_ELT(ans, 0,
-		       mkCharLenCE(reinterpret_cast<const char *>(RAW(x)), j+1, CE_NATIVE));
+	return Rf_ScalarString(
+	    mkCharLenCE(reinterpret_cast<const char *>(RAW(x)), j+1, CE_NATIVE));
     }
-    UNPROTECT(1);
-    return ans;
 }
 
 
@@ -355,10 +354,8 @@ SEXP attribute_hidden do_intToUtf8(/*const*/ rho::Expression* call, const rho::B
 	    len += inttomb(nullptr, INTEGER(x)[i]);
 	}
 	if (haveNA) {
-	    PROTECT(ans = allocVector(STRSXP, 1));
-	    SET_STRING_ELT(ans, 0, NA_STRING);
-	    UNPROTECT(2);
-	    return ans;
+	    UNPROTECT(1);
+	    return Rf_ScalarString(NA_STRING);
 	}
 	if (len >= 10000) {
 	    tmp = Calloc(len+1, char);
@@ -371,8 +368,7 @@ SEXP attribute_hidden do_intToUtf8(/*const*/ rho::Expression* call, const rho::B
 	    strncpy(tmp + len, buf, used);
 	    len += used;
 	}
-	PROTECT(ans = allocVector(STRSXP, 1));
-	SET_STRING_ELT(ans, 0, mkCharLenCE(tmp, int( len), CE_UTF8));
+	ans = PROTECT(Rf_ScalarString(mkCharLenCE(tmp, int( len), CE_UTF8)));
 	if(len >= 10000) Free(tmp);
     }
     UNPROTECT(2);

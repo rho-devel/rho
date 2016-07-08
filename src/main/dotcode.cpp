@@ -1253,9 +1253,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    /* only return one string: warned on the R -> Fortran step */
 		    strncpy(buf, (char*)p, 255);
 		    buf[255] = '\0';
-		    PROTECT(s = allocVector(type, 1));
-		    SET_STRING_ELT(s, 0, mkChar(buf));
-		    UNPROTECT(1);
+		    s = Rf_ScalarString(mkChar(buf));
 		} else if (copy) {
 		    SEXP ss = arg;
 		    PROTECT(s = allocVector(type, n));

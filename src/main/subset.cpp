@@ -799,28 +799,22 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 	    SET_NAMED(ans, named_x);
 	return ans;
     } else {
-	SEXP ans = allocVector(TYPEOF(x), 1);
 	switch (TYPEOF(x)) {
 	case LGLSXP:
+	    return Rf_ScalarLogical(LOGICAL(x)[offset]);
 	case INTSXP:
-	    INTEGER(ans)[0] = INTEGER(x)[offset];
-	    break;
+	    return Rf_ScalarInteger(INTEGER(x)[offset]);
 	case REALSXP:
-	    REAL(ans)[0] = REAL(x)[offset];
-	    break;
+	    return Rf_ScalarReal(REAL(x)[offset]);
 	case CPLXSXP:
-	    COMPLEX(ans)[0] = COMPLEX(x)[offset];
-	    break;
+	    return Rf_ScalarComplex(COMPLEX(x)[offset]);
 	case STRSXP:
-	    SET_STRING_ELT(ans, 0, STRING_ELT(x, offset));
-	    break;
+	    return Rf_ScalarString(STRING_ELT(x, offset));
 	case RAWSXP:
-	    RAW(ans)[0] = RAW(x)[offset];
-	    break;
+	    return Rf_ScalarRaw(RAW(x)[offset]);
 	default:
 	    UNIMPLEMENTED_TYPE("do_subset2", x);
 	}
-	return ans;
     }
 }
 
@@ -890,19 +884,18 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* first translate CADR of args into a string so that we can
        pass it down to DispatchorEval and have it behave correctly */
-    input = PROTECT(allocVector(STRSXP, 1));
-
     nlist = CADR(args);
     if (TYPEOF(nlist) == PROMSXP)
 	nlist = eval(nlist, env);
     if(isSymbol(nlist) )
-	SET_STRING_ELT(input, 0, PRINTNAME(nlist));
+	input = Rf_ScalarString(PRINTNAME(nlist));
     else if(isString(nlist) )
-	SET_STRING_ELT(input, 0, STRING_ELT(nlist, 0));
+	input = Rf_ScalarString(STRING_ELT(nlist, 0));
     else {
 	errorcall(call,_("invalid subscript type '%s'"),
 		  type2char(TYPEOF(nlist)));
     }
+    PROTECT(input);
 
     /* replace the second argument with a string */
 

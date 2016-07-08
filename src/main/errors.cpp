@@ -720,12 +720,7 @@ void NORET errorcall(SEXP call, const char *format,...)
 
 SEXP attribute_hidden do_geterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 {
-    SEXP res;
-
-    PROTECT(res = allocVector(STRSXP, 1));
-    SET_STRING_ELT(res, 0, mkChar(errbuf));
-    UNPROTECT(1);
-    return res;
+    return Rf_ScalarString(mkChar(errbuf));
 }
 
 void error(const char *format, ...)

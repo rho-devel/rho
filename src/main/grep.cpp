@@ -2285,9 +2285,8 @@ gregexpr_perl(const char *pattern, const char *string,
 static SEXP gregexpr_NAInputAns(void)
 {
     SEXP ans, matchlen;
-    PROTECT(ans = allocVector(INTSXP, 1));
-    PROTECT(matchlen = allocVector(INTSXP, 1));
-    INTEGER(ans)[0] = INTEGER(matchlen)[0] = R_NaInt;
+    PROTECT(ans = Rf_ScalarInteger(R_NaInt));
+    PROTECT(matchlen = Rf_ScalarInteger(R_NaInt));
     setAttrib(ans, install("match.length"), matchlen);
     UNPROTECT(2);
     return ans;
@@ -2296,9 +2295,8 @@ static SEXP gregexpr_NAInputAns(void)
 static SEXP gregexpr_BadStringAns(void)
 {
     SEXP ans, matchlen;
-    PROTECT(ans = allocVector(INTSXP, 1));
-    PROTECT(matchlen = allocVector(INTSXP, 1));
-    INTEGER(ans)[0] = INTEGER(matchlen)[0] = -1;
+    PROTECT(ans = Rf_ScalarInteger(-1));
+    PROTECT(matchlen = Rf_ScalarInteger(-1));
     setAttrib(ans, install("match.length"), matchlen);
     UNPROTECT(2);
     return ans;

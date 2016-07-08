@@ -2882,10 +2882,9 @@ SEXP GEcreateSnapshot(pGEDevDesc dd)
 	    SET_VECTOR_ELT(snapshot, i + 1, state);
 	    UNPROTECT(1);
 	}
-    PROTECT(engineVersion = allocVector(INTSXP, 1));
-    INTEGER(engineVersion)[0] = R_GE_getVersion();
-    setAttrib(snapshot, install("engineVersion"), engineVersion);
-    UNPROTECT(2);
+    setAttrib(snapshot, install("engineVersion"),
+	      Rf_ScalarInteger(R_GE_getVersion()));
+    UNPROTECT(1);
     return snapshot;
 }
 

@@ -957,10 +957,7 @@ static SEXP mkString2(const char *s, size_t len, Rboolean escaped)
     if(known_to_be_latin1) enc= CE_LATIN1;
     else if(!escaped && known_to_be_utf8) enc = CE_UTF8;
 
-    PROTECT(t = allocVector(STRSXP, 1));
-    SET_STRING_ELT(t, 0, mkCharLenCE(s, (int) len, enc));
-    UNPROTECT(1);
-    return t;
+    return Rf_ScalarString(mkCharLenCE(s, (int) len, enc));
 }
 
 static SEXP xxdefun(SEXP fname, SEXP formals, SEXP body, YYLTYPE *lloc)
@@ -1775,28 +1772,22 @@ static int KeywordLookup(const char *s)
 			PROTECT(yylval = mkFalse());
 			break;
 		    case 4:
-			PROTECT(yylval = allocVector(REALSXP, 1));
-			REAL(yylval)[0] = R_PosInf;
+                        PROTECT(yylval = Rf_ScalarReal(R_PosInf));
 			break;
 		    case 5:
-			PROTECT(yylval = allocVector(REALSXP, 1));
-			REAL(yylval)[0] = R_NaN;
+                        PROTECT(yylval = Rf_ScalarReal(R_NaN));
 			break;
 		    case 6:
-			PROTECT(yylval = allocVector(INTSXP, 1));
-			INTEGER(yylval)[0] = NA_INTEGER;
+                        PROTECT(yylval = Rf_ScalarInteger(NA_INTEGER));
 			break;
 		    case 7:
-			PROTECT(yylval = allocVector(REALSXP, 1));
-			REAL(yylval)[0] = NA_REAL;
+                        PROTECT(yylval = Rf_ScalarReal(NA_REAL));
 			break;
 		    case 8:
-			PROTECT(yylval = allocVector(STRSXP, 1));
-			SET_STRING_ELT(yylval, 0, NA_STRING);
+                        PROTECT(yylval = Rf_ScalarString(NA_STRING));
 			break;
 		    case 9:
-			PROTECT(yylval = allocVector(CPLXSXP, 1));
-			COMPLEX(yylval)[0].r = COMPLEX(yylval)[0].i = NA_REAL;
+                        PROTECT(yylval = Rf_ScalarComplex({NA_REAL, NA_REAL}));
 			break;
 		    }
 		} else
@@ -1842,9 +1833,7 @@ static SEXP mkComplex(const char *s)
     f = R_atof(s); /* FIXME: make certain the value is legitimate. */
 
     if(GenerateCode) {
-       t = allocVector(CPLXSXP, 1);
-       COMPLEX(t)[0].r = 0;
-       COMPLEX(t)[0].i = f;
+       t = Rf_ScalarComplex({0, f});
     }
 
     return t;
@@ -2312,10 +2301,7 @@ static SEXP mkStringUTF8(const ucs_t *wcs, int cnt)
 #else
     wcstoutf8(s, wcs, nb);
 #endif
-    PROTECT(t = allocVector(STRSXP, 1));
-    SET_STRING_ELT(t, 0, mkCharCE(s, CE_UTF8));
-    UNPROTECT(1);
-    return t;
+    return Rf_ScalarString(mkCharCE(s, CE_UTF8));
 }
 
 #define CTEXT_PUSH(c) do { \

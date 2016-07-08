@@ -875,27 +875,22 @@ static SEXP coerceToPairList(SEXP v)
     for (i = 0; i < n; i++) {
 	switch (TYPEOF(v)) {
 	case LGLSXP:
-	    SETCAR(ansp, Rf_allocVector(LGLSXP, 1));
-	    INTEGER(CAR(ansp))[0] = INTEGER(v)[i];
+	    SETCAR(ansp, Rf_ScalarLogical(INTEGER(v)[i]));
 	    break;
 	case INTSXP:
-	    SETCAR(ansp, Rf_allocVector(INTSXP, 1));
-	    INTEGER(CAR(ansp))[0] = INTEGER(v)[i];
+	    SETCAR(ansp, Rf_ScalarInteger(INTEGER(v)[i]));
 	    break;
 	case REALSXP:
-	    SETCAR(ansp, Rf_allocVector(REALSXP, 1));
-	    REAL(CAR(ansp))[0] = REAL(v)[i];
+	    SETCAR(ansp, Rf_ScalarReal(REAL(v)[i]));
 	    break;
 	case CPLXSXP:
-	    SETCAR(ansp, Rf_allocVector(CPLXSXP, 1));
-	    COMPLEX(CAR(ansp))[0] = COMPLEX(v)[i];
+	    SETCAR(ansp, Rf_ScalarComplex(COMPLEX(v)[i]));
 	    break;
 	case STRSXP:
 	    SETCAR(ansp, Rf_ScalarString(STRING_ELT(v, i)));
 	    break;
 	case RAWSXP:
-	    SETCAR(ansp, Rf_allocVector(RAWSXP, 1));
-	    RAW(CAR(ansp))[0] = RAW(v)[i];
+	    SETCAR(ansp, Rf_ScalarRaw(RAW(v)[i]));
 	    break;
 	case VECSXP:
 	    SETCAR(ansp, VECTOR_ELT(v, i));
@@ -1729,82 +1724,78 @@ SEXP attribute_hidden do_typeof(/*const*/ rho::Expression* call, const rho::Buil
 */
 SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans;
-
-    PROTECT(ans = Rf_allocVector(LGLSXP, 1));
-
     switch (op->variant()) {
     case NILSXP:	/* is.null */
-	LOGICAL(ans)[0] = Rf_isNull(args[0]);
-	break;
+	return Rf_ScalarLogical(Rf_isNull(args[0]));
     case LGLSXP:	/* is.logical */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == LGLSXP);
+	return Rf_ScalarLogical(TYPEOF(args[0]) == LGLSXP);
 	break;
     case INTSXP:	/* is.integer */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == INTSXP)
-	    && !Rf_inherits(args[0], "factor");
+	return Rf_ScalarLogical((TYPEOF(args[0]) == INTSXP)
+				&& !Rf_inherits(args[0], "factor"));
 	break;
     case REALSXP:	/* is.double */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == REALSXP);
+	return Rf_ScalarLogical(TYPEOF(args[0]) == REALSXP);
 	break;
     case CPLXSXP:	/* is.complex */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == CPLXSXP);
+	return Rf_ScalarLogical(TYPEOF(args[0]) == CPLXSXP);
 	break;
     case STRSXP:	/* is.character */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == STRSXP);
+	return Rf_ScalarLogical(TYPEOF(args[0]) == STRSXP);
 	break;
     case SYMSXP:	/* is.symbol === is.name */
 	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
 	    SEXP dot_xData = R_getS4DataSlot(args[0], SYMSXP);
-	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == SYMSXP);
+	    return Rf_ScalarLogical(TYPEOF(dot_xData) == SYMSXP);
 	}
 	else
-	    LOGICAL(ans)[0] = (TYPEOF(args[0]) == SYMSXP);
+	    return Rf_ScalarLogical(TYPEOF(args[0]) == SYMSXP);
 	break;
     case ENVSXP:	/* is.environment */
 	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
 	    SEXP dot_xData = R_getS4DataSlot(args[0], ENVSXP);
-	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == ENVSXP);
+	    return Rf_ScalarLogical(TYPEOF(dot_xData) == ENVSXP);
 	}
 	else
-	    LOGICAL(ans)[0] = (TYPEOF(args[0]) == ENVSXP);
+	    return Rf_ScalarLogical(TYPEOF(args[0]) == ENVSXP);
 	break;
     case VECSXP:	/* is.list */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == VECSXP ||
+	return Rf_ScalarLogical(TYPEOF(args[0]) == VECSXP ||
 			   TYPEOF(args[0]) == LISTSXP);
 	break;
     case LISTSXP:	/* is.pairlist */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == LISTSXP ||
+	return Rf_ScalarLogical(TYPEOF(args[0]) == LISTSXP ||
 			   TYPEOF(args[0]) == NILSXP);/* pairlist() -> NULL */
 	break;
     case EXPRSXP:	/* is.expression */
-	LOGICAL(ans)[0] = TYPEOF(args[0]) == EXPRSXP;
+	return Rf_ScalarLogical(TYPEOF(args[0]) == EXPRSXP);
 	break;
     case RAWSXP:	/* is.raw */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == RAWSXP);
+	return Rf_ScalarLogical(TYPEOF(args[0]) == RAWSXP);
 	break;
 
     case 50:		/* is.object */
-	LOGICAL(ans)[0] = OBJECT(args[0]);
+	return Rf_ScalarLogical(OBJECT(args[0]));
 	break;
     case 51:		/* isS4 */
-	LOGICAL(ans)[0] = IS_S4_OBJECT(args[0]) != 0;
+	return Rf_ScalarLogical(IS_S4_OBJECT(args[0]) != 0);
 	break;
 /* no longer used: is.data.frame is R code
     case 80:
-	LOGICAL(ans)[0] = isFrame(CAR(args));
+	return Rf_ScalarLogicalisFrame(CAR(args));
 	break;
 */
 
     case 100:		/* is.numeric */
-	LOGICAL(ans)[0] = Rf_isNumeric(args[0]) &&
-	    !Rf_isLogical(args[0]);  /* Rf_isNumeric excludes factors */
+	return Rf_ScalarLogical(Rf_isNumeric(args[0]) &&
+                                /* Rf_isNumeric excludes factors */
+				!Rf_isLogical(args[0])); 
 	break;
     case 101:		/* is.matrix */
-	LOGICAL(ans)[0] = Rf_isMatrix(args[0]);
+	return Rf_ScalarLogical(Rf_isMatrix(args[0]));
 	break;
     case 102:		/* is.array */
-	LOGICAL(ans)[0] = Rf_isArray(args[0]);
+	return Rf_ScalarLogical(Rf_isArray(args[0]));
 	break;
 
     case 200:		/* is.atomic */
@@ -1818,10 +1809,10 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
 	case CPLXSXP:
 	case STRSXP:
 	case RAWSXP:
-	    LOGICAL(ans)[0] = 1;
+	    return Rf_ScalarLogical(1);
 	    break;
 	default:
-	    LOGICAL(ans)[0] = 0;
+	    return Rf_ScalarLogical(0);
 	    break;
 	}
 	break;
@@ -1842,24 +1833,24 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
 	// case EXTPTRSXP:
 	// case BCODESXP:
 	// case WEAKREFSXP:
-	    LOGICAL(ans)[0] = 1;
+	    return Rf_ScalarLogical(1);
 	    break;
 	default:
-	    LOGICAL(ans)[0] = 0;
+	    return Rf_ScalarLogical(0);
 	    break;
 	}
 	break;
 
     case 300:		/* is.call */
-	LOGICAL(ans)[0] = TYPEOF(args[0]) == LANGSXP;
+	return Rf_ScalarLogical(TYPEOF(args[0]) == LANGSXP);
 	break;
     case 301:		/* is.language */
-	LOGICAL(ans)[0] = (TYPEOF(args[0]) == SYMSXP ||
+	return Rf_ScalarLogical(TYPEOF(args[0]) == SYMSXP ||
 			   TYPEOF(args[0]) == LANGSXP ||
 			   TYPEOF(args[0]) == EXPRSXP);
 	break;
     case 302:		/* is.function */
-	LOGICAL(ans)[0] = Rf_isFunction(args[0]);
+	return Rf_ScalarLogical(Rf_isFunction(args[0]));
 	break;
 
     case 999:		/* is.single */
@@ -1867,8 +1858,6 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
     default:
 	Rf_errorcall(call, _("unimplemented predicate"));
     }
-    UNPROTECT(1);
-    return (ans);
 }
 
 /* What should is.vector do ?
@@ -1892,28 +1881,28 @@ SEXP attribute_hidden do_isvector(/*const*/ rho::Expression* call, const rho::Bu
     if (streql(stype, "name"))
       stype = "symbol";
 
-    PROTECT(ans = Rf_allocVector(LGLSXP, 1));
     if (streql(stype, "any")) {
 	/* isVector is inlined, means atomic or VECSXP or EXPRSXP */
-	LOGICAL(ans)[0] = Rf_isVector(x);
+	ans = Rf_ScalarLogical(Rf_isVector(x));
     }
     else if (streql(stype, "numeric")) {
-	LOGICAL(ans)[0] = (Rf_isNumeric(x) && !Rf_isLogical(x));
+	ans = Rf_ScalarLogical(Rf_isNumeric(x) && !Rf_isLogical(x));
     }
     /* So this allows any type, including undocumented ones such as
        "closure", but not aliases such as "name" and "function". */
     else if (streql(stype, Rf_type2char(TYPEOF(x)))) {
-	LOGICAL(ans)[0] = 1;
+	ans = Rf_ScalarLogical(1);
     }
     else
-	LOGICAL(ans)[0] = 0;
+	ans = Rf_ScalarLogical(0);
+    PROTECT(ans);
 
     /* We allow a "names" attribute on any vector. */
     if (LOGICAL(ans)[0] && ATTRIB(x_) != R_NilValue) {
 	a = ATTRIB(x_);
 	while(a != R_NilValue) {
 	    if (TAG(a) != R_NamesSymbol) {
-		LOGICAL(ans)[0] = 0;
+		ans = Rf_ScalarLogical(0);
 		break;
 	    }
 	    a = CDR(a);

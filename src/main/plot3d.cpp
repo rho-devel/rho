@@ -128,10 +128,9 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		 * "write" the contour locations into the list of contours
 		 */
 		ctr = PROTECT(allocVector(VECSXP, 3));
-		level = PROTECT(allocVector(REALSXP, 1));
 		xsxp = PROTECT(allocVector(REALSXP, ns + 1));
 		ysxp = PROTECT(allocVector(REALSXP, ns + 1));
-		REAL(level)[0] = zc;
+		level = PROTECT(Rf_ScalarReal(zc));
 		SET_VECTOR_ELT(ctr, CONTOUR_LIST_LEVEL, level);
 		s = start;
 		REAL(xsxp)[0] = s->x0;

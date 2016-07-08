@@ -144,16 +144,14 @@ static SEXP do_relop_dflt(/*const*/ Expression* call,
        R 2.5.0.  We deparse them as deparse() would, minus attributes */
     bool iS;
     if ((iS = isSymbol(x)) || TYPEOF(x) == LANGSXP) {
-	GCStackRoot<> tmp(allocVector(STRSXP, 1));
-	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(x) :
-		       STRING_ELT(deparse1(x, RHO_FALSE, DEFAULTDEPARSE), 0));
-	x = tmp;
+	x = Rf_ScalarString(
+	    (iS) ? PRINTNAME(x) :
+	    STRING_ELT(deparse1(x, RHO_FALSE, DEFAULTDEPARSE), 0));
     }
     if ((iS = isSymbol(y)) || TYPEOF(y) == LANGSXP) {
-	GCStackRoot<> tmp(allocVector(STRSXP, 1));
-	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(y) :
-		       STRING_ELT(deparse1(y, RHO_FALSE, DEFAULTDEPARSE), 0));
-	y = tmp;
+	y = Rf_ScalarString(
+	    (iS) ? PRINTNAME(y) :
+	    STRING_ELT(deparse1(y, RHO_FALSE, DEFAULTDEPARSE), 0));
     }
 
     if (!isVector(x) || !isVector(y)) {

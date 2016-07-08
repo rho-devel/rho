@@ -4920,11 +4920,10 @@ SEXP attribute_hidden do_sumconnection(/*const*/ rho::Expression* call, const rh
     PROTECT(ans = allocVector(VECSXP, 7));
     PROTECT(names = allocVector(STRSXP, 7));
     SET_STRING_ELT(names, 0, mkChar("description"));
-    PROTECT(tmp = allocVector(STRSXP, 1));
     if(Rcon->enc == CE_UTF8)
-	SET_STRING_ELT(tmp, 0, mkCharCE(Rcon->description, CE_UTF8));
+	tmp = Rf_ScalarString(mkCharCE(Rcon->description, CE_UTF8));
     else
-	SET_STRING_ELT(tmp, 0, mkChar(Rcon->description));
+	tmp = Rf_ScalarString(mkChar(Rcon->description));
     SET_VECTOR_ELT(ans, 0, tmp);
     SET_STRING_ELT(names, 1, mkChar("class"));
     SET_VECTOR_ELT(ans, 1, mkString(Rcon->connclass));
@@ -4939,7 +4938,7 @@ SEXP attribute_hidden do_sumconnection(/*const*/ rho::Expression* call, const rh
     SET_STRING_ELT(names, 6, mkChar("can write"));
     SET_VECTOR_ELT(ans, 6, mkString(Rcon->canwrite? "yes":"no"));
     setAttrib(ans, R_NamesSymbol, names);
-    UNPROTECT(3);
+    UNPROTECT(2);
     return ans;
 }
 
