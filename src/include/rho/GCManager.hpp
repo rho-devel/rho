@@ -212,17 +212,15 @@ namespace rho {
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
-	static size_t s_threshold;
 	static size_t s_min_threshold;
 
-	static const size_t s_gclite_margin;  // maybeGC() will
-	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
-	  // by at least s_gclite_margin the number of bytes that were
-	  // allocated following the previous gclite().  This is a
-	  // tuning parameter.
-	static size_t s_gclite_threshold;  // maybeGC() calls
-	  // gclite() when the number of bytes allocated reaches this
-	  // level.
+	// maybeGC() calls  gclite() when the number of bytes allocated reaches this
+	// level.
+	static size_t s_gclite_threshold;
+
+	// maybeGC() calls  gc() when the number of bytes still allocated after running
+	// gclist() reaches this level.
+	static size_t s_threshold;
 
 	static bool s_gc_is_running;
 	static bool s_gc_pending;
