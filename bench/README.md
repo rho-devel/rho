@@ -2,12 +2,17 @@ Rho Benchmarks
 ==============
 
 This directory contains scripts to benchmark Rho. The benchmarks are configured
-to run with JIT enabled so to run the benchmarks you need Clang and the LLVM
+to compile with Clang, and for the JIT benchmarks you will need the LLVM
 development libraries.
 
-The benchmark script `runbench.py` by default will benchmark rho and CR (GnuR).
-The CR benchmark is used as a baseline, and can be optionally skipped (see
-below).
+The benchmark script `runbench.py` by default will benchmark rho with and
+without JIT enabled, and CR (GnuR) with and without bytecode compilation.  The
+CR benchmark is used as a baseline to compare rho performance, and can be
+optionally skipped (see below).
+
+The main benchmark suite used is the R benchmark repository, which is downloaded
+with Git before benchmarks are run the first time. The benchmark repository is here:
+https://github.com/rho-devel/benchmarks
 
 The benchmark scripts and their usage are described in more detail below.
 
@@ -50,6 +55,13 @@ report.R
 
 This script generates a PDF with graphs for each benchmark with data points for
 each benchmarked compiler and version. The output file is `report.pdf`.
+
+compare.R
+---------
+
+Generates a comparison PDF with bar graphs for each benchmarked RVM. The rho
+versions to compare must be supplied on the command line, and at least two
+version names are required.
 
 incremental.R
 -------------
