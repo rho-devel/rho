@@ -219,7 +219,7 @@ namespace rho {
 	static size_t s_gclite_threshold;
 
 	// maybeGC() calls  gc() when the number of bytes still allocated after running
-	// gclist() reaches this level.
+	// gclite() reaches this level.
 	static size_t s_threshold;
 
 	static bool s_gc_is_running;
