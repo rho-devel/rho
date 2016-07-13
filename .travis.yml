@@ -195,10 +195,7 @@ matrix:
     - env: C_COMPILER=clang-3.7 CXX_COMPILER=clang++-3.7 LLVM_CONFIG=/usr/bin/llvm-config-3.7  
     # Likewise for the ubsan run.
     - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 UBSAN_OPTIONS="print_stacktrace=1 suppressions=`pwd`/.ubsan_suppressions" CFLAGS="-g -O2 -fsanitize=undefined" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
-    # The llvm apt repo is currently down.
-    - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 CPPFLAGS="-DNO_CELLPOOLS" CFLAGS="-g -O2 -fsanitize=address" CXXFLAGS="${CFLAGS}" MAIN_LDFLAGS="${CFLAGS}"
-    - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 LLVM_CONFIG=/usr/bin/llvm-config-3.8 CPPFLAGS="-UNDEBUG -DCHECKED_SEXP_DOWNCAST -D_FORTIFY_SOURCE=2" CFLAGS="-g -O2 -fstack-protector-strong" CXXFLAGS=${CFLAGS}
-
+    
 before_install:
   - pip install --user codecov
 
