@@ -63,6 +63,9 @@ void* heap_start = reinterpret_cast<void*>(UINTPTR_MAX);
 void* heap_end = reinterpret_cast<void*>(0);
 
 // Hash bucket for the sparse block table and free lists.
+// The two lowest bits of the data pointer are flags indicating
+// if the hash bucket contains a superblock (2) and whether this
+// hash bucket is the first representing that allocation (1).
 struct HashBucket {
   uintptr_t data;
   unsigned size;
@@ -70,12 +73,18 @@ struct HashBucket {
 
 struct Superblock;
 
+// Freelists are used to store superblock nodes and large allocations.
+// For large allocations the block and superblock members are unused.
 struct FreeListNode {
   FreeListNode* next;
   u32 block;  // Used only for superblock free nodes.
   Superblock* superblock;  // Used only for superblock free nodes.
 };
 
+// Superblocks are used to allocate small and medium sized objects.
+// The bitset tracks which blocks are currently allocated.
+// For small objects block_size is the actual object size.
+// For medium objects block_size is the 2-log of the object size.
 struct Superblock {
   u32 block_size;
   u32 next_untouched;
@@ -188,6 +197,8 @@ uintptr_t arena_superblock_start;
 uintptr_t arena_superblock_end;
 uintptr_t arena_superblock_next;
 
+// Allocates a new superlbock from the small object arena.  If the arena is
+// full, we call abort with the message "out of superblock space".
 Superblock* new_superblock(int block_size) {
   if (arena_superblock_next >= arena_superblock_end) {
     allocerr("out of superblock space");
@@ -201,11 +212,18 @@ Superblock* new_superblock(int block_size) {
   return superblock;
 }
 
+// Compute the address of the superblock header from a pointer.
+// Returns nullptr if candidate pointer is not inside the small object arena
+// or if the pointer points inside the superblock header.
 Superblock* superblock_from_pointer(void* pointer) {
-  uintptr_t block = reinterpret_cast<uintptr_t>(pointer);
-  if (block >= arena_superblock_start && block < arena_superblock_next) {
+  uintptr_t candidate = reinterpret_cast<uintptr_t>(pointer);
+  if (candidate >= arena_superblock_start && candidate < arena_superblock_next) {
+    if ((candidate & (SUPERBLOCK_SIZE - 1)) < SUPERBLOCK_HEADER_SIZE) {
+      // The pointer points inside the superblock header.
+      return nullptr;
+    }
     return reinterpret_cast<Superblock*>(
-        block & ~uintptr_t(SUPERBLOCK_SIZE - 1));
+        candidate & ~uintptr_t{SUPERBLOCK_SIZE - 1});
   } else {
     return nullptr;
   }
@@ -235,12 +253,14 @@ void free_small_block(void* pointer, Superblock* superblock) {
   superblock->free_list = free_node;
 }
 
-// Tag a block as allocated.
+// Tag a block in a superblock as allocated.
 void tag_block_allocated(Superblock* superblock, unsigned block) {
   unsigned bitset = block / 64;
   superblock->free[bitset] &= ~(u64{1} << (block & 63));
 }
 
+// Allocate the small object arena, null out freelist head pointers,
+// and initialize the hashtable.
 void BlockPool::Initialize() {
   superblock_arena = sbrk(ARENASIZE);
   uintptr_t start = reinterpret_cast<uintptr_t>(superblock_arena);
@@ -270,6 +290,8 @@ void BlockPool::Initialize() {
   }
 }
 
+// Attempts to rebalance the hashtable.
+// Returns false if the rebalance failed.
 bool rebalance_sparse_table(unsigned new_sparse_bits) {
   if (new_sparse_bits > 29) {
     allocerr("allocation hashtable is too large");
@@ -310,6 +332,8 @@ bool rebalance_sparse_table(unsigned new_sparse_bits) {
   return true;
 }
 
+// Add an allocation (large object or medium object superblock) to the
+// sparse allocations hashtable.
 void add_sparse_block(uintptr_t pointer, size_t size) {
   uintptr_t key = pointer >> LOW_BITS;
   uintptr_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1))
@@ -346,12 +370,15 @@ void add_sparse_block(uintptr_t pointer, size_t size) {
   } while (key < key_end);
 }
 
+// Add a large allocation to a free list.
 void add_free_block(uintptr_t data, unsigned size_log2) {
   FreeListNode* new_node = reinterpret_cast<FreeListNode*>(data);
   new_node->next = freelists[size_log2];
   freelists[size_log2] = new_node;
 }
 
+// Reuse a large allocation from a freelist.
+// Returns null if no reusable allocation was found.
 void* remove_free_block(unsigned size_log2) {
   FreeListNode* node = reinterpret_cast<FreeListNode*>(freelists[size_log2]);
   if (node) {
@@ -360,7 +387,11 @@ void* remove_free_block(unsigned size_log2) {
   return static_cast<void*>(node);
 }
 
-
+/*
+ * Remove an allocation from the hashtable.  If the allocation is in a
+ * superblock, the superblock is left as is but the superblock bitset is
+ * updated to indicate that the block is free.
+ */
 bool remove_sparse_block(uintptr_t pointer) {
   uintptr_t key = pointer >> LOW_BITS;
   unsigned hash = hash_ptr(key, hash_mask);
@@ -470,6 +501,7 @@ void* BlockPool::AllocBlock(size_t bytes) {
   return result;
 }
 
+// Allocate a medium or large object.
 void* BlockPool::AllocLarge(unsigned size_log2) {
   void* result = nullptr;
   if (size_log2 <= 17) {
@@ -532,6 +564,7 @@ void BlockPool::FreeBlock(void* p) {
   }
 }
 
+// Allocate a small object (<= 256 bytes).
 void* BlockPool::AllocSmall(size_t block_size) {
   unsigned pool_index = (block_size + 7) / 8;
   block_size = pool_index * 8;
@@ -570,6 +603,10 @@ void* BlockPool::AllocSmall(size_t block_size) {
   }
 }
 
+// Iterates over all live objects and calls the argument function on
+// their pointers.
+// It is okay to free objects during the iteration, but adding objects
+// means they may not be found during the current iteration pass.
 void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
 #ifdef ALLOCATION_CHECK
   iterating = true;
