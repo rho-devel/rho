@@ -278,8 +278,7 @@ SEXP attribute_hidden do_paste(/*const*/ rho::Expression* call, const rho::Built
 	    if(known_to_be_latin1) ienc = CE_LATIN1;
 	    if(known_to_be_utf8) ienc = CE_UTF8;
 	}
-	PROTECT(ans = allocVector(STRSXP, 1));
-	SET_STRING_ELT(ans, 0, mkCharCE(cbuf, ienc));
+	PROTECT(ans = Rf_ScalarString(mkCharCE(cbuf, ienc)));
     }
     R_FreeStringBufferL(&cbuff);
     UNPROTECT(1);

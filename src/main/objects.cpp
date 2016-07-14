@@ -1321,8 +1321,7 @@ static SEXP get_primitive_methods(SEXP op, SEXP rho)
 {
     SEXP f, e, val;
     int nprotect = 0;
-    f = PROTECT(Rf_allocVector(STRSXP, 1));  nprotect++;
-    SET_STRING_ELT(f, 0, Rf_mkChar(PRIMNAME(op)));
+    f = PROTECT(Rf_ScalarString(Rf_mkChar(PRIMNAME(op)))); nprotect++;
     PROTECT(e = Rf_allocVector(LANGSXP, 2)); nprotect++;
     SETCAR(e, Rf_install("getGeneric"));
     val = CDR(e); SETCAR(val, f);
@@ -1575,10 +1574,7 @@ SEXP R_get_primname(SEXP object)
     SEXP f;
     if(TYPEOF(object) != BUILTINSXP && TYPEOF(object) != SPECIALSXP)
 	Rf_error("'R_get_primname' called on a non-primitive");
-    PROTECT(f = Rf_allocVector(STRSXP, 1));
-    SET_STRING_ELT(f, 0, Rf_mkChar(PRIMNAME(object)));
-    UNPROTECT(1);
-    return f;
+    return Rf_ScalarString(Rf_mkChar(PRIMNAME(object))));
 }
 #endif
 

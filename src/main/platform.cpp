@@ -1758,10 +1758,9 @@ SEXP attribute_hidden do_setlocale(/*const*/ rho::Expression* call, const rho::B
 	p = nullptr; /* -Wall */
 	error(_("invalid '%s' argument"), "category");
     }
-    PROTECT(ans = allocVector(STRSXP, 1));
-    if (p) SET_STRING_ELT(ans, 0, mkChar(p));
+    if (p) ans = PROTECT(Rf_ScalarString(mkChar(p)));
     else  {
-	SET_STRING_ELT(ans, 0, mkChar(""));
+	ans = PROTECT(Rf_ScalarString(mkChar("")));
 	warning(_("OS reports request to set locale to \"%s\" cannot be honored"),
 		CHAR(STRING_ELT(locale, 0)));
     }

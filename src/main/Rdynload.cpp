@@ -1048,7 +1048,7 @@ Rf_makeDllInfoReference(HINSTANCE inst)
 static SEXP
 Rf_MakeDLLInfo(DllInfo *info)
 {
-    SEXP ref, elNames, tmp;
+    SEXP ref, elNames;
     size_t i, n;
     const char *const names[] = {"name", "path", "dynamicLookup",
 				 "handle", "info"};
@@ -1056,12 +1056,12 @@ Rf_MakeDLLInfo(DllInfo *info)
     n = sizeof(names)/sizeof(names[0]);
 
     PROTECT(ref = allocVector(VECSXP, n));
-    SET_VECTOR_ELT(ref, 0, tmp = allocVector(STRSXP, 1));
-    if(info->name)
-	SET_STRING_ELT(tmp, 0, mkChar(info->name));
-    SET_VECTOR_ELT(ref, 1, tmp = allocVector(STRSXP, 1));
-    if(info->path)
-	SET_STRING_ELT(tmp, 0, mkChar(info->path));
+    SET_VECTOR_ELT(ref, 0, Rf_ScalarString(info->name ? mkChar(info->name)
+					   : R_BlankString));
+
+    SET_VECTOR_ELT(ref, 1, Rf_ScalarString(info->path ? mkChar(info->path)
+					   : R_BlankString));
+
     SET_VECTOR_ELT(ref, 2, ScalarLogical(info->useDynamicLookup));
 
     SET_VECTOR_ELT(ref, 3, Rf_makeDllObject(info->handle));

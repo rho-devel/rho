@@ -1052,7 +1052,6 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     int ddv=0;
     SEXP sym, s;
 
-    GCStackRoot<> rval;
     GCStackRoot<> t;  // Binding defined in PairList form
 
     s = sym = CAR(args);
@@ -1065,22 +1064,19 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ddv = ddVal(sym);
 	sym = R_DotsSymbol;
     }
-    rval = allocVector(LGLSXP,1);
 
     Frame::Binding* bdg = findVarLocInFrame(rho, sym, nullptr);
     t = (bdg ? bdg->asPairList() : nullptr);
     if (t != R_NilValue) {
 	if (DDVAL(s)) {
 	    if (length(CAR(t)) < ddv  || CAR(t) == R_MissingArg) {
-		LOGICAL(rval)[0] = 1;
-		return rval;
+		return Rf_ScalarLogical(1);
 	    }
 	    else
 		t = nthcdr(CAR(t), ddv-1);
 	}
 	if (MISSING(t) || CAR(t) == R_MissingArg) {
-	    LOGICAL(rval)[0] = 1;
-	    return rval;
+	    return Rf_ScalarLogical(1);
 	}
 	else goto havebinding;
     }
@@ -1091,14 +1087,14 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     t = CAR(t);
     if (TYPEOF(t) != PROMSXP) {
-	LOGICAL(rval)[0] = 0;
-	return rval;
+	return Rf_ScalarLogical(0);
     }
 
     t = findRootPromise(t);
-    if (!isSymbol(PREXPR(t))) LOGICAL(rval)[0] = 0;
-    else LOGICAL(rval)[0] = R_isMissing(PREXPR(t), PRENV(t));
-    return rval;
+    if (!isSymbol(PREXPR(t)))
+	return Rf_ScalarLogical(0);
+    else
+	return Rf_ScalarLogical(R_isMissing(PREXPR(t), PRENV(t)));
 }
 
 /*----------------------------------------------------------------------

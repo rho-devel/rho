@@ -404,7 +404,7 @@ SEXP fixup_NaRm(SEXP args)
 
 SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, a, stmp = NA_STRING /* -Wall */, scum = NA_STRING, call2;
+    SEXP a, stmp = NA_STRING /* -Wall */, scum = NA_STRING, call2;
     double tmp = 0.0, s;
     Rcomplex z, ztmp, zcum={0.0, 0.0} /* -Wall */;
     int itmp = 0, icum = 0, int_a, real_a, empty, warn = 0 /* dummy */;
@@ -423,29 +423,22 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	switch(TYPEOF(x)) {
 	case LGLSXP:
 	case INTSXP:
-	    PROTECT(ans = allocVector(REALSXP, 1));
 	    for (i = 0; i < n; i++) {
 		if(INTEGER(x)[i] == NA_INTEGER) {
-		    REAL(ans)[0] = R_NaReal;
-		    UNPROTECT(1); /* ans */
-		    return ans;
+		    return Rf_ScalarReal(R_NaReal);
 		}
 		s += INTEGER(x)[i];
 	    }
-	    REAL(ans)[0] = double( s/n);
-	    break;
+	    return Rf_ScalarReal(double( s/n));
 	case REALSXP:
-	    PROTECT(ans = allocVector(REALSXP, 1));
 	    for (i = 0; i < n; i++) s += REAL(x)[i];
 	    s /= n;
 	    if(R_FINITE(double(s))) {
 		for (i = 0; i < n; i++) t += (REAL(x)[i] - s);
 		s += t/n;
 	    }
-	    REAL(ans)[0] = double( s);
-	    break;
+	    return Rf_ScalarReal(s);
 	case CPLXSXP:
-	    PROTECT(ans = allocVector(CPLXSXP, 1));
 	    for (i = 0; i < n; i++) {
 		s += COMPLEX(x)[i].r;
 		si += COMPLEX(x)[i].i;
@@ -458,15 +451,10 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		s += t/n; si += ti/n;
 	    }
-	    COMPLEX(ans)[0].r = double( s);
-	    COMPLEX(ans)[0].i = double( si);
-	    break;
+	    return Rf_ScalarComplex({(double)s, (double)si});
 	default:
 	    error(R_MSG_type, type2char(TYPEOF(x)));
-	    ans = R_NilValue; // -Wall on clang 4.2
 	}
-	UNPROTECT(1); /* ans */
-	return ans;
     }
 
     /* match to foo(..., na.rm=FALSE) */
@@ -488,7 +476,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     REprintf("C do_summary(op%s, *): did NOT dispatch\n", PRIMNAME(op));
 #endif
 
-    ans = matchArgExact(R_NaRmSymbol, &args);
+    SEXP ans = matchArgExact(R_NaRmSymbol, &args);
     narm = RHOCONSTRUCT(Rboolean, asLogical(ans));
     updated = 0;
     empty = 1;/*- =1: only zero-length arguments, or NA with na.rm=T */
@@ -769,24 +757,22 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    ans = allocVector(ans_type, 1);
     switch(ans_type) {
-    case INTSXP:   INTEGER(ans)[0] = icum;break;
-    case REALSXP:  REAL(ans)[0] = zcum.r; break;
-    case CPLXSXP:  COMPLEX(ans)[0].r = zcum.r; COMPLEX(ans)[0].i = zcum.i;break;
-    case STRSXP:   SET_STRING_ELT(ans, 0, scum); break;
+    case INTSXP:   ans = Rf_ScalarInteger(icum);break;
+    case REALSXP:  ans = Rf_ScalarReal(zcum.r); break;
+    case CPLXSXP:  ans = Rf_ScalarComplex(zcum);break;
+    case STRSXP:   ans = Rf_ScalarString(scum); break;
     default:       break;  // -Wswitch
     }
     UNPROTECT(2); /* scum, args */
     return ans;
 
 na_answer: /* only sum(INTSXP, ...) case currently used */
-    ans = allocVector(ans_type, 1);
     switch(ans_type) {
-    case INTSXP:	INTEGER(ans)[0] = NA_INTEGER; break;
-    case REALSXP:	REAL(ans)[0] = NA_REAL; break;
-    case CPLXSXP:	COMPLEX(ans)[0].r = COMPLEX(ans)[0].i = NA_REAL; break;
-    case STRSXP:        SET_STRING_ELT(ans, 0, NA_STRING); break;
+    case INTSXP:	ans = Rf_ScalarInteger(NA_INTEGER); break;
+    case REALSXP:	ans = Rf_ScalarReal(NA_REAL); break;
+    case CPLXSXP:	ans = Rf_ScalarComplex({NA_REAL, NA_REAL}); break;
+    case STRSXP:        ans = Rf_ScalarString(NA_STRING); break;
     default:            break;  // -Wswitch
     }
     UNPROTECT(2); /* scum, args */

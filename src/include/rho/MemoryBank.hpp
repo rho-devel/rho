@@ -149,7 +149,7 @@ namespace rho {
 	static void notifyDeallocation(size_t bytes);
 
 	friend class String;
-	template<typename, SEXPTYPE, typename>
+	template<typename, SEXPTYPE>
 	friend class FixedVector;
 
         /** @brief Adjust the freed block statistics.

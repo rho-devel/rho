@@ -50,18 +50,8 @@ namespace rho {
      * @tparam T The type of the elements of the vector.
      *
      * @tparam ST The required ::SEXPTYPE of the vector.
-     *
-     * @tparam Initializer (optional).  Class of function object
-     *           defining a static member function
-     *           <code>initialize(RObject*)</code>. (Any return value
-     *           is discarded.)  When a FixedVector object is
-     *           constructed, this member function is applied to it.
-     *           This can be used, for example, to apply an R class
-     *           attribute etc.  The default is to do nothing.
      */
-    // (Default binding of Initializer already defined in VectorBase.h)
-    template <typename T, SEXPTYPE ST,
-	      typename Initializer /* = RObject::DoNothing */>
+    template <typename T, SEXPTYPE ST>
     class FixedVector : public VectorBase {
     public:
 	typedef T value_type;
@@ -197,7 +187,7 @@ namespace rho {
 	void decreaseSizeInPlace(size_type new_size) override;
 
 	// Virtual functions of RObject:
-	FixedVector<T, ST, Initializer>* clone() const override;
+	FixedVector<T, ST>* clone() const override;
 	const char* typeName() const override;
 
 	// Virtual function of GCNode:
@@ -238,14 +228,13 @@ namespace rho {
 	      m_data(reinterpret_cast<T*>(m_first_element_storage))
 	{
 	    constructElementsIfNeeded();
-	    Initializer::initialize(this);
 	}
 
 	/** @brief Copy constructor.
 	 *
 	 * @param pattern FixedVector to be copied.
 	 */
-	FixedVector(const FixedVector<T, ST, Initializer>& pattern);
+	FixedVector(const FixedVector<T, ST>& pattern);
 
 	FixedVector& operator=(const FixedVector&) = delete;
 
@@ -298,9 +287,9 @@ namespace rho {
 #include "localization.h"
 #include "R_ext/Error.h"
 
-template <typename T, SEXPTYPE ST, typename Initr>
-rho::FixedVector<T, ST, Initr>::FixedVector(
-    const FixedVector<T, ST, Initr>& pattern)
+template <typename T, SEXPTYPE ST>
+rho::FixedVector<T, ST>::FixedVector(
+    const FixedVector<T, ST>& pattern)
     : VectorBase(pattern),
       m_data(reinterpret_cast<T*>(m_first_element_storage))
 {
@@ -312,12 +301,10 @@ rho::FixedVector<T, ST, Initr>::FixedVector(
 	*out = ElementTraits::duplicate_element(*in);
 	++out;
     }
-
-    Initr::initialize(this);
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void* rho::FixedVector<T, ST, Initr>::allocate(size_type sz)
+template <typename T, SEXPTYPE ST>
+void* rho::FixedVector<T, ST>::allocate(size_type sz)
 {
     size_type blocksize = sz*sizeof(T);
     // Check for integer overflow:
@@ -334,52 +321,52 @@ void* rho::FixedVector<T, ST, Initr>::allocate(size_type sz)
     }
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-rho::FixedVector<T, ST, Initr>*
-rho::FixedVector<T, ST, Initr>::create(size_type sz)
+template <typename T, SEXPTYPE ST>
+rho::FixedVector<T, ST>*
+rho::FixedVector<T, ST>::create(size_type sz)
 {
     void* storage = allocate(sz);
     return new(storage) FixedVector(sz);
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-rho::FixedVector<T, ST, Initr>* rho::FixedVector<T, ST, Initr>::clone() const
+template <typename T, SEXPTYPE ST>
+rho::FixedVector<T, ST>* rho::FixedVector<T, ST>::clone() const
 {
     void* storage = allocate(size());
     return new(storage) FixedVector(*this);
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::constructElements(iterator from,
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::constructElements(iterator from,
 							iterator to)
 {
     for (iterator p = from; p != to; ++p)
 	new (p) T;
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::destructElements(iterator from,
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::destructElements(iterator from,
 						       iterator to)
 {
     for (iterator p = from; p != to; ++p)
 	p->~T();
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::detachElements(std::true_type)
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::detachElements(std::true_type)
 {
     std::fill(begin(), end(), nullptr);
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::detachReferents()
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::detachReferents()
 {
     detachElements(typename std::is_base_of<GCEdgeBase, T>::type());
     VectorBase::detachReferents();
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::decreaseSizeInPlace(size_type new_size)
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::decreaseSizeInPlace(size_type new_size)
 {
     if (new_size > size()) {
 	Rf_error("Increasing vector length in place not allowed.");
@@ -391,21 +378,21 @@ void rho::FixedVector<T, ST, Initr>::decreaseSizeInPlace(size_type new_size)
     adjustSize(new_size);
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-const char* rho::FixedVector<T, ST, Initr>::typeName() const
+template <typename T, SEXPTYPE ST>
+const char* rho::FixedVector<T, ST>::typeName() const
 {
-    return FixedVector<T, ST, Initr>::staticTypeName();
+    return FixedVector<T, ST>::staticTypeName();
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::visitElements(const_visitor* v,
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::visitElements(const_visitor* v,
 						    std::true_type) const
 {
     std::for_each(begin(), end(), [=](GCNode* n) { if(n) (*v)(n); });
 }
 
-template <typename T, SEXPTYPE ST, typename Initr>
-void rho::FixedVector<T, ST, Initr>::visitReferents(const_visitor* v) const
+template <typename T, SEXPTYPE ST>
+void rho::FixedVector<T, ST>::visitReferents(const_visitor* v) const
 {
     visitElements(v, typename std::is_base_of<GCEdgeBase, T>::type());
     VectorBase::visitReferents(v);

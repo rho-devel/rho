@@ -39,8 +39,7 @@
 
 namespace rho {
     class String;
-    template <typename, SEXPTYPE,
-	      typename Initializer = RObject::DoNothing> class FixedVector;
+    template <typename, SEXPTYPE> class FixedVector;
     typedef FixedVector<int, INTSXP> IntVector;
     typedef FixedVector<RHandle<>, VECSXP> ListVector;
     typedef FixedVector<RHandle<String>, STRSXP> StringVector;

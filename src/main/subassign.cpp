@@ -1372,22 +1372,17 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Note the RHS has already been evaluated at this point */
 
-    input = allocVector(STRSXP, 1);
-
     nlist = CADR(args);
     if (TYPEOF(nlist) == PROMSXP) {
-	PROTECT(input);
 	nlist = eval(nlist, env);
-	UNPROTECT(1);
     }
     iS = isSymbol(nlist);
     if (iS)
-	SET_STRING_ELT(input, 0, PRINTNAME(nlist));
+	input = Rf_ScalarString(PRINTNAME(nlist));
     else if(isString(nlist) )
-	SET_STRING_ELT(input, 0, STRING_ELT(nlist, 0));
+	input = Rf_ScalarString(STRING_ELT(nlist, 0));
     else {
 	error(_("invalid subscript type '%s'"), type2char(TYPEOF(nlist)));
-	return R_NilValue; /*-Wall*/
     }
 
     /* replace the second argument with a string */

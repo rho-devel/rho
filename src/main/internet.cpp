@@ -239,11 +239,7 @@ SEXP Rsockread(SEXP ssock, SEXP smaxlen)
 	(*ptr->sockread)(&sock, abuf, &maxlen);
     else
 	error(_("socket routines cannot be loaded"));
-    SEXP ans = PROTECT(allocVector(STRSXP, 1));
-    SET_STRING_ELT(ans, 0, mkCharLen(buf, maxlen));
-    UNPROTECT(1);
-    return ans;
-		       
+    return Rf_ScalarString(mkCharLen(buf, maxlen));
 }
 
 extern "C"
@@ -286,8 +282,7 @@ SEXP Rsocklisten(SEXP ssock)
     else
 	error(_("socket routines cannot be loaded"));
     SEXP ans = PROTECT(ScalarInteger(sock)); // The socket being listened on
-    SEXP host = PROTECT(allocVector(STRSXP, 1));
-    SET_STRING_ELT(host, 0, mkChar(buf));
+    SEXP host = PROTECT(Rf_ScalarString(mkChar(buf)));
     setAttrib(ans, install("host"), host);
     UNPROTECT(2);
     return ans;
