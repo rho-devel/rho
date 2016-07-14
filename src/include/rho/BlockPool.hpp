@@ -24,8 +24,8 @@
  *  https://www.R-project.org/Licenses/
  */
 
-#include <functional>
 #include <cstdint>
+#include <functional>
 
 using std::size_t;
 using std::function;
@@ -52,13 +52,10 @@ class BlockPool {
     static void DebugRebalance(int low_bits);
 
   private:
-    /** Allocate a small block. The pool index is the allocation size divided by 8. */
+    /** Allocate a small block (bytes >= 32 && bytes <= 256). */
     static void* AllocSmall(size_t bytes);
 
-    /** Free a block in this block pool. */
-    static void FreeSmall(void* p, unsigned superblock_id);
-
-    /** Allocate a large block in the sparse block table. */
+    /** Allocate a medium or large block. */
     static void* AllocLarge(unsigned bytes);
 };
 

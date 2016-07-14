@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <functional>
 #include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <limits>
 #include <map>
 
@@ -651,6 +651,15 @@ void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
 #endif
 }
 
+/**
+ * Finds the corresponding allocation for an internal or exact object pointer.
+ *
+ * If the pointer is inside the bounds of the small object arena, then
+ * the corresponding superblock is found via pointer manipulation.
+ *
+ * If the pointer is inside the heap bounds, then we iterate over all hash
+ * collisions for the pointer to find the corresponding allocation.
+ */
 void* BlockPool::Lookup(void* candidate) {
   void* result = nullptr;
   uintptr_t candidate_uint = reinterpret_cast<uintptr_t>(candidate);
