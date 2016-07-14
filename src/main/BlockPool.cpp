@@ -139,7 +139,7 @@ Superblock* medium_superblocks[18];
 Superblock* small_superblocks[NUM_SMALL_POOLS];
 
 // Constant indicating a deleted bucket.
-uintptr_t deleted_bucket = UINTPTR_MAX;
+#define DELETED_KEY (UINTPTR_MAX)
 
 unsigned add_collision = 0;
 unsigned remove_collision = 0;
@@ -305,7 +305,7 @@ bool rebalance_sparse_table(unsigned new_sparse_bits) {
   // Build new table.
   for (int i = 0; i < num_sparse_buckets; ++i) {
     HashBucket& bucket = sparse_buckets[i];
-    if (bucket.data != 0 && bucket.data != deleted_bucket) {
+    if (bucket.data != 0 && bucket.data != DELETED_KEY) {
       unsigned hash = hash_ptr(bucket.data >> LOW_BITS, new_mask);
       bool placed = false;
       for (int j = 0; j < MAX_REBALANCE_COLLISIONS; ++j) {
@@ -344,7 +344,7 @@ void add_sparse_block(uintptr_t pointer, size_t size) {
     bool added = false;
     for (int i = 0; i < MAX_COLLISIONS; ++i) {
       HashBucket& bucket = sparse_buckets[hash];
-      if (bucket.data == 0 || (bucket.data == deleted_bucket)) {
+      if (bucket.data == 0 || (bucket.data == DELETED_KEY)) {
         if (first) {
           // Tag this as the first hash entry.
           first = false;
@@ -420,7 +420,7 @@ bool remove_sparse_block(uintptr_t pointer) {
         superblock->free_list = free_node;
         return true;
       } else if (data == pointer) {
-        bucket->data = deleted_bucket;
+        bucket->data = DELETED_KEY;
         size_log2 = bucket->size;
         add_free_block(pointer, bucket->size);
         break;
@@ -440,7 +440,7 @@ bool remove_sparse_block(uintptr_t pointer) {
     for (int i = 0; i < MAX_COLLISIONS; ++i) {
       HashBucket& bucket = sparse_buckets[hash];
       if (bucket.data == pointer) {
-        bucket.data = deleted_bucket;
+        bucket.data = DELETED_KEY;
         break;
       }
       if (!bucket.data) {
@@ -642,7 +642,7 @@ void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
   }
   for (int i = 0; i < num_sparse_buckets; ++i) {
     HashBucket& bucket = sparse_buckets[i];
-    if (bucket.data && bucket.data != deleted_bucket) {
+    if (bucket.data && bucket.data != DELETED_KEY) {
       if (bucket.data & 1) {
         void* pointer = reinterpret_cast<void*>(bucket.data & ~uintptr_t{3});
         if (bucket.data & 2) {
@@ -721,7 +721,7 @@ void* BlockPool::Lookup(void* candidate) {
     unsigned hash = hash_ptr(candidate_uint >> LOW_BITS, hash_mask);
     for (int i = 0; i < MAX_COLLISIONS; ++i) {
       HashBucket& bucket = sparse_buckets[hash];
-      if (bucket.data && bucket.data != deleted_bucket) {
+      if (bucket.data && bucket.data != DELETED_KEY) {
         uintptr_t pointer = bucket.data & ~uintptr_t{3};
         if (bucket.data & 2) {
           uintptr_t first_block = pointer + LARGE_HEADER_SIZE;
@@ -801,7 +801,7 @@ static void print_sparse_table() {
     int count = 0;
     for (int j = 0; j < 16 && i + j < num_sparse_buckets; ++j) {
       HashBucket& bucket = sparse_buckets[i + j];
-      if (bucket.data && bucket.data != deleted_bucket) {
+      if (bucket.data && bucket.data != DELETED_KEY) {
         count += 1;
       }
     }
