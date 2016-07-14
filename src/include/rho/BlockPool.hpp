@@ -1,7 +1,5 @@
 #include <algorithm>
 #include <cstdint>
-#include <vector>
-#include <limits>
 
 using std::size_t;
 using std::function;

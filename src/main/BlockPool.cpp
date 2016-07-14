@@ -5,13 +5,14 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <vector>
-#include <map>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
+#include <map>
 
 typedef std::uint64_t u64;
 typedef std::uint32_t u32;
+using std::function;
 
 #ifdef ALLOCATION_CHECK
 typedef std::map<void*, void*> allocation_map;
