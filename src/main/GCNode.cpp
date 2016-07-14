@@ -218,29 +218,23 @@ void GCNode::sweep()
     // Once this is done, all of the nodes in the cycle will be unreferenced
     // and they will have been deleted unless their reference count is
     // saturated.
-    vector<void*> work;
     vector<GCNode*> to_delete;
-    BlockPool::ApplyToAllBlocks([&](void* p) {
-            work.push_back(p);
-            });
-    for (void* pointer : work) {
-        if (BlockPool::Lookup(pointer)) {
-            // The pointer is still allocated, so detach referents.
-            GCNode* node = static_cast<GCNode*>(pointer);
-            if (!node->isMarked()) {
-                int ref_count = node->getRefCount();
-                incRefCount(node);
-                if (node->getRefCount() == ref_count) {
-                    // The reference count has saturated.
-                    node->detachReferents();
-                    to_delete.push_back(node);
-                } else {
-                    node->detachReferents();
-                    decRefCount(node);
-                }
+    BlockPool::ApplyToAllBlocks([&](void* pointer) {
+        // The pointer is still allocated, so detach referents.
+        GCNode* node = static_cast<GCNode*>(pointer);
+        if (!node->isMarked()) {
+            int ref_count = node->getRefCount();
+            incRefCount(node);
+            if (node->getRefCount() == ref_count) {
+                // The reference count has saturated.
+                node->detachReferents();
+                to_delete.push_back(node);
+            } else {
+                node->detachReferents();
+                decRefCount(node);
             }
         }
-    }
+    });
     // At this point, the only unmarked objects are GCNodes with saturated
     // reference counts.  Delete them.
     for (GCNode* node : to_delete) {

@@ -78,6 +78,7 @@ unsigned hash_mask = num_sparse_buckets - 1;
 #define MAX_COLLISIONS (6)
 #define MAX_REBALANCE_COLLISIONS (3)
 
+// Computes the hash key for a pointer.
 static unsigned hash_ptr(uintptr_t ptr, unsigned hash_mask) {
   unsigned low = (ptr << 4) & 0xFFFFFFFF;
   unsigned hi = (ptr >> 32) & 0xFFFFFFFF;
@@ -88,6 +89,7 @@ static unsigned hash_ptr(uintptr_t ptr, unsigned hash_mask) {
   return hash & hash_mask;
 }
 
+// Computes the next key in a probe chain.
 static unsigned probe_func(unsigned hash, int i, unsigned hash_mask) {
   return (hash + i + 1) & hash_mask;
 }
@@ -556,10 +558,9 @@ void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
         (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
     unsigned bitset_entries = (superblock_size + 63) / 64;
     for (int i = 0; i < bitset_entries; ++i) {
-      u64 bitset = superblock->free[i];
-      if (bitset != ~0ull) {
+      if (superblock->free[i] != ~0ull) {
         for (int index = 0; index < 64; ++index) {
-          if (!(bitset & (u64{1} << index))) {
+          if (!(superblock->free[i] & (u64{1} << index))) {
 #ifdef ALLOCATION_CHECK
             if (!lookup_in_allocation_map(reinterpret_cast<void*>(block))) {
               allocerr(
