@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include "Defn.h"
 #include "R_ext/Print.h"
 #include "rho/GCNode.hpp"
 #include "rho/WeakRef.hpp"
@@ -44,10 +45,9 @@ using namespace rho;
 
 unsigned int GCManager::s_inhibitor_count = 0;
 
-size_t GCManager::s_threshold = std::numeric_limits<size_t>::max();
+size_t GCManager::s_threshold = R_VSIZE;
 size_t GCManager::s_min_threshold = s_threshold;
-const size_t GCManager::s_gclite_margin = 10000;
-size_t GCManager::s_gclite_threshold = s_gclite_margin;
+size_t GCManager::s_gclite_threshold = s_threshold;
 bool GCManager::s_gc_is_running = false;
 bool GCManager::s_gc_pending = false;
 size_t GCManager::s_max_bytes = 0;
@@ -101,12 +101,14 @@ void GCManager::gc(bool force_full_collection)
 
     if (force_full_collection || MemoryBank::bytesAllocated() > s_threshold) {
 	GCNode::gc(true);
-	s_threshold = std::max(size_t(0.9*double(s_threshold)),
+	s_threshold = std::max(size_t(0.8*double(s_threshold)),
 			       std::max(s_min_threshold,
-					2*MemoryBank::bytesAllocated()));
+					size_t(1.2*MemoryBank::bytesAllocated())));
     }
 
-    s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
+    s_gclite_threshold = std::max(size_t(0.8*double(s_gclite_threshold)),
+			       std::max(s_min_threshold,
+					size_t(1.2*MemoryBank::bytesAllocated())));
 
     if (s_post_gc) (*s_post_gc)();
 
@@ -121,7 +123,7 @@ void GCManager::resetMaxTallies()
 
 void GCManager::setGCThreshold(size_t initial_threshold)
 {
-    s_min_threshold = s_threshold = initial_threshold;
+    s_min_threshold = s_gclite_threshold = s_threshold = initial_threshold;
 }
 
 std::ostream* GCManager::setReporting(std::ostream* os)
