@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <algorithm>
+#include <functional>
 #include <cstdint>
 #include <cstdlib>
 #include <limits>

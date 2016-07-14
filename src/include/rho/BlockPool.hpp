@@ -24,7 +24,7 @@
  *  https://www.R-project.org/Licenses/
  */
 
-#include <algorithm>
+#include <functional>
 #include <cstdint>
 
 using std::size_t;
