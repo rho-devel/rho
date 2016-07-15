@@ -146,12 +146,12 @@ unsigned remove_collision = 0;
 unsigned lookup_collision = 0;
 
 // Find the 2-log of the next power of two greater than or equal to size.
-static unsigned next_log2_32(int size) {
+static unsigned next_log2_32(u32 size) {
   if (size == 0) {
     return 0;
   }
-  int log2 = 0;
-  int temp = size;
+  unsigned log2 = 0;
+  u32 temp = size;
   if (temp & 0xFFFF0000) {
     log2 += 16;
     temp >>= 16;
@@ -261,7 +261,7 @@ void tag_block_allocated(Superblock* superblock, unsigned block) {
 
 // Allocate the small object arena, null out freelist head pointers,
 // and initialize the hashtable.
-void BlockPool::Initialize() {
+void rho::BlockPool::Initialize() {
   superblock_arena = sbrk(ARENASIZE);
   uintptr_t start = reinterpret_cast<uintptr_t>(superblock_arena);
   uintptr_t end = start + ARENASIZE;
@@ -465,7 +465,7 @@ static void update_heap_bounds(void* allocation, size_t size) {
   }
 }
 
-void* BlockPool::AllocBlock(size_t bytes) {
+void* rho::BlockPool::AllocBlock(size_t bytes) {
   void* result;
   unsigned block_bytes;
   if (bytes <= 256) {
@@ -502,7 +502,7 @@ void* BlockPool::AllocBlock(size_t bytes) {
 }
 
 // Allocate a medium or large object.
-void* BlockPool::AllocLarge(unsigned size_log2) {
+void* rho::BlockPool::AllocLarge(unsigned size_log2) {
   void* result = nullptr;
   if (size_log2 <= 17) {
     unsigned num_blocks = (LARGE_ARENA_SIZE - LARGE_HEADER_SIZE) >> size_log2;
@@ -549,7 +549,7 @@ void* BlockPool::AllocLarge(unsigned size_log2) {
   return result;
 }
 
-void BlockPool::FreeBlock(void* p) {
+void rho::BlockPool::FreeBlock(void* p) {
 #ifdef ALLOCATION_CHECK
   if (!Lookup(p)) {
     allocerr("can not free unknown/already-freed pointer");
@@ -565,7 +565,7 @@ void BlockPool::FreeBlock(void* p) {
 }
 
 // Allocate a small object (<= 256 bytes).
-void* BlockPool::AllocSmall(size_t block_size) {
+void* rho::BlockPool::AllocSmall(size_t block_size) {
   unsigned pool_index = (block_size + 7) / 8;
   block_size = pool_index * 8;
   assert(block_size >= 32 && block_size <= 256
@@ -607,7 +607,7 @@ void* BlockPool::AllocSmall(size_t block_size) {
 // their pointers.
 // It is okay to free objects during the iteration, but adding objects
 // means they may not be found during the current iteration pass.
-void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
+void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
 #ifdef ALLOCATION_CHECK
   iterating = true;
 #endif
@@ -697,7 +697,7 @@ void BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
  * If the pointer is inside the heap bounds, then we iterate over all hash
  * collisions for the pointer to find the corresponding allocation.
  */
-void* BlockPool::Lookup(void* candidate) {
+void* rho::BlockPool::Lookup(void* candidate) {
   void* result = nullptr;
   uintptr_t candidate_uint = reinterpret_cast<uintptr_t>(candidate);
   Superblock* superblock = superblock_from_pointer(candidate);
@@ -847,7 +847,7 @@ void print_superblock(Superblock* superblock) {
   printf("\n");
 }
 
-void BlockPool::DebugPrint() {
+void rho::BlockPool::DebugPrint() {
   uintptr_t next_superblock = arena_superblock_start;
   while (next_superblock < arena_superblock_next) {
     print_superblock(reinterpret_cast<Superblock*>(next_superblock));
@@ -856,7 +856,7 @@ void BlockPool::DebugPrint() {
   print_sparse_table();
 }
 
-void BlockPool::DebugRebalance(int new_bits) {
+void rho::BlockPool::DebugRebalance(int new_bits) {
   rebalance_sparse_table(new_bits);
   print_sparse_table();
 }
