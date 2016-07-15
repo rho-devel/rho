@@ -24,8 +24,6 @@
  *  https://www.R-project.org/Licenses/
  */
 
-#include "rho/BlockPool.hpp"
-
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -35,6 +33,12 @@
 #include <functional>
 #include <limits>
 #include <map>
+
+#include "rho/BlockPool.hpp"
+
+#ifdef HAVE_ADDRESS_SANITIZER
+#include "rho/AddressSanitizer.hpp"
+#endif
 
 // The low pointer bits are masked out in the hash function.
 #define LOW_BITS (19)
@@ -188,6 +192,10 @@ struct Superblock {
       return nullptr;
     }
     void* pointer = reinterpret_cast<void*>(arena_superblock_next);
+#ifdef HAVE_ADDRESS_SANITIZER
+    // Unpoison only the header.
+    ASAN_UNPOISON_MEMORY_REGION(pointer, SUPERBLOCK_HEADER_SIZE);
+#endif
     unsigned superblock_size =
         (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
     unsigned bitset_entries = (superblock_size + 63) / 64;
@@ -240,6 +248,9 @@ struct Superblock {
     }
     if (superblock->free_list) {
       FreeListNode* free_node = superblock->free_list;
+#ifdef HAVE_ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(free_node, block_size);
+#endif
       u32 index = free_node->block;
       Superblock::TagBlockAllocated(free_node->superblock, index);
       superblock->free_list = free_node->next;
@@ -254,8 +265,12 @@ struct Superblock {
       if (superblock->next_untouched == num_blocks) {
         small_superblocks[pool_index] = nullptr;
       }
-      return reinterpret_cast<char*>(superblock) + SUPERBLOCK_HEADER_SIZE
-          + (index * block_size);
+      void* result = reinterpret_cast<char*>(superblock)
+          + SUPERBLOCK_HEADER_SIZE + (index * block_size);
+#ifdef HAVE_ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(result, block_size);
+#endif
+      return result;
     }
   }
 
@@ -283,6 +298,9 @@ struct Superblock {
     }
     free_node->next = superblock->free_list;
     superblock->free_list = free_node;
+#ifdef HAVE_ADDRESS_SANITIZER
+    ASAN_POISON_MEMORY_REGION(free_node, superblock->block_size);
+#endif
   }
 
   /** Allocate a medium or large object. */
@@ -309,6 +327,9 @@ struct Superblock {
       }
       if (superblock->free_list) {
         FreeListNode* free_node = superblock->free_list;
+#ifdef HAVE_ADDRESS_SANITIZER
+        ASAN_UNPOISON_MEMORY_REGION(free_node, 1 << size_log2);
+#endif
         unsigned index = free_node->block;
         Superblock::TagBlockAllocated(free_node->superblock, index);
         superblock->free_list = free_node->next;
@@ -325,6 +346,9 @@ struct Superblock {
         }
         result = reinterpret_cast<char*>(superblock) + SUPERBLOCK_HEADER_SIZE
             + (index << size_log2);
+#ifdef HAVE_ADDRESS_SANITIZER
+        ASAN_UNPOISON_MEMORY_REGION(result, 1 << size_log2);
+#endif
       }
     } else {
       result = remove_free_block(size_log2);
@@ -434,6 +458,11 @@ void rho::BlockPool::Initialize() {
   uintptr_t num_sb = (end - arena_superblock_start) >> SUPERBLOCK_BITS;
   arena_superblock_end = arena_superblock_start + num_sb * SUPERBLOCK_SIZE;
   arena_superblock_next = arena_superblock_start;
+
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Poison the whole small object arena.
+  ASAN_POISON_MEMORY_REGION(reinterpret_cast<void*>(start), ARENASIZE);
+#endif
 
   for (int i = 0; i < NUM_SMALL_POOLS; ++i) {
     small_superblocks[i] = nullptr;
@@ -562,9 +591,12 @@ void alloctable_revert_insert(uintptr_t pointer, size_t size) {
 
 // Add a large allocation to a free list.
 static void add_free_block(uintptr_t data, unsigned size_log2) {
-  FreeListNode* new_node = reinterpret_cast<FreeListNode*>(data);
-  new_node->next = freelists[size_log2];
-  freelists[size_log2] = new_node;
+  FreeListNode* free_node = reinterpret_cast<FreeListNode*>(data);
+  free_node->next = freelists[size_log2];
+  freelists[size_log2] = free_node;
+#ifdef HAVE_ADDRESS_SANITIZER
+  ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
+#endif
 }
 
 // Reuse a large allocation from a freelist.
@@ -572,6 +604,9 @@ static void add_free_block(uintptr_t data, unsigned size_log2) {
 void* remove_free_block(unsigned size_log2) {
   FreeListNode* node = reinterpret_cast<FreeListNode*>(freelists[size_log2]);
   if (node) {
+#ifdef HAVE_ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(node, 1 << size_log2);
+#endif
     freelists[size_log2] = node->next;
   }
   return static_cast<void*>(node);
@@ -598,19 +633,23 @@ bool alloctable_remove_maybe(uintptr_t pointer) {
       if ((bucket->data & 2) && first_block <= pointer
           && (data + MEDIUM_SUPERBLOCK_SIZE) > pointer) {
         Superblock* superblock = reinterpret_cast<Superblock*>(data);
-        unsigned index = (pointer - first_block) >> superblock->block_size;
+        size_log2 = superblock->block_size;
+        unsigned index = (pointer - first_block) >> size_log2;
         unsigned bitset = index / 64;
         superblock->free[bitset] |= u64{1} << (index & 63);
         FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
         free_node->block = index;
         free_node->superblock = superblock;
-        if (medium_superblocks[superblock->block_size]) {
-          superblock = medium_superblocks[superblock->block_size];
+        if (medium_superblocks[size_log2]) {
+          superblock = medium_superblocks[size_log2];
         } else {
-          medium_superblocks[superblock->block_size] = superblock;
+          medium_superblocks[size_log2] = superblock;
         }
         free_node->next = superblock->free_list;
         superblock->free_list = free_node;
+#ifdef HAVE_ADDRESS_SANITIZER
+        ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
+#endif
         return true;
       } else if (data == pointer) {
         bucket->data = DELETED_KEY;
