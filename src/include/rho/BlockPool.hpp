@@ -50,13 +50,8 @@ namespace rho {
       /** @brief Print allocation overview for debugging. */
       static void DebugPrint();
 
+      static void RebalanceAllocationTable(int low_bits);
+
       static void DebugRebalance(int low_bits);
-
-    private:
-      /** Allocate a small block (bytes >= 32 && bytes <= 256). */
-      static void* AllocSmall(size_t bytes);
-
-      /** Allocate a medium or large block. */
-      static void* AllocLarge(unsigned bytes);
   };
 }
