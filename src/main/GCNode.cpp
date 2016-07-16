@@ -327,9 +327,22 @@ void GCNode::restoreInternalData(InternalData data) {
  * to detect errors more reliably.  In particular:
  * - A redzone is added on both sides of the object to detect underflows and
  *   overflows.
+ * - Memory is poisoned when it is freed to detect use-after-free errors.
+ *
+ * - TODO: Freed objects are held in a quarantine to prevent the memory from
+ *   being reallocated quickly.  This helps detect use-after-free errors.
  *
  * Note that in the context of GC, 'use after free' is really premature garbage
  * collection.
+ */
+
+/*
+ * TODO: Add a quarantine in the BlockPool allocator.
+ *
+ * The reason we don't have a quarantine right now is that if objects are not
+ * actually freed they will still be iterated over by the allocator leading to
+ * use-after-poison errors, so the allocator has to be aware of which objects
+ * are quarantined.
  */
 
 void* asan_allocate(size_t bytes) {
