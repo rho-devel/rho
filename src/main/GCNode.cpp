@@ -39,7 +39,6 @@
 #include <set>
 #include <utility>
 
-#include "rho/AddressSanitizer.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/GCRoot.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
@@ -68,37 +67,12 @@ const unsigned char GCNode::s_decinc_refcount[]
 
 unsigned char GCNode::s_mark = 0;
 
-#ifdef HAVE_ADDRESS_SANITIZER
-static void* asan_allocate(size_t bytes);
-static void asan_free(void* object);
-static const int kRedzoneSize = 16;
-#else
-static const int kRedzoneSize = 0;
-#endif  // HAVE_ADDRESS_SANITIZER
-
-// Helper function for address calculations.
-static void* offset_pointer(void* pointer, size_t bytes) {
-    return static_cast<char*>(pointer) + bytes;
-}
-
-static void* get_object_pointer_from_allocation(void* allocation) {
-    return offset_pointer(allocation, kRedzoneSize);
-}
-
-static void* get_allocation_from_object_pointer(void* object) {
-    return offset_pointer(object, -kRedzoneSize);
-}
-
 HOT_FUNCTION void* GCNode::operator new(size_t bytes) {
     GCManager::maybeGC();
     MemoryBank::notifyAllocation(bytes);
     void *result;
 
-#ifdef HAVE_ADDRESS_SANITIZER
-    result = asan_allocate(bytes);
-#else
     result = BlockPool::AllocBlock(bytes);
-#endif
 
     // Because garbage collection may occur between this point and the GCNode's
     // constructor running, we need to ensure that this space is at least
@@ -118,11 +92,7 @@ void GCNode::operator delete(void* pointer, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
 
-#ifdef HAVE_ADDRESS_SANITIZER
-    asan_free(pointer);
-#else
     BlockPool::FreeBlock(pointer);
-#endif
 }
 
 bool GCNode::check() {
@@ -247,8 +217,7 @@ void GCNode::sweep() {
     for (void* pointer : work) {
         if (BlockPool::Lookup(pointer)) {
             // The pointer is still allocated, so detach referents.
-            GCNode* node = static_cast<GCNode*>(
-                    get_object_pointer_from_allocation(pointer));
+            GCNode* node = static_cast<GCNode*>(pointer);
             if (!node->isMarked()) {
                 int ref_count = node->getRefCount();
                 incRefCount(node);
@@ -304,12 +273,7 @@ void rho::initializeMemorySubsystem() {
 // Returns nullptr if the candidate pointer is not inside a GCNode,
 // otherwise returns the pointer to the enclosign GCNode.
 GCNode* GCNode::asGCNode(void* candidate_pointer) {
-    void* result = BlockPool::Lookup(candidate_pointer);
-    if (result) {
-        return static_cast<GCNode*>(
-            get_object_pointer_from_allocation(result));
-    }
-    return nullptr;
+    return static_cast<GCNode*>(BlockPool::Lookup(candidate_pointer));
 }
 
 GCNode::InternalData GCNode::storeInternalData() const {
@@ -320,62 +284,3 @@ void GCNode::restoreInternalData(InternalData data) {
     m_rcmms = data;
 }
 
-#ifdef HAVE_ADDRESS_SANITIZER
-
-/*
- * When compiling with the address sanitizer, we modify the allocation routines
- * to detect errors more reliably.  In particular:
- * - A redzone is added on both sides of the object to detect underflows and
- *   overflows.
- * - Memory is poisoned when it is freed to detect use-after-free errors.
- *
- * - TODO: Freed objects are held in a quarantine to prevent the memory from
- *   being reallocated quickly.  This helps detect use-after-free errors.
- *
- * Note that in the context of GC, 'use after free' is really premature garbage
- * collection.
- */
-
-/*
- * TODO: Add a quarantine in the BlockPool allocator.
- *
- * The reason we don't have a quarantine right now is that if objects are not
- * actually freed they will still be iterated over by the allocator leading to
- * use-after-poison errors, so the allocator has to be aware of which objects
- * are quarantined.
- */
-
-void* asan_allocate(size_t bytes) {
-    size_t allocation_size = bytes + 2 * kRedzoneSize;
-    void* allocation = BlockPool::AllocBlock(allocation_size);
-
-    void* start_redzone = allocation;
-    void* storage = offset_pointer(allocation, kRedzoneSize);
-    void* end_redzone = offset_pointer(storage, bytes);
-
-    ASAN_UNPOISON_MEMORY_REGION(allocation, allocation_size);
-
-    // Store the allocation size for later use.
-    *static_cast<size_t*>(allocation) = allocation_size;
-
-    // Poison the redzones
-    ASAN_POISON_MEMORY_REGION(start_redzone, kRedzoneSize);
-    ASAN_POISON_MEMORY_REGION(end_redzone, kRedzoneSize);
-    return storage;
-}
-
-void asan_free(void* object) {
-    void* allocation = get_allocation_from_object_pointer(object);
-    void* start_redzone = allocation;
-
-    // Unpoison so we can read the allocation size (stored in first redzone).
-    ASAN_UNPOISON_MEMORY_REGION(start_redzone, kRedzoneSize);
-    size_t allocation_size = *static_cast<size_t*>(allocation);
-
-    // We need to unpoison the memory now, to allow the allocator to link
-    // it into a free list. The allocator will later re-poison the memory.
-    ASAN_UNPOISON_MEMORY_REGION(allocation, allocation_size);
-    BlockPool::FreeBlock(allocation);
-}
-
-#endif  // HAVE_ADDRESS_SANITIZER

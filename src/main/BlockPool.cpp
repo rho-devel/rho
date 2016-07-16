@@ -126,6 +126,40 @@ static Superblock* small_superblocks[NUM_SMALL_POOLS];
 // Pointers to medium object superblocks with available blocks.
 static Superblock* medium_superblocks[18];
 
+#ifdef HAVE_ADDRESS_SANITIZER
+
+/*
+ * When compiling with the address sanitizer, we modify the allocation routines
+ * to detect errors more reliably.  In particular:
+ * - A redzone is added on both sides of the object to detect underflows and
+ *   overflows.
+ * - Memory is poisoned when it is freed to detect use-after-free errors.
+ * - Freed objects are held in a quarantine to prevent the memory from
+ *   being reallocated quickly.  This helps detect use-after-free errors.
+ *
+ * Note that in the context of GC, 'use after free' is really premature garbage
+ * collection.
+ */
+
+// Maximum quarantine size = 10Mb.
+#define MAX_QUARANTINE_SIZE (10<<20)
+
+// Redzones are added before and after the allocation.
+#define REDZONE_SIZE (16)
+
+// Quarantines are used so objects are not quickly reused after free.
+static size_t small_quarantine_size = 0;
+static size_t quarantine_size = 0;
+static FreeListNode* small_quarantine[NUM_SMALL_POOLS];
+static FreeListNode* quarantine[64];
+
+// Helper function for address calculations.
+static void* offset_pointer(void* pointer, size_t bytes) {
+    return static_cast<char*>(pointer) + bytes;
+}
+
+#endif // HAVE_ADDRESS_SANITIZER
+
 /**
  * Hash bucket for the allocation table.
  * The two lowest bits of the data pointer are flags indicating
@@ -282,7 +316,8 @@ struct Superblock {
     uintptr_t block = reinterpret_cast<uintptr_t>(pointer);
     uintptr_t superblock_start = reinterpret_cast<uintptr_t>(superblock)
         + SUPERBLOCK_HEADER_SIZE;
-    unsigned index = (block - superblock_start) / superblock->block_size;
+    unsigned block_size = superblock->block_size;
+    unsigned index = (block - superblock_start) / block_size;
     unsigned bitset = index / 64;
     superblock->free[bitset] |= u64{1} << (index & 63);
 
@@ -290,7 +325,35 @@ struct Superblock {
     FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
     free_node->block = index;
     free_node->superblock = superblock;
-    int pool_index = superblock->block_size / 8;
+    int pool_index = block_size / 8;
+#ifdef HAVE_ADDRESS_SANITIZER
+    // Add to quarantine and poison.
+    small_quarantine_size += block_size;
+    free_node->next = small_quarantine_size[pool_index];
+    small_quarantine[pool_index] = superblock->free_list;
+    ASAN_POISON_MEMORY_REGION(free_node, block_size);
+    // Maybe clear the quarantine.
+    if (small_quarantine_size > MAX_QUARANTINE_SIZE) {
+      // Remove all small ojbects from quarantine and insert in freelists.
+      for (int i = 0; i < NUM_SMALL_POOLS; ++i) {
+        while (small_quarantine[i]) {
+          FreeNode* quarantined_node = small_quarantine[i];
+          ASAN_UNPOISON_MEMORY_REGION(quarantined_node, block_size);
+          small_quarantine[i] = quarantined_node->next;
+          if (small_superblocks[i]) {
+            superblock = small_superblocks[i];
+          } else {
+            small_superblocks[i] = superblock;
+          }
+          quarantined_node->next = superblock->free_list;
+          superblock->free_list = quarantined_node;
+          // Re-poison so the freelist nodes stay poisoned while free.
+          ASAN_POISON_MEMORY_REGION(quarantined_node, block_size);
+        }
+      }
+      small_quarantine_size = 0;
+    }
+#else
     if (small_superblocks[pool_index]) {
       superblock = small_superblocks[pool_index];
     } else {
@@ -298,8 +361,6 @@ struct Superblock {
     }
     free_node->next = superblock->free_list;
     superblock->free_list = free_node;
-#ifdef HAVE_ADDRESS_SANITIZER
-    ASAN_POISON_MEMORY_REGION(free_node, superblock->block_size);
 #endif
   }
 
@@ -411,7 +472,6 @@ static void* heap_start = reinterpret_cast<void*>(UINTPTR_MAX);
 static void* heap_end = reinterpret_cast<void*>(0);
 
 static HashBucket* alloctable_buckets = nullptr;
-static FreeListNode* small_freelists[NUM_SMALL_POOLS];
 static FreeListNode* freelists[64];
 
 // Find the 2-log of the next power of two greater than or equal to size.
@@ -466,7 +526,6 @@ void rho::BlockPool::Initialize() {
 
   for (int i = 0; i < NUM_SMALL_POOLS; ++i) {
     small_superblocks[i] = nullptr;
-    small_freelists[i] = nullptr;
   }
 
   for (int i = 0; i < 64; ++i) {
@@ -592,10 +651,31 @@ void alloctable_revert_insert(uintptr_t pointer, size_t size) {
 // Add a large allocation to a free list.
 static void add_free_block(uintptr_t data, unsigned size_log2) {
   FreeListNode* free_node = reinterpret_cast<FreeListNode*>(data);
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Add to quarantine and poison.
+  quarantine_size += 1 << size_log2;
+  free_node->next = quarantine_size[size_log2];
+  quarantine[size_log2] = superblock->free_list;
+  ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
+  // Maybe clear the quarantine.
+  if (quarantine_size > MAX_QUARANTINE_SIZE) {
+    // Remove all small ojbects from quarantine and insert in freelists.
+    for (int i = 0; i < 64; ++i) {
+      while (quarantine[i]) {
+        FreeNode* quarantined_node = quarantine[i];
+        ASAN_UNPOISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+        quarantine[i] = quarantined_node->next;
+        quarantined_node->next = freelists[i];
+        freelists[i] = quarantined_node;
+        // Re-poison so the freelist nodes stay poisoned while free.
+        ASAN_POISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+      }
+    }
+    quarantine_size = 0;
+  }
+#else
   free_node->next = freelists[size_log2];
   freelists[size_log2] = free_node;
-#ifdef HAVE_ADDRESS_SANITIZER
-  ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
 #endif
 }
 
@@ -640,6 +720,34 @@ bool alloctable_remove_maybe(uintptr_t pointer) {
         FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
         free_node->block = index;
         free_node->superblock = superblock;
+#ifdef HAVE_ADDRESS_SANITIZER
+        // Add to quarantine and poison.
+        quarantine_size += 1 << size_log2;
+        free_node->next = quarantine_size[size_log2];
+        quarantine[size_log2] = superblock->free_list;
+        ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
+        // Maybe clear the quarantine.
+        if (quarantine_size > MAX_QUARANTINE_SIZE) {
+          // Remove all small ojbects from quarantine and insert in freelists.
+          for (int i = 0; i < 64; ++i) {
+            while (quarantine[i]) {
+              FreeNode* quarantined_node = quarantine[i];
+              ASAN_UNPOISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+              quarantine[i] = quarantined_node->next;
+              if (medium_superblocks[i]) {
+                superblock = medium_superblocks[i];
+              } else {
+                medium_superblocks[i] = superblock;
+              }
+              quarantined_node->next = superblock->free_list;
+              superblock->free_list = quarantined_node;
+              // Re-poison so the freelist nodes stay poisoned while free.
+              ASAN_POISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+            }
+          }
+          quarantine_size = 0;
+        }
+#else
         if (medium_superblocks[size_log2]) {
           superblock = medium_superblocks[size_log2];
         } else {
@@ -647,8 +755,6 @@ bool alloctable_remove_maybe(uintptr_t pointer) {
         }
         free_node->next = superblock->free_list;
         superblock->free_list = free_node;
-#ifdef HAVE_ADDRESS_SANITIZER
-        ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
 #endif
         return true;
       } else if (data == pointer) {
@@ -699,6 +805,10 @@ static void update_heap_bounds(void* allocation, size_t size) {
 
 void* rho::BlockPool::AllocBlock(size_t bytes) {
   void* result = nullptr;
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Increase size to include redzones.
+  bytes += 2 * REDZONE_SIZE;
+#endif
   unsigned block_bytes;
   if (bytes <= 256) {
     int pool_index = (bytes + 7) / 8;
@@ -739,20 +849,40 @@ void* rho::BlockPool::AllocBlock(size_t bytes) {
   add_to_allocation_map(result, block_bytes);
   Lookup(result);  // Check lookup table consistency.
 #endif
+
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Store allocation size in first redzone.
+  void* start_redzone = result;
+  void* end_redzone = offset_pointer(result, bytes - REDZONE_SIZE);
+
+  // Poison the redzones.
+  ASAN_POISON_MEMORY_REGION(start_redzone, REDZONE_SIZE);
+  ASAN_POISON_MEMORY_REGION(end_redzone, REDZONE_SIZE);
+
+  // Offset the result pointer past first redzone.
+  result = offset_pointer(result, REDZONE_SIZE);
+#endif  // HAVE_ADDRESS_SANITIZER
   return result;
 }
 
-void rho::BlockPool::FreeBlock(void* p) {
+void rho::BlockPool::FreeBlock(void* pointer) {
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Adjust for redzone.
+  pointer = offset_pointer(pointer, -REDZONE_SIZE);
+
+  // Unpoison so we can link this block into a freelist.
+  ASAN_UNPOISON_MEMORY_REGION(pointer, sizeof(FreeListNode));
+#endif
 #ifdef ALLOCATION_CHECK
-  if (!Lookup(p)) {
+  if (!Lookup(pointer)) {
     allocerr("can not free unknown/already-freed pointer");
   }
-  remove_from_allocation_map(p);
+  remove_from_allocation_map(pointer);
 #endif
-  Superblock* superblock = Superblock::SuperblockFromPointer(p);
+  Superblock* superblock = Superblock::SuperblockFromPointer(pointer);
   if (superblock) {
-    Superblock::FreeSmallBlock(p, superblock);
-  } else if (!alloctable_remove_maybe(reinterpret_cast<uintptr_t>(p))) {
+    Superblock::FreeSmallBlock(pointer, superblock);
+  } else if (!alloctable_remove_maybe(reinterpret_cast<uintptr_t>(pointer))) {
     allocerr("failed to free pointer - unallocated or double-free problem");
   }
 }
@@ -784,7 +914,11 @@ void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
                   "apply to all blocks iterating over non-alloc'd pointer");
             }
 #endif
+#ifdef HAVE_ADDRESS_SANITIZER
+            fun(offset_pointer(reinterpret_cast<void*>(block), REDZONE_SIZE));
+#else
             fun(reinterpret_cast<void*>(block));
+#endif
           }
           block += block_size;
         }
@@ -823,7 +957,12 @@ void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
                         "non-alloc'd pointer");
                   }
 #endif
+#ifdef HAVE_ADDRESS_SANITIZER
+                  fun(offset_pointer(reinterpret_cast<void*>(block),
+                      REDZONE_SIZE));
+#else
                   fun(reinterpret_cast<void*>(block));
+#endif
                 }
                 block += block_size;
               }
@@ -832,7 +971,11 @@ void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
             }
           }
         } else {
+#ifdef HAVE_ADDRESS_SANITIZER
+          fun(offset_pointer(reinterpret_cast<void*>(block), REDZONE_SIZE));
+#else
           fun(pointer);
+#endif
         }
       }
     }
@@ -904,6 +1047,10 @@ void* rho::BlockPool::Lookup(void* candidate) {
   if (result != lookup_in_allocation_map(candidate)) {
     allocerr("allocation map mismatch");
   }
+#endif
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Adjust for redzone.
+  result = offset_pointer(result, REDZONE_SIZE);
 #endif
   return result;
 }
