@@ -129,6 +129,7 @@ namespace rho {
 	{
 	    ++s_num_nodes;
 	    s_moribund->push_back(this);
+            makeDirty();  // Mark as dirty and insert in the dirty list.
 	}
 
 	/** @brief Allocate memory.
@@ -233,6 +234,12 @@ namespace rho {
 	 */
 	virtual void visitReferents(const_visitor* v) const {}
 
+        /** @brief Call the argument function on each coalesced reference
+         * counted reference.
+         */
+	virtual void applyToCoalescedReferences(
+                std::function<void(const GCNode*)> fun) const {}
+
 	// If candidate_pointer is a (possibly internal) pointer to a GCNode,
 	// returns the pointer to that node.
 	// Otherwise returns nullptr.
@@ -251,6 +258,90 @@ namespace rho {
 		destruct_aux();
 	    --s_num_nodes;
 	}
+
+        // Reference mutator methods are below. Each of them marks the node as dirty
+        // if it was not already, and inserts it in the dirty list.
+
+        /** @brief Set the initial target of a GCNode reference.
+         *
+         * Marks this node as dirty if this is the first reference mutation
+         * since the last GC pass.
+         */
+        template<class T = GCNode>
+        void attachReference(T*& reference, const T* target) {
+            if (s_on_stack_bits_correct) {
+                incRefCount(static_cast<const GCNode*>(target));
+            } else {
+                makeDirty();
+            }
+            reference = const_cast<T*>(target);
+        }
+
+        // Const first parameter version of above function.
+        template<class T = GCNode>
+        void attachReference(const T*& reference, const T* target) {
+            if (s_on_stack_bits_correct) {
+                incRefCount(static_cast<const GCNode*>(target));
+            } else {
+                makeDirty();
+            }
+            reference = const_cast<T*>(target);
+        }
+
+        /** @brief Change the target of a GCNode reference.
+         *
+         * Marks this node as dirty if this is the first reference mutation
+         * since the last GC pass.
+         */
+        template<class T = GCNode>
+        void retargetReference(T*& reference, const T* target) {
+            if (s_on_stack_bits_correct) {
+                decRefCount(static_cast<const GCNode*>(reference));
+                incRefCount(static_cast<const GCNode*>(target));
+            } else {
+                makeDirty();
+            }
+            reference = const_cast<T*>(target);
+        }
+
+        // Const first parameter version of above function.
+        template<class T = GCNode>
+        void retargetReference(const T*& reference, const T* target) {
+            if (s_on_stack_bits_correct) {
+                decRefCount(static_cast<const GCNode*>(reference));
+                incRefCount(static_cast<const GCNode*>(target));
+            } else {
+                makeDirty();
+            }
+            reference = const_cast<T*>(target);
+        }
+
+        /** @brief Detach a GCNode reference.
+         *
+         * Marks this node as dirty if this is the first reference mutation
+         * since the last GC pass.
+         */
+        template<class T = GCNode>
+        void detachReference(T*& reference) {
+            if (s_on_stack_bits_correct) {
+                decRefCount(static_cast<const GCNode*>(reference));
+            } else {
+                makeDirty();
+            }
+            reference = nullptr;
+        }
+
+        // Const first parameter version of above function.
+        template<class T = GCNode>
+        void detachReference(const T*& reference) {
+            if (s_on_stack_bits_correct) {
+                decRefCount(static_cast<const GCNode*>(reference));
+            } else {
+                makeDirty();
+            }
+            reference = nullptr;
+        }
+
     private:
 	friend class GCRootBase;
 	friend class GCStackFrameBoundary;
@@ -291,11 +382,24 @@ namespace rho {
 	static std::vector<const GCNode*>* s_moribund;  // Vector of
 	  // pointers to nodes whose reference count has fallen to
 	  // zero (but may subsequently have increased again).
+
+        /**
+         * Pointers to nodes marked as dirty since last collection.
+         */
+        static std::vector<const GCNode*> s_dirty_nodes;
+
+        /**
+         * Pointers to remembered outgoing references of dirty nodes.
+         */
+        static std::vector<const GCNode*> s_remembered_references;
+
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 
 	// Flag that is set if the on_stack bits are known to be up to date.
 	// If this true, then objects can be deleted immediately when
 	// their reference count drops to zero if their stack bit is unset.
+        // This flag can also be used to check if a GC pass is currently
+        // ongoing.
 	static bool s_on_stack_bits_correct;
 
 	// Bit patterns XORd into m_refcount_flags to decrement or increment the
@@ -309,7 +413,8 @@ namespace rho {
 
 	static const unsigned char s_mark_mask = 0x80;
 	static const unsigned char s_moribund_mask = 0x40;
-	static const unsigned char s_refcount_mask = 0x3e;
+	static const unsigned char s_dirty_mask = 0x20;
+	static const unsigned char s_refcount_mask = 0x1e;
 	static const unsigned char s_on_stack_mask = 0x1;
 
 	mutable unsigned char m_refcount_flags;
@@ -330,6 +435,15 @@ namespace rho {
 	GCNode(const GCNode&) = delete;
 	GCNode& operator=(const GCNode&) = delete;
 
+        /** @brief Update reference counts from dirty objects.
+         */
+        static void applyCoalescedReferenceUpdates();
+
+        /** @brief Run mark + sweep garbage collection.
+         *
+         * Mark sweep is run more seldom because it has a higher cost
+         * than lightweight GC, but it can clean up more objects.
+         */
 	static void markSweepGC();
 
 	/** @brief Lightweight garbage collection.
@@ -351,6 +465,7 @@ namespace rho {
 	{
 	    return (m_refcount_flags & (s_refcount_mask | s_on_stack_mask)) == 0;
 	}
+
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
 	{
@@ -370,6 +485,21 @@ namespace rho {
 		    node->makeMoribund();
 	    }
 	}
+
+        /** @brief Mark the node as dirty and remember all outgoing references.
+         *
+         * This adds the GCNode to the dirty list, and remembers all outgoing
+         * references. During the next GC pass the reference count for all
+         * remembered outgoing references will be decreased, and the reference
+         * count for all current outgoing references is increased.
+         */
+        void makeDirty() const;
+
+        /** @brief Resets the dirty state of this node. */
+        void clearDirtyFlag() const;
+
+        /** @return true if the node is currently marked dirty. */
+        bool isDirty() const;
 
 	void setOnStackBit() const {
 	    m_refcount_flags |= s_on_stack_mask;

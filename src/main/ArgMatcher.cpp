@@ -50,7 +50,7 @@ bool ArgMatcher::s_warn_on_partial_match = false;
 ArgMatcher::ArgMatcher(const PairList* formals)
     : m_dots_position(-1)
 {
-    m_formals = formals;
+    attachReference(m_formals, formals);
 
     for (const PairList* f = formals; f; f = f->tail()) {
 	const Symbol* sym = dynamic_cast<const Symbol*>(f->tag());
@@ -78,7 +78,7 @@ ArgMatcher::ArgMatcher(const PairList* formals)
 
 void ArgMatcher::detachReferents()
 {
-    m_formals.detach();
+    detachReference(m_formals);
     m_formal_data.clear();
     m_formal_index.clear();
 }
@@ -491,6 +491,13 @@ void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals)
 	(*v)(m_formals);
+}
+
+void ArgMatcher::applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const
+{
+    if (m_formals) {
+	fun(m_formals);
+    }
 }
 
 PairList* ArgMatcher::makePairList(std::initializer_list<const char*> arg_names)
