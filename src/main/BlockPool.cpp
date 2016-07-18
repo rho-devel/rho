@@ -105,24 +105,11 @@ static void remove_from_allocation_map(void* allocation);
 static void* lookup_in_allocation_map(void* tentative_pointer);
 #endif
 
+/* Function to report allocation errors. */
 static void allocerr(const char* message) {
   fprintf(stderr, "ERROR: %s\n", message);
   abort();
 }
-
-// Arena for small-object superblocks:
-static void* superblock_arena = nullptr;
-static uintptr_t arena_superblock_start;
-static uintptr_t arena_superblock_end;
-static uintptr_t arena_superblock_next;
-
-struct Superblock;
-
-// Pointers to small object superblocks with available blocks.
-static Superblock* small_superblocks[NUM_SMALL_POOLS];
-
-// Pointers to medium object superblocks with available blocks.
-static Superblock* medium_superblocks[18];
 
 #ifdef HAVE_ADDRESS_SANITIZER
 
@@ -186,15 +173,6 @@ struct FreeListNode {
   Superblock* superblock;  // Used only for superblock free nodes.
 };
 
-// Forward declarations (used in struct Superblock).
-static void alloctable_insert(uintptr_t pointer, size_t size);
-static bool alloctable_rebalance(unsigned new_alloctable_bits);
-static bool alloctable_remove_maybe(uintptr_t pointer);
-static void alloctable_erase(uintptr_t pointer, size_t size);
-static bool hashtable_try_insert(HashBucket* table, uintptr_t pointer,
-    size_t size);
-static void* remove_free_block(unsigned size_log2);
-
 /**
  * Superblocks are used to allocate small and medium sized objects.
  * The bitset tracks which blocks are currently allocated.
@@ -225,257 +203,627 @@ struct Superblock {
    * If nullptr is returned we need to fall back on using a separately
    * allocated superblock.
    */
-  static Superblock* NewSuperblock(int block_size) {
-    if (arena_superblock_next >= arena_superblock_end) {
-      return nullptr;
-    }
-    void* pointer = reinterpret_cast<void*>(arena_superblock_next);
-#ifdef HAVE_ADDRESS_SANITIZER
-    // Unpoison only the header.
-    ASAN_UNPOISON_MEMORY_REGION(pointer, SUPERBLOCK_HEADER_SIZE);
-#endif
-    unsigned superblock_size =
-        (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
-    unsigned bitset_entries = (superblock_size + 63) / 64;
-    Superblock* superblock = new (pointer)Superblock(block_size, bitset_entries);
-    arena_superblock_next += SUPERBLOCK_SIZE;
-    return superblock;
-  }
+  static Superblock* NewSuperblock(int block_size);
 
   /**
    * Compute the address of the superblock header from a pointer.
    * Returns nullptr if candidate pointer is not inside the small object arena
    * or if the pointer points inside the superblock header.
    */
-  static Superblock* SuperblockFromPointer(void* pointer) {
-    uintptr_t candidate = reinterpret_cast<uintptr_t>(pointer);
-    if (candidate >= arena_superblock_start && candidate < arena_superblock_next) {
-      if ((candidate & (SUPERBLOCK_SIZE - 1)) < SUPERBLOCK_HEADER_SIZE) {
-        // The pointer points inside the superblock header.
-        return nullptr;
-      }
-      return reinterpret_cast<Superblock*>(
-          candidate & ~uintptr_t{SUPERBLOCK_SIZE - 1});
-    } else {
-      return nullptr;
-    }
-  }
+  static Superblock* SuperblockFromPointer(void* pointer);
 
   /**
    * Allocate a small block (bytes >= 32 && bytes <= 256).
    * Returns nullptr if there is no more space left for this object
    * size in the small object arena.
    */
-  static void* AllocSmall(size_t block_size) {
-    unsigned pool_index = (block_size + 7) / 8;
-    block_size = pool_index * 8;
-    assert(block_size >= 32 && block_size <= 256
-        && "Only use AllocSmall to allocate objects between 32 and 256 bytes.");
-
-    unsigned num_blocks =
-        (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
-    Superblock* superblock;
-    if (small_superblocks[pool_index]) {
-      superblock = small_superblocks[pool_index];
-    } else {
-      superblock = Superblock::NewSuperblock(block_size);
-      if (!superblock) {
-        return nullptr;
-      }
-      small_superblocks[pool_index] = superblock;
-    }
-    if (superblock->free_list) {
-      FreeListNode* free_node = superblock->free_list;
-#ifdef HAVE_ADDRESS_SANITIZER
-      ASAN_UNPOISON_MEMORY_REGION(free_node, block_size);
-#endif
-      u32 index = free_node->block;
-      Superblock::TagBlockAllocated(free_node->superblock, index);
-      superblock->free_list = free_node->next;
-      if (!superblock->free_list && superblock->next_untouched == num_blocks) {
-        small_superblocks[pool_index] = nullptr;
-      }
-      return free_node;
-    } else {
-      u32 index = superblock->next_untouched;
-      Superblock::TagBlockAllocated(superblock, index);
-      superblock->next_untouched += 1;
-      if (superblock->next_untouched == num_blocks) {
-        small_superblocks[pool_index] = nullptr;
-      }
-      void* result = reinterpret_cast<char*>(superblock)
-          + SUPERBLOCK_HEADER_SIZE + (index * block_size);
-#ifdef HAVE_ADDRESS_SANITIZER
-      ASAN_UNPOISON_MEMORY_REGION(result, block_size);
-#endif
-      return result;
-    }
-  }
+  static void* AllocSmall(size_t block_size);
 
   /**
    * Free a pointer inside a given superblock. The block MUST be in the given
    * superblock.
    */
-  static void FreeSmallBlock(void* pointer, Superblock* superblock) {
-    uintptr_t block = reinterpret_cast<uintptr_t>(pointer);
-    uintptr_t superblock_start = reinterpret_cast<uintptr_t>(superblock)
-        + SUPERBLOCK_HEADER_SIZE;
-    unsigned block_size = superblock->block_size;
-    unsigned index = (block - superblock_start) / block_size;
-    unsigned bitset = index / 64;
-    superblock->free[bitset] |= u64{1} << (index & 63);
-
-    // Use the block as a free list node and prepend to the free list.
-    FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
-    free_node->block = index;
-    free_node->superblock = superblock;
-    int pool_index = block_size / 8;
-#ifdef HAVE_ADDRESS_SANITIZER
-    // Add to quarantine and poison.
-    small_quarantine_size += block_size;
-    free_node->next = small_quarantine_size[pool_index];
-    small_quarantine[pool_index] = superblock->free_list;
-    ASAN_POISON_MEMORY_REGION(free_node, block_size);
-    // Maybe clear the quarantine.
-    if (small_quarantine_size > MAX_QUARANTINE_SIZE) {
-      // Remove all small ojbects from quarantine and insert in freelists.
-      for (int i = 0; i < NUM_SMALL_POOLS; ++i) {
-        while (small_quarantine[i]) {
-          FreeNode* quarantined_node = small_quarantine[i];
-          ASAN_UNPOISON_MEMORY_REGION(quarantined_node, block_size);
-          small_quarantine[i] = quarantined_node->next;
-          if (small_superblocks[i]) {
-            superblock = small_superblocks[i];
-          } else {
-            small_superblocks[i] = superblock;
-          }
-          quarantined_node->next = superblock->free_list;
-          superblock->free_list = quarantined_node;
-          // Re-poison so the freelist nodes stay poisoned while free.
-          ASAN_POISON_MEMORY_REGION(quarantined_node, block_size);
-        }
-      }
-      small_quarantine_size = 0;
-    }
-#else
-    if (small_superblocks[pool_index]) {
-      superblock = small_superblocks[pool_index];
-    } else {
-      small_superblocks[pool_index] = superblock;
-    }
-    free_node->next = superblock->free_list;
-    superblock->free_list = free_node;
-#endif
-  }
+  static void FreeSmallBlock(void* pointer, Superblock* superblock);
 
   /** Allocate a medium or large object. */
-  static void* AllocLarge(unsigned size_log2) {
-    assert(size_log2 >= 6
-        && "Can not allocate objects smaller than 64 bytes using AllocLarge");
-    void* result = nullptr;
-    if (size_log2 <= 17) {
-      unsigned num_blocks =
-          (MEDIUM_SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) >> size_log2;
-      Superblock* superblock;
-      if (medium_superblocks[size_log2]) {
-        // Reuse existing superblock for this allocation size.
-        superblock = medium_superblocks[size_log2];
-      } else {
-        // Allocate a midsize superblock.
-        void* arena = new double[MEDIUM_SUPERBLOCK_SIZE / sizeof(double)];
-        unsigned bitset_entries =
-            ((1 << (MEDIUM_SUPERBLOCK_SIZE_LOG2 - size_log2)) + 63) / 64;
-        superblock = new (arena)Superblock(size_log2, bitset_entries);
-        alloctable_insert(reinterpret_cast<uintptr_t>(arena) | 2,
-            MEDIUM_SUPERBLOCK_SIZE_LOG2);
-        medium_superblocks[size_log2] = superblock;
-      }
-      if (superblock->free_list) {
-        FreeListNode* free_node = superblock->free_list;
-#ifdef HAVE_ADDRESS_SANITIZER
-        ASAN_UNPOISON_MEMORY_REGION(free_node, 1 << size_log2);
-#endif
-        unsigned index = free_node->block;
-        Superblock::TagBlockAllocated(free_node->superblock, index);
-        superblock->free_list = free_node->next;
-        if (!superblock->free_list && superblock->next_untouched == num_blocks) {
-          medium_superblocks[size_log2] = nullptr;
-        }
-        result = free_node;
-      } else {
-        unsigned index = superblock->next_untouched;
-        Superblock::TagBlockAllocated(superblock, index);
-        superblock->next_untouched += 1;
-        if (superblock->next_untouched == num_blocks) {
-          medium_superblocks[size_log2] = nullptr;
-        }
-        result = reinterpret_cast<char*>(superblock) + SUPERBLOCK_HEADER_SIZE
-            + (index << size_log2);
-#ifdef HAVE_ADDRESS_SANITIZER
-        ASAN_UNPOISON_MEMORY_REGION(result, 1 << size_log2);
-#endif
-      }
-    } else {
-      result = remove_free_block(size_log2);
-      if (!result) {
-        result = new double[(1L << size_log2) / sizeof(double)];
-      }
-      alloctable_insert(reinterpret_cast<uintptr_t>(result), size_log2);
-    }
-    return result;
-  }
+  static void* AllocLarge(unsigned size_log2);
 
   /** Tag a block in a superblock as allocated. */
-  static void TagBlockAllocated(Superblock* superblock, unsigned block) {
-    unsigned bitset = block / 64;
-    superblock->free[bitset] &= ~(u64{1} << (block & 63));
+  static void TagBlockAllocated(Superblock* superblock, unsigned block);
+};
+
+// Forward declarations for freelist functions (used in Superblock).
+static void add_free_block(uintptr_t data, unsigned size_log2);
+static void* remove_free_block(unsigned size_log2);
+
+// Pointers to small object superblocks with available blocks.
+static Superblock* small_superblocks[NUM_SMALL_POOLS];
+
+// Pointers to medium object superblocks with available blocks.
+static Superblock* medium_superblocks[18];
+
+/*
+ * Special-purpose hashtable implementation for tracking medium and large
+ * allocations.
+ *
+ * The table uses quadratic probing.
+ */
+class AllocTable {
+public:
+  /** @param num_bits the number of bits to use for hashing. The number of
+   * buckets is 2^num_bits.
+   */
+  AllocTable(unsigned num_bits): num_bits(num_bits) {
+    num_buckets = 1 << num_bits;
+    hash_mask = num_buckets - 1;
+    buckets = new HashBucket[num_buckets];
+    for (int i = 0; i < num_buckets; ++i) {
+      buckets[i].data = EMPTY_KEY;
+    }
+  }
+
+  /**
+   * Add an allocation (large object or medium object superblock) to the
+   * allocations hashtable.
+   */
+  void insert(uintptr_t pointer, size_t size) {
+    while (!try_insert(buckets, pointer, size)) {
+      // Remove partially inserted entries.
+      erase(pointer, size);
+      // Too many collisions, rebalance the hash table.
+      unsigned new_table_bits = num_bits + 1;
+      while (!rebalance(new_table_bits)) {
+        new_table_bits += 1;
+      }
+    }
+  }
+
+  /*
+   * Erases all hashtable entries for a pointer. The size determines
+   * how many hash buckets are removed.
+   */
+  void erase(uintptr_t pointer, size_t size) {
+    uintptr_t key = pointer >> LOW_BITS;
+    uintptr_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1))
+        >> LOW_BITS;
+    bool first = true;
+    pointer &= ~uintptr_t{3};  // Mask out the flag bits for equality comparison.
+    do {
+      unsigned hash = pointer_hash(key << LOW_BITS);
+      for (int i = 0; i < MAX_COLLISIONS; ++i) {
+        HashBucket& bucket = buckets[hash];
+        if (bucket.DataPointer() == pointer) {
+          bucket.data = DELETED_KEY;
+          break;
+        }
+        if (bucket.data == EMPTY_KEY) {
+          // No more partial entries inserted, we are done.
+          return;
+        }
+        hash = probe_func(hash, i);
+      }
+      key += 1;
+    } while (key < key_end);
+  }
+
+  /*
+   * Find a bucket matching the pointer. Will find internal pointers.
+   */
+  HashBucket* search(uintptr_t candidate) {
+    unsigned hash = pointer_hash(candidate);
+    for (int i = 0; i < MAX_COLLISIONS; ++i) {
+      HashBucket* bucket = &buckets[hash];
+      if (bucket->data != EMPTY_KEY && bucket->data != DELETED_KEY) {
+        uintptr_t pointer = bucket->DataPointer();
+        if (bucket->data & 2) {
+          if (pointer <= candidate
+              && pointer + MEDIUM_SUPERBLOCK_SIZE > candidate) {
+            // Pointer is inside this superblock. Test if it is after the header.
+            if (candidate >= pointer + SUPERBLOCK_HEADER_SIZE) {
+              return bucket;
+            } else {
+              return nullptr;
+            }
+          }
+        } else if (pointer <= candidate
+              && (pointer + (1L << bucket->size)) > candidate) {
+          return bucket;
+        }
+      }
+      if (bucket->data == EMPTY_KEY) {
+        return nullptr;
+      }
+      lookup_collisions += 1;
+      hash = probe_func(hash, i);
+    }
+    return nullptr;
+  }
+
+  /**
+   * Attempts to rebalance the hashtable to use a new number of bits
+   * for hash keys. The rebalance fails if the number of collisions
+   * for a single entry exceeds MAX_REBALANCE_COLLISIONS.
+   * @return true if the rebalance succeeded.
+   */
+  bool rebalance(unsigned new_alloctable_bits) {
+    if (new_alloctable_bits > 29) {
+      allocerr("allocation hashtable is too large");
+    }
+    unsigned new_table_size = 1 << new_alloctable_bits;
+    unsigned old_mask = hash_mask;
+    hash_mask = new_table_size - 1;
+    HashBucket* new_table = new HashBucket[new_table_size];
+    for (int i = 0; i < new_table_size; ++i) {
+      new_table[i].data = EMPTY_KEY;
+    }
+    // Build new table.
+    for (int i = 0; i < num_buckets; ++i) {
+      HashBucket& bucket = buckets[i];
+      uintptr_t data = bucket.data;
+      if (data != EMPTY_KEY && data != DELETED_KEY && (data & 1)) {
+        // This is the initial hash bucket for the corresponding allocation.
+        // Rebuild the hash entries in the new table based only on this entry.
+        if (!try_insert(new_table, data & ~uintptr_t{1}, bucket.size)) {
+          // Failed ot insert in new table. Abort the rebuild.
+          delete[] new_table;
+          hash_mask = old_mask;
+          return false;
+        }
+      }
+    }
+    // Replace the old table.
+    delete[] buckets;
+    buckets = new_table;
+    num_bits = new_alloctable_bits;
+    num_buckets = new_table_size;
+    return true;
+  }
+
+  /*
+   * Remove an allocation from the hashtable.  If the allocation is in a
+   * superblock, the superblock is left as is but the superblock bitset is
+   * updated to indicate that the block is free.
+   * If the allocation is a large object (ie. not in a superblock), then
+   * the object is taken out of the hashtable and inserted into a freelist.
+   */
+  bool free_allocation(uintptr_t pointer) {
+    assert(pointer != EMPTY_KEY && pointer != DELETED_KEY
+        && "Trying to remove invalid key from alloctable.");
+    unsigned hash = pointer_hash(pointer);
+    unsigned size_log2 = 0;
+    HashBucket* bucket = search(pointer);
+    if (!bucket) {
+      // Free failed: could not find block to free.
+      return false;
+    }
+    uintptr_t data = bucket->DataPointer();
+    uintptr_t first_block = data + SUPERBLOCK_HEADER_SIZE;
+    if (bucket->data & 2) {
+      Superblock* superblock = reinterpret_cast<Superblock*>(data);
+      size_log2 = superblock->block_size;
+      unsigned index = (pointer - first_block) >> size_log2;
+      unsigned bitset = index / 64;
+      superblock->free[bitset] |= u64{1} << (index & 63);
+      FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
+      free_node->block = index;
+      free_node->superblock = superblock;
+#ifdef HAVE_ADDRESS_SANITIZER
+      // Add to quarantine and poison.
+      quarantine_size += 1 << size_log2;
+      free_node->next = quarantine_size[size_log2];
+      quarantine[size_log2] = superblock->free_list;
+      ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
+      // Maybe clear the quarantine.
+      if (quarantine_size > MAX_QUARANTINE_SIZE) {
+        // Remove all small ojbects from quarantine and insert in freelists.
+        for (int i = 0; i < 64; ++i) {
+          while (quarantine[i]) {
+            FreeNode* quarantined_node = quarantine[i];
+            ASAN_UNPOISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+            quarantine[i] = quarantined_node->next;
+            if (medium_superblocks[i]) {
+              superblock = medium_superblocks[i];
+            } else {
+              medium_superblocks[i] = superblock;
+            }
+            quarantined_node->next = superblock->free_list;
+            superblock->free_list = quarantined_node;
+            // Re-poison so the freelist nodes stay poisoned while free.
+            ASAN_POISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
+          }
+        }
+        quarantine_size = 0;
+      }
+#else
+      if (medium_superblocks[size_log2]) {
+        superblock = medium_superblocks[size_log2];
+      } else {
+        medium_superblocks[size_log2] = superblock;
+      }
+      free_node->next = superblock->free_list;
+      superblock->free_list = free_node;
+#endif
+      // Done. Don't erase hash entries for the superblock.
+      return true;
+    } else if (data == pointer) {
+      // Erase all entries in hashtable for the allocation.
+      erase(pointer, bucket->size);
+      // Add allocation to free list.
+      add_free_block(pointer, bucket->size);
+    }
+    return true;
+  }
+
+  /**
+   * Iterates over all live objects and calls the argument function on
+   * their pointers.
+   * It is okay to free objects during the iteration, but adding objects
+   * means they may not be found during the current iteration pass.
+   */
+  void ApplyToAllBlocks(std::function<void(void*)> fun) {
+    for (int i = 0; i < num_buckets; ++i) {
+      HashBucket& bucket = buckets[i];
+      if (bucket.data != EMPTY_KEY && bucket.data != DELETED_KEY) {
+        if (bucket.data & 1) {
+          uintptr_t pointer = bucket.DataPointer();
+          if (bucket.data & 2) {
+            // This is a large superblock.
+            Superblock* superblock = reinterpret_cast<Superblock*>(pointer);
+            uintptr_t block = pointer + SUPERBLOCK_HEADER_SIZE;
+            uintptr_t block_end = pointer + MEDIUM_SUPERBLOCK_SIZE;
+            unsigned block_size = 1 << superblock->block_size;
+            unsigned superblock_size =
+                (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE)
+                / superblock->block_size;
+            unsigned bitset_entries =
+                ((1 << (MEDIUM_SUPERBLOCK_SIZE_LOG2 - superblock->block_size))
+                    + 63) / 64;
+            for (int i = 0; i < bitset_entries; ++i) {
+              if (superblock->free[i] != ~0ull) {
+                for (int index = 0; index < 64; ++index) {
+                  if (!(superblock->free[i] & (u64{1} << index))) {
+#ifdef ALLOCATION_CHECK
+                    if (!lookup_in_allocation_map(reinterpret_cast<void*>(
+                        block))) {
+                      allocerr("apply to all blocks iterating over "
+                          "non-alloc'd pointer");
+                    }
+#endif
+#ifdef HAVE_ADDRESS_SANITIZER
+                    fun(offset_pointer(reinterpret_cast<void*>(block),
+                        REDZONE_SIZE));
+#else
+                    fun(reinterpret_cast<void*>(block));
+#endif
+                  }
+                  block += block_size;
+                }
+              } else {
+                block += block_size * 64;
+              }
+            }
+          } else {
+#ifdef HAVE_ADDRESS_SANITIZER
+            fun(offset_pointer(reinterpret_cast<void*>(block), REDZONE_SIZE));
+#else
+            fun(reinterpret_cast<void*>(pointer));
+#endif
+          }
+        }
+      }
+    }
+  }
+
+  void print_alloctable() {
+    printf(">>>>> SPARSE TABLE\n");
+    int size = 0;
+    for (int i = 0; i < num_buckets; i += 16) {
+      int count = 0;
+      for (int j = 0; j < 16 && i + j < num_buckets; ++j) {
+        HashBucket& bucket = buckets[i + j];
+        if (bucket.data != EMPTY_KEY && bucket.data != DELETED_KEY) {
+          count += 1;
+        }
+      }
+      if (count) {
+        printf("%X", count);
+      } else {
+        printf(".");
+      }
+      size += count;
+    }
+    printf("\n");
+    printf("table size: %d\n", size);
+  }
+
+private:
+
+  unsigned num_bits;
+  unsigned num_buckets;
+
+  // Mask deciding which bits of a hash key are used to index the hash table.
+  unsigned hash_mask;
+
+  HashBucket* buckets = nullptr;
+
+  // Counters logging collision statistics:
+  unsigned add_collisions = 0;
+  unsigned remove_collisions = 0;
+  unsigned lookup_collisions = 0;
+
+  /**
+   * Unlike most other member functions this one takes a table pointer,
+   * because it is used to tentatively insert new nodes into a temporary
+   * resized table.
+   *
+   * @return true if the insert succeeded.
+   */
+  bool try_insert(HashBucket* table, uintptr_t pointer, size_t size) {
+    uintptr_t key = pointer >> LOW_BITS;
+    uintptr_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1))
+        >> LOW_BITS;
+    bool first = true;
+    do {
+      unsigned hash = pointer_hash(key << LOW_BITS);
+      bool added = false;
+      for (int i = 0; i < MAX_COLLISIONS; ++i) {
+        HashBucket& bucket = table[hash];
+        if (bucket.data == EMPTY_KEY || bucket.data == DELETED_KEY) {
+          if (first) {
+            // Tag this as the first hash entry.
+            first = false;
+            table[hash].data = pointer | 1;
+          } else {
+            table[hash].data = pointer;
+          }
+          table[hash].size = size;
+          added = true;
+          break;
+        }
+        add_collisions += 1;
+        hash = probe_func(hash, i);
+      }
+      if (!added) {
+        return false;
+      }
+      key += 1;
+    } while (key < key_end);
+    return true;
+  }
+
+  /**
+   * Computes the hash key for a pointer.
+   *
+   * The lowest 19 bits (LOW_BITS) of the pointer are discarded before
+   * generating a hash key. Consecutive pointers are not hashed directly
+   * sequentially, instead spread by 16 entries. This is to allow hash
+   * collisions to be stored in the neighboring buckets.
+   *
+   * The hash function divides the pointer into quarters and XORs them
+   * together. This ensures that any single bit flip will hash to
+   * a different bucket.
+   */
+  unsigned pointer_hash(uintptr_t pointer) {
+    pointer >>= LOW_BITS;
+    pointer <<= 4;  // Spread out hash keys to leave room for collision buckets.
+    unsigned low = pointer & 0xFFFFFFFF;
+    unsigned hi = pointer >> 32;
+    unsigned hash = low ^ hi;
+    low = hash & 0xFFFF;
+    hi = (hash >> 16) & 0xFFFF;
+    hash = (low >> 16) ^ low ^ hi ^ (pointer & (~0xFFFF));
+    return hash & hash_mask;
+  }
+
+  /** Computes the next key in a probe chain. */
+  unsigned probe_func(unsigned hash, int i) {
+    return (hash + i + 1) & hash_mask;
   }
 };
 
-static unsigned alloctable_bits = 16;
-static unsigned num_alloctable_buckets = 1 << alloctable_bits;
+// Medium- and large-object hashtable:
+static AllocTable* alloctable = nullptr;
 
-// Mask deciding which bits of a hash key are used to index the hash table.
-static unsigned alloctable_hash_mask = num_alloctable_buckets - 1;
+// Arena for small-object superblocks:
+static void* superblock_arena = nullptr;
+static uintptr_t arena_superblock_start;
+static uintptr_t arena_superblock_end;
+static uintptr_t arena_superblock_next;
 
-static unsigned add_collisions = 0;
-static unsigned remove_collisions = 0;
-static unsigned lookup_collisions = 0;
-
-/**
- * Computes the hash key for a pointer.
- *
- * The lowest 19 bits (LOW_BITS) of the pointer are discarded before
- * generating a hash key. Consecutive pointers are not hashed directly
- * sequentially, instead spread by 16 entries. This is to allow hash
- * collisions to be stored in the neighboring buckets.
- *
- * The hash function divides the pointer into quarters and XORs them
- * together. This ensures that any single bit flip will hash to
- * a different bucket.
- */
-static unsigned pointer_hash(uintptr_t pointer) {
-  pointer >>= LOW_BITS;
-  pointer <<= 4; // Spread out hash keys to leave room for collision buckets.
-  unsigned low = pointer & 0xFFFFFFFF;
-  unsigned hi = pointer >> 32;
-  unsigned hash = low ^ hi;
-  low = hash & 0xFFFF;
-  hi = (hash >> 16) & 0xFFFF;
-  hash = (low >> 16) ^ low ^ hi ^ (pointer & (~0xFFFF));
-  return hash & alloctable_hash_mask;
+Superblock* Superblock::NewSuperblock(int block_size) {
+  if (arena_superblock_next >= arena_superblock_end) {
+    return nullptr;
+  }
+  void* pointer = reinterpret_cast<void*>(arena_superblock_next);
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Unpoison only the header.
+  ASAN_UNPOISON_MEMORY_REGION(pointer, SUPERBLOCK_HEADER_SIZE);
+#endif
+  unsigned superblock_size =
+      (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
+  unsigned bitset_entries = (superblock_size + 63) / 64;
+  Superblock* superblock = new (pointer)Superblock(block_size, bitset_entries);
+  arena_superblock_next += SUPERBLOCK_SIZE;
+  return superblock;
 }
 
-// Computes the next key in a probe chain.
-static unsigned probe_func(unsigned hash, int i) {
-  return (hash + i + 1) & alloctable_hash_mask;
+Superblock* Superblock::SuperblockFromPointer(void* pointer) {
+  uintptr_t candidate = reinterpret_cast<uintptr_t>(pointer);
+  if (candidate >= arena_superblock_start && candidate < arena_superblock_next) {
+    if ((candidate & (SUPERBLOCK_SIZE - 1)) < SUPERBLOCK_HEADER_SIZE) {
+      // The pointer points inside the superblock header.
+      return nullptr;
+    }
+    return reinterpret_cast<Superblock*>(
+        candidate & ~uintptr_t{SUPERBLOCK_SIZE - 1});
+  } else {
+    return nullptr;
+  }
+}
+
+void* Superblock::AllocSmall(size_t block_size) {
+  unsigned pool_index = (block_size + 7) / 8;
+  block_size = pool_index * 8;
+  assert(block_size >= 32 && block_size <= 256
+      && "Only use AllocSmall to allocate objects between 32 and 256 bytes.");
+
+  unsigned num_blocks =
+      (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / block_size;
+  Superblock* superblock;
+  if (small_superblocks[pool_index]) {
+    superblock = small_superblocks[pool_index];
+  } else {
+    superblock = Superblock::NewSuperblock(block_size);
+    if (!superblock) {
+      return nullptr;
+    }
+    small_superblocks[pool_index] = superblock;
+  }
+  if (superblock->free_list) {
+    FreeListNode* free_node = superblock->free_list;
+#ifdef HAVE_ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(free_node, block_size);
+#endif
+    u32 index = free_node->block;
+    Superblock::TagBlockAllocated(free_node->superblock, index);
+    superblock->free_list = free_node->next;
+    if (!superblock->free_list && superblock->next_untouched == num_blocks) {
+      small_superblocks[pool_index] = nullptr;
+    }
+    return free_node;
+  } else {
+    u32 index = superblock->next_untouched;
+    Superblock::TagBlockAllocated(superblock, index);
+    superblock->next_untouched += 1;
+    if (superblock->next_untouched == num_blocks) {
+      small_superblocks[pool_index] = nullptr;
+    }
+    void* result = reinterpret_cast<char*>(superblock)
+        + SUPERBLOCK_HEADER_SIZE + (index * block_size);
+#ifdef HAVE_ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(result, block_size);
+#endif
+    return result;
+  }
+}
+
+void Superblock::FreeSmallBlock(void* pointer, Superblock* superblock) {
+  uintptr_t block = reinterpret_cast<uintptr_t>(pointer);
+  uintptr_t superblock_start = reinterpret_cast<uintptr_t>(superblock)
+      + SUPERBLOCK_HEADER_SIZE;
+  unsigned block_size = superblock->block_size;
+  unsigned index = (block - superblock_start) / block_size;
+  unsigned bitset = index / 64;
+  superblock->free[bitset] |= u64{1} << (index & 63);
+
+  // Use the block as a free list node and prepend to the free list.
+  FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
+  free_node->block = index;
+  free_node->superblock = superblock;
+  int pool_index = block_size / 8;
+#ifdef HAVE_ADDRESS_SANITIZER
+  // Add to quarantine and poison.
+  small_quarantine_size += block_size;
+  free_node->next = small_quarantine_size[pool_index];
+  small_quarantine[pool_index] = superblock->free_list;
+  ASAN_POISON_MEMORY_REGION(free_node, block_size);
+  // Maybe clear the quarantine.
+  if (small_quarantine_size > MAX_QUARANTINE_SIZE) {
+    // Remove all small ojbects from quarantine and insert in freelists.
+    for (int i = 0; i < NUM_SMALL_POOLS; ++i) {
+      while (small_quarantine[i]) {
+        FreeNode* quarantined_node = small_quarantine[i];
+        ASAN_UNPOISON_MEMORY_REGION(quarantined_node, block_size);
+        small_quarantine[i] = quarantined_node->next;
+        if (small_superblocks[i]) {
+          superblock = small_superblocks[i];
+        } else {
+          small_superblocks[i] = superblock;
+        }
+        quarantined_node->next = superblock->free_list;
+        superblock->free_list = quarantined_node;
+        // Re-poison so the freelist nodes stay poisoned while free.
+        ASAN_POISON_MEMORY_REGION(quarantined_node, block_size);
+      }
+    }
+    small_quarantine_size = 0;
+  }
+#else
+  if (small_superblocks[pool_index]) {
+    superblock = small_superblocks[pool_index];
+  } else {
+    small_superblocks[pool_index] = superblock;
+  }
+  free_node->next = superblock->free_list;
+  superblock->free_list = free_node;
+#endif
+}
+
+void* Superblock::AllocLarge(unsigned size_log2) {
+  assert(size_log2 >= 6
+      && "Can not allocate objects smaller than 64 bytes using AllocLarge");
+  void* result = nullptr;
+  if (size_log2 <= 17) {
+    unsigned num_blocks =
+        (MEDIUM_SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) >> size_log2;
+    Superblock* superblock;
+    if (medium_superblocks[size_log2]) {
+      // Reuse existing superblock for this allocation size.
+      superblock = medium_superblocks[size_log2];
+    } else {
+      // Allocate a midsize superblock.
+      void* arena = new double[MEDIUM_SUPERBLOCK_SIZE / sizeof(double)];
+      unsigned bitset_entries =
+          ((1 << (MEDIUM_SUPERBLOCK_SIZE_LOG2 - size_log2)) + 63) / 64;
+      superblock = new (arena)Superblock(size_log2, bitset_entries);
+      alloctable->insert(reinterpret_cast<uintptr_t>(arena) | 2,
+          MEDIUM_SUPERBLOCK_SIZE_LOG2);
+      medium_superblocks[size_log2] = superblock;
+    }
+    if (superblock->free_list) {
+      FreeListNode* free_node = superblock->free_list;
+#ifdef HAVE_ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(free_node, 1 << size_log2);
+#endif
+      unsigned index = free_node->block;
+      Superblock::TagBlockAllocated(free_node->superblock, index);
+      superblock->free_list = free_node->next;
+      if (!superblock->free_list && superblock->next_untouched == num_blocks) {
+        medium_superblocks[size_log2] = nullptr;
+      }
+      result = free_node;
+    } else {
+      unsigned index = superblock->next_untouched;
+      Superblock::TagBlockAllocated(superblock, index);
+      superblock->next_untouched += 1;
+      if (superblock->next_untouched == num_blocks) {
+        medium_superblocks[size_log2] = nullptr;
+      }
+      result = reinterpret_cast<char*>(superblock) + SUPERBLOCK_HEADER_SIZE
+          + (index << size_log2);
+#ifdef HAVE_ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(result, 1 << size_log2);
+#endif
+    }
+  } else {
+    result = remove_free_block(size_log2);
+    if (!result) {
+      result = new double[(1L << size_log2) / sizeof(double)];
+    }
+    alloctable->insert(reinterpret_cast<uintptr_t>(result), size_log2);
+  }
+  return result;
+}
+
+void Superblock::TagBlockAllocated(Superblock* superblock, unsigned block) {
+  unsigned bitset = block / 64;
+  superblock->free[bitset] &= ~(u64{1} << (block & 63));
 }
 
 // Tracking heap bounds for fast rejection in pointer lookup.
 static void* heap_start = reinterpret_cast<void*>(UINTPTR_MAX);
 static void* heap_end = reinterpret_cast<void*>(0);
 
-static HashBucket* alloctable_buckets = nullptr;
 static FreeListNode* freelists[64];
 
 // Find the 2-log of the next power of two greater than or equal to size.
@@ -542,159 +890,9 @@ void rho::BlockPool::Initialize() {
     medium_superblocks[i] = nullptr;
   }
 
-  alloctable_buckets = new HashBucket[num_alloctable_buckets];
-  for (int i = 0; i < num_alloctable_buckets; ++i) {
-    alloctable_buckets[i].data = EMPTY_KEY;
-  }
+  alloctable = new AllocTable(16);
 }
 
-/**
- * Attempts to rebalance the hashtable.
- * Returns false if the rebalance failed.
- */
-bool alloctable_rebalance(unsigned new_alloctable_bits) {
-  if (new_alloctable_bits > 29) {
-    allocerr("allocation hashtable is too large");
-  }
-  unsigned new_table_size = 1 << new_alloctable_bits;
-  unsigned old_mask = alloctable_hash_mask;
-  alloctable_hash_mask = new_table_size - 1;
-  HashBucket* new_table = new HashBucket[new_table_size];
-  for (int i = 0; i < new_table_size; ++i) {
-    new_table[i].data = EMPTY_KEY;
-  }
-  // Build new table.
-  for (int i = 0; i < num_alloctable_buckets; ++i) {
-    HashBucket& bucket = alloctable_buckets[i];
-    uintptr_t data = bucket.data;
-    if (data != EMPTY_KEY && data != DELETED_KEY && data & 1) {
-      // This is the initial hash bucket for the corresponding allocation.
-      // Rebuild the hash entries in the new table based only on this entry.
-      if (!hashtable_try_insert(new_table, data & ~uintptr_t{1}, bucket.size)) {
-        // Failed ot insert in new table. Abort the rebuild.
-        delete[] new_table;
-        alloctable_hash_mask = old_mask;
-        return false;
-      }
-    }
-  }
-  // Replace the old table.
-  delete[] alloctable_buckets;
-  alloctable_buckets = new_table;
-  alloctable_bits = new_alloctable_bits;
-  num_alloctable_buckets = new_table_size;
-  return true;
-}
-
-/**
- * Add an allocation (large object or medium object superblock) to the
- * allocations hashtable.
- */
-void alloctable_insert(uintptr_t pointer, size_t size) {
-  while (!hashtable_try_insert(alloctable_buckets, pointer, size)) {
-    // Remove partially inserted entries.
-    alloctable_erase(pointer, size);
-    // Too many collisions, rebalance the hash table.
-    unsigned new_table_bits = alloctable_bits + 1;
-    while (!alloctable_rebalance(new_table_bits)) {
-      new_table_bits += 1;
-    }
-  }
-}
-
-bool hashtable_try_insert(HashBucket* table, uintptr_t pointer, size_t size) {
-  uintptr_t key = pointer >> LOW_BITS;
-  uintptr_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1))
-      >> LOW_BITS;
-  bool first = true;
-  do {
-    unsigned hash = pointer_hash(key << LOW_BITS);
-    bool added = false;
-    for (int i = 0; i < MAX_COLLISIONS; ++i) {
-      HashBucket& bucket = table[hash];
-      if (bucket.data == EMPTY_KEY || bucket.data == DELETED_KEY) {
-        if (first) {
-          // Tag this as the first hash entry.
-          first = false;
-          table[hash].data = pointer | 1;
-        } else {
-          table[hash].data = pointer;
-        }
-        table[hash].size = size;
-        added = true;
-        break;
-      }
-      add_collisions += 1;
-      hash = probe_func(hash, i);
-    }
-    if (!added) {
-      return false;
-    }
-    key += 1;
-  } while (key < key_end);
-  return true;
-}
-
-/*
- * Erases all hashtable entries for a pointer. The size determines
- * how many hash buckets are removed.
- */
-void alloctable_erase(uintptr_t pointer, size_t size) {
-  uintptr_t key = pointer >> LOW_BITS;
-  uintptr_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1))
-      >> LOW_BITS;
-  bool first = true;
-  pointer &= ~uintptr_t{3};  // Mask out the flag bits for equality comparison.
-  do {
-    unsigned hash = pointer_hash(key << LOW_BITS);
-    for (int i = 0; i < MAX_COLLISIONS; ++i) {
-      HashBucket& bucket = alloctable_buckets[hash];
-      if (bucket.DataPointer() == pointer) {
-        bucket.data = DELETED_KEY;
-        break;
-      }
-      if (bucket.data == EMPTY_KEY) {
-        // No more partial entries inserted, we are done.
-        return;
-      }
-      hash = probe_func(hash, i);
-    }
-    key += 1;
-  } while (key < key_end);
-}
-
-/*
- * Find a bucket matching the pointer. Will find internal pointers.
- */
-HashBucket* alloctable_search(uintptr_t candidate) {
-  unsigned hash = pointer_hash(candidate);
-  for (int i = 0; i < MAX_COLLISIONS; ++i) {
-    HashBucket* bucket = &alloctable_buckets[hash];
-    if (bucket->data != EMPTY_KEY && bucket->data != DELETED_KEY) {
-      uintptr_t pointer = bucket->DataPointer();
-      if (bucket->data & 2) {
-        if (pointer <= candidate
-            && pointer + MEDIUM_SUPERBLOCK_SIZE > candidate) {
-          // Pointer is inside this superblock. Test if it is after the header.
-          if (candidate >= pointer + SUPERBLOCK_HEADER_SIZE) {
-            return bucket;
-          } else {
-            return nullptr;
-          }
-        }
-      } else if (pointer <= candidate
-            && (pointer + (1L << bucket->size)) > candidate) {
-        return bucket;
-      }
-    }
-    if (bucket->data == EMPTY_KEY) {
-      return nullptr;
-    }
-    lookup_collisions += 1;
-    hash = probe_func(hash, i);
-  }
-  return nullptr;
-}
 /**
  * Add a large allocation to a free list.
  */
@@ -741,81 +939,6 @@ void* remove_free_block(unsigned size_log2) {
     freelists[size_log2] = node->next;
   }
   return static_cast<void*>(node);
-}
-
-/*
- * Remove an allocation from the hashtable.  If the allocation is in a
- * superblock, the superblock is left as is but the superblock bitset is
- * updated to indicate that the block is free.
- * If the allocation is a large object (ie. not in a superblock), then
- * the object is taken out of the hashtable and inserted into a freelist.
- */
-bool alloctable_remove_maybe(uintptr_t pointer) {
-  assert(pointer != EMPTY_KEY && pointer != DELETED_KEY
-      && "Trying to remove invalid key from alloctable.");
-  unsigned hash = pointer_hash(pointer);
-  unsigned size_log2 = 0;
-  HashBucket* bucket = alloctable_search(pointer);
-  if (!bucket) {
-    // Free failed: could not find block to free.
-    return false;
-  }
-  uintptr_t data = bucket->DataPointer();
-  uintptr_t first_block = data + SUPERBLOCK_HEADER_SIZE;
-  if (bucket->data & 2) {
-    Superblock* superblock = reinterpret_cast<Superblock*>(data);
-    size_log2 = superblock->block_size;
-    unsigned index = (pointer - first_block) >> size_log2;
-    unsigned bitset = index / 64;
-    superblock->free[bitset] |= u64{1} << (index & 63);
-    FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
-    free_node->block = index;
-    free_node->superblock = superblock;
-#ifdef HAVE_ADDRESS_SANITIZER
-    // Add to quarantine and poison.
-    quarantine_size += 1 << size_log2;
-    free_node->next = quarantine_size[size_log2];
-    quarantine[size_log2] = superblock->free_list;
-    ASAN_POISON_MEMORY_REGION(free_node, 1 << size_log2);
-    // Maybe clear the quarantine.
-    if (quarantine_size > MAX_QUARANTINE_SIZE) {
-      // Remove all small ojbects from quarantine and insert in freelists.
-      for (int i = 0; i < 64; ++i) {
-        while (quarantine[i]) {
-          FreeNode* quarantined_node = quarantine[i];
-          ASAN_UNPOISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
-          quarantine[i] = quarantined_node->next;
-          if (medium_superblocks[i]) {
-            superblock = medium_superblocks[i];
-          } else {
-            medium_superblocks[i] = superblock;
-          }
-          quarantined_node->next = superblock->free_list;
-          superblock->free_list = quarantined_node;
-          // Re-poison so the freelist nodes stay poisoned while free.
-          ASAN_POISON_MEMORY_REGION(quarantined_node, 1 << size_log2);
-        }
-      }
-      quarantine_size = 0;
-    }
-#else
-    if (medium_superblocks[size_log2]) {
-      superblock = medium_superblocks[size_log2];
-    } else {
-      medium_superblocks[size_log2] = superblock;
-    }
-    free_node->next = superblock->free_list;
-    superblock->free_list = free_node;
-#endif
-    // Done. Don't erase hash entries for the superblock.
-    return true;
-  } else if (data == pointer) {
-    // Erase all entries in hashtable for the allocation.
-    alloctable_erase(pointer, bucket->size);
-    // Add allocation to free list.
-    add_free_block(pointer, bucket->size);
-  }
-  return true;
 }
 
 static void update_heap_bounds(void* allocation, size_t size) {
@@ -907,15 +1030,17 @@ void rho::BlockPool::FreeBlock(void* pointer) {
   Superblock* superblock = Superblock::SuperblockFromPointer(pointer);
   if (superblock) {
     Superblock::FreeSmallBlock(pointer, superblock);
-  } else if (!alloctable_remove_maybe(reinterpret_cast<uintptr_t>(pointer))) {
+  } else if (!alloctable->free_allocation(reinterpret_cast<uintptr_t>(pointer))) {
     allocerr("failed to free pointer - unallocated or double-free problem");
   }
 }
 
-// Iterates over all live objects and calls the argument function on
-// their pointers.
-// It is okay to free objects during the iteration, but adding objects
-// means they may not be found during the current iteration pass.
+/*
+ * Iterates over all live objects and calls the argument function on
+ * their pointers.
+ * It is okay to free objects during the iteration, but adding objects
+ * means they may not be found during the current iteration pass.
+ */
 void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
   uintptr_t next_superblock = arena_superblock_start;
   while (next_superblock < arena_superblock_next) {
@@ -950,58 +1075,7 @@ void rho::BlockPool::ApplyToAllBlocks(std::function<void(void*)> fun) {
     }
     next_superblock += SUPERBLOCK_SIZE;
   }
-  for (int i = 0; i < num_alloctable_buckets; ++i) {
-    HashBucket& bucket = alloctable_buckets[i];
-    if (bucket.data != EMPTY_KEY && bucket.data != DELETED_KEY) {
-      if (bucket.data & 1) {
-        void* pointer = reinterpret_cast<void*>(bucket.data & ~uintptr_t{3});
-        if (bucket.data & 2) {
-          // This is a large superblock.
-          Superblock* superblock = reinterpret_cast<Superblock*>(pointer);
-          uintptr_t block =
-              reinterpret_cast<uintptr_t>(pointer) + SUPERBLOCK_HEADER_SIZE;
-          uintptr_t block_end =
-              reinterpret_cast<uintptr_t>(pointer) + MEDIUM_SUPERBLOCK_SIZE;
-          unsigned block_size = 1 << superblock->block_size;
-          unsigned superblock_size = (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE)
-              / superblock->block_size;
-          unsigned bitset_entries =
-              ((1 << (MEDIUM_SUPERBLOCK_SIZE_LOG2 - superblock->block_size)) + 63)
-              / 64;
-          for (int i = 0; i < bitset_entries; ++i) {
-            if (superblock->free[i] != ~0ull) {
-              for (int index = 0; index < 64; ++index) {
-                if (!(superblock->free[i] & (u64{1} << index))) {
-#ifdef ALLOCATION_CHECK
-                  if (!lookup_in_allocation_map(reinterpret_cast<void*>(
-                      block))) {
-                    allocerr("apply to all blocks iterating over "
-                        "non-alloc'd pointer");
-                  }
-#endif
-#ifdef HAVE_ADDRESS_SANITIZER
-                  fun(offset_pointer(reinterpret_cast<void*>(block),
-                      REDZONE_SIZE));
-#else
-                  fun(reinterpret_cast<void*>(block));
-#endif
-                }
-                block += block_size;
-              }
-            } else {
-              block += block_size * 64;
-            }
-          }
-        } else {
-#ifdef HAVE_ADDRESS_SANITIZER
-          fun(offset_pointer(reinterpret_cast<void*>(block), REDZONE_SIZE));
-#else
-          fun(pointer);
-#endif
-        }
-      }
-    }
-  }
+  alloctable->ApplyToAllBlocks(fun);
 }
 
 /**
@@ -1030,7 +1104,7 @@ void* rho::BlockPool::Lookup(void* candidate) {
       result = nullptr;
     }
   } else if (candidate >= heap_start && candidate < heap_end) {
-    HashBucket* bucket = alloctable_search(candidate_uint);
+    HashBucket* bucket = alloctable->search(candidate_uint);
     if (bucket) {
       uintptr_t pointer = bucket->DataPointer();
       if (bucket->data & 2) {
@@ -1091,28 +1165,6 @@ void* lookup_in_allocation_map(void* tentative_pointer) {
 }
 #endif
 
-static void print_alloctable() {
-  printf(">>>>> SPARSE TABLE\n");
-  int size = 0;
-  for (int i = 0; i < num_alloctable_buckets; i += 16) {
-    int count = 0;
-    for (int j = 0; j < 16 && i + j < num_alloctable_buckets; ++j) {
-      HashBucket& bucket = alloctable_buckets[i + j];
-      if (bucket.data != EMPTY_KEY && bucket.data != DELETED_KEY) {
-        count += 1;
-      }
-    }
-    if (count) {
-      printf("%X", count);
-    } else {
-      printf(".");
-    }
-    size += count;
-  }
-  printf("\n");
-  printf("table size: %d\n", size);
-}
-
 void print_superblock(Superblock* superblock) {
   unsigned superblock_size =
       (SUPERBLOCK_SIZE - SUPERBLOCK_HEADER_SIZE) / superblock->block_size;
@@ -1150,15 +1202,15 @@ void rho::BlockPool::DebugPrint() {
     print_superblock(reinterpret_cast<Superblock*>(next_superblock));
     next_superblock += SUPERBLOCK_SIZE;
   }
-  print_alloctable();
+  alloctable->print_alloctable();
 }
 
 void rho::BlockPool::DebugRebalance(int new_bits) {
-  alloctable_rebalance(new_bits);
-  print_alloctable();
+  alloctable->rebalance(new_bits);
+  alloctable->print_alloctable();
 }
 
 void rho::BlockPool::RebalanceAllocationTable(int new_bits) {
-  alloctable_rebalance(new_bits);
+  alloctable->rebalance(new_bits);
 }
 
