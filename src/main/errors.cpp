@@ -827,9 +827,6 @@ static void jump_to_top_ex(Rboolean traceback,
 	/* at this point, i.e. if we have not exited in
 	   try_jump_to_restart, we are heading for top level */
 
-	/* only run traceback if we are not going to bail out of a
-	   non-interactive session */
-	if (R_Interactive || haveHandler) {
 	    /* write traceback if requested, unless we're already doing it
 	       or there is an inconsistency between inError and oldInError
 	       (which should not happen) */
@@ -841,7 +838,6 @@ static void jump_to_top_ex(Rboolean traceback,
 		   setVar(install(".Traceback"), s, R_GlobalEnv); */
 		UNPROTECT(1);
 		inError = oldInError;
-	    }
 	}
 
 	throw CommandTerminated();
