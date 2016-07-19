@@ -76,12 +76,6 @@ namespace rho {
 // Redzones are added before and after the allocation.
 #define REDZONE_SIZE (16)
 
-// Quarantines are used so objects are not quickly reused after free.
-extern size_t small_quarantine_size;
-extern size_t quarantine_size;
-extern rho::FreeListNode* small_quarantine[NUM_SMALL_POOLS];
-extern rho::FreeListNode* quarantine[64];
-
 /** Helper function for address calculations. */
 void* offset_pointer(void* pointer, size_t bytes);
 

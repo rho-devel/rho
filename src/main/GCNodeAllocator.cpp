@@ -64,13 +64,13 @@
 #define MEDIUM_SUPERBLOCK_SIZE (1 << MEDIUM_SUPERBLOCK_SIZE_LOG2)
 
 #ifdef HAVE_ADDRESS_SANITIZER
-size_t small_quarantine_size = 0;
-size_t quarantine_size = 0;
+static size_t small_quarantine_size = 0;
+static size_t quarantine_size = 0;
 
 // The quarantine free lists are used to store freed objects for a while before
 // they can be reused.
-rho::FreeListNode* small_quarantine[NUM_SMALL_POOLS];
-rho::FreeListNode* quarantine[64];
+static rho::FreeListNode* small_quarantine[NUM_SMALL_POOLS];
+static rho::FreeListNode* quarantine[64];
 
 void* offset_pointer(void* pointer, size_t bytes) {
     return static_cast<char*>(pointer) + bytes;
