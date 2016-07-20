@@ -61,18 +61,6 @@ namespace rho {
      */
     class Allocation {
     public:
-      // Constants indicating an empty/deleted bucket:
-      static constexpr uintptr_t s_empty_key = 0;
-      static constexpr uintptr_t s_deleted_key = UINTPTR_MAX;
-
-      static constexpr int s_first_flag = 1;
-      static constexpr int s_superblock_flag = 2;
-
-      uintptr_t m_data;
-
-      // The size in bytes for small objects, or the 2-log for large objects.
-      unsigned m_size_log2;
-
       // Initializes to the empty key.
       Allocation(): m_data(s_empty_key), m_size_log2(0) {}
 
@@ -98,35 +86,11 @@ namespace rho {
         }
       }
 
-      bool is_deleted() {
-        return m_data == s_deleted_key;
-      }
-
-      bool is_empty() {
-        return m_data == s_empty_key;
-      }
-
-      /**
-       * Returns true if the argument pointer points inside this allocation.
-       */
-      bool is_internal_pointer(uintptr_t pointer) {
-        uintptr_t data = data_pointer();
-        return data <= pointer && (data + (1L << m_size_log2)) > pointer;
-      }
-
       /**
        * Returns true if this allocation represents a superblock.
        */
       bool is_superblock() {
         return (m_data & s_superblock_flag) == s_superblock_flag;
-      }
-
-      /**
-       * Returns true if this allocation bucket is the first entry for the
-       * corresponding allocation in the allocation table.
-       */
-      bool is_first() {
-        return (m_data & s_first_flag) == s_first_flag;
       }
 
       void* as_pointer() {
@@ -137,10 +101,50 @@ namespace rho {
         return reinterpret_cast<rho::AllocatorSuperblock*>(data_pointer());
       }
 
+    private:
+      friend AllocationTable;
+
+      // Constants indicating an empty/deleted bucket:
+      static constexpr uintptr_t s_empty_key = 0;
+      static constexpr uintptr_t s_deleted_key = UINTPTR_MAX;
+
+      static constexpr int s_first_flag = 1;
+      static constexpr int s_superblock_flag = 2;
+
+      uintptr_t m_data;
+
+      // The size in bytes for small objects, or the 2-log for large objects.
+      unsigned m_size_log2;
+
       /** Masks away the pointer bits from the data field. */
       uintptr_t data_pointer() {
         return m_data & ~uintptr_t{3};
       }
+
+      bool is_deleted() {
+        return m_data == s_deleted_key;
+      }
+
+      bool is_empty() {
+        return m_data == s_empty_key;
+      }
+
+      /**
+       * Returns true if this allocation bucket is the first entry for the
+       * corresponding allocation in the allocation table.
+       */
+      bool is_first() {
+        return (m_data & s_first_flag) == s_first_flag;
+      }
+
+      /**
+       * Returns true if the argument pointer points inside this allocation.
+       */
+      bool is_internal_pointer(uintptr_t pointer) {
+        uintptr_t data = data_pointer();
+        return data <= pointer && (data + (1L << m_size_log2)) > pointer;
+      }
+
     };
 
     /**
