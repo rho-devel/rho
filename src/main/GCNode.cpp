@@ -88,8 +88,7 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes) {
 GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(s_decinc_refcount[1]) {
 }
 
-void GCNode::operator delete(void* pointer, size_t bytes)
-{
+void GCNode::operator delete(void* pointer, size_t bytes) {
     MemoryBank::notifyDeallocation(bytes);
 
     GCNodeAllocator::Free(pointer);
@@ -267,7 +266,7 @@ void rho::initializeMemorySubsystem() {
 // Returns nullptr if the candidate pointer is not inside a GCNode,
 // otherwise returns the pointer to the enclosign GCNode.
 GCNode* GCNode::asGCNode(void* candidate_pointer) {
-    return static_cast<GCNode*>(GCNodeAllocator::Lookup(candidate_pointer));
+    return GCNodeAllocator::Lookup(candidate_pointer);
 }
 
 GCNode::InternalData GCNode::storeInternalData() const {

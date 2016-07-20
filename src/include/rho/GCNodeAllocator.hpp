@@ -32,89 +32,32 @@
 
 #include "rho/AddressSanitizer.hpp"
 
-// NUM_SMALL_POOLS = (256 / 8) + 1 = 33
-#define NUM_SMALL_POOLS (33)
+#ifdef ALLOCATION_CHECK
+// Helper functions for allocator consistency checking:
+void add_to_allocation_map(void* allocation, std::size_t size);
+void remove_from_allocation_map(void* allocation);
+void* lookup_in_allocation_map(void* tentative_pointer);
+#endif
 
-typedef std::uint32_t u32;
-
-using std::size_t;
-using std::function;
+/** Reports an allocation error and calls abort(). */
+void allocerr(const char* message);
 
 namespace rho {
+  // Forward declarations.
   struct AllocationTable;
   struct AllocatorSuperblock;
+  struct GCNode;
 
   /**
    * Freelists are used to store superblock nodes and large allocations.
    * For large allocations the block and superblock members are unused.
    */
   struct FreeListNode {
-    FreeListNode* next;
-    u32 block;  // Used only for superblock free nodes.
-    AllocatorSuperblock* superblock;  // Used only for superblock free nodes.
+    FreeListNode* m_next;
+    std::uint32_t m_block;  // Used only for superblock free nodes.
+    AllocatorSuperblock* m_superblock;  // Used only for superblock free nodes.
   };
-}
 
-#ifdef HAVE_ADDRESS_SANITIZER
-
-/*
- * When compiling with the address sanitizer, we modify the allocation routines
- * to detect errors more reliably.  In particular:
- * - A redzone is added on both sides of the object to detect underflows and
- *   overflows.
- * - Memory is poisoned when it is freed to detect use-after-free errors.
- * - Freed objects are held in a quarantine to prevent the memory from
- *   being reallocated quickly.  This helps detect use-after-free errors.
- *
- * Note that in the context of GC, 'use after free' is really premature garbage
- * collection.
- */
-
-// Maximum quarantine size = 10Mb.
-#define MAX_QUARANTINE_SIZE (10<<20)
-
-// Redzones are added before and after the allocation.
-#define REDZONE_SIZE (16)
-
-/** Helper function for address calculations. */
-void* offset_pointer(void* pointer, size_t bytes);
-
-/** Adds a small object to the small-object quarantine. */
-void add_to_small_quarantine(rho::FreeListNode* free_node, int pool_index);
-
-/** Adds an object to the quarantine freelist. */
-void add_to_quarantine(rho::FreeListNode* free_node, unsigned size_log2);
-
-#endif // HAVE_ADDRESS_SANITIZER
-
-#ifdef ALLOCATION_CHECK
-void add_to_allocation_map(void* allocation, size_t size);
-void remove_from_allocation_map(void* allocation);
-void* lookup_in_allocation_map(void* tentative_pointer);
-#endif
-
-extern rho::AllocationTable* alloctable;
-
-// Pointers to small object superblocks with available blocks.
-extern rho::AllocatorSuperblock* small_superblocks[NUM_SMALL_POOLS];
-
-// Pointers to medium object superblocks with available blocks.
-extern rho::AllocatorSuperblock* medium_superblocks[18];
-
-// Arena for small-object superblocks:
-extern void* superblock_arena;
-extern uintptr_t arena_superblock_start;
-extern uintptr_t arena_superblock_end;
-extern uintptr_t arena_superblock_next;
-
-/** Reports an allocation error and calls abort(). */
-void allocerr(const char* message);
-
-// Forward declarations for freelist functions.
-void add_free_block(uintptr_t data, unsigned size_log2);
-void* remove_free_block(unsigned size_log2);
-
-namespace rho {
   /**
    * \brief An allocator for allocating and iterating GCNode objects of
    * different sizes.
@@ -130,17 +73,79 @@ namespace rho {
       /** \brief Must be called before any allocations can be made. */
       static void Initialize();
 
-      static void* Allocate(size_t bytes);
+      static void* Allocate(std::size_t bytes);
       static void Free(void* p);
 
-      /** \brief Apply function to all live allocations. */
-      static void ApplyToAllAllocations(function<void(void*)> f);
+      /** \brief Apply function to all current allocations. */
+      static void ApplyToAllAllocations(std::function<void(void*)> f);
 
       /** \brief Find heap allocation start pointer. */
-      static void* Lookup(void* candidate);
+      static GCNode* Lookup(void* candidate);
 
       /** \brief Print allocation overview for debugging. */
       static void DebugPrint();
+    private:
+      friend class AllocatorSuperblock;
+      friend class AllocationTable;
+
+      /** Samll object arena is 1Gb = 30 bits. */
+      static constexpr unsigned s_arenasize = 1 << 30;
+
+      /** Allocation table for medium and large allocations. */
+      static AllocationTable* s_alloctable;
+
+      /** Number of different object sizes for the small-object superblocks. */
+      static constexpr int s_num_small_pools = (256 / 8) + 1;
+
+      /** Pointers to small object superblocks with available blocks. */
+      static AllocatorSuperblock* s_small_superblocks[s_num_small_pools];
+
+      /** Pointers to medium object superblocks with available blocks. */
+      static AllocatorSuperblock* s_medium_superblocks[18];
+
+      /** Adds an allocation to a freelist. */
+      static void AddToFreelist(uintptr_t data, unsigned size_log2);
+
+      /**
+       * Removes an allocation from a freelist, returns nullptr if there was no
+       * available free object.
+       */
+      static void* RemoveFromFreelist(unsigned size_log2);
+
+#ifdef HAVE_ADDRESS_SANITIZER
+
+      /*
+       * When compiling with the address sanitizer, we modify the allocation routines
+       * to detect errors more reliably.  In particular:
+       * - A redzone is added on both sides of the object to detect underflows and
+       *   overflows.
+       * - Memory is poisoned when it is freed to detect use-after-free errors.
+       * - Freed objects are held in a quarantine to prevent the memory from
+       *   being reallocated quickly.  This helps detect use-after-free errors.
+       *
+       * Note that in the context of GC, 'use after free' is really premature garbage
+       * collection.
+       */
+
+      /** Maximum quarantine size = 10Mb. */
+      static constexpr int s_max_quarantine_size = 10 << 20;
+      static FreeListNode* s_small_quarantine[s_num_small_pools];
+      static FreeListNode* s_quarantine[64];
+
+      /** Redzones are added before and after the allocation. */
+      static constexpr int s_redzone_size = 16;
+
+      /** Helper function for address calculations. */
+      static void* OffsetPointer(void* pointer, std::size_t bytes);
+
+      /** Adds a small object to the small-object quarantine. */
+      static void AddToSmallQuarantine(FreeListNode* free_node, int pool_index);
+
+      /** Adds an object to the quarantine freelist. */
+      static void AddToQuarantine(FreeListNode* free_node, unsigned size_log2);
+
+#endif // HAVE_ADDRESS_SANITIZER
+
   };
 }
 

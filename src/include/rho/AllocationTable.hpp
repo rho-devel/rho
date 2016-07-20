@@ -39,11 +39,6 @@
 
 #include "rho/AllocatorSuperblock.hpp"
 
-typedef std::uint32_t u32;
-
-using std::function;
-using std::size_t;
-
 namespace rho {
   /*
    * Special-purpose hashtable implementation for tracking medium and large
@@ -57,19 +52,94 @@ namespace rho {
    */
   class AllocationTable {
   public:
+
     /**
      * Hash bucket for the allocation table.
      * The two lowest bits of the data pointer are flags indicating
      * if the hash bucket contains a superblock (2) and whether this
      * hash bucket is the first representing that allocation (1).
      */
-    struct HashBucket {
-      uintptr_t data;
-      unsigned size;
+    class Allocation {
+    public:
+      // Constants indicating an empty/deleted bucket:
+      static constexpr uintptr_t s_empty_key = 0;
+      static constexpr uintptr_t s_deleted_key = UINTPTR_MAX;
 
-      /* Masks away the pointer bits from the data field. */
-      uintptr_t DataPointer() {
-        return data & ~uintptr_t{3};
+      static constexpr int s_first_flag = 1;
+      static constexpr int s_superblock_flag = 2;
+
+      uintptr_t m_data;
+
+      // The size in bytes for small objects, or the 2-log for large objects.
+      unsigned m_size_log2;
+
+      // Initializes to the empty key.
+      Allocation(): m_data(s_empty_key), m_size_log2(0) {}
+
+      /**
+       * Creates a new hash bucket for a superblock.
+       */
+      Allocation(rho::AllocatorSuperblock* superblock, unsigned size, bool first):
+          m_data(reinterpret_cast<uintptr_t>(superblock) | s_superblock_flag),
+          m_size_log2(size) {
+        if (first) {
+          m_data |= s_first_flag;
+        }
+      }
+
+      /**
+       * Creates a new hash bucket for a separate allocation (non-superblock).
+       */
+      Allocation(void* allocation, unsigned size_log2, bool first):
+          m_data(reinterpret_cast<uintptr_t>(allocation)),
+          m_size_log2(size_log2) {
+        if (first) {
+          m_data |= s_first_flag;
+        }
+      }
+
+      bool is_deleted() {
+        return m_data == s_deleted_key;
+      }
+
+      bool is_empty() {
+        return m_data == s_empty_key;
+      }
+
+      /**
+       * Returns true if the argument pointer points inside this allocation.
+       */
+      bool is_internal_pointer(uintptr_t pointer) {
+        uintptr_t data = data_pointer();
+        return data <= pointer && (data + (1L << m_size_log2)) > pointer;
+      }
+
+      /**
+       * Returns true if this allocation represents a superblock.
+       */
+      bool is_superblock() {
+        return (m_data & s_superblock_flag) == s_superblock_flag;
+      }
+
+      /**
+       * Returns true if this allocation bucket is the first entry for the
+       * corresponding allocation in the allocation table.
+       */
+      bool is_first() {
+        return (m_data & s_first_flag) == s_first_flag;
+      }
+
+      void* as_pointer() {
+        return reinterpret_cast<void*>(data_pointer());
+      }
+
+      rho::AllocatorSuperblock* as_superblock() {
+        return reinterpret_cast<rho::AllocatorSuperblock*>(data_pointer());
+      }
+
+      /** Masks away the pointer bits from the data field. */
+      uintptr_t data_pointer() {
+        return m_data & ~uintptr_t{3};
       }
     };
 
@@ -83,18 +153,18 @@ namespace rho {
      * Add an allocation (large object or medium object superblock) to the
      * allocations hashtable.
      */
-    void insert(uintptr_t pointer, size_t size);
+    void insert(uintptr_t pointer, std::size_t size);
 
     /*
      * Erases all hashtable entries for a pointer. The size determines
      * how many hash buckets are removed.
      */
-    void erase(uintptr_t pointer, size_t size);
+    void erase(uintptr_t pointer, std::size_t size);
 
     /*
      * Find a bucket matching the pointer. Will find internal pointers.
      */
-    HashBucket* search(uintptr_t candidate);
+    Allocation* search(uintptr_t candidate);
 
     /*
      * Remove an allocation from the hashtable.  If the allocation is in a
@@ -106,31 +176,46 @@ namespace rho {
     bool free_allocation(uintptr_t pointer);
 
     /**
-     * Iterates over all live objects and calls the argument function on
+     * Iterates over all current allocations and calls the argument function on
      * their pointers.
+     *
      * It is okay to free objects during the iteration, but adding objects
      * means they may not be found during the current iteration pass.
      */
-    void ApplyToAllBlocks(std::function<void(void*)> fun);
+    void ApplyToAllAllocations(std::function<void(void*)> fun);
 
     /**
      * Prints a summary of the table illustrating the bucket utilization.
      */
     void PrintTable();
 
+    /**
+     * Attempts to resize the hashtable to use a new number of bits
+     * for hash keys. The resize fails if the number of collisions
+     * for a single entry exceeds MAX_REBALANCE_COLLISIONS.
+     * @return true if the resize succeeded.
+     */
+    bool resize(unsigned new_alloctable_bits);
+
   private:
-    unsigned num_bits;
-    unsigned num_buckets;
+    /** The low pointer bits are shifted out in the hash function. */
+    static constexpr unsigned LOW_BITS = 19;
+
+    /** Additional entries that can be inserted before resize. */
+    unsigned m_capacity;
+
+    unsigned m_num_bits;
+    unsigned m_num_buckets;
 
     // Mask deciding which bits of a hash key are used to index the hash table.
-    unsigned hash_mask;
+    unsigned m_hash_mask;
 
-    HashBucket* buckets = nullptr;
+    Allocation* m_buckets = nullptr;
 
     // Counters logging collision statistics:
-    unsigned add_collisions = 0;
-    unsigned remove_collisions = 0;
-    unsigned lookup_collisions = 0;
+    unsigned m_num_insert_collisions = 0;
+    unsigned m_num_erase_collisions = 0;
+    unsigned m_num_search_collisions = 0;
 
     /**
      * Unlike most other member functions this one takes a table pointer,
@@ -139,7 +224,7 @@ namespace rho {
      *
      * @return true if the insert succeeded.
      */
-    bool try_insert(HashBucket* table, uintptr_t pointer, size_t size);
+    bool try_insert(Allocation* table, uintptr_t pointer, std::size_t size);
 
     /**
      * Computes the hash key for a pointer.
@@ -157,14 +242,6 @@ namespace rho {
 
     /** Computes the next key in a probe chain. */
     unsigned probe_func(unsigned hash, int i);
-
-    /**
-     * Attempts to resize the hashtable to use a new number of bits
-     * for hash keys. The resize fails if the number of collisions
-     * for a single entry exceeds MAX_REBALANCE_COLLISIONS.
-     * @return true if the resize succeeded.
-     */
-    bool resize(unsigned new_alloctable_bits);
 
   };
 }
