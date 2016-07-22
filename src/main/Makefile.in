@@ -132,6 +132,8 @@ ALL_CPPFLAGS = $(TRE_CPPFLAGS) $(XDR_CPPFLAGS) $(R_XTRA_CPPFLAGS) \
 @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
 @WANT_R_SHLIB_TRUE@ALL_FFLAGS = $(ALL_FFLAGS_LO)
 
+ALL_CFLAGS := $(ALL_CFLAGS) $(WERROR_FLAGS)
+ALL_CXXFLAGS := $(ALL_CXXFLAGS) $(WERROR_FLAGS)
 
 ## use an explicit library: there might be an unsatisfactory -lintl around
 R_TRE = @BUILD_TRE_TRUE@ ../extra/tre/libtre.a

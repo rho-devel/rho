@@ -49,7 +49,7 @@ class GCNodeAllocator;
  * Freelists are used to remember allocations while they are not in use.
  * For large allocations m_superblock is set to nullptr.
  */
-struct FreeListNode
+class FreeListNode
 {
 public:
   FreeListNode() :
@@ -257,4 +257,3 @@ private:
 }
 
 #endif // RHO_GCNODEALLOCATOR_HPP
-

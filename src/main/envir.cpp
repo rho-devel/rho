@@ -199,7 +199,6 @@ int attribute_hidden R_Newhashpjw(const char *s)
 
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
-    int nsize = asInteger(size);
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
     GCStackRoot<Frame> frame(new ListFrame);
     return new Environment(enc, frame);
@@ -1152,7 +1151,6 @@ SEXP attribute_hidden do_emptyenv(/*const*/ rho::Expression* call, const rho::Bu
 
 SEXP attribute_hidden do_attach(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_, rho::RObject* pos_, rho::RObject* name_)
 {
-    SEXP x;
     GCStackRoot<Environment> env_to_attach;
 
     int pos = asInteger(pos_);
@@ -1593,7 +1591,7 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP arg = args[0], ans;
+    SEXP arg = args[0];
     if(isEnvironment(arg))
 	return arg;
 

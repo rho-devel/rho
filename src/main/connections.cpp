@@ -3977,35 +3977,47 @@ SEXP attribute_hidden do_readbin(/*const*/ rho::Expression* call, const rho::Bui
 		if(swap && size > 1)
 		    for(i = 0; i < m; i++) swapb(static_cast<char *>(p)+i*size, size);
 	    } else {
-		alignas(double) char buf[size];
+		union {
+		    char buf[16];
+		    signed char signed_char_value;
+		    unsigned char unsigned_char_value;
+		    short short_value;
+		    unsigned short unsigned_short_value;
+		    long long_value;
+		    _lli_t lli_t_value;
+		    float float_value;
+#ifdef HAVE_LONG_DOUBLE
+		    long double long_double_value;
+#endif
+		} buf;
 		R_xlen_t s;
 		if(mode == 1) {
 		    for(i = 0, m = 0; i < n; i++) {
-			s = isRaw ? rawRead(buf, size, 1, bytes, nbytes, &np)
-			    : int( con->read(buf, size, 1, con));
+			s = isRaw ? rawRead(buf.buf, size, 1, bytes, nbytes, &np)
+			    : int( con->read(buf.buf, size, 1, con));
 			if (s < 0) error("error reading from the connection");
 			if(s) m++; else break;
-			if(swap && size > 1) swapb(buf, size);
+			if(swap && size > 1) swapb(buf.buf, size);
 			switch(size) {
 			case sizeof(signed char):
 			    if(signd)
-				INTEGER(ans)[i] = int(*(reinterpret_cast<signed char *>(buf)));
+				INTEGER(ans)[i] = buf.signed_char_value;
 			    else
-				INTEGER(ans)[i] = int(*(reinterpret_cast<unsigned char *>(buf)));
+				INTEGER(ans)[i] = buf.unsigned_char_value;
 			    break;
 			case sizeof(short):
 			    if(signd)
-				INTEGER(ans)[i] = int(*(reinterpret_cast<short *>(buf)));
+				INTEGER(ans)[i] = buf.short_value;
 			    else
-				INTEGER(ans)[i] = int(*(reinterpret_cast<unsigned short *>(buf)));
+				INTEGER(ans)[i] = buf.unsigned_short_value;
 			    break;
 #if SIZEOF_LONG == 8
 			case sizeof(long):
-			  INTEGER(ans)[i] = int(*(reinterpret_cast<long *>(buf)));
+			    INTEGER(ans)[i] = buf.long_value;
 			    break;
 #elif SIZEOF_LONG_LONG == 8
 			case sizeof(_lli_t):
-			    INTEGER(ans)[i] = int(*(reinterpret_cast<_lli_t *>(buf)));
+                            INTEGER(ans)[i] = buf.lli_t_value;
 			    break;
 #endif
 			default:
@@ -4014,18 +4026,18 @@ SEXP attribute_hidden do_readbin(/*const*/ rho::Expression* call, const rho::Bui
 		    }
 		} else if (mode == 2) {
 		    for(i = 0, m = 0; i < n; i++) {
-			s = isRaw ? rawRead(buf, size, 1, bytes, nbytes, &np)
-			    : int( con->read(buf, size, 1, con));
+			s = isRaw ? rawRead(buf.buf, size, 1, bytes, nbytes, &np)
+			    : int( con->read(buf.buf, size, 1, con));
 			if (s < 0) error("error reading from the connection");
 			if(s) m++; else break;
-			if(swap && size > 1) swapb(buf, size);
+			if(swap && size > 1) swapb(buf.buf, size);
 			switch(size) {
 			case sizeof(float):
-			    REAL(ans)[i] = double(*(reinterpret_cast<float *>(buf)));
+			    REAL(ans)[i] = buf.float_value;
 			    break;
 #if HAVE_LONG_DOUBLE && (SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE)
 			case sizeof(long double):
-			    REAL(ans)[i] = double(*(reinterpret_cast<long double *>(buf)));
+			    REAL(ans)[i] = double(buf.long_double_value);
 			    break;
 #endif
 			default:

@@ -411,7 +411,7 @@ void PrintWarnings(void)
 {
     int i;
     char *header;
-    SEXP names, s, t;
+    SEXP names;
 
     if (R_CollectWarnings == 0)
 	return;
@@ -984,7 +984,7 @@ SEXP attribute_hidden do_ngettext(/*const*/ rho::Expression* call, const rho::Bu
 
 #ifdef ENABLE_NLS
     if(isNull(sdom)) {
-	Environment* rho;
+	Environment* rho = Environment::empty();
 
 	for(ClosureContext *cptr = ClosureContext::innermost(
 		Evaluator::Context::innermost()->nextOut());

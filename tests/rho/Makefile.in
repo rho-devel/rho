@@ -249,9 +249,8 @@ SETLENGTHtest.ts : SETLENGTHtest SETLENGTHtest.save
 	rm SETLENGTHtest.out
 	touch $@
 
-RObject_sizer : RObject_sizer.o FORCE #../../src/main/libR.a
-	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
-                   -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
+RObject_sizer : RObject_sizer.o
+	$(LINK.cc) -o $@ $<
 
 Makefile : $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@

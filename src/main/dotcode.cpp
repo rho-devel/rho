@@ -865,15 +865,15 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	int nprotect = 0;
 	R_NativePrimitiveArgType targetType_ = checkTypes ? checkTypes[na] : 0;
-	SEXPTYPE targetType = static_cast<SEXPTYPE>(targetType_);
+	SEXPTYPE targetType = targetType_ == SINGLESXP
+	    ? REALSXP : static_cast<SEXPTYPE>(targetType_);
 	R_xlen_t n;
 	s = CAR(pa);
 	/* start with return value a copy of the inputs, as that is
 	   what is needed for non-atomic-vector inputs */
 	SET_VECTOR_ELT(ans, na, s);
 
-	if(checkNativeType(targetType, TYPEOF(s)) == FALSE &&
-	   targetType != SINGLESXP) {
+	if(checkNativeType(targetType, TYPEOF(s)) == FALSE) {
 	    /* Cannot be called if DUP = FALSE, so only needs to live
 	       until copied in the switch.
 	       But R_alloc allocates, so missed protection < R 2.15.0.
@@ -1124,7 +1124,15 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	    s = VECTOR_ELT(ans, na);
 	    R_NativePrimitiveArgType type_ =
 		checkTypes ? checkTypes[na] : TYPEOF(arg);
-	    SEXPTYPE type = static_cast<SEXPTYPE>(type_);
+	    SEXPTYPE type;
+	    bool single_precision;
+	    if (type_ == SINGLESXP) {
+		type = REALSXP;
+		single_precision = true;
+	    } else {
+		type = static_cast<SEXPTYPE>(type_);
+		single_precision = false;
+	    }
 	    R_xlen_t n = xlength(arg);
 
 	    switch(type) {
@@ -1196,10 +1204,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		break;
 	    case REALSXP:
-	    case SINGLESXP:
 		if (copy) {
 		    s = allocVector(REALSXP, n);
-		    if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
+		    if (single_precision || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 			float *sptr = (float*) p;
 			for(R_xlen_t i = 0 ; i < n ; i++)
 			    REAL(s)[i] = (double) sptr[i];
@@ -1220,7 +1227,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 				      symName, type2char(RHOCONSTRUCT(SEXPTYPE, type)), na+1);
 		    }
 		} else {
-		    if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
+		    if (single_precision || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 			s = allocVector(REALSXP, n);
 			float *sptr = (float*) p;
 			for(int i = 0 ; i < n ; i++)

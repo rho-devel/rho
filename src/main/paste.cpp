@@ -440,7 +440,7 @@ SEXP attribute_hidden do_format(/*const*/ rho::Expression* call, const rho::Buil
     // copy/paste from "OutDec" part of ./options.c
     if (TYPEOF(args[0]) != STRSXP || LENGTH(args[0]) != 1)
 	error(_("invalid '%s' argument"), "decimal.mark");
-    char *my_OutDec;
+    const char *my_OutDec;
     if(STRING_ELT(args[0], 0) == NA_STRING)
 	my_OutDec = OutDec; // default
     else {

@@ -214,9 +214,9 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
      *
      * where  |x| = alpha * 10^kpower	and	 1 <= alpha < 10
      */
-    register double alpha;
-    register double r;
-    register int kp;
+    double alpha;
+    double r;
+    int kp;
     int j;
 
     if (*x == 0.0) {

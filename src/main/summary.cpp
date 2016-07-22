@@ -786,7 +786,7 @@ invalid_type:
 
 SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, a, b, prargs, call2;
+    SEXP ans, call2;
 
     PROTECT(args = fixup_NaRm(args));
     PROTECT(call2 = shallow_duplicate(call));
@@ -943,7 +943,7 @@ SEXP attribute_hidden do_which(/*const*/ rho::Expression* call, const rho::Built
  */
 SEXP attribute_hidden do_pmin(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP a, x, ans;
+    SEXP x, ans;
     int narm;
     R_xlen_t i, n, len, i1;
     SEXPTYPE type, anstype;

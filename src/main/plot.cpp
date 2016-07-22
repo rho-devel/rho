@@ -160,8 +160,12 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	    n = 0;
 	    if (0.5 * dn >= umin) REAL(at)[n++] = 0.5 * dn;
 	    for (;;) {
-		if (dn > umax) break;		REAL(at)[n++] = dn;
-		if (5 * dn > umax) break;	REAL(at)[n++] = 5 * dn;
+		if (dn > umax)
+		    break;
+		REAL(at)[n++] = dn;
+		if (5 * dn > umax)
+		    break;
+		REAL(at)[n++] = 5 * dn;
 		dn *= 10;
 	    }
 	    break;
@@ -171,11 +175,14 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	    if (0.2 * dn >= umin) n++;
 	    if (0.5 * dn >= umin) n++;
 	    for (;;) {
-		if (dn > umax) break;
+		if (dn > umax)
+		    break;
 		n++;
-		if (2 * dn > umax) break;
+		if (2 * dn > umax)
+		    break;
 		n++;
-		if (5 * dn > umax) break;
+		if (5 * dn > umax)
+		    break;
 		n++;
 		dn *= 10;
 	    }
@@ -190,9 +197,15 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	    if (0.2 * dn >= umin) REAL(at)[n++] = 0.2 * dn;
 	    if (0.5 * dn >= umin) REAL(at)[n++] = 0.5 * dn;
 	    for (;;) {
-		if (dn > umax) break;		REAL(at)[n++] = dn;
-		if (2 * dn > umax) break;	REAL(at)[n++] = 2 * dn;
-		if (5 * dn > umax) break;	REAL(at)[n++] = 5 * dn;
+		if (dn > umax)
+		    break;
+		REAL(at)[n++] = dn;
+		if (2 * dn > umax)
+		    break;
+		REAL(at)[n++] = 2 * dn;
+		if (5 * dn > umax)
+		    break;
+		REAL(at)[n++] = 5 * dn;
 		dn *= 10;
 	    }
 	    break;

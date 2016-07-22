@@ -212,6 +212,14 @@ AC_ARG_ENABLE([llvm-jit],
 [AS_HELP_STRING([--enable-llvm-jit],
         [enable JIT compilation of R code with LLVM @<:@no@:>@])])
 
+## Compile with '-Werror'.
+AC_ARG_ENABLE([werror],
+	[AS_HELP_STRING([--enable-werror],
+		[compile src/main with -Wall -Werror @<:@no@:>@])],
+		[if test "${enable_werror}" = "yes";
+		     then WERROR_FLAGS="-Wall -Werror -Wno-error=switch -Wno-error=sign-compare -Wno-error=attributes"; fi ], [])
+AC_SUBST(WERROR_FLAGS)
+
 ### ** Optional features.
 
 ## Allow the user to specify support for R profiling.
@@ -896,7 +904,7 @@ AC_CHECK_TYPES([intptr_t, uintptr_t], , , [#ifdef HAVE_INTTYPES_H
 ### *** C compiler.
 
 CFLAGS="${CFLAGS} -fexceptions" # TODO(kmillar): not the right way to do this.
-CXXFLAGS="${CXXFLAGS} -Wno-attributes"
+CXXFLAGS="${CXXFLAGS}"
 
 R_BIGENDIAN
 AC_C_CONST

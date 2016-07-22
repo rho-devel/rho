@@ -146,9 +146,6 @@ void R_setupHistory()
 
 int R_running_as_main_program = 0;
 
-/* In ../main/main.c, to avoid inlining */
-extern uintptr_t dummy_ii(void);
-
 /* Protection against embedded misuse, PR#15420 */
 static int num_initialized = 0;
 

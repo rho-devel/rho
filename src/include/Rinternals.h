@@ -451,7 +451,7 @@ typedef size_t PROTECT_INDEX;
 #  define PROTECT(s) (rho_function_to_prevent_compiler_warnings(s))
 #  define UNPROTECT(n) (void)(n)
 #  define UNPROTECT_PTR(s) (void)(s)
-#  define PROTECT_WITH_INDEX(x, i) ((void)(x), (void)(i))
+#  define PROTECT_WITH_INDEX(x, i) (*i = 0, (void)(x))
 #  define REPROTECT(x, i) ((void)(x), (void)(i))
 #else
 #  define PROTECT(s)	Rf_protect(s)
