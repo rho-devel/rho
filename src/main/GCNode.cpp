@@ -55,9 +55,11 @@ unsigned int GCNode::s_num_nodes = 0;
 bool GCNode::s_on_stack_bits_correct = false;
 
 // Used to update reference count bits of a GCNode. The array element at index
-// n+1 is XORed with the current rcmms bits to compute the updated reference
-// count n+1.  This does not overflow the reference count bits and preserves
-// the other bits in m_rcmms.
+// 2N + 1 is XORed with the current refcount bits to compute the updated reference
+// count N + 1.  This does not overflow the reference count bits and preserves
+// the other bits in m_refcount_flags.
+// To decrease the reference count, the element at index 2N is XORed with the
+// current reference count bits.
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
@@ -124,7 +126,7 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes)
     return result;
 }
 
-GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(s_decinc_refcount[1]) {
+GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_refcount_flags(s_decinc_refcount[1]) {
 }
 
 void GCNode::operator delete(void* p, size_t bytes)
@@ -143,7 +145,7 @@ bool GCNode::check()
 {
     // Check moribund list:
     for (const GCNode* node: *s_moribund) {
-	if (!(node->m_rcmms & s_moribund_mask)) {
+	if (!(node->m_refcount_flags & s_moribund_mask)) {
 	    cerr << "GCNode::check() : "
 		"Node on moribund list without moribund bit set.\n";
 	    abort();
@@ -205,7 +207,7 @@ void GCNode::gclite()
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
 	// Clear moribund bit.  Beware ~ promotes to unsigned int.
-	node->m_rcmms &= static_cast<unsigned char>(~s_moribund_mask);
+	node->m_refcount_flags &= static_cast<unsigned char>(~s_moribund_mask);
 
 	if (node->maybeGarbage())
 	    delete node;
@@ -245,7 +247,7 @@ void GCNode::makeMoribund() const
 
 void GCNode::addToMoribundList() const
 {
-    m_rcmms |= s_moribund_mask;
+    m_refcount_flags |= s_moribund_mask;
     s_moribund->push_back(this);
 }
 
@@ -338,8 +340,8 @@ void GCNode::Marker::operator()(const GCNode* node)
 	return;
     }
     // Update mark  Beware ~ promotes to unsigned int.
-    node->m_rcmms &= static_cast<unsigned char>(~s_mark_mask);
-    node->m_rcmms |= s_mark;
+    node->m_refcount_flags &= static_cast<unsigned char>(~s_mark_mask);
+    node->m_refcount_flags |= s_mark;
     node->visitReferents(this);
 }
 
@@ -380,11 +382,11 @@ GCNode* GCNode::asGCNode(void* candidate_pointer)
 }
 
 GCNode::InternalData GCNode::storeInternalData() const {
-    return m_rcmms;
+    return m_refcount_flags;
 }
 
 void GCNode::restoreInternalData(InternalData data) {
-    m_rcmms = data;
+    m_refcount_flags = data;
 }
 
 #ifdef HAVE_ADDRESS_SANITIZER
