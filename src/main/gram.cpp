@@ -3206,7 +3206,6 @@ static SEXP xxfuncall(SEXP expr, SEXP args)
 
 static SEXP mkString2(const char *s, size_t len, Rboolean escaped)
 {
-    SEXP t;
     cetype_t enc = CE_NATIVE;
 
     if(known_to_be_latin1) enc= CE_LATIN1;
@@ -4539,7 +4538,6 @@ static int mbcs_get_next2(int c, ucs_t *wc)
 
 static SEXP mkStringUTF8(const ucs_t *wcs, int cnt)
 {
-    SEXP t;
     int nb;
 
 /* NB: cnt includes the terminator */

@@ -70,9 +70,6 @@ unsigned char GCNode::s_mark = 0;
 static void* asan_allocate(size_t bytes);
 static void asan_free(void* object);
 static const int kRedzoneSize = 16;
-#else
-static const int kRedzoneSize = 0;
-#endif  // HAVE_ADDRESS_SANITIZER
 
 static void* offset(void* p, size_t bytes) {
     return static_cast<char*>(p) + bytes;
@@ -85,6 +82,11 @@ static void* get_object_pointer_from_allocation(void* allocation) {
 static void* get_allocation_from_object_pointer(void* object) {
     return offset(object, -kRedzoneSize);
 }
+#else
+static void* get_object_pointer_from_allocation(void* allocation) {
+    return allocation;
+}
+#endif  // HAVE_ADDRESS_SANITIZER
 
 // We repurpose the BDW collector's mark bit as an allocated flag.  This
 // works since the mark-sweep functionality of the BDW GC isn't used at all.

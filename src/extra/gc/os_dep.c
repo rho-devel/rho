@@ -15,6 +15,7 @@
  */
 
 #include "private/gc_priv.h"
+#include "rho/AddressSanitizer.hpp"
 
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(__CC_ARM)
@@ -526,7 +527,7 @@ GC_INNER char * GC_get_maps(void)
 
   /* Return the first non-addressable location > p or bound.    */
   /* Requires the allocation lock.                              */
-  STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
+  NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
              /* Safer if static, since otherwise it may not be  */
@@ -931,7 +932,7 @@ GC_INNER word GC_page_size = 0;
     /* the smallest location q s.t. [q,p) is addressable (!up). */
     /* We assume that p (up) or p-1 (!up) is addressable.       */
     /* Requires allocation lock.                                */
-    STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
+    NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
     {
         static volatile ptr_t result;
                 /* Safer if static, since otherwise it may not be       */

@@ -760,7 +760,7 @@ SEXP attribute_hidden do_asPOSIXlt(/*const*/ rho::Expression* call, const rho::B
 	} else valid = 0;
 	makelt(ptm, ans, i, valid, d - floor(d));
 	if(!isgmt) {
-	    char *p = "";
+	    const char *p = "";
 	    // or ptm->tm_zone
 	    if(valid && ptm->tm_isdst >= 0)
 		p = R_tzname[ptm->tm_isdst];

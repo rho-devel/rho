@@ -122,7 +122,9 @@ void attribute_hidden PrintVersion(char *s, size_t len)
 
 void attribute_hidden PrintVersionString(char *s, size_t len)
 {
-    if(R_GIT_REVISION <= 0) {// 'git log' failed in ../../Makefile.in
+    std::string git_revision = R_GIT_REVISION;
+    if (git_revision == "unknown" || git_revision == "") {
+        // 'git log' failed in ../../Makefile.in
 	snprintf(s, len, "R version %s.%s %s (%s-%s-%s)",
 		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY);
     } else if(strlen(R_STATUS) == 0) {

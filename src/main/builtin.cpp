@@ -829,9 +829,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
 
 SEXP attribute_hidden do_lengthgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP x, ans;
-
-    x = args[0];
+    SEXP x = args[0];
 
     if (!isVector(x) && !isVectorizable(x))
 	error(_("invalid argument"));

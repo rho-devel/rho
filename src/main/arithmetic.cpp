@@ -399,11 +399,6 @@ int Negate::operator()(int value) {
     return value == NA_INTEGER ? NA_INTEGER : -value;
 }
 
-template<>
-int Negate::operator()(Logical value) {
-    return Negate()(static_cast<int>(value));
-}
-
 template<typename InputType>
 static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
@@ -423,20 +418,21 @@ static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     return s1;			/* never used; to keep -Wall happy */
 }
 
+// In R, unary operators behave differently on logicals than other types.
+// Specifically, only the layout attributes are copied and the result is
+// an IntVector, not a LogicalVector.
 SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
     using namespace VectorOps;
     switch (code) {
     case PLUSOP:
 	return applyUnaryOperator([](Logical value) {
-		return int(value); },
+		return static_cast<int>(value); },
 	    CopyLayoutAttributes(),
 	    SEXP_downcast<LogicalVector*>(s1));
     case MINUSOP:
 	return applyUnaryOperator([](Logical value) {
-		if (value.isTrue()) return -1;
-		if (value.isFalse()) return 0;
-		return NA_INTEGER;
+		return static_cast<int>(!value);
 	    },
 	    CopyLayoutAttributes(),
 	    SEXP_downcast<LogicalVector*>(s1));
@@ -454,8 +450,6 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     switch (TYPEOF(s1)) {
     case LGLSXP:
 	// arithmetic on logicals makes no sense but R defines it anyway.
-	// Unlike unary arithmetic on other types, the result only contains
-	// the layout attributes.
 	return logical_unary(operation, s1, call);
     case INTSXP:
 	return typed_unary<IntVector>(operation, s1, call);
@@ -692,6 +686,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	    [](double lhs, double rhs) { return myfloor(lhs, rhs); },
 	    s1, s2);
     }
+    return R_NilValue;  // Unreachable; -Wall.
 }
 
 
@@ -749,7 +744,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
 
-    Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
     if (isComplex(CAR(args)))
@@ -823,9 +817,6 @@ SEXP attribute_hidden do_trunc(/*const*/ rho::Expression* call, const rho::Built
 SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, s = R_NilValue /* -Wall */;
-
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 
     x = CAR(args);
     if (isInteger(x) || isLogical(x)) {
@@ -1145,7 +1136,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 /* log{2,10} are builtins */
 SEXP attribute_hidden do_log1arg(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP res, tmp = R_NilValue /* -Wall */;
+    SEXP tmp = R_NilValue /* -Wall */;
 
     if(op->variant() == 10) tmp = ScalarReal(10.0);
     if(op->variant() == 2)  tmp = ScalarReal(2.0);

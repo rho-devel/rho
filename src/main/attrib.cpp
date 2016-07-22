@@ -798,7 +798,6 @@ SEXP attribute_hidden R_do_data_class(/*const*/ rho::Expression* call, const rho
 /* names(object) <- name */
 SEXP attribute_hidden do_namesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans;
     RObject* object = args[0];
     RObject* names = args[1];
     /* Special case: removing non-existent names, to avoid a copy */
@@ -924,8 +923,6 @@ SEXP attribute_hidden do_names(/*const*/ rho::Expression* call, const rho::Built
 
 SEXP attribute_hidden do_dimnamesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans;
-
     RObject* object = args[0];
     if (MAYBE_SHARED(object)) object = shallow_duplicate(object);
     setAttrib(object, R_DimNamesSymbol, args[1]);
@@ -1036,8 +1033,7 @@ SEXP attribute_hidden do_dim(/*const*/ rho::Expression* call, const rho::BuiltIn
 
 SEXP attribute_hidden do_dimgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans, x;
-    x = args[0];
+    SEXP x = args[0];
     /* Duplication might be expensive */
     if (args[1] == R_NilValue) {
 	SEXP s;
@@ -1149,8 +1145,6 @@ SEXP attribute_hidden do_attributes(/*const*/ rho::Expression* call, const rho::
 
 SEXP attribute_hidden do_levelsgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans;
-
     RObject* object = args[0];
     RObject* levels = args[1];
     if(!isNull(levels) && any_duplicated(levels, FALSE))

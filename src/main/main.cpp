@@ -185,7 +185,7 @@ attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
 attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
-char* OutDec = ".";  /* decimal point used for output */
+const char* OutDec = ".";  /* decimal point used for output */
 attribute_hidden Rboolean R_DisableNLinBrowser = FALSE;
 attribute_hidden char R_BrowserLastCommand = 'n';
 
@@ -1750,15 +1750,4 @@ void attribute_hidden dummy12345(void)
     F77_CALL(intpr)("dummy", &i, &i, &i);
 }
 
-/* Used in unix/system.c, avoid inlining by using an extern there.
-
-   This is intended to return a local address.
-   Use -Wno-return-local-addr when compiling.
- */
-extern "C"
-uintptr_t dummy_ii(void)
-{
-    int ii;
-    return uintptr_t( &ii);
-}
 #endif

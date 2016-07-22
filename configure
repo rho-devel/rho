@@ -947,6 +947,7 @@ WANT_R_SHLIB_FALSE
 WANT_R_SHLIB_TRUE
 WANT_R_FRAMEWORK_FALSE
 WANT_R_FRAMEWORK_TRUE
+WERROR_FLAGS
 config_opts
 rsharedir
 rincludedir
@@ -1023,6 +1024,7 @@ ac_user_opts='
 enable_option_checking
 enable_provenance_tracking
 enable_llvm_jit
+enable_werror
 enable_R_profiling
 enable_memory_profiling
 enable_R_framework
@@ -1762,6 +1764,7 @@ Optional Features:
   --enable-provenance-tracking
                           enable rho provenance tracking facilities [no]
   --enable-llvm-jit       enable JIT compilation of R code with LLVM [no]
+  --enable-werror         compile src/main with -Wall -Werror [no]
   --enable-R-profiling    attempt to compile support for Rprof() [yes]
   --enable-memory-profiling
                           attempt to compile support for Rprofmem(),
@@ -5051,6 +5054,15 @@ fi
 if test "${enable_llvm_jit+set}" = set; then :
   enableval=$enable_llvm_jit;
 fi
+
+
+## Compile with '-Werror'.
+# Check whether --enable-werror was given.
+if test "${enable_werror+set}" = set; then :
+  enableval=$enable_werror; if test "${enable_werror}" = "yes";
+		     then WERROR_FLAGS="-Wall -Werror -Wno-error=switch -Wno-error=sign-compare -Wno-error=attributes"; fi
+fi
+
 
 
 ### ** Optional features.
@@ -24503,7 +24515,7 @@ fi
 ### *** C compiler.
 
 CFLAGS="${CFLAGS} -fexceptions" # TODO(kmillar): not the right way to do this.
-CXXFLAGS="${CXXFLAGS} -Wno-attributes"
+CXXFLAGS="${CXXFLAGS}"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
 $as_echo_n "checking whether byte ordering is bigendian... " >&6; }
@@ -25855,7 +25867,7 @@ _ACEOF
 # flags.
 r_save_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS $r_verb"
-(eval echo $as_me:25858: \"$ac_link\") >&5
+(eval echo $as_me:25870: \"$ac_link\") >&5
 r_c_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$r_c_v_output" >&5
 CFLAGS=$r_save_CFLAGS
@@ -25930,7 +25942,7 @@ _ACEOF
 # flags.
 r_save_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS $r_cv_prog_c_v"
-(eval echo $as_me:25933: \"$ac_link\") >&5
+(eval echo $as_me:25945: \"$ac_link\") >&5
 r_c_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$r_c_v_output" >&5
 CFLAGS=$r_save_CFLAGS
