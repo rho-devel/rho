@@ -72,7 +72,7 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes) {
     MemoryBank::notifyAllocation(bytes);
     void *result;
 
-    result = GCNodeAllocator::Allocate(bytes);
+    result = GCNodeAllocator::allocate(bytes);
 
     // Because garbage collection may occur between this point and the GCNode's
     // constructor running, we need to ensure that this space is at least
@@ -91,7 +91,7 @@ GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(s_decinc_refcount[1
 void GCNode::operator delete(void* pointer, size_t bytes) {
     MemoryBank::notifyDeallocation(bytes);
 
-    GCNodeAllocator::Free(pointer);
+    GCNodeAllocator::free(pointer);
 }
 
 bool GCNode::check() {
@@ -168,7 +168,7 @@ void GCNode::gclite() {
 }
 
 void GCNode::initialize() {
-    GCNodeAllocator::Initialize();
+    GCNodeAllocator::initialize();
     s_moribund = new vector<const GCNode*>();
 }
 
@@ -209,7 +209,7 @@ void GCNode::sweep() {
     // and they will have been deleted unless their reference count is
     // saturated.
     vector<GCNode*> to_delete;
-    GCNodeAllocator::ApplyToAllAllocations([&](void* pointer) {
+    GCNodeAllocator::applyToAllAllocations([&](void* pointer) {
         // The pointer is still allocated, so detach referents.
         GCNode* node = static_cast<GCNode*>(pointer);
         if (!node->isMarked()) {
@@ -266,7 +266,7 @@ void rho::initializeMemorySubsystem() {
 // Returns nullptr if the candidate pointer is not inside a GCNode,
 // otherwise returns the pointer to the enclosign GCNode.
 GCNode* GCNode::asGCNode(void* candidate_pointer) {
-    return GCNodeAllocator::Lookup(candidate_pointer);
+    return GCNodeAllocator::lookupPointer(candidate_pointer);
 }
 
 GCNode::InternalData GCNode::storeInternalData() const {
