@@ -26,75 +26,80 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <limits>
-#include <map>
+#include <memory>
 
 #include "rho/AddressSanitizer.hpp"
 #include "rho/AllocationTable.hpp"
 #include "rho/AllocatorSuperblock.hpp"
 
-unsigned rho::AllocatorSuperblock::s_size_class[] = {
-       0,      0,      0,      0,  4 * 8,  5 * 8,  6 * 8,  7 * 8,
-   8 * 8,  9 * 8, 10 * 8, 11 * 8, 12 * 8, 13 * 8, 14 * 8, 15 * 8,
-  16 * 8, 17 * 8, 18 * 8, 19 * 8, 20 * 8, 21 * 8, 22 * 8, 23 * 8,
-  24 * 8, 25 * 8, 26 * 8, 27 * 8, 28 * 8, 29 * 8, 30 * 8, 31 * 8,
-  32 * 8,
-  1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7,
-  1 << 8, 1 << 9, 1 <<10, 1 <<11, 1 <<12, 1 <<13, 1 <<14, 1 <<15,
-  1 <<16, 1 <<17,
-};
-
 // Arena for small-object superblocks:
-void* superblock_arena = nullptr;
 uintptr_t arena_superblock_start = 0;
 uintptr_t arena_superblock_end = 0;
 uintptr_t arena_superblock_next = 0;
 
 void rho::AllocatorSuperblock::allocateArena() {
-  // We use new[] here, but one could also use sbrk(ARENASIZE).
-  superblock_arena = new double[s_arenasize / sizeof(double)];
-  uintptr_t start = reinterpret_cast<uintptr_t>(superblock_arena);
-  uintptr_t end = start + s_arenasize;
-  uintptr_t pad = s_small_superblock_size - (start & (s_small_superblock_size - 1));
-  arena_superblock_start = start + pad;
-  uintptr_t num_sb = (end - arena_superblock_start) >> s_small_superblock_bits;
-  arena_superblock_end = arena_superblock_start + num_sb * s_small_superblock_size;
+  void* arena = nullptr;
+  size_t space = s_arenasize; // Total acquired arena space.
+  posix_memalign(&arena, s_small_superblock_size, space);
+#ifdef HAVE_STD_ALING
+  if (!arena) {
+    // Try to use operator new and std::align()  instead.
+    arena = new char[s_arenasize];
+    std::align(s_small_superblock_size,
+        s_small_superblock_size,
+        &arena,
+        &space);
+  }
+#endif // HAVE_STD_ALING
+  if (!arena) {
+    allocerr("failed to allocate small-object arena");
+  }
+  size_t num_superblock = space / s_small_superblock_size;
+  arena_superblock_start = reinterpret_cast<uintptr_t>(arena);
+  arena_superblock_end = arena_superblock_start
+      + num_superblock * s_small_superblock_size;
   arena_superblock_next = arena_superblock_start;
 
 #ifdef HAVE_ADDRESS_SANITIZER
   // Poison the whole small object arena.
-  ASAN_POISON_MEMORY_REGION(reinterpret_cast<void*>(start), s_arenasize);
+  ASAN_POISON_MEMORY_REGION(reinterpret_cast<void*>(arena), space);
 #endif
 }
 
-rho::AllocatorSuperblock* rho::AllocatorSuperblock::newSuperblockFromArena(unsigned block_size) {
+rho::AllocatorSuperblock* rho::AllocatorSuperblock::newSuperblockFromArena(
+    unsigned block_size) {
   if (arena_superblock_next >= arena_superblock_end) {
     return nullptr;
   }
   void* pointer = reinterpret_cast<void*>(arena_superblock_next);
 #ifdef HAVE_ADDRESS_SANITIZER
-  // The whole arena is poisoned on allocation, now we just unpoison this superblock header.
+  // The whole arena is poisoned on allocation, now we just unpoison this
+  // superblock header.
   ASAN_UNPOISON_MEMORY_REGION(pointer, s_superblock_header_size);
 #endif
   unsigned superblock_size =
       (s_small_superblock_size - s_superblock_header_size) / block_size;
   unsigned bitset_entries = (superblock_size + 63) / 64;
   AllocatorSuperblock* superblock =
-      new (pointer)AllocatorSuperblock(smallSizeClass(block_size), bitset_entries);
+      new (pointer)AllocatorSuperblock(
+          sizeClassFromBlockSize(block_size), bitset_entries);
   arena_superblock_next += s_small_superblock_size;
   return superblock;
 }
 
-rho::AllocatorSuperblock* rho::AllocatorSuperblock::newLargeSuperblock(unsigned size_log2) {
+rho::AllocatorSuperblock* rho::AllocatorSuperblock::newLargeSuperblock(
+    unsigned size_log2) {
   void* memory = new double[s_large_superblock_size / sizeof(double)];
   unsigned bitset_entries =
       ((1 << (s_large_superblock_size_log2 - size_log2)) + 63) / 64;
-  AllocatorSuperblock* superblock = new (memory)AllocatorSuperblock(largeSizeClass(size_log2), bitset_entries);
+  AllocatorSuperblock* superblock = new (memory)AllocatorSuperblock(
+      sizeClassFromSizeLog2(size_log2), bitset_entries);
   GCNodeAllocator::s_alloctable->insertSuperblock(superblock,
       s_large_superblock_size_log2);
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -107,7 +112,8 @@ rho::AllocatorSuperblock* rho::AllocatorSuperblock::newLargeSuperblock(unsigned 
   return superblock;
 }
 
-rho::AllocatorSuperblock* rho::AllocatorSuperblock::arenaSuperblockFromPointer(uintptr_t candidate) {
+rho::AllocatorSuperblock* rho::AllocatorSuperblock::arenaSuperblockFromPointer(
+    uintptr_t candidate) {
   if (candidate >= arena_superblock_start && candidate < arena_superblock_next) {
     if ((candidate & (s_small_superblock_size - 1)) < s_superblock_header_size) {
       // The pointer points inside the superblock header.
@@ -143,11 +149,12 @@ void* rho::AllocatorSuperblock::lookupBlock(uintptr_t candidate) {
 
 void* rho::AllocatorSuperblock::allocateBlock(size_t block_size) {
   assert(block_size >= 32 && block_size <= 256
-      && "Only use allocateBlock() to allocate objects between 32 and 256 bytes.");
+      && "Only use allocateBlock() to allocate objects between "
+         "32 and 256 bytes.");
   assert((block_size & 7) == 0
       && "The size argument must be a multiple of 8 bytes");
 
-  unsigned size_class = smallSizeClass(block_size);
+  unsigned size_class = sizeClassFromBlockSize(block_size);
   AllocatorSuperblock* superblock;
   if (GCNodeAllocator::s_superblocks[size_class]) {
     superblock = GCNodeAllocator::s_superblocks[size_class];
@@ -163,14 +170,16 @@ void* rho::AllocatorSuperblock::allocateBlock(size_t block_size) {
 
 void* rho::AllocatorSuperblock::allocateNextUntouched() {
   unsigned block_size = blockSize();
-  unsigned num_blocks = (superblockSize() - s_superblock_header_size) / block_size;
+  unsigned num_blocks =
+      (superblockSize() - s_superblock_header_size) / block_size;
   uint32_t index = m_next_untouched;
   tagBlockAllocated(index);
   m_next_untouched += 1;
   if (m_next_untouched == num_blocks) {
     GCNodeAllocator::s_superblocks[m_size_class] = nullptr;
   }
-  void* result = reinterpret_cast<void*>(firstBlockPointer() + (index * block_size));
+  void* result = reinterpret_cast<void*>(
+      firstBlockPointer() + (index * block_size));
 #ifdef HAVE_ADDRESS_SANITIZER
   ASAN_UNPOISON_MEMORY_REGION(result, block_size);
 #endif
@@ -186,16 +195,15 @@ void rho::AllocatorSuperblock::freeBlock(void* pointer) {
   tagBlockUnallocated(index);
 
   // Use the block as a free list node and prepend to the free list.
-  FreeListNode* free_node = reinterpret_cast<FreeListNode*>(pointer);
-  free_node->m_block = index;
-  free_node->m_superblock = this;
+  FreeListNode* free_node = new (pointer)FreeListNode(this, index);
   GCNodeAllocator::addToFreelist(free_node, m_size_class);
 }
 
 void* rho::AllocatorSuperblock::allocateLarge(unsigned size_log2) {
   assert(size_log2 >= 6 && size_log2 < GCNodeAllocator::s_num_medium_pools
-      && "Can not allocate objects smaller than 64 bytes using allocateLarge()");
-  unsigned size_class = largeSizeClass(size_log2);
+      && "Can not allocate objects smaller than "
+         "64 bytes using allocateLarge()");
+  unsigned size_class = sizeClassFromSizeLog2(size_log2);
   unsigned num_blocks =
       (s_large_superblock_size - s_superblock_header_size) >> size_log2;
   AllocatorSuperblock* superblock;
@@ -221,10 +229,12 @@ void rho::AllocatorSuperblock::tagBlockUnallocated(unsigned block) {
   m_free[bitset] |= uint64_t{1} << (block & 63);
 }
 
-void rho::AllocatorSuperblock::applyToArenaAllocations(std::function<void(void*)> fun) {
+void rho::AllocatorSuperblock::applyToArenaAllocations(
+    std::function<void(void*)> fun) {
   uintptr_t next_superblock = arena_superblock_start;
   while (next_superblock < arena_superblock_next) {
-    AllocatorSuperblock* superblock = reinterpret_cast<AllocatorSuperblock*>(next_superblock);
+    AllocatorSuperblock* superblock =
+      reinterpret_cast<AllocatorSuperblock*>(next_superblock);
     superblock->applyToBlocks(fun);
     next_superblock += s_small_superblock_size;
   }

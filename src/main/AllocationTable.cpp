@@ -47,141 +47,136 @@ rho::AllocationTable::~AllocationTable() {
   m_buckets = nullptr;
 }
 
-void rho::AllocationTable::insert(void* pointer, std::size_t size) {
-  if (m_capacity == 0) {
-    if (!resize(m_num_bits + 1)) {
-      allocerr("failed to increase allocation table size");
-    }
+void rho::AllocationTable::insert(const Allocation& allocation) {
+  while (m_capacity < requiredCapacity(allocation)) {
+    resize(m_num_bits + 1);
   }
-  m_capacity -= 1;
-  if (!tryInsert(m_buckets, reinterpret_cast<uintptr_t>(pointer), size)) {
-    allocerr("failed to insert allocation into allocation table");
+  insertUnchecked(allocation);
+}
+
+void rho::AllocationTable::insertUnchecked(const Allocation& allocation) {
+  m_capacity -= requiredCapacity(allocation);
+  bool first = true;
+  size_t key_end = endKey(allocation.dataPointer(), allocation.sizeLog2());
+  for (size_t key = startKey(allocation.dataPointer()); key < key_end; ++key) {
+    insertSingleKey(allocation, key << LOW_BITS, first);
+    first = false;
   }
 }
 
-void* rho::AllocationTable::lookup_pointer(uintptr_t candidate) {
-  Allocation* bucket = search(candidate);
-  if (bucket) {
-    if (bucket->isSuperblock()) {
-      AllocatorSuperblock* superblock = bucket->asSuperblock();
-      return superblock->lookupBlock(candidate);
-    } else {
-      return bucket->asPointer();
+void rho::AllocationTable::insertSingleKey(const Allocation& allocation,
+    size_t key, bool first) {
+  size_t hash = pointerHash(key);
+  // Insert will always succed because we have a precondition testing that
+  // there is enough space in the table.
+  for (int i = 0; true;
+      hash = probeFunc(hash, i),
+      m_num_insert_collisions += 1,
+      i += 1) {
+    Allocation& bucket = m_buckets[hash];
+    if (bucket.isEmpty() || bucket.isDeleted()) {
+      // Can insert here.
+      m_buckets[hash] = allocation;
+      if (first) {
+        // Set the first flag for this entry.
+        m_buckets[hash].m_data |= Allocation::s_first_flag;
+      }
+      return;
     }
   }
-  return nullptr;
 }
 
 void rho::AllocationTable::erase(uintptr_t pointer, size_t size) {
+  assert(pointer != Allocation::s_empty_key
+      && pointer != Allocation::s_deleted_key
+      && "Trying to remove invalid key from alloctable.");
   pointer &= ~uintptr_t{3};  // Mask out the flag bits for equality comparison.
   size_t key_end = endKey(pointer, size);
-  bool first = true;
   for (size_t key = startKey(pointer); key < key_end; ++key) {
-    size_t hash = pointerHash(key << LOW_BITS);
-    for (int i = 0; i < m_num_buckets; ++i) {
-      Allocation& bucket = m_buckets[hash];
-      if (bucket.dataPointer() == pointer) {
-        m_capacity += 1;
-        bucket.m_data = Allocation::s_deleted_key;
-        break;
-      }
-      if (bucket.isEmpty()) {
-        // No more partial entries inserted, we are done.
-        return;
-      }
-      m_num_erase_collisions += 1;
-      hash = probeFunc(hash, i);
-    }
+    eraseSingleKey(pointer, key);
   }
 }
 
-rho::AllocationTable::Allocation* rho::AllocationTable::search(uintptr_t candidate) {
-  size_t hash = pointerHash(candidate);
-  for (int i = 0; i < m_num_buckets; ++i) {
-    Allocation* bucket = &m_buckets[hash];
-    if (!bucket->isEmpty() && !bucket->isDeleted()) {
-      if (bucket->isSuperblock()) {
-        AllocatorSuperblock* superblock = bucket->asSuperblock();
-        if (superblock->isInternalPointer(candidate)) {
-          // Pointer is inside this superblock. Test if it is after the header.
-          if (superblock->isBlockPointer(candidate)) {
-            return bucket;
-          } else {
-            return nullptr;
-          }
-        }
-      } else if (bucket->isInternalPointer(candidate)) {
-        return bucket;
-      }
+void rho::AllocationTable::eraseSingleKey(uintptr_t pointer, size_t key) {
+  size_t hash = pointerHash(key << LOW_BITS);
+  // We don't have precondition ensuring the key is in the table before trying
+  // to delete, so we can rely on always finding the key. A fatal error is
+  // generated if the key is not found.
+  for (int i = 0; i < m_num_buckets;
+      hash = probeFunc(hash, i),
+      m_num_erase_collisions += 1,
+      i += 1) {
+    Allocation& bucket = m_buckets[hash];
+    if (bucket.dataPointer() == pointer) {
+      m_capacity += 1;
+      bucket.m_data = Allocation::s_deleted_key;
+      return;
     }
+    if (bucket.isEmpty()) {
+      // We didn't find the correct hash entry.
+      allocerr("trying to erase non-existent allocation entry");
+    }
+  }
+  allocerr("trying to erase non-existent allocation entry");
+}
+
+rho::AllocationTable::Allocation* rho::AllocationTable::search(
+    uintptr_t candidate) {
+  size_t hash = pointerHash(candidate);
+  for (int i = 0; i < m_num_buckets;
+      hash = probeFunc(hash, i),
+      m_num_search_collisions += 1,
+      i += 1) {
+    Allocation* bucket = &m_buckets[hash];
     if (bucket->isEmpty()) {
       return nullptr;
     }
-    m_num_search_collisions += 1;
-    hash = probeFunc(hash, i);
+    if (bucket->isDeleted()) {
+      continue;
+    }
+    if (bucket->isSuperblock()) {
+      AllocatorSuperblock* superblock = bucket->asSuperblock();
+      if (superblock->isInternalPointer(candidate)) {
+        // Pointer is inside this superblock. Test if it is after the header.
+        if (superblock->isBlockPointer(candidate)) {
+          return bucket;
+        } else {
+          // The pointer mapped to this superblock, but was inside the header.
+          return nullptr;
+        }
+      }
+    } else if (bucket->isInternalPointer(candidate)) {
+      return bucket;
+    }
   }
   return nullptr;
 }
 
-bool rho::AllocationTable::resize(unsigned new_alloctable_bits) {
-  unsigned new_table_size = 1 << new_alloctable_bits;
-  unsigned old_mask = m_hash_mask;
-  unsigned new_capacity = new_table_size / 2;  // Sets max load factor to 50%.
-  m_hash_mask = new_table_size - 1;
-  Allocation* new_table = new Allocation[new_table_size];
+void rho::AllocationTable::resize(unsigned new_alloctable_bits) {
+  assert(new_alloctable_bits > m_num_bits
+      && "can not shrink this table");
+  AllocationTable new_table(new_alloctable_bits);
   // Build new table.
   for (int i = 0; i < m_num_buckets; ++i) {
-    Allocation& bucket = m_buckets[i];
+    const Allocation& bucket = m_buckets[i];
     if (!bucket.isEmpty() && !bucket.isDeleted() && bucket.isFirst()) {
       // This is the initial hash bucket for the corresponding allocation.
       // Rebuild the hash entries in the new table based only on this entry.
-      new_capacity -= 1;
-      if (!tryInsert(new_table, bucket.m_data & ~uintptr_t{1},
-          bucket.m_size_log2)) {
-        // Failed to insert in new table. Abort the rebuild.
-        delete[] new_table;
-        m_hash_mask = old_mask;
-        return false;
-      }
+      new_table.insertUnchecked(bucket);
     }
   }
-  // Replace the old table.
-  delete[] m_buckets;
-  m_buckets = new_table;
-  m_num_bits = new_alloctable_bits;
-  m_num_buckets = new_table_size;
-  m_capacity = new_capacity;
-  return true;
+  // Copy everything except collision counts from the new table.
+  m_capacity = new_table.m_capacity;
+  m_num_bits = new_table.m_num_bits;
+  m_num_buckets = new_table.m_num_buckets;
+  m_hash_mask = new_table.m_hash_mask;
+
+  // Swap to ensure the old bucket array is freed with the temporary table.
+  std::swap(m_buckets, new_table.m_buckets);
 }
 
-bool rho::AllocationTable::freeAllocation(uintptr_t pointer) {
-  assert(pointer != Allocation::s_empty_key
-      && pointer != Allocation::s_deleted_key
-      && "Trying to remove invalid key from alloctable.");
-  size_t hash = pointerHash(pointer);
-  unsigned size_log2 = 0;
-  Allocation* bucket = search(pointer);
-  if (!bucket) {
-    // Free failed: could not find block to free.
-    return false;
-  }
-  uintptr_t data = bucket->dataPointer();
-  if (bucket->isSuperblock()) {
-    AllocatorSuperblock* superblock = bucket->asSuperblock();
-    superblock->freeBlock(reinterpret_cast<void*>(pointer));
-    // Done. Don't erase hash entries for the superblock.
-    return true;
-  } else if (data == pointer) {
-    // Erase all entries in hashtable for the allocation.
-    erase(pointer, bucket->m_size_log2);
-    // Add allocation to free list.
-    GCNodeAllocator::addToFreelist(pointer,
-        AllocatorSuperblock::largeSizeClass(bucket->m_size_log2));
-  }
-  return true;
-}
-
-void rho::AllocationTable::applyToAllAllocations(std::function<void(void*)> fun) {
+void rho::AllocationTable::applyToAllAllocations(
+    std::function<void(void*)> fun) {
   for (int i = 0; i < m_num_buckets; ++i) {
     Allocation& bucket = m_buckets[i];
     if (!bucket.isEmpty() && !bucket.isDeleted()) {
@@ -226,32 +221,6 @@ void rho::AllocationTable::printSummary() {
   printf("table size: %d\n", size);
 }
 
-bool rho::AllocationTable::tryInsert(Allocation* table, uintptr_t pointer, size_t size) {
-  size_t key_end = endKey(pointer, size);
-  bool first = true;
-  for (size_t key = startKey(pointer); key < key_end; ++key) {
-    size_t hash = pointerHash(key << LOW_BITS);
-    bool added = false;
-    for (int i = 0; i < m_num_buckets; ++i) {
-      Allocation& bucket = table[hash];
-      if (bucket.isEmpty() || bucket.isDeleted()) {
-        new (&table[hash])Allocation(reinterpret_cast<void*>(pointer), size, first);
-        first = false;
-        added = true;
-        break;
-      }
-      m_num_insert_collisions += 1;
-      hash = probeFunc(hash, i);
-    }
-    if (!added) {
-      // Failed to insert the current key.
-      return false;
-    }
-  }
-  // All keys inserted.
-  return true;
-}
-
 size_t rho::AllocationTable::pointerHash(uintptr_t pointer) {
   pointer >>= LOW_BITS;
   pointer <<= 4;  // Spread out hash keys to leave room for collision buckets.
@@ -272,15 +241,9 @@ size_t rho::AllocationTable::startKey(uintptr_t pointer) {
   return pointer >> LOW_BITS;
 }
 
-size_t rho::AllocationTable::endKey(uintptr_t pointer, size_t size) {
-  size_t key_end = (pointer + (1 << size) + ((1 << LOW_BITS) - 1)) >> LOW_BITS;
-  if (startKey(pointer) == key_end) {
-    // Ensure that at least one entry is added to the table.
-    // If the pointer was exactly aligned to LOW_BITS then
-    // key_end will be equal to key, otherwise key_end will point
-    // to the next hash bucket past the allocation range.
-    key_end += 1;
-  }
-  return key_end;
+size_t rho::AllocationTable::endKey(uintptr_t pointer, size_t size_log2) {
+  // We add (1 << LOW_BITS) - 1 to ensure that the end key is one-past the last
+  // valid internal pointer hash key.
+  return (pointer + (1 << size_log2) + ((1 << LOW_BITS) - 1)) >> LOW_BITS;
 }
 
