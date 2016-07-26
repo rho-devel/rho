@@ -70,7 +70,7 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
       m_num_invokes(0)
 {
     attachReference(m_matcher, new ArgMatcher(formal_args));
-    m_body = body;
+    attachReference(m_body, body);
     m_environment = env;
 }
 
@@ -88,7 +88,7 @@ Closure* Closure::clone() const
 void Closure::detachReferents()
 {
     detachReference(m_matcher);
-    m_body.detach();
+    detachReference(m_body);
     m_environment.detach();
     m_compiled_body.detach();
     FunctionBase::detachReferents();
@@ -171,7 +171,7 @@ void Closure::setFormals(PairList* formals) {
 }
 
 void Closure::setBody(RObject* body) {
-    m_body = body;
+    retargetReference(m_body, body);
     invalidateCompiledCode();
 }
 
@@ -205,6 +205,9 @@ void Closure::applyToCoalescedReferences(std::function<void(const GCNode*)> fun)
 
     if (m_matcher) {
 	fun(m_matcher);
+    }
+    if (m_body) {
+	fun(m_body);
     }
 }
 

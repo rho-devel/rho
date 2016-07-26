@@ -75,10 +75,10 @@ namespace rho {
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
               m_num_invokes(0),
-	      m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{
             attachReference(m_matcher, pattern.m_matcher);
+            attachReference(m_body, pattern.m_body);
         }
 
 	/** @brief Access the body of the Closure.
@@ -275,7 +275,7 @@ namespace rho {
         mutable GCEdge<JIT::CompiledExpression> m_compiled_body;
 
 	const ArgMatcher* m_matcher = nullptr;
-	GCEdge<> m_body;
+	RObject* m_body;
 	GCEdge<Environment> m_environment;
         static bool s_debugging_enabled;
 
