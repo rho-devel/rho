@@ -69,7 +69,7 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
       m_num_invokes(0)
 {
-    m_matcher = new ArgMatcher(formal_args);
+    attachReference(m_matcher, new ArgMatcher(formal_args));
     m_body = body;
     m_environment = env;
 }
@@ -87,7 +87,7 @@ Closure* Closure::clone() const
 
 void Closure::detachReferents()
 {
-    m_matcher.detach();
+    detachReference(m_matcher);
     m_body.detach();
     m_environment.detach();
     m_compiled_body.detach();
@@ -166,7 +166,7 @@ void Closure::setEnvironment(Environment* new_env) {
 }
 
 void Closure::setFormals(PairList* formals) {
-    m_matcher = new ArgMatcher(formals);
+    retargetReference(m_matcher, new ArgMatcher(formals));
     invalidateCompiledCode();
 }
 
@@ -196,6 +196,16 @@ void Closure::visitReferents(const_visitor* v) const
 	(*v)(environment);
     if (compiled_body)
 	(*v)(compiled_body);
+}
+
+void Closure::applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const
+{
+    // Must also apply to all inherited references:
+    RObject::applyToCoalescedReferences(fun);
+
+    if (m_matcher) {
+	fun(m_matcher);
+    }
 }
 
 void SET_FORMALS(SEXP closure, SEXP formals) {
