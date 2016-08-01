@@ -106,6 +106,13 @@ def parse_args():
       help=('The build directory is not cleaned before building each '
             'Rho revision. This speeds up the benchmarking process but '
             'may affect accuracy.'))
+  parser.add_argument(
+      '--no-build', dest='no_build', action='store_true',
+      help=('Skips building rho. '
+            'Use only for re-running a single benchmark.'))
+  parser.add_argument(
+      '--timestamp',
+      help='Manually specified version timestamp (output in out/versions).')
   args = parser.parse_args()
   return args
 
@@ -113,33 +120,33 @@ def parse_args():
 # Set up RVM parameters to run Gnu R.
 def use_cr(jit):
   if jit:
-    return {'name': 'R-bytecode', 'id': 'cr-jit'}
+    return {'name': 'R-bytecode', 'id': 'cr-jit', 'command': 'R'}
   else:
-    return {'name': 'R', 'id': 'cr'}
+    return {'name': 'R', 'id': 'cr', 'command': 'R'}
 
 
-def build_rho(gitref, args, jit, build=True):
+def build_rho(gitref, args, jit):
   bench_dir = os.getcwd()
   rvm = {'name': 'Rho'}
   if jit:
     rvm['id'] = 'rho-jit'
   else:
     rvm['id'] = 'rho'
-  try:
-    os.chdir(args.build_dir)
-    if not os.path.isdir('.git'):
-      # Clone Rho into the local directory.
-      exit_code = subprocess.call(['git', 'clone', args.repository, '.'])
-      if exit_code != 0:
-        raise Exception('Failed to fetch rho version %s' % gitref)
-    else:
-      # Fetch latest commits.
-      exit_code = subprocess.call(['git', 'fetch', 'origin'])
-      if exit_code != 0:
-        raise Exception('Failed to fetch latest rho commits')
-    # Clean and switch to the selected revision.
-    subprocess.call(['git', 'reset', '--hard', gitref])
-    if build:
+  if not args.no_build:
+    try:
+      os.chdir(args.build_dir)
+      if not os.path.isdir('.git'):
+        # Clone Rho into the local directory.
+        exit_code = subprocess.call(['git', 'clone', args.repository, '.'])
+        if exit_code != 0:
+          raise Exception('Failed to fetch rho version %s' % gitref)
+      else:
+        # Fetch latest commits.
+        exit_code = subprocess.call(['git', 'fetch', 'origin'])
+        if exit_code != 0:
+          raise Exception('Failed to fetch latest rho commits')
+      # Clean and switch to the selected revision.
+      subprocess.call(['git', 'reset', '--hard', gitref])
       if not args.no_clean:
         subprocess.call(['git', 'clean', '-fd'])
         subprocess.call(['git', 'clean', '-fX'])
@@ -158,16 +165,19 @@ def build_rho(gitref, args, jit, build=True):
           subprocess.call([
               './configure', '--with-blas', '--with-lapack'], env=env)
         subprocess.call(['make', '-j2'])
-  finally:
-    os.chdir(bench_dir)
+    finally:
+      os.chdir(bench_dir)
   # Create a new config file because the benchmark suite is not aware of our
   # Rho build.
   rvm['cfg_file'] = write_config(args, jit)
+  rvm['command'] = os.path.realpath('%s/bin/rho' % args.build_dir)
   return rvm
 
 
 # Returns the timestamp for a Git reference.
 def get_timestamp(gitref, args):
+  if args.timestamp:
+    return args.timestamp
   bench_dir = os.getcwd()
   try:
     os.chdir(args.build_dir)
@@ -203,6 +213,7 @@ def write_config(args, jit):
   return cfg_file
 
 
+# Runs the benchmark suite on a single R version.
 def bench(gitref, args, rvm):
   print('Starting benchmark runs for commit %s with RVM %s.'
         % (gitref, rvm['name']))
