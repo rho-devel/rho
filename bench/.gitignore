@@ -5,3 +5,5 @@
 /report.pdf
 /tables.pdf
 /commits
+
+*.pyc
