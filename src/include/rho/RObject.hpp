@@ -499,12 +499,10 @@ namespace rho {
 	virtual void unpackGPBits(unsigned int gpbits);
 
 	// Virtual functions of GCNode:
-	void detachReferents() override
-	{
-	    m_attrib.detach();
-	}
+	void detachReferents() override;
 
 	void visitReferents(const_visitor* v) const override;
+        void applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const override;
     protected:
 	/**
 	 * @param stype Required type of the RObject.
@@ -571,7 +569,7 @@ namespace rho {
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
-	GCEdge<PairList> m_attrib;
+	PairList* m_attrib = nullptr; // Must always be initialized.
 
 #ifdef R_MEMORY_PROFILING
 	// This function implements maybeTraceMemory() (qv.) when

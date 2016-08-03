@@ -75,9 +75,11 @@ namespace rho {
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
               m_num_invokes(0),
-	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
-	{}
+	{
+            attachReference(m_matcher, pattern.m_matcher);
+            attachReference(m_body, pattern.m_body);
+        }
 
 	/** @brief Access the body of the Closure.
 	 *
@@ -218,6 +220,7 @@ namespace rho {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
+        void applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const override;
 
         void compile() const;
     protected:
@@ -271,8 +274,8 @@ namespace rho {
         mutable int m_num_invokes;
         mutable GCEdge<JIT::CompiledExpression> m_compiled_body;
 
-	GCEdge<const ArgMatcher> m_matcher;
-	GCEdge<> m_body;
+	const ArgMatcher* m_matcher = nullptr;
+	RObject* m_body;
 	GCEdge<Environment> m_environment;
         static bool s_debugging_enabled;
 
