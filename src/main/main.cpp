@@ -468,6 +468,23 @@ static void R_ReplConsole(SEXP rho, int savestack)
 	std::bind(R_ReplConsole_impl, rho, savestack));
 }
 
+/* A simple customized print of the traceback */
+static void printTraceback(SEXP trace) {
+    int line = 1;
+    if(trace != R_NilValue) {
+	PROTECT(trace);
+	REprintf("\nTraceback:\n");
+	for(SEXP p = trace; p != R_NilValue; p = CDR(p), line++) {
+	    SEXP q = CAR(p); /* a character vector */
+	    REprintf("%2d: ", line);
+	    for(int i = 0; i < LENGTH(q); i++)
+		REprintf("%s", CHAR(STRING_ELT(q, i)));
+	    REprintf("\n");
+	}
+	UNPROTECT(1);
+    }
+}
+
 static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 
 static void check_session_exit()
@@ -483,7 +500,9 @@ static void check_session_exit()
             return;
 
         exiting = true;
-        REprintf(_("Execution halted\n"));
+	printTraceback(SYMVALUE(install(".Traceback")));;
+        REprintf(_("\nExecution halted\n"));
+
         R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
     }
 }
@@ -569,6 +588,7 @@ int R_ReplDLLdo1(void)
     return prompt_type;
 }
 
+
 /* Main Loop: It is assumed that at this point that operating system */
 /* specific tasks (dialog window creation etc) have been performed. */
 /* We can now print a greeting, run the .First function and then enter */
@@ -604,22 +624,8 @@ static int num_caught = 0;
 static void win32_segv(int signum)
 {
     /* NB: stack overflow is not an access violation on Win32 */
-    {   /* A simple customized print of the traceback */
-	SEXP trace, p, q;
-	int line = 1, i;
-	PROTECT(trace = R_GetTraceback(0));
-	if(trace != R_NilValue) {
-	    REprintf("\nTraceback:\n");
-	    for(p = trace; p != R_NilValue; p = CDR(p), line++) {
-		q = CAR(p); /* a character vector */
-		REprintf("%2d: ", line);
-		for(i = 0; i < LENGTH(q); i++)
-		    REprintf("%s", CHAR(STRING_ELT(q, i)));
-		REprintf("\n");
-	    }
-	    UNPROTECT(1);
-	}
-    }
+    printTraceback(R_GetTraceback(0));
+
     num_caught++;
     if(num_caught < 10) signal(signum, win32_segv);
     if(signum == SIGILL)
@@ -738,22 +744,8 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 	    }
 	REprintf("address %p, cause '%s'\n", ip->si_addr, s);
     }
-    {   /* A simple customized print of the traceback */
-	SEXP trace, p, q;
-	int line = 1, i;
-	PROTECT(trace = R_GetTraceback(0));
-	if(trace != R_NilValue) {
-	    REprintf("\nTraceback:\n");
-	    for(p = trace; p != R_NilValue; p = CDR(p), line++) {
-		q = CAR(p); /* a character vector */
-		REprintf("%2d: ", line);
-		for(i = 0; i < LENGTH(q); i++)
-		    REprintf("%s", CHAR(STRING_ELT(q, i)));
-		REprintf("\n");
-	    }
-	    UNPROTECT(1);
-	}
-    }
+    printTraceback(R_GetTraceback(0));
+
     if(R_Interactive) {
 	REprintf("\nPossible actions:\n1: %s\n2: %s\n3: %s\n4: %s\n",
 		 "abort (with core dump, if enabled)",

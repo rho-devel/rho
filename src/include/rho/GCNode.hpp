@@ -125,7 +125,7 @@ namespace rho {
 	};
 
 	GCNode()
-            : m_rcmms(s_mark | s_moribund_mask)
+            : m_refcount_flags(s_mark | s_moribund_mask)
 	{
 	    ++s_num_nodes;
 	    s_moribund->push_back(this);
@@ -247,7 +247,7 @@ namespace rho {
 	 */
 	virtual ~GCNode()
 	{
-	    if (m_rcmms & s_moribund_mask)
+	    if (m_refcount_flags & s_moribund_mask)
 		destruct_aux();
 	    --s_num_nodes;
 	}
@@ -298,7 +298,7 @@ namespace rho {
 	// their reference count drops to zero if their stack bit is unset.
 	static bool s_on_stack_bits_correct;
 
-	// Bit patterns XORd into m_rcmms to decrement or increment the
+	// Bit patterns XORd into m_refcount_flags to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
 	// decrement; 1, 3, 5, .. to increment.
 	static const unsigned char s_decinc_refcount[];
@@ -312,8 +312,8 @@ namespace rho {
 	static const unsigned char s_refcount_mask = 0x3e;
 	static const unsigned char s_on_stack_mask = 0x1;
 
-	mutable unsigned char m_rcmms;
-	  // Refcount/moribund/marked/on_stack.  The least
+	mutable unsigned char m_refcount_flags;
+          // Refcount + moribund/marked/on_stack flags.  The least
 	  // significant bit is set if a pointer to this object is
 	  // known to be on the stack.
 	  // The reference count is held in the next 5
@@ -349,12 +349,12 @@ namespace rho {
 	 */
 	bool maybeGarbage() const
 	{
-	    return (m_rcmms & (s_refcount_mask | s_on_stack_mask)) == 0;
+	    return (m_refcount_flags & (s_refcount_mask | s_on_stack_mask)) == 0;
 	}
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
 	{
-	    return (m_rcmms & s_refcount_mask) >> 1;
+	    return (m_refcount_flags & s_refcount_mask) >> 1;
 	}
 
 	// Decrement the reference count (subject to the stickiness of
@@ -363,21 +363,21 @@ namespace rho {
 	static void decRefCount(const GCNode* node)
 	{
 	    if (node) {
-		unsigned char& rcmms = node->m_rcmms;
-		rcmms ^= s_decinc_refcount[rcmms & s_refcount_mask];
-		if ((rcmms &
+		unsigned char& refcount_flags = node->m_refcount_flags;
+		refcount_flags ^= s_decinc_refcount[refcount_flags & s_refcount_mask];
+		if ((refcount_flags &
 		     (s_refcount_mask | s_on_stack_mask| s_moribund_mask)) == 0)
 		    node->makeMoribund();
 	    }
 	}
 
 	void setOnStackBit() const {
-	    m_rcmms |= s_on_stack_mask;
+	    m_refcount_flags |= s_on_stack_mask;
 	}
 
 	void clearOnStackBit() const {
-	    m_rcmms = m_rcmms & static_cast<unsigned char>(~s_on_stack_mask);
-	    if ((m_rcmms & (s_refcount_mask | s_moribund_mask)) == 0) {
+	    m_refcount_flags = m_refcount_flags & static_cast<unsigned char>(~s_on_stack_mask);
+	    if ((m_refcount_flags & (s_refcount_mask | s_moribund_mask)) == 0) {
                 // Clearing stack bits only happens when removing a stack barrier, so
                 // the object still exists on the stack and we can only add it to the
                 // moribund list here.
@@ -386,7 +386,7 @@ namespace rho {
 	}
 
 	bool isOnStackBitSet() const {
-	    return m_rcmms & s_on_stack_mask;
+	    return m_refcount_flags & s_on_stack_mask;
 	}
 
 
@@ -404,8 +404,8 @@ namespace rho {
 	static void incRefCount(const GCNode* node)
 	{
 	    if (node) {
-		unsigned char& rcmms = node->m_rcmms;
-		rcmms ^= s_decinc_refcount[(rcmms & s_refcount_mask) + 1];
+		unsigned char& refcount_flags = node->m_refcount_flags;
+		refcount_flags ^= s_decinc_refcount[(refcount_flags & s_refcount_mask) + 1];
 	    }
 	}
 
@@ -420,7 +420,7 @@ namespace rho {
 
 	bool isMarked() const
 	{
-	    return (m_rcmms & s_mark_mask) == s_mark;
+	    return (m_refcount_flags & s_mark_mask) == s_mark;
 	}
 
 	/** @brief Mark this node as moribund or delete if the stack bit is correct.
