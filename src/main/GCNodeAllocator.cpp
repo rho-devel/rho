@@ -67,8 +67,8 @@ rho::FreeListNode* rho::GCNodeAllocator::s_freelists[s_num_freelists];
 // on the allocator.
 
 namespace {
-  static void add_to_allocation_map(void* allocation, std::size_t size);
-  static void remove_from_allocation_map(void* allocation);
+  void add_to_allocation_map(void* allocation, std::size_t size);
+  void remove_from_allocation_map(void* allocation);
 
   /**
    * This should always return the same result as
@@ -78,7 +78,7 @@ namespace {
    * against the result of this function.  This is also used to test if we try to
    * free something unalloated or allocate something which is already allocated.
    */
-  static void* lookup_in_allocation_map(void* tentative_pointer);
+  void* lookup_in_allocation_map(void* tentative_pointer);
 }
 
 #endif
@@ -419,16 +419,16 @@ namespace {
   typedef std::map<void*, void*> allocation_map;
 
   /** Extra map for allocator sanity checking. */
-  static allocation_map allocations;
+  allocation_map allocations;
 
   /** Adds an allocation to the extra allocation map. */
-  static void add_to_allocation_map(void* allocation, std::size_t size) {
+  void add_to_allocation_map(void* allocation, std::size_t size) {
     void* allocation_end = static_cast<char*>(allocation) + size;
     allocations[allocation] = allocation_end;
   }
 
   /** Removes an allocation from the extra allocation map. */
-  static void remove_from_allocation_map(void* allocation) {
+  void remove_from_allocation_map(void* allocation) {
     allocations.erase(allocation);
   }
 
@@ -437,7 +437,7 @@ namespace {
    * Returns the start pointer of the allocation if the pointer
    * is in the map, otherwise returns null.
    */
-  static void* lookup_in_allocation_map(void* tentative_pointer) {
+  void* lookup_in_allocation_map(void* tentative_pointer) {
     // Find the largest key less than or equal to tentative_pointer.
     allocation_map::const_iterator next_allocation =
         allocations.upper_bound(tentative_pointer);

@@ -38,25 +38,17 @@
 #include "rho/AllocationTable.hpp"
 #include "rho/AllocatorSuperblock.hpp"
 
-// Arena for small-object superblocks:
-uintptr_t arena_superblock_start = 0;
-uintptr_t arena_superblock_end = 0;
-uintptr_t arena_superblock_next = 0;
+namespace {
+  // Arena for small-object superblocks:
+  uintptr_t arena_superblock_start = 0;
+  uintptr_t arena_superblock_end = 0;
+  uintptr_t arena_superblock_next = 0;
+}
 
 void rho::AllocatorSuperblock::allocateArena() {
   void* arena = nullptr;
   size_t space = s_arenasize; // Total acquired arena space.
   posix_memalign(&arena, s_small_superblock_size, space);
-#ifdef HAVE_STD_ALING
-  if (!arena) {
-    // Try to use operator new and std::align()  instead.
-    arena = new char[s_arenasize];
-    std::align(s_small_superblock_size,
-        s_small_superblock_size,
-        &arena,
-        &space);
-  }
-#endif // HAVE_STD_ALING
   if (!arena) {
     allocerr("failed to allocate small-object arena");
   }
@@ -66,10 +58,8 @@ void rho::AllocatorSuperblock::allocateArena() {
       + num_superblock * s_small_superblock_size;
   arena_superblock_next = arena_superblock_start;
 
-#ifdef HAVE_ADDRESS_SANITIZER
   // Poison the whole small object arena.
   ASAN_POISON_MEMORY_REGION(reinterpret_cast<void*>(arena), space);
-#endif
 }
 
 rho::AllocatorSuperblock* rho::AllocatorSuperblock::newSuperblockFromArena(
@@ -78,11 +68,9 @@ rho::AllocatorSuperblock* rho::AllocatorSuperblock::newSuperblockFromArena(
     return nullptr;
   }
   void* pointer = reinterpret_cast<void*>(arena_superblock_next);
-#ifdef HAVE_ADDRESS_SANITIZER
   // The whole arena is poisoned on allocation, now we just unpoison this
   // superblock header.
   ASAN_UNPOISON_MEMORY_REGION(pointer, s_superblock_header_size);
-#endif
   unsigned superblock_size =
       (s_small_superblock_size - s_superblock_header_size) / block_size;
   unsigned bitset_entries = (superblock_size + 63) / 64;
@@ -102,13 +90,11 @@ rho::AllocatorSuperblock* rho::AllocatorSuperblock::newLargeSuperblock(
       sizeClassFromSizeLog2(size_log2), bitset_entries);
   GCNodeAllocator::s_alloctable->insertSuperblock(superblock,
       s_large_superblock_size_log2);
-#ifdef HAVE_ADDRESS_SANITIZER
   // Poison all blocks in the superblock. They are unpoisoned one at a time
   // later, when allocated.
   ASAN_POISON_MEMORY_REGION(
       reinterpret_cast<void*>(superblock->firstBlockPointer()),
       s_large_superblock_size - s_superblock_header_size);
-#endif
   return superblock;
 }
 
@@ -180,9 +166,7 @@ void* rho::AllocatorSuperblock::allocateNextUntouched() {
   }
   void* result = reinterpret_cast<void*>(
       firstBlockPointer() + (index * block_size));
-#ifdef HAVE_ADDRESS_SANITIZER
   ASAN_UNPOISON_MEMORY_REGION(result, block_size);
-#endif
   return result;
 }
 
