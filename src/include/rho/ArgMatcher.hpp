@@ -35,7 +35,6 @@
 #include "boost/range.hpp"
 #include "rho/ArgList.hpp"
 #include "rho/Frame.hpp"
-#include "rho/GCEdge.hpp"
 #include "rho/Promise.hpp"
 #include "rho/String.hpp"
 
@@ -283,6 +282,7 @@ namespace rho {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
+        void applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const override;
 
 	class MatchCallback;
     protected:
@@ -301,7 +301,7 @@ namespace rho {
 
 	enum MatchStatus {UNMATCHED = 0, EXACT_TAG, PARTIAL_TAG, POSITIONAL};
 
-	GCEdge<const PairList> m_formals;
+	const PairList* m_formals;
 
 	// Data on formals (including "...") in order of occurrence:
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;

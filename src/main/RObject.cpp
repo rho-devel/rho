@@ -83,14 +83,19 @@ RObject::RObject(const RObject& pattern)
       m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
       m_binding_locked(pattern.m_binding_locked)
 {
-    m_attrib = clone(pattern.m_attrib.get());
+    attachReference(m_attrib, clone(pattern.m_attrib));
     maybeTraceMemory(&pattern);
+}
+
+void RObject::detachReferents()
+{
+    detachReference(m_attrib);
 }
 
 void RObject::clearAttributes()
 {
     if (m_attrib) {
-	m_attrib = nullptr;
+	detachReference(m_attrib);
 	// Beware promotion to int by ~:
 	m_type &= static_cast<signed char>(~s_class_mask);
     }
@@ -159,16 +164,18 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
 	if (value)
 	    node->setCar(value);
 	// Delete existing attribute:
-	else if (prev)
+	else if (prev) {
 	    prev->setTail(node->tail());
-	else m_attrib = node->tail();
+        } else {
+            retargetReference(m_attrib, node->tail());
+        }
     } else if (value) {  
 	// Create new node:
 	PairList* newnode = PairList::cons(value, nullptr, name);
-	if (prev)
+	if (prev) {
 	    prev->setTail(newnode);
-	else { // No preexisting attributes at all:
-	    m_attrib = newnode;
+        } else { // No preexisting attributes at all:
+	    retargetReference(m_attrib, newnode);
 	}
     }
 }
@@ -213,6 +220,13 @@ void RObject::visitReferents(const_visitor* v) const
 {
     if (m_attrib)
 	(*v)(m_attrib);
+}
+
+void RObject::applyToCoalescedReferences(std::function<void(const GCNode*)> fun) const
+{
+    if (m_attrib) {
+	fun(m_attrib);
+    }
 }
 
 // ***** C interface *****
