@@ -121,7 +121,7 @@ void rho::AllocationTable::eraseSingleKey(uintptr_t pointer, size_t key) {
 }
 
 rho::AllocationTable::Allocation* rho::AllocationTable::search(
-    uintptr_t candidate) {
+    uintptr_t candidate) const {
   size_t hash = pointerHash(candidate);
   for (int i = 0; i < m_num_buckets;
       hash = probeFunc(hash, i),
@@ -176,7 +176,7 @@ void rho::AllocationTable::resize(unsigned new_alloctable_bits) {
 }
 
 void rho::AllocationTable::applyToAllAllocations(
-    std::function<void(void*)> fun) {
+    std::function<void(void*)> fun) const {
   for (int i = 0; i < m_num_buckets; ++i) {
     Allocation& bucket = m_buckets[i];
     if (!bucket.isEmpty() && !bucket.isDeleted()) {
@@ -199,7 +199,7 @@ void rho::AllocationTable::applyToAllAllocations(
   }
 }
 
-void rho::AllocationTable::printSummary() {
+void rho::AllocationTable::printSummary() const {
   printf("Allocation Table Summary:\n");
   int size = 0;
   for (int i = 0; i < m_num_buckets; i += 16) {
@@ -221,7 +221,7 @@ void rho::AllocationTable::printSummary() {
   printf("table size: %d\n", size);
 }
 
-size_t rho::AllocationTable::pointerHash(uintptr_t pointer) {
+size_t rho::AllocationTable::pointerHash(uintptr_t pointer) const {
   pointer >>= LOW_BITS;
   pointer <<= 4;  // Spread out hash keys to leave room for collision buckets.
   size_t low = pointer & 0xFFFFFFFF;
@@ -233,7 +233,7 @@ size_t rho::AllocationTable::pointerHash(uintptr_t pointer) {
   return hash & m_hash_mask;
 }
 
-size_t rho::AllocationTable::probeFunc(size_t prev_hash, int i) {
+size_t rho::AllocationTable::probeFunc(size_t prev_hash, int i) const {
   return (prev_hash + i + 1) & m_hash_mask;
 }
 

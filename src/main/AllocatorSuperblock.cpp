@@ -136,7 +136,7 @@ void* rho::AllocatorSuperblock::lookupAllocation(uintptr_t candidate) {
   return nullptr;
 }
 
-void* rho::AllocatorSuperblock::lookupBlock(uintptr_t candidate) {
+void* rho::AllocatorSuperblock::lookupBlock(uintptr_t candidate) const {
   uintptr_t first_block = firstBlockPointer();
   unsigned index = (candidate - first_block) / blockSize();
   // Check that the block is actually allocated.
@@ -240,7 +240,8 @@ void rho::AllocatorSuperblock::applyToArenaAllocations(
   }
 }
 
-void rho::AllocatorSuperblock::applyToBlocks(std::function<void(void*)> fun) {
+void rho::AllocatorSuperblock::applyToBlocks(std::function<void(void*)> fun)
+    const {
   uintptr_t block = firstBlockPointer();
   unsigned block_size = blockSize();
   unsigned num_blocks =
@@ -274,7 +275,7 @@ void rho::AllocatorSuperblock::debugPrintSmallSuperblocks() {
   }
 }
 
-void rho::AllocatorSuperblock::printSummary() {
+void rho::AllocatorSuperblock::printSummary() const {
   unsigned superblock_size =
       (superblockSize() - s_superblock_header_size) / blockSize();
   printf("Superblock Summary (blocksize=%d, num block=%d):\n",

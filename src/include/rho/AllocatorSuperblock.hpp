@@ -94,7 +94,7 @@ public:
   static void applyToArenaAllocations(std::function<void(void*)> fun);
 
   /** @brief Apply function to all current blocks in this superblock. */
-  void applyToBlocks(std::function<void(void*)> fun);
+  void applyToBlocks(std::function<void(void*)> fun) const;
 
   /**
    * Free a pointer inside a given superblock. The block MUST be in the given
@@ -106,7 +106,7 @@ public:
    * Tests the bitset if a block index is allocated.
    * Returns true if the given block is currently allocated.
    */
-  bool isBlockAllocated(unsigned block) {
+  bool isBlockAllocated(unsigned block) const {
     unsigned bitset = block / 64;
     return !(m_free[bitset] & (uint64_t{1} << (block & 63)));
   }
@@ -115,7 +115,7 @@ public:
    * Returns true if the pointer is inside the superblock and not inside
    * the superblock header.
    */
-  bool isBlockPointer(uintptr_t pointer) {
+  bool isBlockPointer(uintptr_t pointer) const {
     return pointer >= firstBlockPointer() && pointer < endPointer();
   }
 
@@ -123,13 +123,13 @@ public:
    * Returns true if the pointer is inside the superblock (may be inside the
    * superblock header).
    */
-  bool isInternalPointer(uintptr_t pointer) {
+  bool isInternalPointer(uintptr_t pointer) const {
     return pointer >= reinterpret_cast<uintptr_t>(this)
         && pointer < endPointer();
   }
 
   /** Print debug info about this superblock. */
-  void printSummary();
+  void printSummary() const;
 
   /**
    * Tag a block in a superblock as allocated.
@@ -261,7 +261,7 @@ private:
   /**
    * Lookup the start of a block via a (possibly internal) block pointer.
    */
-  void* lookupBlock(uintptr_t candidate);
+  void* lookupBlock(uintptr_t candidate) const;
 
   /**
    * Allocates a new superblock from the small object arena.

@@ -210,7 +210,7 @@ public:
    * It is okay to free objects during the iteration, but adding objects
    * means they may not be found during the current iteration pass.
    */
-  void applyToAllAllocations(std::function<void(void*)> fun);
+  void applyToAllAllocations(std::function<void(void*)> fun) const;
 
   /** @breif Erases all hashtable entries for an allocation.
    *
@@ -238,12 +238,12 @@ public:
    * This function does find internal pointers. This is supported by mapping
    * all possible internal hash keys into the allocation table.
    */
-  Allocation* search(uintptr_t candidate);
+  Allocation* search(uintptr_t candidate) const;
 
   /** @brief Prints a summary of the table illustrating the bucket
    * utilization.
    */
-  void printSummary();
+  void printSummary() const;
 
   /**
    * Attempts to resize the hashtable to use a new number of bits
@@ -272,9 +272,9 @@ private:
   Allocation* m_buckets = nullptr;
 
   // Counters logging collision statistics:
-  unsigned m_num_insert_collisions = 0;
-  unsigned m_num_erase_collisions = 0;
-  unsigned m_num_search_collisions = 0;
+  mutable unsigned m_num_insert_collisions = 0;
+  mutable unsigned m_num_erase_collisions = 0;
+  mutable unsigned m_num_search_collisions = 0;
 
   /** Erase a single key entry from the table. */
   void eraseSingleKey(uintptr_t pointer, size_t key);
@@ -331,7 +331,7 @@ private:
    * together. This ensures that any single bit flip will hash to
    * a different bucket.
    */
-  size_t pointerHash(uintptr_t pointer);
+  size_t pointerHash(uintptr_t pointer) const;
 
   /** @brief Computes the next key in a probe chain.
    *
@@ -344,7 +344,7 @@ private:
    * i    = NA, 0, 1, 2,  3,  4,  5,  6, ...
    * hash =  0, 1, 3, 6, 10, 15, 21, 28, ...
    */
-  size_t probeFunc(size_t prev_hash, int i);
+  size_t probeFunc(size_t prev_hash, int i) const;
 
 };
 }

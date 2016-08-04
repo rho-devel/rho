@@ -66,18 +66,21 @@ rho::FreeListNode* rho::GCNodeAllocator::s_freelists[s_num_freelists];
 // allocator. The extra allocation map is checked to verify each operation
 // on the allocator.
 
-static void add_to_allocation_map(void* allocation, std::size_t size);
-static void remove_from_allocation_map(void* allocation);
+namespace {
+  static void add_to_allocation_map(void* allocation, std::size_t size);
+  static void remove_from_allocation_map(void* allocation);
 
-/**
- * This should always return the same result as
- * GCNodeAllocator::lookupPointer().  If it does not, something is wrong.
- *
- * When allocation checking is enabled, each call to lookupPointer() is checked
- * against the result of this function.  This is also used to test if we try to
- * free something unalloated or allocate something which is already allocated.
- */
-static void* lookup_in_allocation_map(void* tentative_pointer);
+  /**
+   * This should always return the same result as
+   * GCNodeAllocator::lookupPointer().  If it does not, something is wrong.
+   *
+   * When allocation checking is enabled, each call to lookupPointer() is checked
+   * against the result of this function.  This is also used to test if we try to
+   * free something unalloated or allocate something which is already allocated.
+   */
+  static void* lookup_in_allocation_map(void* tentative_pointer);
+}
+
 #endif
 
 void allocerr(const char* message) {
@@ -108,6 +111,12 @@ static unsigned next_log2_32(unsigned size) {
 #else
   // Use manual log-2 finding implementation. The builtin version is available
   // for most compilers, but if not we fall back on this version.
+  //
+  // The algorithm below is inspired by this one for finding the number of
+  // trailing zeroes:
+  // https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightBinSearch
+  // The code below works similarly by doing a binary search to find the
+  // number of leading zeroes.
   unsigned log2 = 0;
   // This holds remaining bits after shifting out uninteresting bits:
   unsigned remaining = size;
@@ -398,48 +407,51 @@ void rho::GCNodeAllocator::printSummary() {
 }
 
 #ifdef ALLOCATION_CHECK
-/*
- * Defining ALLOCATION_CHECK adds a separate allocation-map to
- * track all current allocations. This map is used to double-check
- * each operation the GCNodeAllocator does to ensure it is consistent
- * with the state recorded in the ALLOCATION_CHECK map.
- */
 
-typedef std::map<void*, void*> allocation_map;
+namespace {
+  /*
+   * Defining ALLOCATION_CHECK adds a separate allocation-map to
+   * track all current allocations. This map is used to double-check
+   * each operation the GCNodeAllocator does to ensure it is consistent
+   * with the state recorded in the ALLOCATION_CHECK map.
+   */
 
-/** Extra map for allocator sanity checking. */
-static allocation_map allocations;
+  typedef std::map<void*, void*> allocation_map;
 
-/** Adds an allocation to the extra allocation map. */
-static void add_to_allocation_map(void* allocation, std::size_t size) {
-  void* allocation_end = static_cast<char*>(allocation) + size;
-  allocations[allocation] = allocation_end;
-}
+  /** Extra map for allocator sanity checking. */
+  static allocation_map allocations;
 
-/** Removes an allocation from the extra allocation map. */
-static void remove_from_allocation_map(void* allocation) {
-  allocations.erase(allocation);
-}
-
-/**
- * Check if a pointer is in the extra allocation map.
- * Returns the start pointer of the allocation if the pointer
- * is in the map, otherwise returns null.
- */
-static void* lookup_in_allocation_map(void* tentative_pointer) {
-  // Find the largest key less than or equal to tentative_pointer.
-  allocation_map::const_iterator next_allocation =
-      allocations.upper_bound(tentative_pointer);
-  if (next_allocation != allocations.begin()) {
-    allocation_map::const_iterator allocation = std::prev(next_allocation);
-
-    // Check that tentative_pointer is before the end of the allocation.
-    void* allocation_end = allocation->second;
-    if (tentative_pointer < allocation_end) {
-      return allocation->first;
-    }
+  /** Adds an allocation to the extra allocation map. */
+  static void add_to_allocation_map(void* allocation, std::size_t size) {
+    void* allocation_end = static_cast<char*>(allocation) + size;
+    allocations[allocation] = allocation_end;
   }
-  return nullptr;
+
+  /** Removes an allocation from the extra allocation map. */
+  static void remove_from_allocation_map(void* allocation) {
+    allocations.erase(allocation);
+  }
+
+  /**
+   * Check if a pointer is in the extra allocation map.
+   * Returns the start pointer of the allocation if the pointer
+   * is in the map, otherwise returns null.
+   */
+  static void* lookup_in_allocation_map(void* tentative_pointer) {
+    // Find the largest key less than or equal to tentative_pointer.
+    allocation_map::const_iterator next_allocation =
+        allocations.upper_bound(tentative_pointer);
+    if (next_allocation != allocations.begin()) {
+      allocation_map::const_iterator allocation = std::prev(next_allocation);
+
+      // Check that tentative_pointer is before the end of the allocation.
+      void* allocation_end = allocation->second;
+      if (tentative_pointer < allocation_end) {
+        return allocation->first;
+      }
+    }
+    return nullptr;
+  }
 }
 #endif
 
