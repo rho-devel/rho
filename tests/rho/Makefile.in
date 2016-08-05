@@ -39,6 +39,7 @@ unit_test_sources = \
 	EvaluationTests.cpp \
 	FixedVectorTest.cpp \
 	FrameTests.cpp \
+	GCNodeAllocatorTests.cpp \
 	GCRootTest.cpp \
 	GCStackFrameBoundaryTests.cpp \
 	LogicalTests.cpp \

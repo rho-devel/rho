@@ -31,7 +31,8 @@ SOURCES_C = complex.c inlined.c radixsort.c \
 	g_alab_her.c g_cntrlify.c g_fontdb.c g_her_glyph.c
 
 SOURCES_CXX = \
-	allocstats.cpp ArgList.cpp ArgMatcher.cpp \
+	AllocationTable.cpp AllocatorSuperblock.cpp allocstats.cpp \
+	ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp \
 	CellPool.cpp Closure.cpp \
 	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
@@ -39,24 +40,24 @@ SOURCES_CXX = \
 	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
-        Frame.cpp FunctionBase.cpp FunctionContext.cpp \
-        GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp \
+	Frame.cpp FunctionBase.cpp FunctionContext.cpp \
+	GCEdge.cpp GCManager.cpp GCNode.cpp GCNodeAllocator.cpp GCRoot.cpp \
 	GCStackFrameBoundary.cpp GCStackRoot.cpp \
-        IntVector.cpp inspect.cpp \
+	IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp Logical.cpp LogicalVector.cpp \
 	LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
-        PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
+	PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
 	ProvenanceTracker.cpp \
-        RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
-        RealVector.cpp Renviron.cpp ReturnBailout.cpp \
-        S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
+	RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
+	RealVector.cpp Renviron.cpp ReturnBailout.cpp \
+	S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
 	StackChecker.cpp \
-        String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
+	String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \
-        VectorBase.cpp \
-        WeakRef.cpp \
+	VectorBase.cpp \
+	WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
 	bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
@@ -70,15 +71,15 @@ SOURCES_CXX = \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp \
 	names.cpp \
-        objects.cpp options.cpp \
+	objects.cpp options.cpp \
 	paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp \
 	provenance_do.cpp \
 	qsort.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp sort.cpp \
-        source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
-        subscript.cpp subset.cpp summary.cpp sysutils.cpp \
+	source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
+	subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	times.cpp \
 	unique.cpp util.cpp \
 	version.cpp
