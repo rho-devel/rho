@@ -245,6 +245,12 @@ private:
    */
   static void clearQuarantine();
 
+  /**
+   * Remove all free nodes for a particular size class from the quarantine and
+   * insert in corresponding freelist.
+   */
+  static void clearQuarantineBySizeClass(int size_class);
+
 #endif // HAVE_ADDRESS_SANITIZER
 
 };

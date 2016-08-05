@@ -224,37 +224,6 @@ TEST(GCNodeAllocatorTest, FreeListMedium) {
     GCNodeAllocator::free(p5);
 }
 
-TEST(GCNodeAllocatorTest, FreeListLarge) {
-    // Test freelist re-allocation ordering.
-    // These three sizes are designed to be different size classes in the allocator.
-    // They all will be allocated as large allocations.
-    int small = 1 << 18;
-    int medium = 1 << 19;
-    int large = 1 << 20;
-    void* p1 = GCNodeAllocator::allocate(small);
-    void* p2 = GCNodeAllocator::allocate(medium);
-    void* p3 = GCNodeAllocator::allocate(medium);
-    void* p4 = GCNodeAllocator::allocate(medium);
-    void* p5 = GCNodeAllocator::allocate(large);
-
-    GCNodeAllocator::free(p1);
-    GCNodeAllocator::free(p2);
-    GCNodeAllocator::free(p3);
-    GCNodeAllocator::free(p4);
-    GCNodeAllocator::free(p5);
-
-    EXPECT_EQ(p4, GCNodeAllocator::allocate(medium));
-    EXPECT_EQ(p3, GCNodeAllocator::allocate(medium));
-    EXPECT_EQ(p2, GCNodeAllocator::allocate(medium));
-    EXPECT_EQ(p5, GCNodeAllocator::allocate(large));
-    EXPECT_EQ(p1, GCNodeAllocator::allocate(small));
-
-    GCNodeAllocator::free(p1);
-    GCNodeAllocator::free(p2);
-    GCNodeAllocator::free(p3);
-    GCNodeAllocator::free(p4);
-    GCNodeAllocator::free(p5);
-}
 #endif // HAVE_ADDRESS_SANITIZER
 
 TEST(GCNodeAllocatorTest, AllocManySmall) {

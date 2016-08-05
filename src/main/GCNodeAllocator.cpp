@@ -363,8 +363,16 @@ void rho::GCNodeAllocator::addToFreelist(FreeListNode* free_node,
 #ifdef HAVE_ADDRESS_SANITIZER
   addToQuarantine(free_node, size_class);
 #else
-  free_node->m_next = s_freelists[size_class];
-  s_freelists[size_class] = free_node;
+  if (size_class >= s_num_small_pools + s_num_medium_pools) {
+    // NOTE: large allocations are freed directly instead of inserting in a
+    // freelist.  This is to avoid the memory cost of keeping large allocations
+    // around.  This may be changed in the future so that the freelist is used
+    // again for large objects.
+    delete[] free_node;
+  } else {
+    free_node->m_next = s_freelists[size_class];
+    s_freelists[size_class] = free_node;
+  }
 #endif
 }
 
@@ -482,9 +490,30 @@ void rho::GCNodeAllocator::addToQuarantine(rho::FreeListNode* free_node,
 void rho::GCNodeAllocator::clearQuarantine() {
   // Remove all free nodes from quarantine and insert in corresponding
   // freelist.
-  for (int i = 0; i < s_num_freelists; ++i) {
+  for (int size_class = 0; size_class < s_num_freelists; ++size_class) {
+    clearQuarantineBySizeClass(size_class);
+  }
+}
+
+void rho::GCNodeAllocator::clearQuarantineBySizeClass(int size_class) {
+  if (size_class >= s_num_small_pools + s_num_medium_pools) {
+    // NOTE: large allocations are freed instead of inserting in a
+    // freelist.  This is to avoid the memory cost of keeping large allocations
+    // around.  This may be changed in the future so that the freelist is used
+    // again for large objects.
+    FreeListNode* next_node = s_quarantine[size_class];
+    while (next_node) {
+      FreeListNode* free_node = next_node;
+
+      // Unpoison the quarantined allocation so we can read the next link.
+      ASAN_UNPOISON_MEMORY_REGION(free_node, sizeof(FreeListNode));
+      next_node = free_node->m_next;
+      delete[] free_node;
+    }
+    s_quarantine[size_class] = nullptr;
+  } else {
     FreeListNode* tail_node = nullptr;
-    FreeListNode* next_node = s_quarantine[i];
+    FreeListNode* next_node = s_quarantine[size_class];
     while (next_node) {
       tail_node = next_node;
 
@@ -497,12 +526,12 @@ void rho::GCNodeAllocator::clearQuarantine() {
     if (tail_node) {
       // Unpoison the last node so we can write the next link.
       ASAN_UNPOISON_MEMORY_REGION(tail_node, sizeof(FreeListNode));
-      tail_node->m_next = s_freelists[i];
+      tail_node->m_next = s_freelists[size_class];
       // Re-poison so the freelist nodes stay poisoned while free.
       ASAN_POISON_MEMORY_REGION(tail_node, sizeof(FreeListNode));
 
-      s_freelists[i] = s_quarantine[i];
-      s_quarantine[i] = nullptr;
+      s_freelists[size_class] = s_quarantine[size_class];
+      s_quarantine[size_class] = nullptr;
     }
   }
 }
