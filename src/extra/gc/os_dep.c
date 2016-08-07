@@ -15,37 +15,6 @@
  */
 
 #include "private/gc_priv.h"
-#include "rho/AddressSanitizer.hpp"
-
-#if defined(LINUX) && !defined(POWERPC) && !defined(NO_SIGCONTEXT_H)
-# include <linux/version.h>
-# if (LINUX_VERSION_CODE <= 0x10400)
-    /* Ugly hack to get struct sigcontext_struct definition.  Required  */
-    /* for some early 1.3.X releases.  Will hopefully go away soon.     */
-    /* in some later Linux releases, asm/sigcontext.h may have to       */
-    /* be included instead.                                             */
-#   define __KERNEL__
-#   include <asm/signal.h>
-#   undef __KERNEL__
-# else
-    /* Kernels prior to 2.1.1 defined struct sigcontext_struct instead of */
-    /* struct sigcontext.  libc6 (glibc2) uses "struct sigcontext" in     */
-    /* prototypes, so we have to include the top-level sigcontext.h to    */
-    /* make sure the former gets defined to be the latter if appropriate. */
-#   include <features.h>
-#   if 2 <= __GLIBC__
-#     if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
-        /* glibc 2.1 no longer has sigcontext.h.  But signal.h          */
-        /* has the right declaration for glibc 2.1.                     */
-#       include <sigcontext.h>
-#     endif /* 0 == __GLIBC_MINOR__ */
-#   else /* __GLIBC__ < 2 */
-      /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
-      /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
-#     include <asm/sigcontext.h>
-#   endif /* __GLIBC__ < 2 */
-# endif
-#endif /* LINUX && !POWERPC */
 
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(__CC_ARM)
@@ -446,7 +415,6 @@ GC_INNER char * GC_get_maps(void)
       extern int _etext[], __dso_handle[];
 #   endif
 # endif /* LINUX */
-  extern int _end[];
 
   ptr_t GC_data_start = NULL;
 
@@ -454,10 +422,12 @@ GC_INNER char * GC_get_maps(void)
 
   GC_INNER void GC_init_linux_data_start(void)
   {
+    ptr_t data_end = DATAEND;
+
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
 #     ifdef PLATFORM_ANDROID
-        /* Workaround for "gold" (default) linker (as of Android NDK r9b).      */
+        /* Workaround for "gold" (default) linker (as of Android NDK r10e). */
         if ((word)__data_start < (word)_etext
             && (word)_etext < (word)__dso_handle) {
           GC_data_start = (ptr_t)(__dso_handle);
@@ -465,18 +435,18 @@ GC_INNER char * GC_get_maps(void)
             GC_log_printf(
                 "__data_start is wrong; using __dso_handle as data start\n");
 #         endif
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
         }
 #     endif
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
       }
       if ((ptr_t)data_start != 0) {
           GC_data_start = (ptr_t)(data_start);
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
       }
 #     ifdef DEBUG_ADD_DEL_ROOTS
@@ -487,11 +457,11 @@ GC_INNER char * GC_get_maps(void)
     if (GC_no_dls) {
       /* Not needed, avoids the SIGSEGV caused by       */
       /* GC_find_limit which complicates debugging.     */
-      GC_data_start = (ptr_t)_end; /* set data root size to 0 */
+      GC_data_start = data_end; /* set data root size to 0 */
       return;
     }
 
-    GC_data_start = GC_find_limit((ptr_t)(_end), FALSE);
+    GC_data_start = GC_find_limit(data_end, FALSE);
   }
 #endif /* SEARCH_FOR_DATA_START */
 
@@ -556,7 +526,7 @@ GC_INNER char * GC_get_maps(void)
 
   /* Return the first non-addressable location > p or bound.    */
   /* Requires the allocation lock.                              */
-NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
+  STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
              /* Safer if static, since otherwise it may not be  */
@@ -597,8 +567,7 @@ NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
 
   /* Return first addressable location > p or bound.    */
   /* Requires the allocation lock.                      */
-
-STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
+  STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
     static volatile int firstpass;
@@ -783,10 +752,17 @@ GC_INNER word GC_page_size = 0;
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      ptr_t trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
+      ptr_t trunc_sp;
+      word size;
+
+      /* Set page size if it is not ready (so client can use this       */
+      /* function even before GC is initialized).                       */
+      if (!GC_page_size) GC_setpagesize();
+
+      trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
-      word size = GC_get_writable_length(trunc_sp, 0);
+      size = GC_get_writable_length(trunc_sp, 0);
       GC_ASSERT(size != 0);
       sb -> mem_base = trunc_sp + size;
       return GC_SUCCESS;
@@ -854,6 +830,7 @@ GC_INNER word GC_page_size = 0;
 #   define GC_AMIGA_SB
 #   include "extra/AmigaOS.c"
 #   undef GC_AMIGA_SB
+#   define GET_MAIN_STACKBASE_SPECIAL
 # endif /* AMIGA */
 
 # if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
@@ -954,7 +931,7 @@ GC_INNER word GC_page_size = 0;
     /* the smallest location q s.t. [q,p) is addressable (!up). */
     /* We assume that p (up) or p-1 (!up) is addressable.       */
     /* Requires allocation lock.                                */
-NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
+    STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
     {
         static volatile ptr_t result;
                 /* Safer if static, since otherwise it may not be       */
@@ -1203,13 +1180,13 @@ NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, p
       if (pthread_getattr_np(pthread_self(), &attr) == 0) {
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
-          pthread_attr_destroy(&attr);
+          (void)pthread_attr_destroy(&attr);
 #         ifdef STACK_GROWS_DOWN
             stackaddr = (char *)stackaddr + size;
 #         endif
           return (ptr_t)stackaddr;
         }
-        pthread_attr_destroy(&attr);
+        (void)pthread_attr_destroy(&attr);
       }
       WARN("pthread_getattr_np or pthread_attr_getstack failed"
            " for main thread\n", 0);
@@ -1286,7 +1263,7 @@ NO_SANITIZE_ADDRESS STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, p
     if (pthread_attr_getstack(&attr, &(b -> mem_base), &size) != 0) {
         ABORT("pthread_attr_getstack failed");
     }
-    pthread_attr_destroy(&attr);
+    (void)pthread_attr_destroy(&attr);
 #   ifdef STACK_GROWS_DOWN
         b -> mem_base = (char *)(b -> mem_base) + size;
 #   endif
@@ -2057,8 +2034,9 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #       endif
           if (zero_fd == -1)
             ABORT("Could not open /dev/zero");
+          if (fcntl(zero_fd, F_SETFD, FD_CLOEXEC) == -1)
+            WARN("Could not set FD_CLOEXEC for /dev/zero", 0);
 
-          fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
           initialized = TRUE;
       }
 #   endif
@@ -3646,8 +3624,7 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 
 GC_INNER void GC_dirty_init(void)
 {
-    int fd;
-    char buf[30];
+    char buf[40];
 
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
@@ -3656,19 +3633,14 @@ GC_INNER void GC_dirty_init(void)
                 (unsigned long)(GC_bytes_allocd + GC_bytes_allocd_before_gc));
     }
 
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)getpid());
     buf[sizeof(buf) - 1] = '\0';
-    fd = open(buf, O_RDONLY);
-    if (fd < 0) {
-        ABORT("/proc open failed");
-    }
-    GC_proc_fd = syscall(SYS_ioctl, fd, PIOCOPENPD, 0);
-    close(fd);
-    syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
+    GC_proc_fd = open(buf, O_RDONLY);
     if (GC_proc_fd < 0) {
-        WARN("/proc ioctl(PIOCOPENPD) failed", 0);
-        return;
+      ABORT("/proc open failed");
     }
+    if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
+      WARN("Could not set FD_CLOEXEC for /proc", 0);
 
     GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
@@ -4192,7 +4164,7 @@ GC_INNER void GC_dirty_init(void)
   /* This will call the real pthread function, not our wrapper */
   if (pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
     ABORT("pthread_create failed");
-  pthread_attr_destroy(&attr);
+  (void)pthread_attr_destroy(&attr);
 
   /* Setup the sigbus handler for ignoring the meaningless SIGBUSs */
 # ifdef BROKEN_EXCEPTION_HANDLING

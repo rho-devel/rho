@@ -12,7 +12,7 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.4.2,bdwgc@lists.opendylan.org)
+AC_INIT(gc,7.4.4,bdwgc@lists.opendylan.org)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -145,7 +145,7 @@ AH_TEMPLATE([GC_OPENBSD_THREADS],   [Define to support OpenBSD pthreads.])
 AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
 AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support Win32 threads.])
-AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support win32-pthreads.])
+AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support pthreads-win32.])
 AH_TEMPLATE([GC_RTEMS_PTHREADS],    [Define to support rtems-pthreads.])
 
 dnl System header feature requests.
@@ -275,7 +275,7 @@ case "$THREADS" in
         ;;
      *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
-        # Using win32-pthreads
+        # Using pthreads-win32 library.
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
@@ -561,7 +561,8 @@ if test "${enable_shared}" = yes; then
                      [ac_cv_fvisibility_hidden=no])
       CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
-            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"])
+            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"],
+            [CFLAGS="-DGC_NO_VISIBILITY $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
   fi
