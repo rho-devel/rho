@@ -48,8 +48,7 @@ namespace {
 void rho::AllocatorSuperblock::allocateArena() {
   void* arena = nullptr;
   size_t space = s_arenasize; // Total acquired arena space.
-  posix_memalign(&arena, s_small_superblock_size, space);
-  if (!arena) {
+  if (posix_memalign(&arena, s_small_superblock_size, space) != 0) {
     allocerr("failed to allocate small-object arena");
   }
   size_t num_superblock = space / s_small_superblock_size;
