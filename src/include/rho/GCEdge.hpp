@@ -185,6 +185,13 @@ namespace rho {
 	struct MustDestruct<GCEdge<T> >  : boost::mpl::true_
 	{};
 
+	template<typename T>
+	struct Duplicate<GCEdge<T>> {
+		T* operator()(const GCEdge<T>& value) const {
+		    return value.get() ? value.get()->clone() : nullptr;
+	    }
+	};
+
 	template <class T>
 	struct NAFunc<GCEdge<T> > {
 	    const GCEdge<T>& operator()() const

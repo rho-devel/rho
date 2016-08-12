@@ -38,9 +38,9 @@
 #include "rho/SEXP_downcast.hpp"
 
 namespace rho {
-    /** @brief General vector of RHandle<RObject>.
+    /** @brief General vector of GCEdge<RObject>.
      */
-    typedef FixedVector<RHandle<>, VECSXP> ListVector;
+    typedef FixedVector<GCEdge<>, VECSXP> ListVector;
 }  // namespace rho
 
 extern "C" {

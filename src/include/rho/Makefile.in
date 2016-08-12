@@ -42,7 +42,7 @@ RHO_HPPS = \
   MemoryBank.hpp NodeStack.hpp \
   PairList.hpp PredefinedSymbols.hpp Promise.hpp ProtectStack.hpp \
   Provenance.hpp ProvenanceTracker.hpp \
-  RAllocStack.hpp RObject.hpp RawVector.hpp RealVector.hpp RHandle.hpp \
+  RAllocStack.hpp RObject.hpp RawVector.hpp RealVector.hpp \
   S4Object.hpp SEXP_downcast.hpp SEXPTYPE.hpp String.hpp \
   StringVector.hpp Subscripting.hpp Symbol.hpp\
   UnaryFunction.hpp VectorBase.hpp WeakRef.hpp \
