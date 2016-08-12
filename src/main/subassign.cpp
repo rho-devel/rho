@@ -900,9 +900,9 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
 {
     GCStackRoot<PairList> args(SEXP_downcast<PairList*>(argsarg));
 
-    SEXP ignored, x, y;
+    SEXP x, y;
     PairList* subs;
-    int nsubs = SubAssignArgs(args, &x, &subs, &y);
+    size_t nsubs = SubAssignArgs(args, &x, &subs, &y);
    
     /* If there are multiple references to an object we must */
     /* duplicate it so that only the local version is mutated. */
@@ -934,7 +934,6 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
 	    VectorBase* xv = static_cast<VectorBase*>(x);
 	    if (xv->size() == 0 && Rf_length(y) == 0)
 		return x;
-	    size_t nsubs = listLength(subs);
 	    switch (nsubs) {
 	    case 0:
 		x = VectorAssign(call, rho, x, R_MissingArg, y);

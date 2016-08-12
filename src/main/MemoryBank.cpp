@@ -41,7 +41,7 @@ using namespace rho;
 // (or valgrind's memcheck tool) and AGGRESSIVE_GC, this makes
 // finding memory protection errors very simple.
 #ifdef NO_CELLPOOLS
-const size_t MemoryBank::s_new_threshold = 0;
+const size_t MemoryBank::s_new_threshold = 1;
 #else
 const size_t MemoryBank::s_new_threshold = 193;
 #endif
@@ -132,7 +132,6 @@ void MemoryBank::defragment()
 
 void MemoryBank::initialize()
 {
-#ifndef NO_CELLPOOLS
     // The following leave some space at the end of each 4096-byte
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
@@ -147,7 +146,6 @@ void MemoryBank::initialize()
     s_pools[7].initialize(12, 42);
     s_pools[8].initialize(16, 31);
     s_pools[9].initialize(24, 21);
-#endif
 }
 
 void MemoryBank::notifyAllocation(size_t bytes)

@@ -139,8 +139,6 @@ namespace {
 /* & | ! */
 SEXP attribute_hidden do_logic(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
-    SEXP ans;
-
     switch (op->variant()) {
     case 1:
     case 2:
@@ -204,6 +202,9 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else /* x1 == FALSE */
 		ans = x2;
 	}
+	break;
+    default:
+	error(_("internal error in do_logic2"));
     }
     return ScalarLogical(ans);
 }

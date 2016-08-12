@@ -64,7 +64,7 @@ namespace {
 	return !(l==r);
     }
 
-    bool isNaOrNaN(Logical value) { return isNA(value); }
+    // bool isNaOrNaN(Logical value) { return isNA(value); }
     bool isNaOrNaN(int value)     { return isNA(value); }
     bool isNaOrNaN(double value)  { return std::isnan(value); }
     bool isNaOrNaN(Complex value) { return (isNaOrNaN(value.r)

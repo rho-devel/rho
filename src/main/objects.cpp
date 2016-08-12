@@ -181,8 +181,8 @@ int Rf_isBasicClass(const char *ss) {
       s_S3table = Rf_findVarInFrame3(R_MethodsNamespace, Rf_install(".S3MethodsClasses"), TRUE);
       if(s_S3table == R_UnboundValue)
 	Rf_error(_("no .S3MethodsClass table, cannot use S4 objects with S3 methods (methods package not attached?)"));
-	if (TYPEOF(s_S3table) == PROMSXP)  /* Rf_findVar... ignores lazy data */
-	    s_S3table = Rf_eval(s_S3table, R_MethodsNamespace);
+      if (TYPEOF(s_S3table) == PROMSXP)  /* Rf_findVar... ignores lazy data */
+	  s_S3table = Rf_eval(s_S3table, R_MethodsNamespace);
     }
     if(s_S3table == R_UnboundValue)
       return FALSE; /* too screwed up to do conversions */

@@ -177,7 +177,6 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       ArgList* arglist) const
 {
     assert(!func->isInternalGeneric());
-    size_t arity = func->arity();
     bool evaluated = arglist->status() == ArgList::EVALUATED;
     switch(func->arity()) {
     case 0:

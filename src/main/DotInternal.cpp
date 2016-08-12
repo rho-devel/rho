@@ -55,8 +55,6 @@ namespace rho {
 
 SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
     PairList* argspl = SEXP_downcast<PairList*>(args);
     Environment* envir = SEXP_downcast<Environment*>(env);
     Expression* innercall = dynamic_cast<Expression*>(argspl->car());

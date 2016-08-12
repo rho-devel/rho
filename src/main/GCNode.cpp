@@ -87,7 +87,8 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes) {
     return result;
 }
 
-GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_refcount_flags(s_decinc_refcount[1]) {
+GCNode::GCNode(CreateAMinimallyInitializedGCNode*)
+    : m_refcount_flags(s_decinc_refcount[1]) {
 }
 
 void GCNode::operator delete(void* pointer, size_t bytes) {
@@ -278,4 +279,3 @@ GCNode::InternalData GCNode::storeInternalData() const {
 void GCNode::restoreInternalData(InternalData data) {
     m_refcount_flags = data;
 }
-

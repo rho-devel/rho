@@ -2859,7 +2859,6 @@ SEXP GEcreateSnapshot(pGEDevDesc dd)
     int i;
     SEXP snapshot, tmp;
     SEXP state;
-    SEXP engineVersion;
     /* Create a list with one spot for the display list
      * and one spot each for the registered graphics systems
      * to put their graphics state

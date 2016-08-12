@@ -657,8 +657,14 @@ SEXP attribute_hidden do_merge(/*const*/ rho::Expression* call, const rho::Built
     isort_with_index(INTEGER(yi), iy, ny);
 
     /* 1. determine result sizes */
-    for (i = 0; i < nx; i++) if (INTEGER(xi)[i] > 0) break; nx_lone = i;
-    for (i = 0; i < ny; i++) if (INTEGER(yi)[i] > 0) break; ny_lone = i;
+    for (i = 0; i < nx; i++)
+	if (INTEGER(xi)[i] > 0)
+	    break;
+    nx_lone = i;
+    for (i = 0; i < ny; i++)
+	if (INTEGER(yi)[i] > 0)
+	    break;
+    ny_lone = i;
     double dnans = 0;
     for (i = nx_lone, j = ny_lone; i < nx; i = nnx, j = nny) {
 	int tmp = INTEGER(xi)[i];
@@ -1270,7 +1276,7 @@ static const unsigned int utf8_table2[] = { 0, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc};
 
 static size_t Rwcrtomb(char *s, const wchar_t wc)
 {
-    register size_t i, j;
+    size_t i, j;
     unsigned int cvalue = static_cast<unsigned int>( wc);
     char buf[10], *b;
 

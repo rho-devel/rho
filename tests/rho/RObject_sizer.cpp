@@ -34,6 +34,7 @@ int main() {
 	 << "\nsizeof(RObject): " << sizeof(RObject)
 	 << "\nsizeof(ConsCell): " << sizeof(ConsCell)
          << "\nsizeof(PairList): " << sizeof(PairList)
+         << "\nsizeof(Symbol): " << sizeof(Symbol)
 	 << "\nsizeof(VectorBase): " << sizeof(VectorBase)
 	 << "\nsizeof(IntVector): " << sizeof(IntVector)
 	 << "\nsizeof(RealVector): " << sizeof(RealVector)

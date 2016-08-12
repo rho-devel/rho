@@ -48,8 +48,7 @@ namespace {
 void rho::AllocatorSuperblock::allocateArena() {
   void* arena = nullptr;
   size_t space = s_arenasize; // Total acquired arena space.
-  posix_memalign(&arena, s_small_superblock_size, space);
-  if (!arena) {
+  if (posix_memalign(&arena, s_small_superblock_size, space) != 0) {
     allocerr("failed to allocate small-object arena");
   }
   size_t num_superblock = space / s_small_superblock_size;
@@ -188,8 +187,6 @@ void* rho::AllocatorSuperblock::allocateLarge(unsigned size_log2) {
       && "Can not allocate objects smaller than "
          "64 bytes using allocateLarge()");
   unsigned size_class = sizeClassFromSizeLog2(size_log2);
-  unsigned num_blocks =
-      (s_large_superblock_size - s_superblock_header_size) >> size_log2;
   AllocatorSuperblock* superblock;
   if (GCNodeAllocator::s_superblocks[size_class]) {
     // Reuse existing superblock for this allocation size.
@@ -289,4 +286,3 @@ void rho::AllocatorSuperblock::printSummary() const {
   }
   printf("\n");
 }
-

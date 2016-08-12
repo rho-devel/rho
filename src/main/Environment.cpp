@@ -63,7 +63,6 @@ namespace rho {
 namespace {
     // Used in {,un}packGPBits():
     const unsigned int FRAME_LOCK_MASK = 1<<14;
-    const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 
     // Used by the cache.
     struct PointerHash {
@@ -261,7 +260,6 @@ unsigned int Environment::packGPBits() const
 {
     unsigned int ans = RObject::packGPBits();
     if (m_locked) ans |= FRAME_LOCK_MASK;
-    // if (m_globally_cached) ans |= GLOBAL_FRAME_MASK;
     return ans;
 }
 

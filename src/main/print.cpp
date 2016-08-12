@@ -135,7 +135,7 @@ SEXP attribute_hidden do_invisible(/*const*/ rho::Expression* call, const rho::B
 SEXP attribute_hidden do_prmatrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* rowlab_, rho::RObject* collab_, rho::RObject* quote_, rho::RObject* right_, rho::RObject* na_print_)
 {
     int quote;
-    SEXP a, x, rowlab, collab, naprint;
+    SEXP x, rowlab, collab, naprint;
     char *rowname = nullptr, *colname = nullptr;
 
     PrintDefaults();

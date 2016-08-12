@@ -300,7 +300,7 @@ static const int utf8_table2[] = { 0, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc};
 
 static size_t inttomb(char *s, const int wc)
 {
-    register int i, j;
+    int i, j;
     unsigned int cvalue = wc;
     char buf[10], *b;
 
