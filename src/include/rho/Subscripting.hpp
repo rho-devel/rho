@@ -57,7 +57,7 @@ namespace rho {
      *
      * @todo A matter for possible review is the fact that during
      * subsetting and subassignment operations, rho sometimes makes
-     * deep copies of vectors of RHandle objects in cases where CR
+     * deep copies of vectors of GCEdge objects in cases where CR
      * gets away with simple pointer copies.
      *
      * @todo CR 3 uses vectors of real numbers to represent subscripts

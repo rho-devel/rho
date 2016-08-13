@@ -42,9 +42,9 @@ namespace rho {
 	SEXP (*STRING_ELTp)(const SEXP x, R_xlen_t i) = STRING_ELT;
     }
 
-    RHandle<String> ElementTraits::NAFunc<RHandle<String>>::makeNA()
+    GCEdge<String> ElementTraits::NAFunc<GCEdge<String>>::makeNA()
     {
-	RHandle<String> na;
+	GCEdge<String> na;
 	na = String::NA();
 	return na;
     }

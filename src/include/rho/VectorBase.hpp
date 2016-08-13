@@ -33,7 +33,6 @@
 
 #include "rho/RObject.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
 #include <stddef.h>
 
@@ -41,8 +40,8 @@ namespace rho {
     class String;
     template <typename, SEXPTYPE> class FixedVector;
     typedef FixedVector<int, INTSXP> IntVector;
-    typedef FixedVector<RHandle<>, VECSXP> ListVector;
-    typedef FixedVector<RHandle<String>, STRSXP> StringVector;
+    typedef FixedVector<GCEdge<>, VECSXP> ListVector;
+    typedef FixedVector<GCEdge<String>, STRSXP> StringVector;
 
     /** @brief Untemplated base class for R vectors.
      */

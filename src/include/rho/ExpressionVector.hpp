@@ -51,7 +51,7 @@ namespace rho {
      * @todo Replace the encapsulated pointer type RObject* with something
      * stricter (but is needs to embrace Symbol as well as Expression).
      */
-    typedef FixedVector<RHandle<>, EXPRSXP> ExpressionVector;
+    typedef FixedVector<GCEdge<>, EXPRSXP> ExpressionVector;
 }  // namespace rho
 
 extern "C" {

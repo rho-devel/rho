@@ -34,7 +34,6 @@
 #include "Rinternals.h"
 #include "rho/Allocator.hpp"
 #include "rho/GCRoot.hpp"
-#include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
 #include "rho/VectorBase.hpp"
 #include <string>
@@ -316,39 +315,31 @@ namespace rho {
     // Designed for use with std::accumulate():
     unsigned int stringWidthQuote(unsigned int minwidth, const String* string);
 
-    // Since Strings are uniqued, coping them is almost zero-cost.
-    // So allow implicit copies for RHandle<String>.
-    template<>
-    inline RHandle<String>::RHandle(const RHandle<String>&) = default;
-    template<>
-    inline RHandle<String>& RHandle<String>::operator=(const RHandle<String>&)
-      = default;
-
     // Template specializations:
     namespace ElementTraits {
 	template <>
-	struct NAFunc<RHandle<String> > {
-	    static RHandle<String> makeNA();
+	struct NAFunc<GCEdge<String> > {
+	    static GCEdge<String> makeNA();
 
-	    inline const RHandle<String>& operator()() const
+	    inline const GCEdge<String>& operator()() const
 	    {
-		static RHandle<String> na = makeNA();
+		static GCEdge<String> na = makeNA();
 		return na;
 	    }
 	};
 
 	template <>
-        inline bool IsNA<RHandle<String>>::operator()(const RHandle<String>& t)
+        inline bool IsNA<GCEdge<String>>::operator()(const GCEdge<String>& t)
 	    const
 	{
-	    typedef RHandle<String> T;
+	    typedef GCEdge<String> T;
 	    return t == NA<T>();
 	}
     }
 
-    // Make the default handle for a String point to a blank string:
+    // Make the default value for a String point to a blank string:
     template <>
-    inline RHandle<String>::RHandle()
+    inline GCEdge<String>::GCEdge()
     {
 	operator=(String::blank());
     }

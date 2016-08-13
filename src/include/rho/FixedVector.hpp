@@ -243,7 +243,7 @@ namespace rho {
 	static void constructElements(iterator from, iterator to);
 	static void constructElementsIfNeeded(iterator from, iterator to)
 	{
-	    // This is essential for e.g. RHandles, otherwise they
+	    // This is essential for e.g. GCEdges, otherwise they
 	    // may contain junk pointers.
 	    if (ElementTraits::MustConstruct<T>::value) // compile-time constant
 		constructElements(from, to);

@@ -40,7 +40,6 @@
 #include <iostream>
 
 #include "rho/FixedVector.hpp"
-#include "rho/RHandle.hpp"
 #include "rho/SEXP_downcast.hpp"
 #include "rho/String.hpp"
 
@@ -51,7 +50,7 @@ namespace rho {
      * fill the constructed vector with blank strings rather than
      * with NULL.
      */
-    typedef FixedVector<RHandle<String>, STRSXP> StringVector;
+    typedef FixedVector<GCEdge<String>, STRSXP> StringVector;
 
     /** @brief Create a StringVector containing a single std::string.
      *
