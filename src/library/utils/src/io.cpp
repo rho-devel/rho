@@ -973,7 +973,7 @@ static Rboolean isna(SEXP x, int indx)
 	return Rboolean(INTEGER(x)[indx] == NA_INTEGER);
 	break;
     case REALSXP:
-	return ISNAN(REAL(x)[indx]);
+	return Rboolean(ISNAN(REAL(x)[indx]));
 	break;
     case STRSXP:
 	return Rboolean(STRING_ELT(x, indx) == NA_STRING);
