@@ -30,7 +30,6 @@
 
 #include "rho/ListFrame.hpp"
 
-#include <cmath>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "rho/GCStackRoot.hpp"

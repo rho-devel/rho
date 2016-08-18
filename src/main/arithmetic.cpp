@@ -141,7 +141,7 @@ static double R_ValueOfNA(void)
 
 int R_IsNA(double x)
 {
-    if (isnan(x)) {
+    if (ISNAN(x)) {
 	ieee_double y;
 	y.value = x;
 	return (y.word[lw] == 1954);
@@ -149,9 +149,9 @@ int R_IsNA(double x)
     return 0;
 }
 
-Rboolean R_IsNaN(double x)
+int R_IsNaN(double x)
 {
-    if (isnan(x)) {
+    if (ISNAN(x)) {
 	ieee_double y;
 	y.value = x;
 	return RHOCONSTRUCT(Rboolean, (y.word[lw] != 1954));
@@ -159,17 +159,13 @@ Rboolean R_IsNaN(double x)
     return FALSE;
 }
 
-
 /* Mainly for use in packages */
-
-// Force a non-inline embodiment of R_finite():
-namespace rho {
-    namespace ForceNonInline{
-	Rboolean (*R_finitep)(double) = R_finite;
-        auto R_isnancppPtr = &R_isnancpp;
-    }
+int R_isnancpp(double x) {
+    return ISNAN(x);
 }
-
+int R_finite(double x) {
+    return R_FINITE(x);
+}
 
 /* Arithmetic Initialization */
 
@@ -705,8 +701,8 @@ public:
 	/* This code assumes that isnan(in) implies isnan(m_f(in)), so we
 	   only need to check isnan(in) if isnan(m_f(in)) is true. */
 	double ans = m_f(in);
-	if (isnan(ans)) {
-	    if (isnan(in))
+	if (ISNAN(ans)) {
+	    if (ISNAN(in))
 		ans = in; // ensure the incoming NaN is preserved.
 	    else
 		m_any_NaN = true;

@@ -31,7 +31,6 @@
 
 #include "rho/GCManager.hpp"
 
-#include <cmath>
 #include <cstdarg>
 #include <iomanip>
 #include <iostream>
