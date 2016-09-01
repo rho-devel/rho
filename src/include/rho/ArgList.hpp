@@ -372,6 +372,10 @@ namespace rho {
          */
         bool has3Dots() const;
 
+	/** @brief Do any of the arguments have names?
+         */
+	bool hasTags() const;
+
 	/** @brief Remove argument names.
 	 *
 	 * This function removes any tags from the ArgList.  This will

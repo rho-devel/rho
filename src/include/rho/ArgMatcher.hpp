@@ -339,6 +339,8 @@ namespace rho {
         void match(const ArgList* supplied, MatchCallback* callback) const;
         void matchWithCache(const ArgList* supplied, MatchCallback* callback,
 			    const ArgMatchInfo* matching) const;
+        void matchByPosition(const ArgList* supplied, MatchCallback* callback)
+	    const;
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
@@ -355,6 +357,7 @@ namespace rho {
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in supplied_list.
 	static void unusedArgsError(const SuppliedList& supplied_list);
+	static void unusedArgsError(const PairList* supplied_list);
 
 	static PairList* makePairList(
 	    std::initializer_list<const char*> arg_names);

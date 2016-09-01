@@ -332,10 +332,54 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied,
     matchWithCache(supplied, &callback, matching);
 }
 
+void ArgMatcher::matchByPosition(const ArgList* supplied,
+				 MatchCallback* callback) const
+{
+    const size_t num_formals
+	= m_dots_position == -1 ? m_formal_data.size() : m_dots_position;
+    unsigned int supplied_index = 0;
+    unsigned int formals_index = 0;
+    const PairList* s;
+    for (s = supplied->list();
+	 s && (formals_index < num_formals);
+	 s = s->tail(), ++supplied_index, ++formals_index)
+    {
+	callback->matchedArgument(m_formal_data[formals_index],
+				  supplied_index, s->car());
+    }
+    // Set unmatched arguments to their default values.
+    for (; formals_index < m_formal_data.size(); ++formals_index) {
+	if (formals_index != m_dots_position)
+	    callback->defaultValue(m_formal_data[formals_index]);
+    }
+
+    // Any remaining supplied args are either rolled into ... or
+    // there's an error:
+    if (has3Dots()) {
+	// Pass unmatched arguments.
+	vector<int> dotted_arg_indices;
+	for (; s; ++supplied_index, s = s->tail()) {
+	    dotted_arg_indices.push_back(supplied_index);
+	}
+	callback->dottedArgs(m_formal_data[m_dots_position],
+			     boost::make_iterator_range(dotted_arg_indices),
+			     supplied);
+    } else {
+	if (s) {
+	    unusedArgsError(s);
+	}
+    }
+}
 
 void ArgMatcher::match(const ArgList* supplied,
 		       MatchCallback* callback) const
 {
+    // Short-circuit if none of the arguments are named.
+    if (!supplied->hasTags()) {
+	matchByPosition(supplied, callback);
+	return;
+    }
+
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
     SuppliedList supplied_list;

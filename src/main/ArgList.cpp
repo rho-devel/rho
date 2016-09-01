@@ -198,6 +198,17 @@ bool ArgList::has3Dots() const {
   return false;
 }
 
+bool ArgList::hasTags() const {
+  if (!list())
+    return false;
+
+  for (const ConsCell& cell : *list()) {
+    if (cell.tag())
+      return true;
+  }
+  return false;
+}
+
 void ArgList::stripTags()
 {
     for (PairList* p = mutable_list(); p; p = p->tail())

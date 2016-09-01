@@ -138,9 +138,16 @@ void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
 	    value = const_cast<RObject*>(PREXPR(value));
 	unused_list = PairList::cons(value, unused_list, supplied_data.tag);
     }
+    unusedArgsError(unused_list);
+}
+
+void ArgMatcher::unusedArgsError(const PairList* unused_list)
+{
     // Prepare error message:
     GCStackRoot<StringVector>
-	argstrv(static_cast<StringVector*>(Rf_deparse1line(unused_list, FALSE)));
+	argstrv(static_cast<StringVector*>(
+		    Rf_deparse1line(
+			const_cast<PairList*>(unused_list), FALSE)));
     // '+ 4' is to remove 'list' from 'list(badTag1, ...' :
     const char* errdetails = (*argstrv)[0]->c_str() + 4;
     Rf_error(_("unused argument(s) %s"), errdetails);
