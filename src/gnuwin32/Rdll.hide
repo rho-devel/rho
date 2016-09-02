@@ -378,7 +378,6 @@
  Rf_onsigusr1
  Rf_onsigusr2
  Rf_osDynSymbol
- Rf_patchArgsByActuals
  Rf_pbeta_raw
  Rf_printArray
  Rf_printComplexVector
