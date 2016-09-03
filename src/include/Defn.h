@@ -626,7 +626,6 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 # define onsigusr1              Rf_onsigusr1
 # define onsigusr2              Rf_onsigusr2
 # define parse			Rf_parse
-# define patchArgsByActuals	Rf_patchArgsByActuals
 # define PrintDefaults		Rf_PrintDefaults
 # define PrintGreeting		Rf_PrintGreeting
 # define PrintValueEnv		Rf_PrintValueEnv
@@ -806,10 +805,8 @@ void Rf_mainloop(void);
 SEXP Rf_makeSubscript(SEXP, SEXP, R_xlen_t *, SEXP);
 SEXP Rf_markKnown(const char *, SEXP);
 SEXP Rf_mat2indsub(SEXP, SEXP, SEXP);
-SEXP Rf_matchArg(SEXP, SEXP*);
 SEXP Rf_matchArgExact(SEXP, SEXP*);
 SEXP Rf_matchArgs(SEXP, SEXP, SEXP);
-SEXP Rf_matchPar(const char *, SEXP*);
 SEXP Rf_mkCLOSXP(SEXP, SEXP, SEXP);
 SEXP Rf_mkFalse(void);
 SEXP Rf_mkPROMISE(SEXP, SEXP);
