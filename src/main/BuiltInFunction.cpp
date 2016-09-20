@@ -280,23 +280,6 @@ const char* BuiltInFunction::GetInternalGroupDispatchName() const
 };
 
 std::pair<bool, RObject*>
-BuiltInFunction::RealInternalGroupDispatch(
-    const Expression* call, Environment* env,
-    int num_args, RObject* const* evaluated_args, const PairList* tags) const
-{
-    PairList* pargs = PairList::make(num_args, evaluated_args);
-    pargs->copyTagsFrom(tags);
-    ArgList arglist(pargs, ArgList::EVALUATED);
-    RObject* result = nullptr;
-    bool dispatched = Rf_DispatchGroup(GetInternalGroupDispatchName(),
-				       const_cast<Expression*>(call),
-				       const_cast<BuiltInFunction*>(this),
-				       const_cast<PairList*>(arglist.list()),
-				       env, &result);
-    return std::make_pair(dispatched, result);
-}
-
-std::pair<bool, RObject*>
 BuiltInFunction::RealInternalDispatch(const Expression* call,
 				      int num_args,
 				      RObject* const* evaluated_args,
@@ -307,10 +290,28 @@ BuiltInFunction::RealInternalDispatch(const Expression* call,
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);
     RObject* result = nullptr;
-    bool dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
-					const_cast<BuiltInFunction*>(this),
-					const_cast<PairList*>(arglist.list()),
-					env, &result, MissingArgHandling::Drop,
-					1);
+    bool dispatched;
+
+    switch(m_dispatch_type) {
+    case DispatchType::INTERNAL:
+	dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
+				       const_cast<BuiltInFunction*>(this),
+				       const_cast<PairList*>(arglist.list()),
+				       env, &result, MissingArgHandling::Drop,
+				       1);
+	break;
+    case DispatchType::GROUP_MATH:
+    case DispatchType::GROUP_OPS:
+    case DispatchType::GROUP_COMPLEX:
+    case DispatchType::GROUP_SUMMARY:
+	dispatched = Rf_DispatchGroup(GetInternalGroupDispatchName(),
+				      const_cast<Expression*>(call),
+				      const_cast<BuiltInFunction*>(this),
+				      const_cast<PairList*>(arglist.list()),
+				      env, &result);
+	break;
+    default:
+	Rf_error("Internal error: Unexepcted group dispatch type");
+    }
     return std::make_pair(dispatched, result);
 }

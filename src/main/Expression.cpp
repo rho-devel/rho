@@ -156,19 +156,21 @@ static void prepareToInvokeBuiltIn(const BuiltInFunction* func)
 
 template<typename... Args>
 RObject* Expression::evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction* func,
+						      Environment* env,
+						      const PairList* tags,
 						      Args... args) const
 {
     prepareToInvokeBuiltIn(func);
-    return func->invokeFixedArity(this, args...);
+    return func->invokeFixedArity(this, env, tags, args...);
 }
 
 template<typename... Args>
-RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Environment* env, bool evaluated, Args... args) const
+RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Environment* env, const PairList* tags, bool evaluated, Args... args) const
 {
     if (evaluated) {
-	return evaluateBuiltInWithEvaluatedArgs(fun, args...);
+	return evaluateBuiltInWithEvaluatedArgs(fun, env, tags, args...);
     }
-    return evaluateBuiltInWithEvaluatedArgs(fun,
+    return evaluateBuiltInWithEvaluatedArgs(fun, env, tags,
 	(args ? args->evaluate(env) : nullptr)...);
 }
 
@@ -176,22 +178,22 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       Environment* env,
 					       ArgList* arglist) const
 {
-    assert(!func->isInternalGeneric());
     bool evaluated = arglist->status() == ArgList::EVALUATED;
+    const PairList* tags = arglist->list();
     switch(func->arity()) {
     case 0:
-	return evaluateFixedArityBuiltIn(func, env, evaluated);
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated);
 /*  This macro expands out to:
     case 1:
-	return evaluateFixedArityBuiltIn(func, env, evaluated, arglist->get(1));
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist->get(1));
     case 2:
-	return evaluateFixedArityBuiltIn(func, env, evaluated, arglist->get(1), arglist->get(2));
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist->get(1), arglist->get(2));
     ...
 */
 #define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist->get(N)
 #define CASE_STATEMENT(Z, N, IGNORED)              \
     case N:                                        \
-	return evaluateFixedArityBuiltIn(func, env, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
 
 	BOOST_PP_REPEAT_FROM_TO(1, 20, CASE_STATEMENT, 0);
 
@@ -239,17 +241,7 @@ RObject* Expression::evaluateDirectBuiltInCall(
     // Copy the arguments to the stack, evaluating if necessary.
     arglist->evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
 
-    // Handle internal generic functions.
-    if (func->isInternalGeneric()) {
-	auto dispatched = func->InternalDispatch(this, env, num_evaluated_args,
-						 evaluated_arg_array,
-						 arglist->list());
-	if (dispatched.first)
-	    return dispatched.second;
-    }
-
     prepareToInvokeBuiltIn(func);
-
     return func->invoke(this, env, evaluated_arg_array, num_evaluated_args,
                         arglist->list());
 }
@@ -271,19 +263,6 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     const char* first_arg_name = func->getFirstArgName();
     if (first_arg_name) {
 	check1arg(first_arg_name);
-    }
-
-    // Handle internal generic functions.
-    static BuiltInFunction* length_fn
-	= BuiltInFunction::obtainPrimitive("length");
-    if (func->isInternalGeneric()
-	&& func->sexptype() == BUILTINSXP
-	&& !func->isSummaryGroupGeneric()
-	&& func != length_fn)
-    {
-	auto dispatched = func->InternalDispatch(this, env, arglist);
-	if (dispatched.first)
-	    return dispatched.second;
     }
 
     prepareToInvokeBuiltIn(func);
