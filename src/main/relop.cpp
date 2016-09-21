@@ -364,26 +364,6 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 }
 
 
-static SEXP bitwiseNot(SEXP a)
-{
-    int np = 0;
-    if(isReal(a)) {a = PROTECT(coerceVector(a, INTSXP)); np++;}
-    R_xlen_t i, m = XLENGTH(a);
-    SEXP ans = allocVector(TYPEOF(a), m);
-    switch(TYPEOF(a)) {
-    case INTSXP:
-	for(i = 0; i < m; i++) {
-	    int aa = INTEGER(a)[i];
-	    INTEGER(ans)[i] = (aa == NA_INTEGER) ? aa : ~aa;
-	}
-	break;
-    default:
-	UNIMPLEMENTED_TYPE("bitNot", a);
-    }
-    if(np) UNPROTECT(np);
-    return ans;
-}
-
 #define mymax(x, y) ((x >= y) ? x : y)
 
 #define BIT(op, name) \
@@ -467,16 +447,38 @@ static SEXP bitwiseShiftR(SEXP a, SEXP b)
     return ans;
 }
 
-SEXP attribute_hidden do_bitwise(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_bitwise(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* y_)
 {
-    SEXP ans = R_NilValue; /* -Wall */
     switch(op->variant()) {
-    case 1: ans = bitwiseAnd(args[0], args[1]); break;
-    case 2: ans = bitwiseNot(args[0]); break;
-    case 3: ans = bitwiseOr(args[0], args[1]); break;
-    case 4: ans = bitwiseXor(args[0], args[1]); break;
-    case 5: ans = bitwiseShiftL(args[0], args[1]); break;
-    case 6: ans = bitwiseShiftR(args[0], args[1]); break;
+    case 1:
+	return bitwiseAnd(x_, y_);
+    case 3:
+	return bitwiseOr(x_, y_);
+    case 4:
+	return bitwiseXor(x_, y_);
+    case 5:
+	return bitwiseShiftL(x_, y_);
+    case 6:
+	return bitwiseShiftR(x_, y_);
     }
+    return nullptr;  // unreachable.
+}
+
+SEXP attribute_hidden do_bitwise_not(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a) {
+    int np = 0;
+    if(isReal(a)) {a = PROTECT(coerceVector(a, INTSXP)); np++;}
+    R_xlen_t i, m = XLENGTH(a);
+    SEXP ans = allocVector(TYPEOF(a), m);
+    switch(TYPEOF(a)) {
+    case INTSXP:
+	for(i = 0; i < m; i++) {
+	    int aa = INTEGER(a)[i];
+	    INTEGER(ans)[i] = (aa == NA_INTEGER) ? aa : ~aa;
+	}
+	break;
+    default:
+	UNIMPLEMENTED_TYPE("bitNot", a);
+    }
+    if(np) UNPROTECT(np);
     return ans;
 }

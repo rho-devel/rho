@@ -2675,19 +2675,16 @@ static Rconnection newraw(const char *description, SEXP raw, const char *mode)
     return newconn;
 }
 
-SEXP attribute_hidden do_rawconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_rawconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sfile, rho::RObject* sraw, rho::RObject* sopen)
 {
-    SEXP sfile, sraw, sopen, ans, connclass;
+    SEXP ans, connclass;
     const char *desc, *open;
     int ncon;
     Rconnection con = nullptr;
 
-    sfile = args[0];
     if(!isString(sfile) || Rf_length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     desc = translateChar(STRING_ELT(sfile, 0));
-    sraw = args[1];
-    sopen = args[2];
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
@@ -3205,23 +3202,20 @@ SEXP attribute_hidden do_sockconn(/*const*/ rho::Expression* call, const rho::Bu
 /* ------------------- unz connections  --------------------- */
 
 /* see dounzip.c for the details */
-SEXP attribute_hidden do_unz(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_unz(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sfile, rho::RObject* sopen, rho::RObject* enc)
 {
-    SEXP sfile, sopen, ans, connclass, enc;
+    SEXP ans, connclass;
     const char *file, *open;
     int ncon;
     Rconnection con = nullptr;
 
-    sfile = args[0];
     if(!isString(sfile) || Rf_length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    sopen = args[1];
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    enc = args[2];
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -3386,19 +3380,19 @@ SEXP attribute_hidden do_close(/*const*/ rho::Expression* call, const rho::Built
 }
 
 /* seek(con, where = numeric(), origin = "start", rw = "") */
-SEXP attribute_hidden do_seek(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_seek(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* connection, rho::RObject* where_, rho::RObject* origin_, rho::RObject* rw_)
 {
     int origin, rw;
     Rconnection con = nullptr;
     double where;
 
-    if(!inherits(args[0], "connection"))
+    if(!inherits(connection, "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(args[0]));
+    con = getConnection(asInteger(connection));
     if(!con->isopen) error(_("connection is not open"));
-    where = asReal(args[1]);
-    origin = asInteger(args[2]);
-    rw = asInteger(args[3]);
+    where = asReal(where_);
+    origin = asInteger(origin_);
+    rw = asInteger(rw_);
     if(!ISNAN(where) && con->nPushBack > 0) {
 	/* clear pushback */
 	int j;

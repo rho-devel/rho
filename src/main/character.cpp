@@ -225,23 +225,16 @@ int R_nchar(SEXP string, nchar_type type_,
     return NA_INTEGER; // -Wall
 } // R_nchar()
 
-SEXP attribute_hidden do_nchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_nchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* stype, rho::RObject* allowNA_, rho::RObject* keepNA_)
 {
-    SEXP d, s, x, stype;
+    SEXP d, s, x;
 
-    if (num_args < 3 || num_args > 4)
-	errorcall(call,
-		  ngettext("%d argument passed to '%s' which requires %d to %d",
-			   "%d arguments passed to '%s' which requires %d to %d",
-			   (unsigned long) num_args),
-		  num_args, op->name(), 3, 4);
-    if (isFactor(args[0]))
+    if (isFactor(x_))
 	error(_("'%s' requires a character vector"), "nchar()");
-    PROTECT(x = coerceVector(args[0], STRSXP));
+    PROTECT(x = coerceVector(x_, STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nchar()");
     R_xlen_t len = XLENGTH(x);
-    stype = args[1];
     if (!isString(stype) || LENGTH(stype) != 1)
 	error(_("invalid '%s' argument"), "type");
     const char *type = CHAR(STRING_ELT(stype, 0)); /* always ASCII */
@@ -252,14 +245,11 @@ SEXP attribute_hidden do_nchar(/*const*/ rho::Expression* call, const rho::Built
     else if (strncmp(type, "chars", ntype) == 0) type_ = Chars;
     else if (strncmp(type, "width", ntype) == 0) type_ = Width;
     else error(_("invalid '%s' argument"), "type");
-    int allowNA = asLogical(args[2]);
+    int allowNA = asLogical( allowNA_);
     if (allowNA == NA_LOGICAL) allowNA = 0;
-    int keepNA;
-    if(num_args >= 4) {
-	keepNA = asLogical(args[3]);
-	if (keepNA == NA_LOGICAL) // default
-	    keepNA = (type_ == Width) ? FALSE : TRUE;
-    } else  keepNA = (type_ == Width) ? FALSE : TRUE;
+    int keepNA = asLogical( keepNA_);
+    if (keepNA == NA_LOGICAL) // default
+	keepNA = (type_ == Width) ? FALSE : TRUE;
     PROTECT(s = allocVector(INTSXP, len));
     int *s_ = INTEGER(s);
     for (R_xlen_t i = 0; i < len; i++) {

@@ -197,13 +197,13 @@ SEXP attribute_hidden do_provCommand (/*const*/ rho::Expression* call, const rho
     return nullptr;
 #else
     int n;
-    if ((n=length(args))!=1)
+    if ((n=num_args)!=1)
 	errorcall(call,_("%d arguments passed to 'provCommand' which requires 1"),n);
 
-    if (TYPEOF(CAR(args))!=SYMSXP)
+    if (TYPEOF(args[0])!=SYMSXP)
 	errorcall(call,_("provCommand expects Symbol argument"));
 
-    Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
+    Symbol* sym=SEXP_downcast<Symbol*>(args[0]);
     Environment* env=static_cast<Environment*>(rho);
     Frame::Binding* bdg = env->findBinding(sym);
     return const_cast<RObject*>(bdg->provenance()->command());

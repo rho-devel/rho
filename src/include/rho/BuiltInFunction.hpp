@@ -321,7 +321,7 @@ namespace rho {
 	    // Handle internal generic functions.
 	    static BuiltInFunction* length_fn
 		= BuiltInFunction::obtainPrimitive("length");
-	    if (needsDispatch()
+	    if (needsDispatch(args)
                 // Specials, the summary group and length handle dispatch
 		// themselves.
 		&& sexptype() == BUILTINSXP
@@ -410,7 +410,7 @@ namespace rho {
         // have already been evaluated.
         std::pair<bool, RObject*>
         InternalDispatch(const Expression* call,
-			 Environment*env,
+			 Environment* env,
 			 int num_args,
 			 RObject* const* evaluated_args,
 			 const PairList* tags) const {
@@ -549,6 +549,21 @@ namespace rho {
 		return needsDispatch(evaluated_args[0]);
 	    default:
 		return needsDispatch(evaluated_args[0], evaluated_args[1]);
+	    }
+	}
+
+	bool needsDispatch(const ArgList* evaluated_args) const
+	{
+	    if (!isInternalGeneric())
+		return false;
+	    switch(evaluated_args->size()) {
+	    case 0:
+		return false;
+	    case 1:
+		return needsDispatch(evaluated_args->get(0));
+	    default:
+		return needsDispatch(evaluated_args->get(0),
+				     evaluated_args->get(1));
 	    }
 	}
 

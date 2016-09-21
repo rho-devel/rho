@@ -1316,15 +1316,15 @@ R_getRegisteredRoutines(SEXP dll)
 }
 
 SEXP attribute_hidden
-do_getSymbolInfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_getSymbolInfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_, rho::RObject* package_, rho::RObject* with_registration_info_)
 {
     const char *package = "", *name;
     R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {nullptr}, nullptr};
     SEXP sym = R_NilValue;
     DL_FUNC f = nullptr;
 
-    SEXP sname = args[0], spackage = args[1], 
-	withRegistrationInfo = args[2];
+    SEXP sname = name_, spackage = package_, 
+	withRegistrationInfo = with_registration_info_;
 
     name = translateChar(STRING_ELT(sname, 0));
     if(length(spackage)) {

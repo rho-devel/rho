@@ -876,7 +876,7 @@ SEXP Rf_ItemName(SEXP, R_xlen_t);
 
 /* ../main/errors.c : */
 void NORET ErrorMessage(SEXP, int, ...);
-void WarningMessage(SEXP, R_WARNING, ...);
+    void WarningMessage(SEXP, int /* R_WARNING */, ...);
 SEXP R_GetTraceback(int);
 
 R_size_t R_GetMaxVSize(void);

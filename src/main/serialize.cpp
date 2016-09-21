@@ -2581,10 +2581,10 @@ static char names[NC][PATH_MAX];
 static char *ptr[NC];
 
 SEXP attribute_hidden
-do_lazyLoadDBflush(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_lazyLoadDBflush(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_)
 {
     int i;
-    const char *cfile = CHAR(STRING_ELT(args[0], 0));
+    const char *cfile = CHAR(STRING_ELT(file_, 0));
 
     /* fprintf(stderr, "flushing file %s", cfile); */
     for (i = 0; i < used; i++)
@@ -2809,38 +2809,29 @@ do_lazyLoadDBfetch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* 
 }
 
 SEXP attribute_hidden
-do_getVarsFromFrame(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_getVarsFromFrame(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* env_, rho::RObject* force_promises_)
 {
-    return R_getVarsFromFrame(args[0], args[1], args[2]);
+    return R_getVarsFromFrame(vars_, env_, force_promises_);
 }
 
 
 SEXP attribute_hidden
-do_lazyLoadDBinsertValue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_lazyLoadDBinsertValue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* value, rho::RObject* file, rho::RObject* ascii, rho::RObject* compsxp, rho::RObject* hook)
 {
-    SEXP value, file, ascii, compsxp, hook;
-    value = args[0]; args = (args + 1);
-    file = args[0]; args = (args + 1);
-    ascii = args[0]; args = (args + 1);
-    compsxp = args[0]; args = (args + 1);
-    hook = args[0]; args = (args + 1);
     return R_lazyLoadDBinsertValue(value, file, ascii, compsxp, hook);
 }
 
 SEXP attribute_hidden
-do_serialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_serialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection, rho::RObject* type, rho::RObject* version, rho::RObject* hook)
 {
-    if (op->variant() == 2) return R_unserialize(args[0], args[1]);
-
-    SEXP object, icon, type, ver, fun;
-    object = args[0]; args = (args + 1);
-    icon = args[0]; args = (args + 1);
-    type = args[0]; args = (args + 1);
-    ver = args[0]; args = (args + 1);
-    fun = args[0];
-
     if(op->variant() == 1)
-	return R_serializeb(object, icon, type, ver, fun);
+	return R_serializeb(object, connection, type, version, hook);
     else
-	return R_serialize(object, icon, type, ver, fun);
+	return R_serialize(object, connection, type, version, hook);
+}
+
+SEXP attribute_hidden
+do_unserialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection)
+{
+    return R_unserialize(object, connection);
 }

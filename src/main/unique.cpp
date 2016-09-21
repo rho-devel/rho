@@ -977,20 +977,19 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 
 
 // .Internal(match(x, table, nomatch, incomparables)) :
-SEXP attribute_hidden do_match(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_match(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* table, rho::RObject* nomatch_, rho::RObject* incomparables)
 {
-    if ((!isVector(args[0]) && !isNull(args[0]))
-	|| (!isVector(args[1]) && !isNull(args[1])))
+    if ((!isVector(x) && !isNull(x))
+	|| (!isVector(table) && !isNull(table)))
 	error(_("'match' requires vector arguments"));
 
-    int nomatch = asInteger(args[2]);
-    SEXP incomp = args[3];
+    int nomatch = asInteger(nomatch_);
 
-    if (isNull(incomp) || /* S has FALSE to mean empty */
-	(Rf_length(incomp) == 1 && Rf_isLogical(incomp) && LOGICAL(incomp)[0] == 0))
-	return match5(args[1], args[0], nomatch, NULL, env);
+    if (isNull(incomparables) || /* S has FALSE to mean empty */
+	(Rf_length(incomparables) == 1 && Rf_isLogical(incomparables) && LOGICAL(incomparables)[0] == 0))
+	return match5(table, x, nomatch, NULL, R_BaseEnv);
     else
-	return match5(args[1], args[0], nomatch, incomp, env);
+	return match5(table, x, nomatch, incomparables, R_BaseEnv);
 }
 
 /* pmatch and charmatch return integer positions, so cannot be used
@@ -1569,14 +1568,14 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     return ans;
 }
 
-SEXP attribute_hidden do_rowsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_rowsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* group_, rho::RObject* unique_groups_, rho::RObject* na_rm_, rho::RObject* unique_group_names_)
 {
     if(op->variant() == 1)
-	return rowsum_df(args[0], args[1], args[2], args[3],
-			 args[4]);
+	return rowsum_df(x_, group_, unique_groups_, na_rm_,
+			 unique_group_names_);
     else
-	return rowsum(args[0], args[1], args[2], args[3], 
-		      args[4]);
+	return rowsum(x_, group_, unique_groups_, na_rm_, 
+		      unique_group_names_);
 }
 
 

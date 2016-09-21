@@ -354,18 +354,18 @@ extern char ** environ;
 # include <windows.h> /* _wgetenv etc */
 #endif
 
-SEXP attribute_hidden do_getenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_getenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* symbol_, rho::RObject* default_value_)
 {
     int i, j;
     SEXP ans;
 
-    if (!isString(args[0]))
+    if (!isString(symbol_))
 	error(_("wrong type for argument"));
 
-    if (!isString(args[1]) || LENGTH(args[1]) != 1)
+    if (!isString(default_value_) || LENGTH(default_value_) != 1)
 	error(_("wrong type for argument"));
 
-    i = LENGTH(args[0]);
+    i = LENGTH(symbol_);
     if (i == 0) {
 #ifdef Win32
 	int n = 0, N;
@@ -403,9 +403,9 @@ SEXP attribute_hidden do_getenv(/*const*/ rho::Expression* call, const rho::Buil
 		SET_STRING_ELT(ans, j, mkCharCE(buf, CE_UTF8));
 	    }
 #else
-	    char *s = getenv(translateChar(STRING_ELT(args[0], j)));
+	    char *s = getenv(translateChar(STRING_ELT(symbol_, j)));
 	    if (s == nullptr)
-		SET_STRING_ELT(ans, j, STRING_ELT(args[1], 0));
+		SET_STRING_ELT(ans, j, STRING_ELT(default_value_, 0));
 	    else {
 		SEXP tmp;
 		if(known_to_be_latin1) tmp = mkCharCE(s, CE_LATIN1);
@@ -446,15 +446,15 @@ static int Rputenv(const char *nm, const char *val)
 #endif
 
 
-SEXP attribute_hidden do_setenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_setenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_, rho::RObject* value_)
 {
 #if defined(HAVE_PUTENV) || defined(HAVE_SETENV)
     int i, n;
     SEXP ans, nm, vars;
 
-    if (!isString(nm = args[0]))
+    if (!isString(nm = name_))
 	error(_("wrong type for argument"));
-    if (!isString(vars = args[1]))
+    if (!isString(vars = value_))
 	error(_("wrong type for argument"));
     if(LENGTH(nm) != LENGTH(vars))
 	error(_("wrong length for argument"));

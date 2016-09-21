@@ -827,15 +827,15 @@ SEXP lengthgets(SEXP x, R_len_t len)
 }
 
 
-SEXP attribute_hidden do_lengthgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_lengthgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
 {
-    SEXP x = args[0];
+    SEXP x = x_;
 
     if (!isVector(x) && !isVectorizable(x))
 	error(_("invalid argument"));
-    if (length(args[1]) != 1)
+    if (length(value_) != 1)
 	error(_("invalid value"));
-    R_xlen_t len = asVecSize(args[1]);
+    R_xlen_t len = asVecSize(value_);
     if (len < 0) error(_("invalid value"));
     if (len > R_LEN_T_MAX) {
 #ifdef LONG_VECTOR_SUPPORT

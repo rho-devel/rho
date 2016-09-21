@@ -796,10 +796,10 @@ SEXP attribute_hidden R_do_data_class(/*const*/ rho::Expression* call, const rho
 }
 
 /* names(object) <- name */
-SEXP attribute_hidden do_namesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_namesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
 {
-    RObject* object = args[0];
-    RObject* names = args[1];
+    RObject* object = x_;
+    RObject* names = value_;
     /* Special case: removing non-existent names, to avoid a copy */
     if (names == R_NilValue &&
 	getAttrib(object, R_NamesSymbol) == R_NilValue)
@@ -826,7 +826,7 @@ SEXP attribute_hidden do_namesgets(/*const*/ rho::Expression* call, const rho::B
         PROTECT(call = new Expression(nullptr, tl));
 	SETCAR(call, install("as.character"));
 	SETCADR(call, names);
-	names = eval(call, env);
+	names = eval(call, R_BaseEnv);
 	UNPROTECT(1);
     }
     setAttrib(object, R_NamesSymbol, names);
@@ -908,10 +908,10 @@ SEXP namesgets(SEXP vec, SEXP val)
     return vec;
 }
 
-SEXP attribute_hidden do_names(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_names(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans;
-    ans = args[0];
+    ans = x_;
     if (isVector(ans) || isList(ans) || isLanguage(ans) ||
 	IS_S4_OBJECT(ans))
 	ans = getAttrib(ans, R_NamesSymbol);
@@ -921,11 +921,11 @@ SEXP attribute_hidden do_names(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_dimnamesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_dimnamesgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* names_)
 {
-    RObject* object = args[0];
+    RObject* object = x_;
     if (MAYBE_SHARED(object)) object = shallow_duplicate(object);
-    setAttrib(object, R_DimNamesSymbol, args[1]);
+    setAttrib(object, R_DimNamesSymbol, names_);
     SET_NAMED(object, 0);
     return object;
 }
@@ -1021,28 +1021,28 @@ SEXP dimnamesgets(SEXP vec, SEXP val)
     return vec;
 }
 
-SEXP attribute_hidden do_dimnames(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_dimnames(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
-    return getAttrib(args[0], R_DimNamesSymbol);
+    return getAttrib(x_, R_DimNamesSymbol);
 }
 
-SEXP attribute_hidden do_dim(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_dim(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
-    return getAttrib(args[0], R_DimSymbol);
+    return getAttrib(x_, R_DimSymbol);
 }
 
-SEXP attribute_hidden do_dimgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_dimgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
 {
-    SEXP x = args[0];
+    SEXP x = x_;
     /* Duplication might be expensive */
-    if (args[1] == R_NilValue) {
+    if (value_ == R_NilValue) {
 	SEXP s;
 	for (s = ATTRIB(x); s != R_NilValue; s = CDR(s))
 	    if (TAG(s) == R_DimSymbol || TAG(s) == R_NamesSymbol) break;
 	if (s == R_NilValue) return x;
     }
     if (MAYBE_SHARED(x)) x = shallow_duplicate(x);
-    setAttrib(x, R_DimSymbol, args[1]);
+    setAttrib(x, R_DimSymbol, value_);
     setAttrib(x, R_NamesSymbol, R_NilValue);
     SET_NAMED(x, 0);
     return x;
@@ -1143,10 +1143,10 @@ SEXP attribute_hidden do_attributes(/*const*/ rho::Expression* call, const rho::
     return value;
 }
 
-SEXP attribute_hidden do_levelsgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_levelsgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
 {
-    RObject* object = args[0];
-    RObject* levels = args[1];
+    RObject* object = x_;
+    RObject* levels = value_;
     if(!isNull(levels) && any_duplicated(levels, FALSE))
 	warningcall(call, _("duplicated levels in factors are deprecated"));
 /* TODO errorcall(call, _("duplicated levels are not allowed in factors anymore")); */

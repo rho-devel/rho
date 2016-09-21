@@ -826,7 +826,6 @@ SEXP attribute_hidden do_remove(/*const*/ rho::Expression* call, const rho::Buil
 
 */
 
-
 SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     SEXP rval, genv, t1 = R_NilValue;
@@ -915,7 +914,7 @@ SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltIn
 #undef GET_VALUE
 
 static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
-		  SEXP ifnotfound, int inherits, SEXP enclos)
+		  SEXP ifnotfound, int inherits)
 {
     SEXP rval, t1, R_fcall, var;
 
@@ -928,7 +927,7 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
 	if( isFunction(ifnotfound) ) {
 	    PROTECT(var = mkString(name));
 	    PROTECT(R_fcall = LCONS(ifnotfound, CONS(var, R_NilValue)));
-	    rval = eval(R_fcall, enclos);
+	    rval = eval(R_fcall, R_BaseEnv);
 	    UNPROTECT(2);
 	} else
 	    rval = ifnotfound;
@@ -947,12 +946,10 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
  *
  * @return  a list of the same length as x, a character vector (of names).
  */
-SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* ifnotfound, rho::RObject* inherits)
 {
-    SEXP ans, env, x, mode, ifnotfound;
+    SEXP ans, env;
     int ginherits = 0, nvals, nmode, nifnfnd;
-
-    x = args[0];
 
     nvals = length(x);
 
@@ -964,11 +961,10 @@ SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltI
 	if( isNull(STRING_ELT(x, i)) || !CHAR(STRING_ELT(x, 0))[0] )
 	    error(_("invalid name in position %d"), i+1);
 
-    env = downcast_to_env(args[1]);
+    env = downcast_to_env(envir);
     if (!env)
 	error(_("second argument must be an environment"));
 
-    mode = args[2];
     nmode = length(mode);
     if( !isString(mode) )
 	error(_("invalid '%s' argument"), "mode");
@@ -976,7 +972,7 @@ SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltI
     if( nmode != nvals && nmode != 1 )
 	error(_("wrong length for '%s' argument"), "mode");
 
-    PROTECT(ifnotfound = coerceVector(args[3], VECSXP));
+    PROTECT(ifnotfound = coerceVector(ifnotfound, VECSXP));
     nifnfnd = length(ifnotfound);
     if( !isVector(ifnotfound) )
 	error(_("invalid '%s' argument"), "ifnotfound");
@@ -984,7 +980,7 @@ SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltI
     if( nifnfnd != nvals && nifnfnd != 1 )
 	error(_("wrong length for '%s' argument"), "ifnotfound");
 
-    ginherits = asLogical(args[4]);
+    ginherits = asLogical(inherits);
     if (ginherits == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "inherits");
 
@@ -992,16 +988,16 @@ SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltI
 
     for(int i = 0; i < nvals; i++) {
 	SEXPTYPE gmode;
-	if (!strcmp(CHAR(STRING_ELT(args[2], i % nmode)), "function"))
+	if (!strcmp(CHAR(STRING_ELT(mode, i % nmode)), "function"))
 	    gmode = FUNSXP;
 	else {
-	    gmode = str2type(CHAR(STRING_ELT(args[2], i % nmode)));
+	    gmode = str2type(CHAR(STRING_ELT(mode, i % nmode)));
 	    if(gmode == SEXPTYPE( (-1)))
 		error(_("invalid '%s' argument"), "mode");
 	}
 	SEXP ans_i = gfind(translateChar(STRING_ELT(x, i % nvals)), env,
                            gmode, VECTOR_ELT(ifnotfound, i % nifnfnd),
-                           ginherits, rho);
+                           ginherits);
 	SET_VECTOR_ELT(ans, i, lazy_duplicate(ans_i));
     }
 
@@ -1589,9 +1585,8 @@ static SEXP matchEnvir(SEXP call, const char *what)
 
 /* This is primitive */
 SEXP attribute_hidden
-do_as_environment(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_as_environment(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* arg)
 {
-    SEXP arg = args[0];
     if(isEnvironment(arg))
 	return arg;
 
@@ -1617,7 +1612,7 @@ do_as_environment(/*const*/ rho::Expression* call, const rho::BuiltInFunction* o
 	PROTECT(call = lang4(install("list2env"), arg,
 			     /* envir = */nullptr,
 			     /* parent = */R_EmptyEnv));
-	val = eval(call, rho);
+	val = eval(call, R_BaseEnv);
 	UNPROTECT(1);
 	return val;
     }

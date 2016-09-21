@@ -297,20 +297,17 @@ SEXP attribute_hidden do_sys(/*const*/ rho::Expression* call, const rho::BuiltIn
     }
 }
 
-SEXP attribute_hidden do_parentframe(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_parentframe(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_)
 {
-    int n;
-    SEXP t;
     ClosureContext *cptr;
 
-    t = num_args ? args[0] : nullptr;
-    n = asInteger(t);
+    int n = asInteger(n_);
 
     if(n == NA_INTEGER || n < 1 )
 	error(_("invalid '%s' value"), "n");
 
     cptr = ClosureContext::innermost();
-    t = cptr->callEnvironment();
+    SEXP t = cptr->callEnvironment();
     while (cptr){
 	if (cptr->workingEnvironment() == t)
 	    {
