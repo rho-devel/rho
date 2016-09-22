@@ -35,6 +35,7 @@
 #include "R_ext/Arith.h"
 #include "rho/FixedVector.hpp"
 #include "rho/SEXP_downcast.hpp"
+#include <cmath>
 
 namespace rho {
     // Template specializations:
