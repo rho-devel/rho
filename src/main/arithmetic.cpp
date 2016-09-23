@@ -161,10 +161,10 @@ int R_IsNaN(double x)
 
 /* Mainly for use in packages */
 int R_isnancpp(double x) {
-    return ISNAN(x);
+    return std::isnan(x);
 }
 int R_finite(double x) {
-    return R_FINITE(x);
+    return std::isfinite(x);
 }
 
 /* Arithmetic Initialization */
