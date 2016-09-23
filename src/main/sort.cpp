@@ -181,10 +181,9 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
     return FALSE;/* sorted */
 } // isUnsorted()
 
-SEXP attribute_hidden do_isunsorted(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_isunsorted(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* strictly_)
 {
-    RObject* x = PROTECT(args[0]);
-    int strictly = asLogical(args[1]);
+    int strictly = asLogical(strictly_);
     if(strictly == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' argument"), "strictly");
     if(isVectorAtomic(x)) {
@@ -195,8 +194,8 @@ SEXP attribute_hidden do_isunsorted(/*const*/ rho::Expression* call, const rho::
     if(isObject(x)) {
 	SEXP call;
 	PROTECT(call = 	// R>  .gtn(x, strictly) :
-		lang3(install(".gtn"), x, args[1]));
-	SEXP ans = eval(call, rho);
+		lang3(install(".gtn"), x, strictly_));
+	SEXP ans = eval(call, R_BaseEnv);
 	UNPROTECT(2);
 	return ans;
     } // else

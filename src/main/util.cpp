@@ -757,28 +757,26 @@ SEXP attribute_hidden do_getwd(/*const*/ rho::Expression* call, const rho::Built
 # include <direct.h> /* for chdir, via io.h */
 #endif
 
-SEXP attribute_hidden do_setwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_setwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dir)
 {
-    SEXP s = R_NilValue, wd = R_NilValue;	/* -Wall */
-
-    if (num_args == 0 || !isValidString(s = args[0]))
+    if (!isValidString(dir))
 	error(_("character argument expected"));
-    if (STRING_ELT(s, 0) == NA_STRING)
+    if (STRING_ELT(dir, 0) == NA_STRING)
 	error(_("missing value is invalid"));
 
     /* get current directory to return */
-    PROTECT(wd = intern_getwd());
+    SEXP wd = PROTECT(intern_getwd());
 
 #ifdef Win32
     {
-	const wchar_t *path = filenameToWchar(STRING_ELT(s, 0), TRUE);
+	const wchar_t *path = filenameToWchar(STRING_ELT(dir, 0), TRUE);
 	if(_wchdir(path) < 0)
 	    error(_("cannot change working directory"));
     }
 #else
     {
 	const char *path
-	    = R_ExpandFileName(translateChar(STRING_ELT(s, 0)));
+	    = R_ExpandFileName(translateChar(STRING_ELT(dir, 0)));
     if(chdir(path) < 0)
 	error(_("cannot change working directory"));
     }
@@ -2241,28 +2239,28 @@ SEXP attribute_hidden do_findinterval(/*const*/ rho::Expression* call, const rho
 # undef ERROR
 #endif
 #include <R_ext/Applic.h>
-SEXP attribute_hidden do_pretty(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_pretty(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* min_, rho::RObject*  max_, rho::RObject*  n_, rho::RObject*  min_n_, rho::RObject*  shrink_sml_, rho::RObject*  bias_, rho::RObject*  eps_correct_)
 {
     SEXP ans, nm, hi;
-    double l = asReal(args[0]); args = (args + 1);
+    double l = asReal(min_);
     if (!R_FINITE(l)) error(_("invalid '%s' argument"), "l");
-    double u = asReal(args[0]); args = (args + 1);
+    double u = asReal(max_);
     if (!R_FINITE(u)) error(_("invalid '%s' argument"), "u");
-    int n = asInteger(args[0]); args = (args + 1);
+    int n = asInteger(n_);
     if (n == NA_INTEGER || n < 0) error(_("invalid '%s' argument"), "n");
-    int min_n = asInteger(args[0]); args = (args + 1);
+    int min_n = asInteger(min_n_);
     if (min_n == NA_INTEGER || min_n < 0 || min_n > n) 
 	error(_("invalid '%s' argument"), "min.n");
-    double shrink = asReal(args[0]); args = (args + 1);
+    double shrink = asReal(shrink_sml_);
     if (!R_FINITE(shrink) || shrink <= 0.) 
 	error(_("invalid '%s' argument"), "shrink.sml");
-    PROTECT(hi = coerceVector(args[0], REALSXP)); args = (args + 1);
+    PROTECT(hi = coerceVector(bias_, REALSXP));
     double z;
     if (!R_FINITE(z = REAL(hi)[0]) || z < 0.)
 	error(_("invalid '%s' argument"), "high.u.bias");
     if (!R_FINITE(z = REAL(hi)[1]) || z < 0.)
 	error(_("invalid '%s' argument"), "u5.bias");
-    int eps = asInteger(args[0]); /* eps.correct */
+    int eps = asInteger(eps_correct_); /* eps.correct */
     if (eps == NA_INTEGER || eps < 0 || eps > 2) 
 	error(_("'eps.correct' must be 0, 1, or 2"));
     R_pretty(&l, &u, &n, min_n, shrink, REAL(hi), eps, 1);
@@ -2288,17 +2286,17 @@ static void
 str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	   const char *format, const char *flag, char **result);
 
-SEXP attribute_hidden do_formatC(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_formatC(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject*  mode_, rho::RObject*  width_, rho::RObject*  digits_, rho::RObject*  format_, rho::RObject*  flag_, rho::RObject*  i_strlen_)
 {
-    SEXP x = args[0]; args = (args + 1);
+    SEXP x = x_;
     if (!isVector(x)) error(_("'x' must be a vector"));
     R_xlen_t n = XLENGTH(x);
-    const char *type = CHAR(STRING_ELT(args[0], 0)); args = (args + 1);
-    int width = asInteger(args[0]); args = (args + 1);
-    int digits = asInteger(args[0]); args = (args + 1);
-    const char *fmt = CHAR(STRING_ELT(args[0], 0)); args = (args + 1);
-    const char *flag = CHAR(STRING_ELT(args[0], 0)); args = (args + 1);
-    SEXP i_strlen = PROTECT(coerceVector(args[0], INTSXP));
+    const char *type = CHAR(STRING_ELT(mode_, 0));
+    int width = asInteger(width_);
+    int digits = asInteger(digits_);
+    const char *fmt = CHAR(STRING_ELT(format_, 0));
+    const char *flag = CHAR(STRING_ELT(flag_, 0));
+    SEXP i_strlen = PROTECT(coerceVector(i_strlen_, INTSXP));
     char **cptr = static_cast<char **>( RHO_alloc(n, sizeof(char*)));
     for (R_xlen_t i = 0; i < n; i++) {
 	int ix = INTEGER(i_strlen)[i] + 2;

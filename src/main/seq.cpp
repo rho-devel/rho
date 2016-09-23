@@ -154,16 +154,16 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     return ans;
 }
 
-SEXP attribute_hidden do_colon(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_colon(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_)
 {
     SEXP s1, s2;
     double n1, n2;
 
-    if (inherits(args[0], "factor") && inherits(args[1], "factor"))
-	return(cross_colon(call, args[0], args[1]));
+    if (inherits(from_, "factor") && inherits(to_, "factor"))
+	return(cross_colon(call, from_, to_));
 
-    s1 = args[0];
-    s2 = args[1];
+    s1 = from_;
+    s2 = to_;
     n1 = length(s1);
     n2 = length(s2);
     if (n1 == 0 || n2 == 0)

@@ -29,7 +29,7 @@ matrix:
             - gfortran-4.9
       env: FC=gfortran-4.9 F77=gfortran-4.9 C_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
-    # gcc 5.3
+    # gcc 5.4
     - compiler: gcc
       addons:
         apt:
@@ -42,12 +42,12 @@ matrix:
             - liblzma-dev
             - libpcre3-dev
             - libedit-dev
-            - gcc-5=5.3.*
-            - g++-5=5.3.*
-            - gfortran-5=5.3.*
+            - gcc-5=5.4.*
+            - g++-5=5.4.*
+            - gfortran-5=5.4.*
       env: FC=gfortran-5 F77=gfortran-5 C_COMPILER=gcc-5 CXX_COMPILER=g++-5
 
-    # gcc 6.1 with code coverage.
+    # gcc 6.2 with code coverage.
     - compiler: gcc
       addons:
         apt:
@@ -60,9 +60,9 @@ matrix:
             - liblzma-dev
             - libpcre3-dev
             - libedit-dev
-            - gcc-6=6.1.*
-            - g++-6=6.1.*
-            - gfortran-6=6.1.*
+            - gcc-6=6.2.*
+            - g++-6=6.2.*
+            - gfortran-6=6.2.*
       env: F77=gfortran-6 FCC=gfortran-6 C_COMPILER=gcc-6 CXX_COMPILER=g++-6 CFLAGS="-g -O1 --coverage" CXXFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" COVERAGE=1
 
     # TODO: work out how to use clang 3.4 on travis.

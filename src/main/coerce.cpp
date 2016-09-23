@@ -1397,20 +1397,17 @@ SEXP attribute_hidden do_asatomic(/*const*/ rho::Expression* call, const rho::Bu
 
 /* NB: as.vector is used for several other as.xxxx, including
    as.expression, as.list, as.pairlist, as.symbol, (as.single) */
-SEXP attribute_hidden do_asvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_asvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* mode)
 {
-    SEXP x, ans;
+    SEXP ans;
     SEXPTYPE type;
 
-    op->checkNumArgs(num_args, 2, call);
-    x = args[0];
-
-    if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
+    if (!Rf_isString(mode) || LENGTH(mode) != 1)
 	errorcall_return(call, R_MSG_mode);
-    if (!strcmp("function", (CHAR(STRING_ELT(args[1], 0))))) /* ASCII */
+    if (!strcmp("function", (CHAR(STRING_ELT(mode, 0))))) /* ASCII */
 	type = CLOSXP;
     else
-	type = Rf_str2type(CHAR(STRING_ELT(args[1], 0))); /* ASCII */
+	type = Rf_str2type(CHAR(STRING_ELT(mode, 0))); /* ASCII */
 
     /* "any" case added in 2.13.0 */
     if(type == ANYSXP || TYPEOF(x) == type) {
@@ -1722,63 +1719,63 @@ SEXP attribute_hidden do_typeof(/*const*/ rho::Expression* call, const rho::Buil
 /* Define many of the <primitive> "is.xxx" functions :
    Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or ../include/Rinlinedfuns.h
 */
-SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     switch (op->variant()) {
     case NILSXP:	/* is.null */
-	return Rf_ScalarLogical(Rf_isNull(args[0]));
+	return Rf_ScalarLogical(Rf_isNull(x_));
     case LGLSXP:	/* is.logical */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == LGLSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == LGLSXP);
 	break;
     case INTSXP:	/* is.integer */
-	return Rf_ScalarLogical((TYPEOF(args[0]) == INTSXP)
-				&& !Rf_inherits(args[0], "factor"));
+	return Rf_ScalarLogical((TYPEOF(x_) == INTSXP)
+				&& !Rf_inherits(x_, "factor"));
 	break;
     case REALSXP:	/* is.double */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == REALSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == REALSXP);
 	break;
     case CPLXSXP:	/* is.complex */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == CPLXSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == CPLXSXP);
 	break;
     case STRSXP:	/* is.character */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == STRSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == STRSXP);
 	break;
     case SYMSXP:	/* is.symbol === is.name */
-	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
-	    SEXP dot_xData = R_getS4DataSlot(args[0], SYMSXP);
+	if(IS_S4_OBJECT(x_) && (TYPEOF(x_) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(x_, SYMSXP);
 	    return Rf_ScalarLogical(TYPEOF(dot_xData) == SYMSXP);
 	}
 	else
-	    return Rf_ScalarLogical(TYPEOF(args[0]) == SYMSXP);
+	    return Rf_ScalarLogical(TYPEOF(x_) == SYMSXP);
 	break;
     case ENVSXP:	/* is.environment */
-	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
-	    SEXP dot_xData = R_getS4DataSlot(args[0], ENVSXP);
+	if(IS_S4_OBJECT(x_) && (TYPEOF(x_) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(x_, ENVSXP);
 	    return Rf_ScalarLogical(TYPEOF(dot_xData) == ENVSXP);
 	}
 	else
-	    return Rf_ScalarLogical(TYPEOF(args[0]) == ENVSXP);
+	    return Rf_ScalarLogical(TYPEOF(x_) == ENVSXP);
 	break;
     case VECSXP:	/* is.list */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == VECSXP ||
-			   TYPEOF(args[0]) == LISTSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == VECSXP ||
+			   TYPEOF(x_) == LISTSXP);
 	break;
     case LISTSXP:	/* is.pairlist */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == LISTSXP ||
-			   TYPEOF(args[0]) == NILSXP);/* pairlist() -> NULL */
+	return Rf_ScalarLogical(TYPEOF(x_) == LISTSXP ||
+			   TYPEOF(x_) == NILSXP);/* pairlist() -> NULL */
 	break;
     case EXPRSXP:	/* is.expression */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == EXPRSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == EXPRSXP);
 	break;
     case RAWSXP:	/* is.raw */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == RAWSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == RAWSXP);
 	break;
 
     case 50:		/* is.object */
-	return Rf_ScalarLogical(OBJECT(args[0]));
+	return Rf_ScalarLogical(OBJECT(x_));
 	break;
     case 51:		/* isS4 */
-	return Rf_ScalarLogical(IS_S4_OBJECT(args[0]) != 0);
+	return Rf_ScalarLogical(IS_S4_OBJECT(x_) != 0);
 	break;
 /* no longer used: is.data.frame is R code
     case 80:
@@ -1787,19 +1784,19 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
 */
 
     case 100:		/* is.numeric */
-	return Rf_ScalarLogical(Rf_isNumeric(args[0]) &&
+	return Rf_ScalarLogical(Rf_isNumeric(x_) &&
                                 /* Rf_isNumeric excludes factors */
-				!Rf_isLogical(args[0])); 
+				!Rf_isLogical(x_)); 
 	break;
     case 101:		/* is.matrix */
-	return Rf_ScalarLogical(Rf_isMatrix(args[0]));
+	return Rf_ScalarLogical(Rf_isMatrix(x_));
 	break;
     case 102:		/* is.array */
-	return Rf_ScalarLogical(Rf_isArray(args[0]));
+	return Rf_ScalarLogical(Rf_isArray(x_));
 	break;
 
     case 200:		/* is.atomic */
-	switch(TYPEOF(args[0])) {
+	switch(TYPEOF(x_)) {
 	case NILSXP:
 	    /* NULL is atomic (S compatibly), but not in Rf_isVectorAtomic(.) */
 	case CHARSXP:
@@ -1817,7 +1814,7 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
 	}
 	break;
     case 201:		/* is.recursive */
-	switch(TYPEOF(args[0])) {
+	switch(TYPEOF(x_)) {
 	case VECSXP:
 	case LISTSXP:
 	case CLOSXP:
@@ -1842,15 +1839,15 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
 	break;
 
     case 300:		/* is.call */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == LANGSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == LANGSXP);
 	break;
     case 301:		/* is.language */
-	return Rf_ScalarLogical(TYPEOF(args[0]) == SYMSXP ||
-			   TYPEOF(args[0]) == LANGSXP ||
-			   TYPEOF(args[0]) == EXPRSXP);
+	return Rf_ScalarLogical(TYPEOF(x_) == SYMSXP ||
+			   TYPEOF(x_) == LANGSXP ||
+			   TYPEOF(x_) == EXPRSXP);
 	break;
     case 302:		/* is.function */
-	return Rf_ScalarLogical(Rf_isFunction(args[0]));
+	return Rf_ScalarLogical(Rf_isFunction(x_));
 	break;
 
     case 999:		/* is.single */
@@ -1940,7 +1937,7 @@ namespace {
     }
 }
     
-SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -1950,7 +1947,7 @@ SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltI
 	errorcall_return(call, "is.na " R_MSG_list_vec);
 
 #endif
-    x = args[0];
+    x = x_;
     n = Rf_xlength(x);
     PROTECT(ans = Rf_allocVector(LGLSXP, n));
     if (Rf_isVector(x)) {
@@ -2157,7 +2154,7 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -2166,7 +2163,7 @@ SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::Built
     if (!Rf_isList(args[0]) && !Rf_isVector(args[0]))
 	errorcall_return(call, "is.nan " R_MSG_list_vec);
 #endif
-    x = args[0];
+    x = x_;
     n = Rf_xlength(x);
     PROTECT(ans = Rf_allocVector(LGLSXP, n));
     if (Rf_isVector(x)) {
@@ -2214,7 +2211,7 @@ SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
@@ -2223,7 +2220,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::Bu
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.finite " R_MSG_list_vec);
 #endif
-    x = args[0];
+    x = x_;
     n = Rf_xlength(x);
     ans = Rf_allocVector(LGLSXP, n);
     if (Rf_isVector(x)) {
@@ -2269,7 +2266,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_isinfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_isinfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP ans, x, names, dims;
     double xr, xi;
@@ -2279,7 +2276,7 @@ SEXP attribute_hidden do_isinfinite(/*const*/ rho::Expression* call, const rho::
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.infinite " R_MSG_list_vec);
 #endif
-    x = args[0];
+    x = x_;
     n = Rf_xlength(x);
     ans = Rf_allocVector(LGLSXP, n);
     if (Rf_isVector(x)) {

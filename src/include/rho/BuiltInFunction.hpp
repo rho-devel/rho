@@ -318,7 +318,22 @@ namespace rho {
 	RObject* invoke(const Expression* call, Environment* env,
                         ArgList* args) const
 	{
-            assert(m_function);
+	    // Handle internal generic functions.
+	    static BuiltInFunction* length_fn
+		= BuiltInFunction::obtainPrimitive("length");
+	    if (needsDispatch(args)
+                // Specials, the summary group and length handle dispatch
+		// themselves.
+		&& sexptype() == BUILTINSXP
+		&& !isSummaryGroupGeneric()
+		&& this != length_fn)
+	    {
+		auto dispatched = InternalDispatch(call, env, args);
+		if (dispatched.first)
+		    return dispatched.second;
+	    }
+
+	    assert(m_function);
             return m_function(const_cast<Expression*>(call),
                               const_cast<BuiltInFunction*>(this),
                               const_cast<PairList*>(args->list()),
@@ -328,6 +343,20 @@ namespace rho {
         RObject* invoke(const Expression* call, Environment* env,
                         RObject* const* args, int num_args,
                         const PairList* tags) const {
+	    // Handle internal generic functions.
+	    static BuiltInFunction* length_fn
+		= BuiltInFunction::obtainPrimitive("length");
+	    if (needsDispatch(num_args, args)
+		&& sexptype() == BUILTINSXP
+		&& !isSummaryGroupGeneric()
+		&& this != length_fn)
+	    {
+		auto dispatched = RealInternalDispatch(call, num_args, args,
+						       tags, env);
+		if (dispatched.first)
+		    return dispatched.second;
+	    }
+	    
             assert(m_quick_function);
             return m_quick_function(const_cast<Expression*>(call),
                                     this, env, args, num_args, tags);
@@ -335,9 +364,26 @@ namespace rho {
 
 	template<typename... Args>
         RObject* invokeFixedArity(const Expression* call,
+				  Environment* env,
+				  const PairList* tags,
 				  Args... args) const {
 	    assert(m_fixed_arity_fn);
 	    assert(sizeof...(Args) == arity());
+	    static BuiltInFunction* length_fn
+		= BuiltInFunction::obtainPrimitive("length");
+
+	    if (needsDispatch(args...)
+		&& sexptype() == BUILTINSXP
+		&& !isSummaryGroupGeneric()
+		&& this != length_fn)
+	    {
+		std::initializer_list<RObject*> args_array = { args... };
+		auto dispatched = RealInternalDispatch(
+		    call, args_array.size(), args_array.begin(), tags, env);
+		if (dispatched.first)
+		    return dispatched.second;
+	    }
+
 	    auto fn = reinterpret_cast<
 		RObject*(*)(Expression*, const BuiltInFunction*,
 			    Args...)>(m_fixed_arity_fn);
@@ -360,86 +406,26 @@ namespace rho {
 			 Environment* env,
 			 ArgList* evaluated_args) const;
 
+        // This works like DispatchOrEval in the case where the arguments
+        // have already been evaluated.
         std::pair<bool, RObject*>
         InternalDispatch(const Expression* call,
-			 Environment*env,
+			 Environment* env,
 			 int num_args,
 			 RObject* const* evaluated_args,
 			 const PairList* tags) const {
 	    // assert(sexptype() == BUILTINSXP
 	    // 	   || m_function == do_Math2
 	    // 	   || m_function == do_log);
-	    assert(m_dispatch_type != DispatchType::NONE);
-
-	    switch (m_dispatch_type) {
-	    case DispatchType::GROUP_MATH:
-	    case DispatchType::GROUP_COMPLEX:
-	    case DispatchType::GROUP_SUMMARY:
-		return InternalGroupDispatch(call, env,
-					     num_args, evaluated_args, tags);
-	    case DispatchType::GROUP_OPS:
-		return InternalOpsGroupDispatch(call, env,
-						num_args, evaluated_args, tags);
-	    case DispatchType::INTERNAL:
-		return InternalDispatch(call, num_args, evaluated_args, tags,
-					env);
-	    case DispatchType::NONE:
+	    if (!needsDispatch(num_args, evaluated_args)) {
 		return std::make_pair(false, nullptr);
-	    default:
-		// Should be unreachable.
-		Rf_error("Bad internal dispatch type.");
-	    };
+	    }
+	    return RealInternalDispatch(call, num_args, evaluated_args, tags,
+					env);
 	}
 
     private:
 	const char* GetInternalGroupDispatchName() const;
-
-	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
-	// dispatch on the first argument (first two for 'Ops').
-	// The number of arguments is not checked.
-        std::pair<bool, RObject*>
-        InternalGroupDispatch(const Expression* call,
-			      Environment* env, int num_args,
-			      RObject* const* evaluated_args,
-                              const PairList* tags) const
-        {
-	    if (!needsDispatch(num_args, evaluated_args, 1)) {
-		return std::make_pair(false, nullptr);
-	    }
-	    return RealInternalGroupDispatch(call, env, num_args,
-					     evaluated_args, tags);
-	}
-
-	// The 'Ops' group is special becaues it dispatches on the first two
-	// arguments.
-        std::pair<bool, RObject*>
-        InternalOpsGroupDispatch(const Expression* call,
-				 Environment* env, int num_args,
-				 RObject* const* evaluated_args,
-                                 const PairList* tags) const
-        {
-	    if (!needsDispatch(num_args, evaluated_args, 2)) {
-		return std::make_pair(false, nullptr);
-	    }
-	    return RealInternalGroupDispatch(call, env, num_args,
-					     evaluated_args, tags);
-	}
-
-        // This works like DispatchOrEval in the case where the arguments
-        // have already been evaluated.
-	// Note that only the first argument is used for dispatching.
-        std::pair<bool, RObject*>
-        InternalDispatch(const Expression* call,
-                         int num_args, RObject* const* evaluated_args,
-                         const PairList* tags,
-                         Environment* env) const
-          {
-	      if (!needsDispatch(num_args, evaluated_args, 1)) {
-		      return std::make_pair(false, nullptr);
-	      }
-	      return RealInternalDispatch(call, num_args,
-					  evaluated_args, tags, env);
-          }
 
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
@@ -554,31 +540,48 @@ namespace rho {
 	// Internal dispatch is used a lot, but there most of the time
 	// no dispatch is needed because no objects are involved.
 	// This quickly detects most of cases.
-	bool needsDispatch(int num_args, RObject* const* evaluated_args,
-			   int args_to_check) const {
-	    // args_to_check is always 1 or 2.
-	    // assert(sexptype() == BUILTINSXP);
-	    assert(args_to_check == 1 || args_to_check == 2);
-
-	    if (num_args > 0) {
-		if (Rf_isObject(evaluated_args[0])) {
-		    return true;
-		} else if (args_to_check == 2 && num_args > 1) {
-		    return Rf_isObject(evaluated_args[1]);
-		}
+	bool needsDispatch(int num_args, RObject* const* evaluated_args) const
+	{
+	    switch(num_args) {
+	    case 0:
+		return false;
+	    case 1:
+		return needsDispatch(evaluated_args[0]);
+	    default:
+		return needsDispatch(evaluated_args[0], evaluated_args[1]);
 	    }
+	}
+
+	bool needsDispatch(const ArgList* evaluated_args) const
+	{
+	    if (!isInternalGeneric())
+		return false;
+	    switch(evaluated_args->size()) {
+	    case 0:
+		return false;
+	    case 1:
+		return needsDispatch(evaluated_args->get(0));
+	    default:
+		return needsDispatch(evaluated_args->get(0),
+				     evaluated_args->get(1));
+	    }
+	}
+
+	bool needsDispatch(const RObject* arg1 = nullptr,
+			   const RObject* arg2 = nullptr,
+			   ...) const
+	{
+	    if (!isInternalGeneric())
+		return false;
+	    if (arg1 && arg1->hasClass())
+		return true;
+	    // 'Ops' dispatch on the second argument as well.
+	    if (m_dispatch_type == DispatchType::GROUP_OPS
+		&& arg2 && arg2->hasClass())
+		return true;
 	    return false;
 	}
 
-	// Most cases dispatch on the first argument, except "Ops" which uses
-	// the first two.
-        std::pair<bool, RObject*>
-        RealInternalGroupDispatch(const Expression* call,
-				  Environment* env, int num_args,
-                                  RObject* const* args, const PairList* tags)
-          const;
-
-	// This dispatches on just the first argument.
         std::pair<bool, RObject*>
         RealInternalDispatch(const Expression* call,
                              int num_args, RObject* const* evaluated_args,

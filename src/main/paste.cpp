@@ -285,7 +285,7 @@ SEXP attribute_hidden do_paste(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* sep_)
 {
     SEXP ans, sep, x;
     int i, j, k, ln, maxlen, nx, nzero, pwidth, sepw;
@@ -294,14 +294,14 @@ SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::Bu
 
     /* Check the arguments */
 
-    x = args[0];
+    x = x_;
     if (!isVectorList(x))
 	error(_("invalid first argument"));
     nx = length(x);
     if(nx == 0) return allocVector(STRSXP, 0);
 
 
-    sep = args[1];
+    sep = sep_;
     if (!isString(sep) || LENGTH(sep) <= 0 || STRING_ELT(sep, 0) == NA_STRING)
 	error(_("invalid separator"));
     sep = STRING_ELT(sep, 0);
@@ -316,7 +316,7 @@ SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::Bu
 	    SEXP call, xj = VECTOR_ELT(x, j);
 	    if(OBJECT(xj)) { /* method dispatch */
 		PROTECT(call = lang2(install("as.character"), xj));
-		SET_VECTOR_ELT(x, j, eval(call, env));
+		SET_VECTOR_ELT(x, j, eval(call, R_BaseEnv));
 		UNPROTECT(1);
 	    } else if (isSymbol(xj))
 		SET_VECTOR_ELT(x, j, ScalarString(PRINTNAME(xj)));
@@ -373,7 +373,7 @@ SEXP attribute_hidden do_filepath(/*const*/ rho::Expression* call, const rho::Bu
 
 /* format.default(x, trim, digits, nsmall, width, justify, na.encode,
 		  scientific, decimal.mark) */
-SEXP attribute_hidden do_format(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_format(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject*  trim_, rho::RObject*  digits_, rho::RObject*  nsmall_, rho::RObject*  width_, rho::RObject*  justify_, rho::RObject*  na_encode_, rho::RObject*  scientific_, rho::RObject*  decimal_mark_)
 {
     SEXP l, x, y, swd;
     int il, digits, trim = 0, nsmall = 0, wd = 0, adj = -1, na, sci = 0;
@@ -385,74 +385,68 @@ SEXP attribute_hidden do_format(/*const*/ rho::Expression* call, const rho::Buil
     PrintDefaults();
     scikeep = R_print.scipen;
 
-    if (isEnvironment(x = args[0])) {
+    if (isEnvironment(x = x_)) {
 	return mkString(EncodeEnvironment(x));
     }
     else if (!isVector(x))
 	error(_("first argument must be atomic"));
-    args = (args + 1);
 
-    trim = asLogical(args[0]);
+    trim = asLogical(trim_);
     if (trim == NA_INTEGER)
 	error(_("invalid '%s' argument"), "trim");
-    args = (args + 1);
 
-    if (!isNull(args[0])) {
-	digits = asInteger(args[0]);
+    if (!isNull(digits_)) {
+	digits = asInteger(digits_);
 	if (digits == NA_INTEGER || digits < R_MIN_DIGITS_OPT
 	    || digits > R_MAX_DIGITS_OPT)
 	    error(_("invalid '%s' argument"), "digits");
 	R_print.digits = digits;
     }
-    args = (args + 1);
 
-    nsmall = asInteger(args[0]);
+    nsmall = asInteger(nsmall_);
     if (nsmall == NA_INTEGER || nsmall < 0 || nsmall > 20)
 	error(_("invalid '%s' argument"), "nsmall");
-    args = (args + 1);
 
-    if (isNull(swd = args[0])) wd = 0; else wd = asInteger(swd);
+    if (isNull(swd = width_)) wd = 0; else wd = asInteger(swd);
     if(wd == NA_INTEGER)
 	error(_("invalid '%s' argument"), "width");
-    args = (args + 1);
 
-    adj = asInteger(args[0]);
+    adj = asInteger(justify_);
     if(adj == NA_INTEGER || adj < 0 || adj > 3)
 	error(_("invalid '%s' argument"), "justify");
-    args = (args + 1);
 
-    na = asLogical(args[0]);
+    na = asLogical(na_encode_);
     if(na == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "na.encode");
-    args = (args + 1);
-    if(LENGTH(args[0]) != 1)
+
+    if(LENGTH(scientific_) != 1)
 	error(_("invalid '%s' argument"), "scientific");
-    if(isLogical(args[0])) {
-	int tmp = LOGICAL(args[0])[0];
+    if(isLogical(scientific_)) {
+	int tmp = LOGICAL(scientific_)[0];
 	if(tmp == NA_LOGICAL) sci = NA_INTEGER;
 	else sci = tmp > 0 ?-100 : 100;
-    } else if (isNumeric(args[0])) {
-	sci = asInteger(args[0]);
+    } else if (isNumeric(scientific_)) {
+	sci = asInteger(scientific_);
     } else
 	error(_("invalid '%s' argument"), "scientific");
     if(sci != NA_INTEGER) R_print.scipen = sci;
-    args = (args + 1);
+
     // copy/paste from "OutDec" part of ./options.c
-    if (TYPEOF(args[0]) != STRSXP || LENGTH(args[0]) != 1)
+    if (TYPEOF(decimal_mark_) != STRSXP || LENGTH(decimal_mark_) != 1)
 	error(_("invalid '%s' argument"), "decimal.mark");
     const char *my_OutDec;
-    if(STRING_ELT(args[0], 0) == NA_STRING)
+    if(STRING_ELT(decimal_mark_, 0) == NA_STRING)
 	my_OutDec = OutDec; // default
     else {
 	static char sdec[11];
 // not warning here by default for now
 #ifdef _WARN_decimal_mark_non_1
-	if(R_nchar(STRING_ELT(args[0], 0), Chars,
+	if(R_nchar(STRING_ELT(decimal_mark_, 0), Chars,
 		   /* allowNA = */ FALSE, /* keepNA = */ FALSE,
 		   "decimal.mark") != 1) // will become an error
 	    warning(_("'decimal.mark' must be a string of one character"));
 #endif
-	strncpy(sdec, CHAR(STRING_ELT(args[0], 0)), 10);
+	strncpy(sdec, CHAR(STRING_ELT(decimal_mark_, 0)), 10);
 	sdec[10] = '\0';
 	my_OutDec = sdec;
     }

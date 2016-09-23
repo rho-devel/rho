@@ -71,14 +71,11 @@ SEXP GetColNames(SEXP dimnames)
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_matrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_matrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vals, rho::RObject* nrow, rho::RObject* ncol, rho::RObject* byrow_, rho::RObject* dimnames, rho::RObject* miss_nr_, rho::RObject* miss_nc_)
 {
-    SEXP vals, ans, snr, snc, dimnames;
-    int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
-    R_xlen_t lendat;
+    SEXP ans;
+    int nr = 1, nc = 1;
 
-    op->checkNumArgs(num_args, call);
-    vals = args[0]; args = (args + 1);
     switch(TYPEOF(vals)) {
 	case LGLSXP:
 	case INTSXP:
@@ -93,28 +90,24 @@ SEXP attribute_hidden do_matrix(/*const*/ rho::Expression* call, const rho::Buil
 	    error(_("'data' must be of a vector type, was '%s'"),
 		type2char(TYPEOF(vals)));
     }
-    lendat = XLENGTH(vals);
-    snr = args[0]; args = (args + 1);
-    snc = args[0]; args = (args + 1);
-    byrow = asLogical(args[0]); args = (args + 1);
+    R_xlen_t lendat = XLENGTH(vals);
+    int byrow = asLogical(byrow_);
     if (byrow == NA_INTEGER)
 	error(_("invalid '%s' argument"), "byrow");
-    dimnames = args[0];
-    args = (args + 1);
-    miss_nr = asLogical(args[0]); args = (args + 1);
-    miss_nc = asLogical(args[0]);
+    int miss_nr = asLogical(miss_nr_);
+    int miss_nc = asLogical(miss_nc_);
 
     if (!miss_nr) {
-	if (!isNumeric(snr)) error(_("non-numeric matrix extent"));
-	nr = asInteger(snr);
+	if (!isNumeric(nrow)) error(_("non-numeric matrix extent"));
+	nr = asInteger(nrow);
 	if (nr == NA_INTEGER)
 	    error(_("invalid 'nrow' value (too large or NA)"));
 	if (nr < 0)
 	    error(_("invalid 'nrow' value (< 0)"));
     }
     if (!miss_nc) {
-	if (!isNumeric(snc)) error(_("non-numeric matrix extent"));
-	nc = asInteger(snc);
+	if (!isNumeric(ncol)) error(_("non-numeric matrix extent"));
+	nc = asInteger(ncol);
 	if (nc == NA_INTEGER)
 	    error(_("invalid 'ncol' value (too large or NA)"));
 	if (nc < 0)
@@ -453,13 +446,13 @@ SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_rowscols(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_rowscols(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP x, ans;
     int i, j, nr, nc;
 
     /* This is the dimensions vector */
-    x = args[0];
+    x = x_;
     if (!isInteger(x) || LENGTH(x) != 2)
 	error(_("a matrix-like object is required as argument to '%s'"),
 	      (op->variant() == 2) ? "col" : "row");

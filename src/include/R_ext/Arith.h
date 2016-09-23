@@ -43,11 +43,6 @@
 extern "C" {
 #endif
 
-#ifndef NO_C_HEADERS
-    /* needed for isnan and isfinite */
-# include <math.h>
-#endif
-
 /* implementation of these : ../../main/arithmetic.c */
 LibExtern double R_NaN;		/* IEEE NaN */
 LibExtern double R_PosInf;	/* IEEE Inf */
@@ -55,7 +50,7 @@ LibExtern double R_NegInf;	/* IEEE -Inf */
 LibExtern double R_NaReal;	/* NA_REAL: IEEE */
 LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 #ifdef __MAIN__
-//#undef extern  /* 2007/06/03 arr */
+#undef extern
 #undef LibExtern
 #endif
 
@@ -72,23 +67,23 @@ int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 
 /* ISNAN(): True for *both* NA and NaN.
    NOTE: some systems do not return 1 for TRUE.
-   C specifies that isnan and isfinite are macros, but the C++ math headers
-   specifically undefine them and are not required to add replacement function
-   declarations in the global namespace.
-
-   This works around that issue.  This code also appears in Rmath.h
- */
-#ifdef isnan
-#  define ISNAN(x) (isnan(x) != 0)
+   Also note that C++ math headers specifically undefine
+   isnan if it is a macro (it is on macOS and in C99),
+   hence the workaround.  This code also appears in Rmath.h
+*/
+#ifdef __cplusplus
+  int R_isnancpp(double); /* in arithmetic.c */
+#  define ISNAN(x)     R_isnancpp(x)
 #else
-#  define ISNAN(x) std::isnan(x)
+#  define ISNAN(x)     (isnan(x)!=0)
 #endif
-int R_isnancpp(double x);
 
-#ifdef isfinite
-#  define R_FINITE(x) (isfinite(x) != 0)
+/* The following is only defined inside R */
+#ifdef HAVE_WORKING_ISFINITE
+/* isfinite is defined in <math.h> according to C99 */
+# define R_FINITE(x)    isfinite(x)
 #else
-#  define R_FINITE(x) std::isfinite(x)
+# define R_FINITE(x)    R_finite(x)
 #endif
 
 #ifdef  __cplusplus

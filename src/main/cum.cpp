@@ -156,12 +156,12 @@ static SEXP icummin(SEXP x, SEXP s)
     return s;
 }
 
-SEXP attribute_hidden do_cum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_cum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
 {
     SEXP s, t, ans;
     R_xlen_t i, n;
-    if (isComplex(args[0])) {
-	t = args[0];
+    if (isComplex(x_)) {
+	t = x_;
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(CPLXSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));
@@ -187,9 +187,9 @@ SEXP attribute_hidden do_cum(/*const*/ rho::Expression* call, const rho::BuiltIn
 	default:
 	    errorcall(call, "unknown cumxxx function");
 	}
-    } else if( ( isInteger(args[0]) || isLogical(args[0]) ) &&
+    } else if( ( isInteger(x_) || isLogical(x_) ) &&
 	       op->variant() != 2) {
-	PROTECT(t = coerceVector(args[0], INTSXP));
+	PROTECT(t = coerceVector(x_, INTSXP));
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(INTSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));
@@ -215,7 +215,7 @@ SEXP attribute_hidden do_cum(/*const*/ rho::Expression* call, const rho::BuiltIn
 	UNPROTECT(2); /* t, s */
 	return ans;
     } else {
-	PROTECT(t = coerceVector(args[0], REALSXP));
+	PROTECT(t = coerceVector(x_, REALSXP));
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(REALSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));

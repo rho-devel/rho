@@ -100,11 +100,9 @@ amatch_regaparams(regaparams_t *params, int patlen,
     }
 }
 
-SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern, rho::RObject* vec, rho::RObject* ignore_case_, rho::RObject* value_, rho::RObject* opt_costs, rho::RObject* opt_bounds, rho::RObject* useBytes_, rho::RObject* fixed_)
 {
-    SEXP pat, vec, ind, ans;
-    SEXP opt_costs, opt_bounds;
-    int opt_icase, opt_value, opt_fixed, useBytes;
+    SEXP ind, ans;
     R_xlen_t i, j, n;
     int nmatches, patlen;
     Rboolean useWC = FALSE;
@@ -115,15 +113,10 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
     regamatch_t match;
     int rc, cflags = REG_NOSUB;
 
-    pat = args[0]; args = (args + 1);
-    vec = args[0]; args = (args + 1);
-    opt_icase = asLogical(args[0]); args = (args + 1);
-    opt_value = asLogical(args[0]); args = (args + 1);
-    opt_costs = args[0]; args = (args + 1);
-    opt_bounds = args[0]; args = (args + 1);
-    useBytes = asLogical(args[0]);
-    args = (args + 1);
-    opt_fixed = asLogical(args[0]);
+    int opt_icase = asLogical(ignore_case_);
+    int opt_value = asLogical(value_);
+    int useBytes = asLogical(useBytes_);
+    int opt_fixed = asLogical(fixed_);
 
     if(opt_icase == NA_INTEGER) opt_icase = 0;
     if(opt_value == NA_INTEGER) opt_value = 0;
@@ -132,9 +125,9 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
 
     if(opt_fixed) cflags |= REG_LITERAL;
 
-    if(!isString(pat) || Rf_length(pat) < 1)
+    if(!isString(pattern) || Rf_length(pattern) < 1)
 	error(_("invalid '%s' argument"), "pattern");
-    if(Rf_length(pat) > 1)
+    if(Rf_length(pattern) > 1)
 	warning(_("argument '%s' has length > 1 and only the first element will be used"), "pattern");
 
     if(!isString(vec)) error(_("invalid '%s' argument"), "x");
@@ -143,7 +136,7 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
 
     n = XLENGTH(vec);
     if(!useBytes) {
-	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+	Rboolean haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pattern, 0)));
 	if(!haveBytes)
 	    for (i = 0; i < n; i++)
 		if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -153,7 +146,7 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
 	if(haveBytes) useBytes = TRUE;
     }
     if(!useBytes) {
-	useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
+	useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pattern, 0)));
 	if(!useWC) {
 	    for (i = 0 ; i < n ; i++) {
 		if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -165,7 +158,7 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
 	}
     }
 
-    if(STRING_ELT(pat, 0) == NA_STRING) {
+    if(STRING_ELT(pattern, 0) == NA_STRING) {
 	if(opt_value) {
 	    PROTECT(ans = allocVector(STRSXP, n));
 	    for(i = 0; i < n; i++)
@@ -185,13 +178,13 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
     static SEXP s_nchar = install("nchar");
     if(useBytes)
 	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
-		    lang3(s_nchar, pat,
+		    lang3(s_nchar, pattern,
 			  ScalarString(mkChar("bytes")))));
     else
 	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
-		    lang3(s_nchar, pat,
+		    lang3(s_nchar, pattern,
 			  ScalarString(mkChar("chars")))));
-    patlen = asInteger(eval(call, env));
+    patlen = asInteger(eval(call, R_BaseEnv));
     UNPROTECT(1);
     if(!patlen)
 	error(_("'pattern' must be a non-empty character string"));
@@ -199,11 +192,11 @@ SEXP attribute_hidden do_agrep(/*const*/ rho::Expression* call, const rho::Built
     /* wtransChar and translateChar can R_alloc */
     vmax = vmaxget();
     if(useBytes)
-	rc = tre_regcompb(&reg, CHAR(STRING_ELT(pat, 0)), cflags);
+	rc = tre_regcompb(&reg, CHAR(STRING_ELT(pattern, 0)), cflags);
     else if(useWC)
-	rc = tre_regwcomp(&reg, wtransChar(STRING_ELT(pat, 0)), cflags);
+	rc = tre_regwcomp(&reg, wtransChar(STRING_ELT(pattern, 0)), cflags);
     else {
-	const char *spat = translateChar(STRING_ELT(pat, 0));
+	const char *spat = translateChar(STRING_ELT(pattern, 0));
 	if(mbcslocale && !mbcsValid(spat))
 	    error(_("regular expression is invalid in this locale"));
 	rc = tre_regcomp(&reg, spat, cflags);
@@ -736,11 +729,9 @@ SEXP attribute_hidden do_adist(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern, rho::RObject* vec, rho::RObject* opt_bounds, rho::RObject* opt_costs, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* use_bytes_)
 {
-    SEXP pat, vec, ans, matchpos, matchlen;
-    SEXP opt_bounds, opt_costs;
-    int opt_icase, opt_fixed, useBytes;
+    SEXP ans, matchpos, matchlen;
 
     Rboolean haveBytes, useWC = FALSE;
     const char *s, *t;
@@ -755,13 +746,9 @@ SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::Bu
     R_xlen_t i, n;
     int rc, cflags = REG_EXTENDED;
 
-    pat = args[0]; args = (args + 1);
-    vec = args[0]; args = (args + 1);
-    opt_bounds = args[0]; args = (args + 1);
-    opt_costs = args[0]; args = (args + 1);
-    opt_icase = asLogical(args[0]); args = (args + 1);
-    opt_fixed = asLogical(args[0]); args = (args + 1);
-    useBytes = asLogical(args[0]);
+    int opt_icase = asLogical(ignore_case_);
+    int opt_fixed = asLogical(fixed_);
+    int useBytes = asLogical(use_bytes_);
 
     if(opt_icase == NA_INTEGER) opt_icase = 0;
     if(opt_fixed == NA_INTEGER) opt_fixed = 0;
@@ -774,11 +761,11 @@ SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::Bu
     if(opt_fixed) cflags |= REG_LITERAL;
     if(opt_icase) cflags |= REG_ICASE;
 
-    if(!isString(pat) ||
-       (Rf_length(pat) < 1) ||
-       (STRING_ELT(pat, 0) == NA_STRING))
+    if(!isString(pattern) ||
+       (Rf_length(pattern) < 1) ||
+       (STRING_ELT(pattern, 0) == NA_STRING))
 	error(_("invalid '%s' argument"), "pattern");
-    if(Rf_length(pat) > 1)
+    if(Rf_length(pattern) > 1)
 	warning(_("argument '%s' has length > 1 and only the first element will be used"), "pattern");
 
     if(!isString(vec))
@@ -787,7 +774,7 @@ SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::Bu
     n = XLENGTH(vec);
 
     if(!useBytes) {
-        haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
+        haveBytes = RHOCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pattern, 0)));
 	if(!haveBytes)
 	    for(i = 0; i < n; i++) {
 		if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -799,7 +786,7 @@ SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::Bu
     }
 
     if(!useBytes) {
-        useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
+        useWC = RHOCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pattern, 0)));
 	if(!useWC) {
 	    for(i = 0 ; i < n ; i++) {
 		if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -814,23 +801,23 @@ SEXP attribute_hidden do_aregexec(/*const*/ rho::Expression* call, const rho::Bu
     static SEXP s_nchar = install("nchar");
     if(useBytes)
 	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
-		    lang3(s_nchar, pat,
+		    lang3(s_nchar, pattern,
 			  ScalarString(mkChar("bytes")))));
     else
 	PROTECT(call = rho::SEXP_downcast<rho::Expression*>(
-		    lang3(s_nchar, pat,
+		    lang3(s_nchar, pattern,
 			  ScalarString(mkChar("chars")))));
-    patlen = asInteger(eval(call, env));
+    patlen = asInteger(eval(call, R_BaseEnv));
     UNPROTECT(1);
     if(!patlen)
 	error(_("'pattern' must be a non-empty character string"));
 
     if(useBytes)
-	rc = tre_regcompb(&reg, CHAR(STRING_ELT(pat, 0)), cflags);
+	rc = tre_regcompb(&reg, CHAR(STRING_ELT(pattern, 0)), cflags);
     else if(useWC)
-	rc = tre_regwcomp(&reg, wtransChar(STRING_ELT(pat, 0)), cflags);
+	rc = tre_regwcomp(&reg, wtransChar(STRING_ELT(pattern, 0)), cflags);
     else {
-	s = translateChar(STRING_ELT(pat, 0));
+	s = translateChar(STRING_ELT(pattern, 0));
 	if(mbcslocale && !mbcsValid(s))
 	    error(_("regular expression is invalid in this locale"));
 	rc = tre_regcomp(&reg, s, cflags);

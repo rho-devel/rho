@@ -914,7 +914,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 } /* do_c */
 
 
-SEXP attribute_hidden do_unlist(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args_, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_unlist(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject*  recursive_, rho::RObject*  use_names_)
 {
     SEXP ans, t;
     SEXPTYPE mode;
@@ -927,9 +927,9 @@ SEXP attribute_hidden do_unlist(/*const*/ rho::Expression* call, const rho::Buil
     /* By default we recurse, but this can be over-ridden */
     /* by an optional "recursive" argument. */
 
-    SEXP args = PROTECT(args_[0]);
-    int recurse = asLogical(args_[1]);
-    int usenames = asLogical(args_[2]);
+    SEXP args = PROTECT(x_);
+    int recurse = asLogical(recursive_);
+    int usenames = asLogical(use_names_);
     int lenient = TRUE; // was (implicitly!) FALSE  up to R 3.0.1
 
     /* Determine the type of the returned value. */

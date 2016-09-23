@@ -1184,7 +1184,7 @@ void NORET ErrorMessage(SEXP call, int which_error, ...)
 }
 
 attribute_hidden
-void WarningMessage(SEXP call, R_WARNING which_warn, ...)
+void WarningMessage(SEXP call, int /* R_WARNING */ which_warn, ...)
 {
     int i;
     char buf[BUFSIZE];
@@ -1458,17 +1458,17 @@ namespace {
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* classes_, rho::RObject* handlers_, rho::RObject* parent_env_, rho::RObject* target_, rho::RObject* calling_)
 {
     SEXP classes, handlers, parentenv, target, oldstack, newstack, result;
     int calling, i, n;
     PROTECT_INDEX osi;
 
-    classes = args[0]; args = (args + 1);
-    handlers = args[0]; args = (args + 1);
-    parentenv = args[0]; args = (args + 1);
-    target = args[0]; args = (args + 1);
-    calling = asLogical(args[0]);
+    classes = classes_;
+    handlers = handlers_;
+    parentenv = parent_env_;
+    target = target_;
+    calling = asLogical(calling_);
 
     if (classes == R_NilValue || handlers == R_NilValue)
 	return R_HandlerStack;
@@ -1812,11 +1812,11 @@ SEXP attribute_hidden NORET do_invokeRestart(/*const*/ rho::Expression* call, co
     invokeRestart(r_, args_);
 }
 
-SEXP attribute_hidden do_seterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_seterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_)
 {
     SEXP msg;
 
-    msg = args[0];
+    msg = message_;
     if(!isString(msg) || LENGTH(msg) != 1)
 	error(_("error message must be a character string"));
     R_SetErrmessage(CHAR(STRING_ELT(msg, 0)));

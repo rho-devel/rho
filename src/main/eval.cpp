@@ -2113,19 +2113,19 @@ SEXP attribute_hidden do_savefile(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_setnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_setnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* num_threads_)
 {
     int old = R_num_math_threads, newi;
-    newi = Rf_asInteger(args[0]);
+    newi = Rf_asInteger(num_threads_);
     if (newi >= 0 && newi <= R_max_num_math_threads)
 	R_num_math_threads = newi;
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_setmaxnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_setmaxnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* num_threads_)
 {
     int old = R_max_num_math_threads, newi;
-    newi = Rf_asInteger(args[0]);
+    newi = Rf_asInteger(num_threads_);
     if (newi >= 0) {
 	R_max_num_math_threads = newi;
 	if (R_num_math_threads > R_max_num_math_threads)
