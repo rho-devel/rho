@@ -203,7 +203,7 @@ namespace rho {
 
 	    // GCNode::~GCNode doesn't know about the string storage space in
 	    // this object, so account for it here.
-	    size_t bytes = (size() - 1) * sizeof(T);
+	    size_t bytes = (size()) * sizeof(T);
             if (bytes != 0) {
                 MemoryBank::adjustFreedSize(sizeof(FixedVector), sizeof(FixedVector) + bytes);
             }
@@ -306,9 +306,11 @@ rho::FixedVector<T, ST>::FixedVector(
 template <typename T, SEXPTYPE ST>
 void* rho::FixedVector<T, ST>::allocate(size_type sz)
 {
-    size_type blocksize = sz*sizeof(T);
+    // We allocate enough space for sz + 1 elements so that the stack scanner
+    // recognizes end() as belonging to this object.
+    size_type blocksize = (sz + 1) * sizeof(T);
     // Check for integer overflow:
-    if (blocksize/sizeof(T) != sz)
+    if (blocksize / sizeof(T) != sz + 1)
 	Rf_error(_("request to create impossibly large vector."));
 
     size_type headersize = sizeof(FixedVector);
