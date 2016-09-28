@@ -36,58 +36,6 @@
 namespace rho {
     class RObject;
 
-    /** @brief Untemplated base class for GCEdge.
-     */
-    class GCEdgeBase {
-    public:
-	/** @brief Null the encapsulated pointer.
-	 */
-	void detach();
-    protected:
-	GCEdgeBase()
-	    : m_target(nullptr)
-	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * @param source Pattern for the copy.
-	 */
-	GCEdgeBase(const GCEdgeBase& source)
-	    : m_target(source.m_target)
-	{
-	    GCNode::incRefCount(m_target);
-	}
-	    
-	~GCEdgeBase()
-	{
-	    GCNode::decRefCount(m_target);
-	}
-
-	/** @brief Get target of this edge.
-	 *
-	 * @return Pointer to the target (if any) of this GCEdgeBase.
-	 */
-	const GCNode* target() const
-	{
-	    return m_target;
-	}
-    protected:
-	/** @brief Redirect the GCEdge to point at a (possibly) different node.
-         *
-         * @param newtarget Pointer to the object to which reference is now
-         *           to be made.
-         */
-	void retarget(const GCNode* newtarget)
-	{
-	    GCNode::incRefCount(newtarget);
-	    const GCNode* oldtarget = m_target;
-	    m_target = newtarget;
-	    GCNode::decRefCount(oldtarget);
-	}
-    private:
-	const GCNode* m_target;
-    };
-
     /** @brief Directed edge in the graph whose nodes are GCNode objects.
      *
      * This class encapsulates a pointer from one GCNode to another,
@@ -107,11 +55,11 @@ namespace rho {
      *           GCEdge<const String>.
      */
     template <class T = RObject>
-    class GCEdge : public GCEdgeBase {
+    class GCEdge {
     public:
 	typedef T type;
 
-	GCEdge()
+	GCEdge() : m_target(nullptr)
 	{}
 
 	// explicit GCEdge(T* target) is intentionally not defined here.
@@ -132,8 +80,16 @@ namespace rho {
 	 * will point to the same object (if any) as \a source. 
 	 */
 	GCEdge(const GCEdge<T>& source)
-	    : GCEdgeBase(source)
-	{}
+	    : m_target(source.m_target)
+	{
+	    static_assert(sizeof(T) >= 0, "T must be a complete type");
+	    GCNode::incRefCount(m_target);
+	}
+
+	~GCEdge() {
+	    check_complete_type();
+	    GCNode::decRefCount(m_target);
+	}
 
 	GCEdge<T>& operator=(const GCEdge<T>& source)
 	{
@@ -167,12 +123,37 @@ namespace rho {
 	 */
 	T* get() const
 	{
-	    return static_cast<T*>(const_cast<GCNode*>(target()));
+	    return m_target;
+	}
+
+	void detach() {
+	    check_complete_type();
+	    GCNode::decRefCount(m_target);
+	    m_target = nullptr;
 	}
 
     private:
+	T* m_target;
+
+	/** @brief Redirect the GCEdge to point at a (possibly) different node.
+         *
+         * @param newtarget Pointer to the object to which reference is now
+         *           to be made.
+         */
+	void retarget(T* newtarget)
+	{
+	    check_complete_type();
+	    GCNode::incRefCount(newtarget);
+	    T* oldtarget = m_target;
+	    m_target = newtarget;
+	    GCNode::decRefCount(oldtarget);
+	}
 	// A GCEdge is a pointer, not an array.
 	T& operator[](size_t) const = delete;
+
+	static void check_complete_type() {
+	    static_assert(sizeof(T) >= 0, "T must be a complete type");
+	}
     };
 
     // Partial specializations of ElementTraits:
@@ -208,7 +189,14 @@ namespace rho {
 		return false;
 	    }
 	};
-	}  // namespace ElementTraits
+
+        template<typename T>
+	struct IsGCEdge : public std::false_type {};
+
+        template<typename T>
+	struct IsGCEdge<GCEdge<T>> : public std::true_type {};
+    
+    }  // namespace ElementTraits
 } // namespace rho
 
 #endif  // GCEDGE_HPP

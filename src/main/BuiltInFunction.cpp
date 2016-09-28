@@ -38,6 +38,7 @@
 #include "rho/ProtectStack.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/RAllocStack.hpp"
+#include "rho/String.hpp"
 #include "rho/Symbol.hpp"
 #include "rho/errors.hpp"
 #include "R_ext/Print.h"

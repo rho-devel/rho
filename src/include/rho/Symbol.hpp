@@ -28,15 +28,19 @@
  * @brief Class rho::Symbol and associated C interface.
  */
 
+#include "rho/RObject.hpp"
+
 #ifndef RSYMBOL_H
 #define RSYMBOL_H
 
-#include "rho/RObject.hpp"
 #include "rho/GCRoot.hpp"
 #include "rho/SEXP_downcast.hpp"
-#include "rho/String.hpp"
+
+extern "C" void Rf_InitNames();
 
 namespace rho {
+    class String;
+
     /** @brief Class used to represent R symbols.
      *
      * A Symbol is an R identifier.  Each Symbol (except for
@@ -154,9 +158,7 @@ namespace rho {
 	 */
 	const String* name() const
 	{
-	    if (m_name)
-		return m_name;
-	    return String::blank();
+	    return m_name;
 	}
 
 	/** @brief Get a pointer to a regular Symbol object.
@@ -170,10 +172,7 @@ namespace rho {
 	 * @return Pointer to a Symbol (preexisting or newly
 	 * created) with the required name.
 	 */
-	static Symbol* obtain(const String* name)
-	{
-	    return (name->m_symbol ? name->m_symbol : make(name));
-	}
+	static Symbol* obtain(const String* name);;
 
 	/** @brief Get a pointer to a regular Symbol object.
 	 *
@@ -257,15 +256,13 @@ namespace rho {
 
         /** @brief Return a symbol object that has no name.
          *
-         *  An unnamed is useful in places where an illegal symbol is
+         *  An unnamed symbol is useful in places where an illegal symbol is
          *  useful.  Examples are missing arguments and unbound values.
          *
          *  Note that unlike other symbols, unnamed symbols are not
          *  automatically protected from garbage collection.
          */
-        static Symbol* createUnnamedSymbol() {
-          return new Symbol();
-        }
+        static Symbol* createUnnamedSymbol();
     protected:
 	// Virtual function of GCNode:
 	void detachReferents() override;
@@ -291,12 +288,11 @@ namespace rho {
 	 *          signifies a psuedo-symbol, which is not entered
          *          into the table.
 	 */
-	explicit Symbol(const String* name = nullptr);
+	explicit Symbol(const String* name);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
-	~Symbol()
-	{}
+	~Symbol();
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -324,10 +320,7 @@ namespace rho {
      *
      * @return true if the Symbol's name starts with '.'.
      */
-    inline bool isDotSymbol(const Symbol* symbol)
-    {
-	return symbol && symbol->name()->c_str()[0] == '.';
-    }
+    bool isDotSymbol(const Symbol* symbol);
 
     /** @brief Does Symbol's name start with '..'?
      *
@@ -426,12 +419,7 @@ extern "C" {
      *
      * @return Pointer to a rho::String representing \a x's name.
      */
-    inline SEXP PRINTNAME(SEXP x)
-    {
-	using namespace rho;
-	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return const_cast<String*>(sym.name());
-    }
+    SEXP PRINTNAME(SEXP x);
 }
 
 #endif /* RSYMBOL_H */

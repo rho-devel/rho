@@ -41,7 +41,7 @@ SOURCES_CXX = \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
 	Frame.cpp FunctionBase.cpp FunctionContext.cpp \
-	GCEdge.cpp GCManager.cpp GCNode.cpp GCNodeAllocator.cpp GCRoot.cpp \
+	GCManager.cpp GCNode.cpp GCNodeAllocator.cpp GCRoot.cpp \
 	GCStackFrameBoundary.cpp GCStackRoot.cpp \
 	IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp Logical.cpp LogicalVector.cpp \

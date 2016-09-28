@@ -31,8 +31,8 @@
 #ifndef GCROOT_H
 #define GCROOT_H 1
 
-#include "rho/RObject.hpp"
 #include "rho/GCNode.hpp"
+#include "Rinternals.h"
 
 namespace rho {
     class RObject;
@@ -160,7 +160,9 @@ namespace rho {
 	 *          pointer.
 	 */
     GCRoot(T* node = 0)
-    : GCRootBase(node) {}
+    : GCRootBase(node) {
+	check_complete_type();
+    }
 
 	/** @brief Copy constructor.
 	 *
@@ -191,6 +193,7 @@ namespace rho {
 	 */
 	GCRoot& operator=(T* node)
 	{
+	    check_complete_type();
 	    GCRootBase::redirect(node);
 	    return *this;
 	}
@@ -233,7 +236,12 @@ namespace rho {
 	 */
 	T* get() const
 	{
+	    check_complete_type();
 	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
+	}
+    private:
+	static void check_complete_type() {
+	    static_assert(sizeof(T) >= 0, "T must be a complete type");
 	}
     };
 }  // namespace rho

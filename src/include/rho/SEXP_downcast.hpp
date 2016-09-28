@@ -28,7 +28,6 @@
 #ifndef SEXP_DOWNCAST_HPP
 #define SEXP_DOWNCAST_HPP 1
 
-#include "rho/RObject.hpp"
 #include "R_ext/Error.h"  // For NORET
 #include <type_traits>
 
