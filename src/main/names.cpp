@@ -887,6 +887,8 @@ BuiltInFunction::createLookupTables()
     GCManager::GCInhibitor no_gc;
     map* primitive_function_cache = new map();
     map* internal_function_cache = new map();
+    primitive_function_cache->set_empty_key(nullptr);
+    internal_function_cache->set_empty_key(nullptr);
 
     for (BuiltInFunction* function : getFunctionTable()) {
 	Symbol* sym = Symbol::obtain(function->name());

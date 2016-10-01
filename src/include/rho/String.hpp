@@ -274,9 +274,9 @@ namespace rho {
 
         map::value_type* m_key_val_pr;
 	const char* m_data;
-	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
+	cetype_t m_encoding;
 	bool m_ascii;
 
         // Should only be called by String::create().

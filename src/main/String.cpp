@@ -61,8 +61,8 @@ String::String(char* character_storage,
 	       const std::string& text, cetype_t encoding, bool isAscii)
     : VectorBase(CHARSXP, text.size()),
       m_key_val_pr(nullptr),
-      m_encoding(encoding),
       m_symbol(nullptr),
+      m_encoding(encoding),
       m_ascii(isAscii)
 {
     memcpy(character_storage, text.data(), text.size());
