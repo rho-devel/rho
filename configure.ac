@@ -461,8 +461,6 @@ AC_ARG_WITH([system-tre],
 [R_ARG_USE_SYSTEM(tre)],
 [use_system_tre=no])
 
-AC_CONFIG_SUBDIRS([src/extra/sparsehash])
-
 ## Valgrind instrumentation
 AC_ARG_WITH([valgrind-instrumentation],
 [AS_HELP_STRING([--with-valgrind-instrumentation],[Level of additional instrumentation for Valgrind (0/1/2) @<:@0@:>@])],
@@ -2709,6 +2707,11 @@ AC_SUBST(OSF_SH_BUG)
 : ${R_SHELL=${SHELL}}
 AC_SUBST(R_SHELL)
 AC_MSG_RESULT([using as R_SHELL for scripts ... ${R_SHELL}])
+
+# Configure sparsehash.
+export CXX1X
+export CXX1XFLAGS
+AC_CONFIG_SUBDIRS([src/extra/sparsehash])
 
 
 ### * Win32 overrides
