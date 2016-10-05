@@ -613,7 +613,7 @@ int R_ignore_SIGPIPE = 0;
 static RETSIGTYPE handlePipe(int dummy)
 {
     signal(SIGPIPE, handlePipe);
-    if (!R_ignore_SIGPIPE) error("ignoring SIGPIPE signal");
+    Rf_warning("ignoring SIGPIPE signal");
 }
 #endif
 
@@ -843,7 +843,7 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 }
 
 
-int R_SignalHandlers = 0;  /* Exposed in R_interface.h */ // 2007/07/23 arr
+int R_SignalHandlers = 1;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
 const char* get_workspace_name();  /* from startup.c */
 
