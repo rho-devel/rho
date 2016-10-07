@@ -274,7 +274,7 @@ else
 	debugger_args="${debugger_args} --args"
       fi
       ;;
-    valgrind*)
+    valgrind* | catchsegv*)
       args_ok=yes
       ;;
   esac

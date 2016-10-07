@@ -643,7 +643,9 @@ static void win32_segv(int signum)
 
    2005-12-17 BDR */
 
-static unsigned char ConsoleBuf[CONSOLE_BUFFER_SIZE];
+static char ConsoleBuf[CONSOLE_BUFFER_SIZE];
+
+static struct sigaction previous_handlers[NSIG];
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
@@ -753,8 +755,8 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 		 "exit R without saving workspace",
 		 "exit R saving workspace");
 	while(1) {
-	    if(R_ReadConsole("Selection: ", ConsoleBuf, CONSOLE_BUFFER_SIZE,
-			     0) > 0) {
+	    REprintf("Selection: ");
+	    if (fgets(ConsoleBuf, CONSOLE_BUFFER_SIZE, stdin)) {
 		if(ConsoleBuf[0] == '1') break;
 		if(ConsoleBuf[0] == '2') R_CleanUp(SA_DEFAULT, 0, 1);
 		if(ConsoleBuf[0] == '3') R_CleanUp(SA_NOSAVE, 70, 0);
@@ -766,9 +768,14 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     else // non-interactively :
 	REprintf("An irrecoverable exception occurred. R is aborting now ...\n");
     R_CleanTempDir();
-    /* now do normal behaviour, e.g. core dump */
-    signal(signum, SIG_DFL);
-    raise(signum);
+
+    /* Call the previous signal handler. */
+    const struct sigaction& previous_handler = previous_handlers[signum];
+    if (previous_handler.sa_flags & SA_SIGINFO) {
+	(*previous_handler.sa_handler)(signum);
+    } else {
+	(*previous_handler.sa_sigaction)(signum, ip, context);
+    }
 }
 
 #ifndef SIGSTKSZ
@@ -799,10 +806,10 @@ static void init_signal_handlers(void)
     sa.sa_sigaction = sigactionSegv;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, nullptr);
-    sigaction(SIGILL, &sa, nullptr);
+    sigaction(SIGSEGV, &sa, &previous_handlers[SIGSEGV]);
+    sigaction(SIGILL, &sa, &previous_handlers[SIGILL]);
 #ifdef SIGBUS
-    sigaction(SIGBUS, &sa, nullptr);
+    sigaction(SIGBUS, &sa, &previous_handlers[SIGBUS]);
 #endif
 
     signal(SIGINT,  handleInterrupt);
