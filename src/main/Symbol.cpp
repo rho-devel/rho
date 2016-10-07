@@ -64,10 +64,6 @@ Symbol::Symbol(const String* the_name)
     : RObject(SYMSXP), m_dd_index(0), m_is_special_symbol(false)
 {
     m_name = the_name;
-    if (m_name) {
-	if (m_name->size() == 0)
-	    Rf_error(_("attempt to use zero-length variable name"));
-    }
     // If this is a ..n symbol, extract the value of n.
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
@@ -85,6 +81,18 @@ Symbol::Symbol(const String* the_name)
 	    m_dd_index = n;
 	}
     }
+}
+
+Symbol::~Symbol() {
+    // nothing needed.
+}
+
+Symbol* Symbol::obtain(const String* name) {
+    return (name->m_symbol ? name->m_symbol : make(name));
+}
+
+Symbol* Symbol::createUnnamedSymbol() {
+    return new Symbol(String::blank());
 }
 
 void Symbol::detachReferents()
@@ -113,7 +121,7 @@ RObject* Symbol::evaluate(Environment* env)
     if (val == unboundValue())
 	Rf_error(_("object '%s' not found"), name()->c_str());
     if (val == missingArgument() && !isDotDotSymbol()) {
-	if (m_name)
+	if (m_name && m_name != String::blank())
 	    Rf_error(_("argument \"%s\" is missing, with no default"),
 		     name()->c_str());
 	else Rf_error(_("argument is missing, with no default"));
@@ -165,6 +173,9 @@ Symbol::Table* Symbol::getTable()
 
 Symbol* Symbol::make(const String* name)
 {
+    if (name->size() == 0) {
+	Rf_error(_("attempt to use zero-length variable name"));
+    }
     Symbol* ans = new Symbol(name);
     getTable()->push_back(GCRoot<Symbol>(ans));
     name->m_symbol = ans;
@@ -227,3 +238,15 @@ namespace rho {
 #undef PREDEFINED_SYMBOL
 
 // Rf_install() is currently defined in main.cpp
+
+SEXP PRINTNAME(SEXP x)
+{
+    using namespace rho;
+    const Symbol& sym = *SEXP_downcast<Symbol*>(x);
+    return const_cast<String*>(sym.name());
+}
+
+bool rho::isDotSymbol(const Symbol* symbol)
+{
+    return symbol && symbol->name()->c_str()[0] == '.';
+}

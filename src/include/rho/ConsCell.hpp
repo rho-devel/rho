@@ -36,10 +36,11 @@
  * to be found in PairList.h.
  */
 
+#include "rho/RObject.hpp"
+
 #ifndef CONSCELL_H
 #define CONSCELL_H
 
-#include "rho/RObject.hpp"
 #include <stdexcept>
 
 #include "rho/GCManager.hpp"

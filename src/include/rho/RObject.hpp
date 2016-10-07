@@ -509,11 +509,7 @@ namespace rho {
 	/**
 	 * @param stype Required type of the RObject.
 	 */
-	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype & s_sexptype_mask), m_named(0),
-	      m_memory_traced(false), m_missing(0), m_argused(0),
-	      m_active_binding(false), m_binding_locked(false)
-	{}
+	explicit RObject(SEXPTYPE stype = CXXSXP);
 
 	/** @brief Copy constructor.
 	 *
@@ -596,6 +592,15 @@ namespace rho {
 	};
     }  // namespace ElementTraits
 }  // namespace rho
+
+// Ensure that PairList is a complete type for the inlined functions below.
+#include "rho/PairList.hpp"
+
+inline rho::RObject::RObject(SEXPTYPE stype)
+    : m_type(stype & s_sexptype_mask), m_named(0),
+      m_memory_traced(false), m_missing(0), m_argused(0),
+      m_active_binding(false), m_binding_locked(false)
+{}
 
 extern "C" {
     /** @brief Get the attributes of a rho::RObject.

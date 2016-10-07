@@ -129,8 +129,8 @@ error () {
 
 ### Argument loop
 args=
-debugger=
-debugger_args=
+debugger="${RHO_DEBUGGER}"
+debugger_args="${RHO_DEBUGGER_ARGS}"
 gui=
 while test -n "${1}"; do
   case ${1} in
@@ -274,7 +274,7 @@ else
 	debugger_args="${debugger_args} --args"
       fi
       ;;
-    valgrind*)
+    valgrind* | catchsegv*)
       args_ok=yes
       ;;
   esac

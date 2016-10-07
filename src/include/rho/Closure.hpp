@@ -36,12 +36,12 @@
 #include "rho/Environment.hpp"
 #include "rho/PairList.hpp"
 
+#ifdef ENABLE_LLVM_JIT
+#include "rho/jit/CompiledExpression.hpp"
+#endif
+
 namespace rho {
     class ClosureContext;
-
-    namespace JIT {
-        class CompiledExpression;
-    }
 
     /** @brief Class representing a functional programming closure.
      *
@@ -269,8 +269,11 @@ namespace rho {
 
 	bool m_debug;
         mutable int m_num_invokes;
+#ifdef ENABLE_LLVM_JIT
         mutable GCEdge<JIT::CompiledExpression> m_compiled_body;
-
+#else
+        GCEdge<> m_compiled_body;  // unused.
+#endif
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;

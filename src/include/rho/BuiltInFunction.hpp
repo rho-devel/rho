@@ -31,13 +31,13 @@
 #ifndef BUILTINFUNCTION_H
 #define BUILTINFUNCTION_H
 
-#include <map>
 #include <vector>
 
 #include "rho/ArgList.hpp"
 #include "rho/Environment.hpp"
 #include "rho/Expression.hpp"
 #include "rho/FunctionBase.hpp"
+#include "sparsehash/dense_hash_map"
 
 extern "C" {
     /** @brief The type of the do_xxxx functions.
@@ -504,7 +504,7 @@ namespace rho {
 
 	static const std::vector<BuiltInFunction*>& getFunctionTable();
 
-	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
+	typedef google::dense_hash_map<const Symbol*, GCRoot<BuiltInFunction>> map;
         static std::pair<map*, map*> getLookupTables();
         static std::pair<map*, map*> createLookupTables();
 	// Mapping from function names to pointers to BuiltInFunction

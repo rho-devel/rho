@@ -30,6 +30,8 @@
 #include <ctime>
 #include <set>
 
+#include "rho/String.hpp"
+
 using namespace rho;
 
 unsigned int Provenance::s_next_serial = 0;

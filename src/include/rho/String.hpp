@@ -47,7 +47,7 @@ namespace rho {
      * At any one time, at most one String object with a particular
      * text and encoding may exist.
      *
-     * @note When the method size() of VectorBase is applied to a
+     * @note When the method size() is applied to a
      * String, it returns the number of <tt>char</tt>s that the String
      * comprises.  If the string uses a multibyte encoding scheme,
      * this may be different from the number of Unicode characters
@@ -274,9 +274,9 @@ namespace rho {
 
         map::value_type* m_key_val_pr;
 	const char* m_data;
-	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
+	cetype_t m_encoding;
 	bool m_ascii;
 
         // Should only be called by String::create().
@@ -341,7 +341,9 @@ namespace rho {
     template <>
     inline GCEdge<String>::GCEdge()
     {
-	operator=(String::blank());
+	m_target = nullptr;  // In case String::blank() causes GC.
+	m_target = String::blank();
+	GCNode::incRefCount(m_target);
     }
 }  // namespace rho
 

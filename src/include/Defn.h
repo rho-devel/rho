@@ -70,6 +70,7 @@
 #ifdef __cplusplus
 #include "rho/ArgList.hpp"
 #include "rho/Frame.hpp"
+#include "rho/ListVector.hpp"
 extern "C" {
 #endif
 
@@ -115,15 +116,16 @@ extern0 SEXP    R_dot_GenericCallEnv;  /* ".GenericCallEnv" */
 extern0 SEXP    R_dot_GenericDefEnv;  /* ".GenericDefEnv" */
 
 
-int IS_BYTES(SEXP x);
-void SET_BYTES(SEXP x);
-int IS_ASCII(SEXP x);
-
 #include "Errormsg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int IS_BYTES(SEXP x);
+void SET_BYTES(SEXP x);
+int IS_ASCII(SEXP x);
+int ENC_KNOWN(SEXP x);
 
 extern void R_ProcessEvents(void);
 #ifdef Win32

@@ -39,6 +39,7 @@ void Rf_InitGlobalEnv();
 #include "rho/Frame.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/PairList.hpp"
+#include "rho/StringVector.hpp"
 #include "rho/Symbol.hpp"
 
 /** @def DETACH_LOCAL_FRAMES

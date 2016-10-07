@@ -49,6 +49,7 @@
 #include "rho/GCStackRoot.hpp"
 #include "rho/ListFrame.hpp"
 #include "rho/WeakRef.hpp"
+#include "sparsehash/dense_hash_map"
 
 #ifdef Win32
 #include <trioremap.h>
@@ -181,9 +182,10 @@ using namespace rho;
 /*
  * Forward Declarations
  */
+typedef google::dense_hash_map<SEXP, int> HashTable;
 
-static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table);
-static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream);
+static void OutStringVec(R_outpstream_t stream, SEXP s, HashTable* ref_table);
+static void WriteItem (SEXP s, HashTable* ref_table, R_outpstream_t stream);
 static SEXP ReadItem(SEXP ref_table, R_inpstream_t stream);
 static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream);
 
@@ -608,55 +610,30 @@ static void InFormat(R_inpstream_t stream)
  *
  * Hashing functions for hashing reference objects during writing.
  * Objects are entered, and the order in which they are encountered is
- * recorded.  GashGet returns this number, a positive integer, if the
- * object was seen before, and zero if not.  A fixed hash table size
- * is used; this is not ideal but seems adequate for now.  The hash
- * table representation consists of a (R_NilValue . vector) pair.  The
- * hash buckets are in the vector.  This indirect representation
- * should allow resizing the table at some point.
+ * recorded.  HashGet returns this number, a positive integer, if the
+ * object was seen before, and zero if not.
  */
-
-#define HASHSIZE 1099
-
-#define PTRHASH(obj) ((R_size_t( (obj))) >> 2)
-
-#define HASH_TABLE_COUNT(ht) TRUELENGTH(ht)
-#define SET_HASH_TABLE_COUNT(ht, val) SET_TRUELENGTH(ht, val)
-
-#define HASH_TABLE_SIZE(ht) LENGTH(ht)
-
-#define HASH_BUCKET(ht, pos) VECTOR_ELT(ht, pos)
-#define SET_HASH_BUCKET(ht, pos, val) SET_VECTOR_ELT(ht, pos, val)
-
-static SEXP MakeHashTable(void)
+static HashTable MakeHashTable()
 {
-    SEXP val = Rf_allocVector(VECSXP, HASHSIZE);
-    SET_HASH_TABLE_COUNT(val, 0);
-    return val;
+    HashTable table;
+    table.set_empty_key((SEXP)0x1);
+    return table;
 }
 
-static void HashAdd(SEXP obj, SEXP ht)
+static void HashAdd(SEXP obj, HashTable* table)
 {
-    R_size_t pos = PTRHASH(obj) % HASH_TABLE_SIZE(ht);
-    int count = HASH_TABLE_COUNT(ht) + 1;
-    SEXP val = Rf_ScalarInteger(count);
-    SEXP cell = CONS(val, HASH_BUCKET(ht, pos));
-
-    SET_HASH_TABLE_COUNT(ht, count);
-    SET_HASH_BUCKET(ht, pos, cell);
-    SET_TAG(cell, obj);
+    int count = table->size() + 1;
+    (*table)[obj] = count;
 }
 
-static int HashGet(SEXP item, SEXP ht)
+static int HashGet(SEXP item, const HashTable* table)
 {
-    R_size_t pos = PTRHASH(item) % HASH_TABLE_SIZE(ht);
-    SEXP cell;
-    for (cell = HASH_BUCKET(ht, pos); cell != R_NilValue; cell = CDR(cell))
-	if (item == TAG(cell))
-	    return INTEGER(CAR(cell))[0];
+    HashTable::const_iterator iter = table->find(item);
+    if (iter != table->end()) {
+	return iter->second;
+    }
     return 0;
 }
-
 
 /*
  * Administrative SXP values
@@ -836,7 +813,7 @@ static void WriteLENGTH(R_outpstream_t stream, SEXP s)
 #endif
 }
 
-static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
+static void OutStringVec(R_outpstream_t stream, SEXP s, HashTable* ref_table)
 {
     R_assert(TYPEOF(s) == STRSXP);
 
@@ -975,14 +952,16 @@ OutComplexVec(R_outpstream_t stream, SEXP s, R_xlen_t length)
     }
 }
 
-static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
+static void WriteItem (SEXP s, HashTable* ref_table, R_outpstream_t stream)
 {
     int i;
     SEXP t;
 
  tailcall:
     R_CheckStack();
-    if ((t = GetPersistentName(stream, s)) != R_NilValue) {
+    if ((i = HashGet(s, ref_table)) != 0)
+	OutRefIndex(stream, i);
+    else if ((t = GetPersistentName(stream, s)) != R_NilValue) {
 	R_assert(TYPEOF(t) == STRSXP && LENGTH(t) > 0);
 	PROTECT(t);
 	HashAdd(s, ref_table);
@@ -992,8 +971,6 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
     }
     else if ((i = SaveSpecialHook(s)) != 0)
 	OutInteger(stream, i);
-    else if ((i = HashGet(s, ref_table)) != 0)
-	OutRefIndex(stream, i);
     else if (TYPEOF(s) == SYMSXP) {
 	/* Note : NILSXP can't occur here */
 	HashAdd(s, ref_table);
@@ -1177,30 +1154,8 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
     }
 }
 
-class CircleFinder {
-private:
-    std::map<const RObject*, int> m_counts;
-    GCStackRoot<PairList> m_duplicates;
-public:
-    bool add(RObject* item);
-
-    PairList* duplicates() const
-    {
-	return m_duplicates;
-    }
-};
-
-bool CircleFinder::add(RObject* item)
-{
-    int count = ++m_counts[item];
-    if (count == 2)
-	m_duplicates = PairList::cons(item, m_duplicates);
-    return count != 1;
-}
-
 void R_Serialize(SEXP s, R_outpstream_t stream)
 {
-    SEXP ref_table;
     int version = stream->version;
 
     OutFormat(stream);
@@ -1214,9 +1169,8 @@ void R_Serialize(SEXP s, R_outpstream_t stream)
     default: Rf_error(_("version %d not supported"), version);
     }
 
-    PROTECT(ref_table = MakeHashTable());
-    WriteItem(s, ref_table, stream);
-    UNPROTECT(1);
+    HashTable ref_table = MakeHashTable();
+    WriteItem(s, &ref_table, stream);
 }
 
 

@@ -61,13 +61,13 @@ String::String(char* character_storage,
 	       const std::string& text, cetype_t encoding, bool isAscii)
     : VectorBase(CHARSXP, text.size()),
       m_key_val_pr(nullptr),
-      m_encoding(encoding),
+      m_data(character_storage),
       m_symbol(nullptr),
+      m_encoding(encoding),
       m_ascii(isAscii)
 {
     memcpy(character_storage, text.data(), text.size());
     character_storage[text.size()] = '\0';  // Null terminated.
-    m_data = character_storage;
     assert(m_data);
 
     switch(m_encoding) {

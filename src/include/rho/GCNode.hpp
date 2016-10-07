@@ -437,7 +437,7 @@ namespace rho {
 	 */
 	static void sweep();
 
-	friend class GCEdgeBase;
+	template<typename T> friend class GCEdge;
 	friend class GCTestHelper;
 
     protected:

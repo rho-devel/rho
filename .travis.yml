@@ -8,7 +8,9 @@ env:
     - TAR=/bin/tar
     - R_BUILD_TAR=/bin/tar
     - R_INSTALL_TAR=/bin/tar
-
+    # Use catchsegv to get useful stacktraces on failures.
+    - RHO_DEBUGGER=catchsegv
+    
 matrix:
   include:
     # gcc 4.9
