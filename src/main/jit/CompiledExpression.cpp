@@ -134,7 +134,8 @@ void CompiledExpression::detachReferents() {
 }
 
 void CompiledExpression::visitReferents(const_visitor* v) const {
-    (*v)(m_frame_descriptor);
+    if (m_frame_descriptor)
+	(*v)(m_frame_descriptor);
     GCNode::visitReferents(v);
 }
 
