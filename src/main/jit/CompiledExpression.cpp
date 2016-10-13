@@ -85,9 +85,11 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 #endif
     Value* return_value = compiler.emitEval(body);
 
-    if (!return_value->hasName())
-	return_value->setName("return_value");
-    compiler.CreateRet(return_value);
+    if (!llvm::isa<llvm::UndefValue>(return_value)) {
+	if (!return_value->hasName())
+	    return_value->setName("return_value");
+	compiler.CreateRet(return_value);
+    }
 
     // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
@@ -134,7 +136,8 @@ void CompiledExpression::detachReferents() {
 }
 
 void CompiledExpression::visitReferents(const_visitor* v) const {
-    (*v)(m_frame_descriptor);
+    if (m_frame_descriptor)
+	(*v)(m_frame_descriptor);
     GCNode::visitReferents(v);
 }
 

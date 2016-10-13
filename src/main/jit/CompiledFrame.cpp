@@ -62,7 +62,8 @@ void CompiledFrame::detachReferents()
 void CompiledFrame::visitReferents(const_visitor* v) const
 {
     ListFrame::visitReferents(v);
-    (*v)(m_descriptor);
+    if (m_descriptor)
+	(*v)(m_descriptor);
 }
 
 // Unlike ListFrame, the location to insert symbols is controlled by
