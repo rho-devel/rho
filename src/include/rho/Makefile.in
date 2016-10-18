@@ -46,7 +46,7 @@ RHO_HPPS = \
   S4Object.hpp SEXP_downcast.hpp SEXPTYPE.hpp String.hpp \
   StringVector.hpp Subscripting.hpp Symbol.hpp\
   UnaryFunction.hpp VectorBase.hpp WeakRef.hpp \
-  errors.hpp unrho.hpp config.hpp
+  errors.hpp unrho.hpp config.hpp strutil.hpp
 
 
 RHO_HEADERS = $(RHO_HPPS)

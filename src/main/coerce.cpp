@@ -2350,9 +2350,9 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (NAMED(tmp)) MARK_NOT_MUTABLE(tmp);
 	SETCAR(rest, tmp);
     }
-    rfun = LCONS(rfun, evargs);
+    Expression* result = new Expression(rfun, SEXP_downcast<PairList*>(evargs));
     UNPROTECT(3);
-    return (rfun);
+    return (result);
 }
 
 SEXP attribute_hidden do_docall(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_, rho::RObject* args_, rho::RObject* envir_)
@@ -2489,7 +2489,7 @@ SEXP attribute_hidden Rf_substituteList(SEXP el, SEXP rho)
 	} else {
 	    h = Rf_substitute(CAR(el), rho);
 	    if (Rf_isLanguage(el))
-		h = LCONS(h, R_NilValue);
+		h = new Expression(h, {});
 	    else
 		h = CONS(h, R_NilValue);
 	    SET_TAG(h, TAG(el));

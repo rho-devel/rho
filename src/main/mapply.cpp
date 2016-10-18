@@ -32,6 +32,8 @@
 
 #include "rho/RAllocStack.hpp"
 
+using namespace rho;
+
 SEXP attribute_hidden
 do_mapply(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
@@ -63,30 +65,30 @@ do_mapply(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::
        f(dots[[1]][[4]], dots[[2]][[4]], dots[[3]][[4]], d=7)
     */
 
-    SEXP fcall = R_NilValue; // -Wall
+    PairList* fargs = R_NilValue; // -Wall
     if (constantArgs == R_NilValue)
 	;
     else if (isVectorList(constantArgs))
-	fcall = VectorToPairList(constantArgs);
+	fargs = static_cast<PairList*>(VectorToPairList(constantArgs));
     else
 	error(_("argument 'MoreArgs' of 'mapply' is not a list"));
     PROTECT_INDEX fi;
-    PROTECT_WITH_INDEX(fcall, &fi);
+    PROTECT_WITH_INDEX(fargs, &fi);
 
     Rboolean realIndx = RHOCONSTRUCT(Rboolean, longest > INT_MAX);
-    SEXP Dots = install("dots");
+    static Symbol* Dots = Symbol::obtain("dots");
     for (int j = m - 1; j >= 0; j--) {
 	SET_VECTOR_ELT(mindex, j, ScalarInteger(j + 1));
 	SET_VECTOR_ELT(nindex, j, allocVector(realIndx ? REALSXP : INTSXP, 1));
 	SEXP tmp1 = PROTECT(lang3(R_Bracket2Symbol, Dots, VECTOR_ELT(mindex, j)));
 	SEXP tmp2 = PROTECT(lang3(R_Bracket2Symbol, tmp1, VECTOR_ELT(nindex, j)));
-	REPROTECT(fcall = CONS(tmp2, fcall), fi);
+	REPROTECT(fargs = PairList::cons(tmp2, fargs), fi);
 	UNPROTECT(2);
 	if (named && CHAR(STRING_ELT(vnames, j))[0] != '\0')
-	    SET_TAG(fcall, installTrChar(STRING_ELT(vnames, j)));
+	    SET_TAG(fargs, installTrChar(STRING_ELT(vnames, j)));
     }
 
-    REPROTECT(fcall = LCONS(f, fcall), fi);
+    Expression* fcall = new Expression(f, fargs);
 
     SEXP ans = PROTECT(allocVector(VECSXP, longest));
 

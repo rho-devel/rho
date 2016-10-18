@@ -234,7 +234,9 @@ namespace rho {
 	{}
 
 	CachingExpression(RObject* function,
-			  std::initializer_list<RObject*> unnamed_args);
+			  std::initializer_list<RObject*> unnamed_args)
+	    : Expression(function, unnamed_args)
+	{}
 
 	/** @brief Copy constructor.
 	 *

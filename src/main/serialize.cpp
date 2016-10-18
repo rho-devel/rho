@@ -1375,15 +1375,10 @@ static R_xlen_t ReadLENGTH (R_inpstream_t stream)
 /* differs when it fails from version in envir.c */
 static SEXP R_FindNamespace1(SEXP info)
 {
-    SEXP expr, val, where;
-    PROTECT(info);
-    where = PROTECT(Rf_ScalarString(Rf_mkChar(lastname)));
-    SEXP s_getNamespace = Rf_install("..getNamespace");
-    PROTECT(expr = LCONS(s_getNamespace,
-			 CONS(info, CONS(where, R_NilValue))));
-    val = Rf_eval(expr, R_GlobalEnv);
-    UNPROTECT(3);
-    return val;
+    SEXP where = Rf_mkString(lastname);
+    static Symbol* s_getNamespace = Symbol::obtain("..getNamespace");
+    Expression* expr = new Expression(s_getNamespace, { info, where });
+    return expr->evaluate(Environment::global());
 }
 
 
@@ -2069,11 +2064,8 @@ void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 /* ought to quote the argument, but it should only be an ENVSXP or STRSXP */
 static SEXP CallHook(SEXP x, SEXP fun)
 {
-    SEXP val, call;
-    PROTECT(call = LCONS(fun, CONS(x, R_NilValue)));
-    val = Rf_eval(call, R_GlobalEnv);
-    UNPROTECT(1);
-    return val;
+    Expression* call = new Expression(fun, { x });
+    return call->evaluate(Environment::global());
 }
 
 /* Used from saveRDS().

@@ -45,6 +45,7 @@
 #include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/ListFrame.hpp"
+#include "rho/LogicalVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
 #include "rho/RAllocStack.hpp"
@@ -2168,11 +2169,8 @@ void R_SaveGlobalEnvToFile(const char *name)
 	fclose(fp);
     }
     else {
-	SEXP args, call;
-	args = CONS(ScalarString(mkChar(name)), R_NilValue);
-	PROTECT(call = LCONS(sym, args));
+	Expression* call = new Expression(sym, { ScalarString(mkChar(name)) });
 	eval(call, R_GlobalEnv);
-	UNPROTECT(1);
     }
 }
 
@@ -2189,13 +2187,10 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
 	}
     }
     else {
-	SEXP args, call, sQuiet;
-	sQuiet = quiet ? mkTrue() : mkFalse();
-	PROTECT(args = CONS(sQuiet, R_NilValue));
-	args = CONS(ScalarString(mkChar(name)), args);
-	PROTECT(call = LCONS(sym, args));
+	SEXP sQuiet = LogicalVector::createScalar(quiet);
+	auto call = new Expression(sym,
+				   { ScalarString(mkChar(name)), sQuiet });
 	eval(call, R_GlobalEnv);
-	UNPROTECT(2);
     }
 }
 
