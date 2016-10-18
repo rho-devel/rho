@@ -32,14 +32,13 @@
 
 #include "rho/FunctionContext.hpp"
 
-extern "C" {
-    // Parked here pending the creation of an ErrorHandling class:
-    extern rho::GCRoot<> R_HandlerStack;  // Condition handler stack
-    extern rho::GCRoot<> R_RestartStack;  // Stack of available restarts
-}
-
 namespace rho {
     class FunctionBase;
+    class PairList;
+
+    // Parked here pending the creation of an ErrorHandling class:
+    extern GCRoot<PairList> R_HandlerStack;  // Condition handler stack
+    extern GCRoot<PairList> R_RestartStack;  // Stack of available restarts
 
     /** @brief Context typically recording the call of a Closure.
      *
@@ -184,8 +183,8 @@ namespace rho {
 	void runOnExit();
 
 	Rboolean m_interrupts_suspended;
-	GCStackRoot<> m_handlerstack;
-	GCStackRoot<> m_restartstack;
+	GCStackRoot<PairList> m_handlerstack;
+	GCStackRoot<PairList> m_restartstack;
 	GCStackRoot<Environment> m_working_env;
 	GCStackRoot<const PairList> m_promise_args;
 	GCStackRoot<> m_onexit;

@@ -85,96 +85,107 @@ namespace rho {
     public:
 	/** @brief iterator for iterating over a HeterogeneousList.
 	 */
-	class iterator
-	    : public std::iterator<std::forward_iterator_tag, ConsCell> {
+	template<typename ValueType = ConsCell>
+	class iterator_tmpl
+	    : public std::iterator<std::forward_iterator_tag, ValueType> {
 	public:
 	    /** @brief Constructor.
 	     *
 	     * @param cc Pointer, possibly null, to the ConsCell to be
 	     *           designated by the iterator.
 	     */
-	    explicit iterator(ConsCell* cc = nullptr)
+	    explicit iterator_tmpl(ValueType* cc = nullptr)
 		: m_cc(cc)
 	    {}
 
-	    ConsCell& operator*() const
+	    ValueType& operator*() const
 	    {
 		return *m_cc;
 	    }
 
-	    ConsCell* operator->() const
+	    ValueType* operator->() const
 	    {
 		return m_cc;
 	    }
 
-	    iterator operator++()
+	    iterator_tmpl operator++()
 	    {
 		advance();
 		return *this;
 	    }
 
-	    iterator operator++(int)
+	    iterator_tmpl operator++(int)
 	    {
-		iterator ans = *this;
+		iterator_tmpl ans = *this;
 		advance();
 		return ans;
 	    }
 
-	    bool operator==(ConsCell::iterator other) const {
+	    bool operator==(iterator_tmpl other) const {
 		return m_cc == other.m_cc;
 	    }
+	    bool operator!=(iterator_tmpl other) const {
+		return m_cc != other.m_cc;
+	    }
 	private:
-	    ConsCell* m_cc;
+	    ValueType* m_cc;
 
 	    void advance();
 	};
 
 	/** @brief const_iterator for iterating over a ConsCell list.
 	 */
-	class const_iterator
-	    : public std::iterator<std::forward_iterator_tag, const ConsCell> {
+	template<typename ValueType = ConsCell>
+	class const_iterator_tmpl
+	    : public std::iterator<std::forward_iterator_tag, const ValueType> {
 	public:
 	    /** @brief Constructor.
 	     *
 	     * @param cc Pointer, possibly null, to the ConsCell to be
 	     *           designated by the const_iterator.
 	     */
-	    explicit const_iterator(const ConsCell* cc = nullptr)
+	    explicit const_iterator_tmpl(const ValueType* cc = nullptr)
 		: m_cc(cc)
 	    {}
 
-	    const ConsCell& operator*() const
+	    const ValueType& operator*() const
 	    {
 		return *m_cc;
 	    }
 
-	    const ConsCell* operator->() const
+	    const ValueType* operator->() const
 	    {
 		return m_cc;
 	    }
 
-	    const_iterator operator++()
+	    const_iterator_tmpl operator++()
 	    {
 		advance();
 		return *this;
 	    }
 
-	    const_iterator operator++(int)
+	    const_iterator_tmpl operator++(int)
 	    {
-		const_iterator ans = *this;
+		const_iterator_tmpl ans = *this;
 		advance();
 		return ans;
 	    }
 
-	    bool operator==(ConsCell::const_iterator other) const {
+	    bool operator==(const_iterator_tmpl other) const {
 		return m_cc == other.m_cc;
 	    }
+	    bool operator!=(const_iterator_tmpl other) const {
+		return m_cc != other.m_cc;
+	    }
 	private:
-	    const ConsCell* m_cc;
+	    const ValueType* m_cc;
 
 	    void advance();
 	};
 
+	typedef iterator_tmpl<ConsCell> iterator;
+	typedef const_iterator_tmpl<ConsCell> const_iterator;
+	
 	iterator begin()
 	{
 	    return iterator(this);
@@ -356,17 +367,6 @@ namespace rho {
 	friend void ::SET_TYPEOF(SEXP, SEXPTYPE);
     };
 
-    inline bool operator!=(ConsCell::iterator l, ConsCell::iterator r)
-    {
-	return !(l == r);
-    }
-
-    inline bool operator!=(ConsCell::const_iterator l,
-			   ConsCell::const_iterator r)
-    {
-	return !(l == r);
-    }
-
     /** @brief <tt>cc ? cc->car() : 0</tt>
      *
      * @param cc Pointer to the ConsCell whose 'car' object is
@@ -498,7 +498,23 @@ namespace rho {
 	 */
 	static PairList* make(int size, RObject* const* args);
         
-	/** @brief Copy the tags from one PairList to another.
+	typedef iterator_tmpl<PairList> iterator;
+	typedef const_iterator_tmpl<PairList> const_iterator;
+
+	iterator begin() {
+	    return iterator(this);
+	}
+	const_iterator begin() const {
+	    return const_iterator(this);
+	}
+	iterator end() {
+	    return iterator();
+	}
+	const_iterator end() const {
+	    return const_iterator();
+	}
+
+        /** @brief Copy the tags from one PairList to another.
 	 */
         void copyTagsFrom(const PairList* listWithTags);
 
@@ -536,12 +552,14 @@ namespace rho {
 	PairList& operator=(const PairList&);
     };
 
-    inline void ConsCell::iterator::advance()
+    template<typename ValueType>
+    inline void ConsCell::iterator_tmpl<ValueType>::advance()
     {
 	m_cc = m_cc->tail();
     }
 
-    inline void ConsCell::const_iterator::advance()
+    template<typename ValueType>
+    inline void ConsCell::const_iterator_tmpl<ValueType>::advance()
     {
 	m_cc = m_cc->tail();
     }

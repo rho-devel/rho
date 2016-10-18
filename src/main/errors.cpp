@@ -50,6 +50,7 @@
 
 #include "rho/ClosureContext.hpp"
 #include "rho/CommandTerminated.hpp"
+#include "rho/ConsCell.hpp"
 #include "rho/ListVector.hpp"
 #include "rho/ReturnException.hpp"
 #include "rho/StackChecker.hpp"
@@ -755,7 +756,6 @@ static void try_jump_to_restart(void)
     }
 }
 
-
 static void jump_to_top_ex(Rboolean traceback,
 			   Rboolean tryUserHandler,
 			   Rboolean processWarnings,
@@ -1429,6 +1429,16 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
     return entry;
 }
 
+static void push_handler(SEXP handlerEntry) {
+    R_HandlerStack = PairList::cons(handlerEntry, R_HandlerStack);
+}
+static void push_restart(SEXP restart) {
+    R_RestartStack = PairList::cons(restart, R_RestartStack);
+}
+static void pop_restart() {
+    R_RestartStack = R_RestartStack->tail();
+}
+
 namespace {
     /**** rename these??*/
     bool IS_CALLING_ENTRY(SEXP e)
@@ -1459,17 +1469,9 @@ namespace {
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* classes_, rho::RObject* handlers_, rho::RObject* parent_env_, rho::RObject* target_, rho::RObject* calling_)
+SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* classes, rho::RObject* handlers, rho::RObject* parentenv, rho::RObject* target, rho::RObject* calling_)
 {
-    SEXP classes, handlers, parentenv, target, oldstack, newstack, result;
-    int calling, i, n;
-    PROTECT_INDEX osi;
-
-    classes = classes_;
-    handlers = handlers_;
-    parentenv = parent_env_;
-    target = target_;
-    calling = asLogical(calling_);
+    int calling = asLogical(calling_);
 
     if (classes == R_NilValue || handlers == R_NilValue)
 	return R_HandlerStack;
@@ -1478,35 +1480,30 @@ SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho
 	LENGTH(classes) != LENGTH(handlers))
 	error(_("bad handler data"));
 
-    n = LENGTH(handlers);
-    oldstack = R_HandlerStack;
+    int n = LENGTH(handlers);
+    SEXP oldstack = R_HandlerStack;
+    
+    SEXP result = allocVector(VECSXP, RESULT_SIZE);
 
-    PROTECT(result = allocVector(VECSXP, RESULT_SIZE));
-    PROTECT_WITH_INDEX(newstack = oldstack, &osi);
-
-    for (i = n - 1; i >= 0; i--) {
+    for (int i = n - 1; i >= 0; i--) {
 	SEXP klass = STRING_ELT(classes, i);
 	SEXP handler = VECTOR_ELT(handlers, i);
 	SEXP entry = mkHandlerEntry(klass, parentenv, handler, target, result,
 				    calling);
-	REPROTECT(newstack = CONS(entry, newstack), osi);
+	push_handler(entry);
     }
-
-    R_HandlerStack = newstack;
-    UNPROTECT(2);
 
     return oldstack;
 }
 
-static SEXP findSimpleErrorHandler(void)
+static PairList* findSimpleErrorHandler(void)
 {
-    SEXP list;
-    for (list = R_HandlerStack; list != R_NilValue; list = CDR(list)) {
-	SEXP entry = CAR(list);
+    for (PairList& item : *R_HandlerStack) {
+	SEXP entry = item.car();
 	if (! strcmp(CHAR(ENTRY_CLASS(entry)), "simpleError") ||
 	    ! strcmp(CHAR(ENTRY_CLASS(entry)), "error") ||
 	    ! strcmp(CHAR(ENTRY_CLASS(entry)), "condition"))
-	    return list;
+	    return &item;
     }
     return R_NilValue;
 }
@@ -1543,14 +1540,14 @@ static void NORET gotoExitingHandler(SEXP cond, SEXP call, SEXP entry)
 static void vsignalError(SEXP call, const char *format, va_list ap)
 {
     char localbuf[BUFSIZE];
-    SEXP list, oldstack;
-
-    oldstack = R_HandlerStack;
+    PairList* list;
+    
+    GCStackRoot<PairList> oldstack(R_HandlerStack);
     Rvsnprintf(localbuf, BUFSIZE - 1, format, ap);
     while ((list = findSimpleErrorHandler()) != R_NilValue) {
 	char *buf = errbuf;
-	SEXP entry = CAR(list);
-	R_HandlerStack = CDR(list);
+	SEXP entry = list->car();
+	R_HandlerStack = list->tail();
 	strncpy(buf, localbuf, BUFSIZE - 1);
 	/*	Rvsnprintf(buf, BUFSIZE - 1, format, ap);*/
 	buf[BUFSIZE - 1] = 0;
@@ -1574,38 +1571,31 @@ static void vsignalError(SEXP call, const char *format, va_list ap)
     R_HandlerStack = oldstack;
 }
 
-static SEXP findConditionHandler(SEXP cond)
+static PairList* findConditionHandler(SEXP cond)
 {
-    int i;
-    SEXP list;
     SEXP classes = getAttrib(cond, R_ClassSymbol);
 
     if (TYPEOF(classes) != STRSXP)
 	return R_NilValue;
 
     /**** need some changes here to allow conditions to be S4 classes */
-    for (list = R_HandlerStack; list != R_NilValue; list = CDR(list)) {
-	SEXP entry = CAR(list);
-	for (i = 0; i < LENGTH(classes); i++)
+    for (PairList& item : *R_HandlerStack) {
+	SEXP entry = item.car();
+	for (int i = 0; i < LENGTH(classes); i++)
 	    if (! strcmp(CHAR(ENTRY_CLASS(entry)),
 			 CHAR(STRING_ELT(classes, i))))
-		return list;
+		return &item;
     }
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cond_, rho::RObject* message_, rho::RObject* call_)
+SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cond, rho::RObject* msg, rho::RObject* ecall)
 {
-    SEXP list, cond, msg, ecall, oldstack;
-
-    cond = cond_;
-    msg = message_;
-    ecall = call_;
-
-    PROTECT(oldstack = R_HandlerStack);
+    PairList* list;
+    GCStackRoot<PairList> oldstack(R_HandlerStack);
     while ((list = findConditionHandler(cond)) != R_NilValue) {
-	SEXP entry = CAR(list);
-	R_HandlerStack = CDR(list);
+	SEXP entry = list->car();
+	R_HandlerStack = list->tail();
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
 	    if (!h) {
@@ -1623,18 +1613,16 @@ SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const 
 	else gotoExitingHandler(cond, ecall, entry);
     }
     R_HandlerStack = oldstack;
-    UNPROTECT(1);
     return R_NilValue;
 }
 
-static SEXP findInterruptHandler(void)
+static PairList* findInterruptHandler(void)
 {
-    SEXP list;
-    for (list = R_HandlerStack; list != R_NilValue; list = CDR(list)) {
-	SEXP entry = CAR(list);
+    for (PairList& item : *R_HandlerStack) {
+	SEXP entry = item.car();
 	if (! strcmp(CHAR(ENTRY_CLASS(entry)), "interrupt") ||
 	    ! strcmp(CHAR(ENTRY_CLASS(entry)), "condition"))
-	    return list;
+	    return &item;
     }
     return R_NilValue;
 }
@@ -1654,13 +1642,12 @@ static SEXP getInterruptCondition(void)
 
 static void signalInterrupt(void)
 {
-    SEXP list, cond, oldstack;
-
-    PROTECT(oldstack = R_HandlerStack);
+    GCStackRoot<PairList> oldstack(R_HandlerStack);
+    PairList* list;
     while ((list = findInterruptHandler()) != R_NilValue) {
-	SEXP entry = CAR(list);
-	R_HandlerStack = CDR(list);
-	PROTECT(cond = getInterruptCondition());
+	SEXP entry = list->car();
+	R_HandlerStack = list->tail();
+	SEXP cond = PROTECT(getInterruptCondition());
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
 	    Expression* hcall = new Expression(h, { cond });
@@ -1670,7 +1657,6 @@ static void signalInterrupt(void)
 	UNPROTECT(1);
     }
     R_HandlerStack = oldstack;
-    UNPROTECT(1);
 }
 
 void attribute_hidden
@@ -1685,14 +1671,14 @@ R_InsertRestartHandlers(ClosureContext *cptr, Rboolean browser)
     rho = cptr->workingEnvironment();
     PROTECT(klass = mkChar("error"));
     entry = mkHandlerEntry(klass, rho, nullptr, rho, R_NilValue, TRUE);
-    R_HandlerStack = CONS(entry, R_HandlerStack);
+    push_handler(entry);
     UNPROTECT(1);
     PROTECT(name = mkString(browser ? "browser" : "tryRestart"));
     PROTECT(entry = allocVector(VECSXP, 2));
     SET_VECTOR_ELT(entry, 0, name);
     SET_VECTOR_ELT(entry, 1, R_MakeExternalPtr(cptr, R_NilValue, R_NilValue));
     setAttrib(entry, R_ClassSymbol, mkString("restart"));
-    R_RestartStack = CONS(entry, R_RestartStack);
+    push_restart(entry);
     UNPROTECT(2);
 }
 
@@ -1759,10 +1745,10 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_addRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* restart_)
+SEXP attribute_hidden do_addRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* restart)
 {
-    CHECK_RESTART(restart_);
-    R_RestartStack = CONS(restart_, R_RestartStack);
+    CHECK_RESTART(restart);
+    push_restart(restart);
     return R_NilValue;
 }
 
@@ -1777,10 +1763,9 @@ static void NORET invokeRestart(SEXP r, SEXP arglist)
 	jump_to_toplevel();
     }
     else {
-	for (; R_RestartStack != R_NilValue;
-	     R_RestartStack = CDR(R_RestartStack))
+	for (; R_RestartStack != R_NilValue; pop_restart())
 	    if (exit == RESTART_EXIT(CAR(R_RestartStack))) {
-		R_RestartStack = CDR(R_RestartStack);
+		pop_restart();
 		if (TYPEOF(exit) == EXTPTRSXP)
 		    throw CommandTerminated();
 		else {

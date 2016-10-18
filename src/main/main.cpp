@@ -1321,7 +1321,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment::ReturnScope returnscope(envir);
 	bool redo;
 	do {
-	    GCStackRoot<> saved_handler_stack(R_HandlerStack);
+	    GCStackRoot<PairList> saved_handler_stack(R_HandlerStack);
 	    redo = false;
 	    try {
 		ClosureContext* cptr = ClosureContext::innermost();

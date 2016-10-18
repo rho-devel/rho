@@ -35,8 +35,8 @@
 using namespace std;
 using namespace rho;
 
-GCRoot<> R_HandlerStack;
-GCRoot<> R_RestartStack;
+GCRoot<PairList> rho::R_HandlerStack;
+GCRoot<PairList> rho::R_RestartStack;
 
 void ClosureContext::runOnExit()
 {
