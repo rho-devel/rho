@@ -31,6 +31,8 @@
 #include <Internal.h>
 #include "rho/ExpressionVector.hpp"
 
+using namespace rho;
+
 /* .Internal(lapply(X, FUN)) */
 
 /* This is a special .Internal, so has unevaluated arguments.  It is
@@ -56,29 +58,23 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Build call: FUN(XX[[<ind>]], ...) */
 
     SEXP ind = PROTECT(allocVector(realIndx ? REALSXP : INTSXP, 1));
-    SEXP isym = install("i");
+    static Symbol* isym = Symbol::obtain("i");
     defineVar(isym, ind, rho);
     SET_NAMED(ind, 1);
 
-    /* Notice that it is OK to have one arg to LCONS do memory
-       allocation and not PROTECT the result (LCONS does memory
-       protection of its args internally), but not both of them,
-       since the computation of one may destroy the other */
-
-    SEXP tmp = PROTECT(LCONS(R_Bracket2Symbol,
-			CONS(X, CONS(isym, R_NilValue))));
-    SEXP R_fcall = PROTECT(LCONS(FUN,
-				 CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
+    Expression* item = new Expression(R_Bracket2Symbol,
+				     { X, isym });
+    Expression* R_fcall = new CachingExpression(FUN, { item, R_DotsSymbol });
 
     for(R_xlen_t i = 0; i < n; i++) {
 	if (realIndx) REAL(ind)[0] = (double)(i + 1);
 	else INTEGER(ind)[0] = (int)(i + 1);
-	tmp = R_forceAndCall(R_fcall, 1, rho);
+	SEXP tmp = R_forceAndCall(R_fcall, 1, rho);
 	if (MAYBE_REFERENCED(tmp)) tmp = lazy_duplicate(tmp);
 	SET_VECTOR_ELT(ans, i, tmp);
     }
 
-    UNPROTECT(6);
+    UNPROTECT(4);
     return ans;
 }
 
@@ -87,7 +83,7 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* This is a special .Internal */
 SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP R_fcall, ans, names = R_NilValue, rowNames = R_NilValue,
+    SEXP ans, names = R_NilValue, rowNames = R_NilValue,
 	X, XX, FUN, value, dim_v;
     R_xlen_t i, n;
     int commonLen;
@@ -137,22 +133,16 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
        using the evaluated version.
     */
     {
-	SEXP ind, tmp;
+	SEXP ind;
 	/* Build call: FUN(XX[[<ind>]], ...) */
 
-	SEXP isym = install("i");
+	static Symbol* isym = Symbol::obtain("i");
 	PROTECT(ind = allocVector(INTSXP, 1));
 	defineVar(isym, ind, rho);
 	SET_NAMED(ind, 1);
 
-	/* Notice that it is OK to have one arg to LCONS do memory
-	   allocation and not PROTECT the result (LCONS does memory
-	   protection of its args internally), but not both of them,
-	   since the computation of one may destroy the other */
-	PROTECT(tmp = LCONS(R_Bracket2Symbol,
-			    CONS(X, CONS(isym, R_NilValue))));
-	PROTECT(R_fcall = LCONS(FUN,
-				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
+	Expression* item = new Expression(R_Bracket2Symbol, { X, isym });
+	Expression* R_fcall = new Expression(FUN, { item, R_DotsSymbol });
 
 	int common_len_offset = 0;
 	for(i = 0; i < n; i++) {
@@ -229,7 +219,7 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    UNPROTECT(1);
 	}
-	UNPROTECT(3);
+	UNPROTECT(1);
     }
 
     if (commonLen != 1) {

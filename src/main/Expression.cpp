@@ -67,6 +67,17 @@ namespace rho {
 
 GCRoot<> R_CurrentExpr;
 
+Expression::Expression(RObject* function, std::initializer_list<RObject*> args)
+    : Expression(function)
+{
+    ConsCell* current = this;
+    for (RObject* arg : args) {
+	PairList* next = new PairList(arg);
+	current->setTail(next);
+	current = next;
+    }
+}
+
 Expression* Expression::clone() const
 {
     return new CachingExpression(*this);

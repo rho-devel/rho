@@ -53,6 +53,7 @@
 #include "rho/ListVector.hpp"
 #include "rho/ReturnException.hpp"
 #include "rho/StackChecker.hpp"
+#include "rho/strutil.hpp"
 
 using namespace std;
 using namespace rho;
@@ -301,7 +302,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	if( !isLanguage(s) &&  ! isExpression(s) )
 	    error(_("invalid option \"warning.expression\""));
 	cptr = ClosureContext::innermost();
-	eval(s, cptr->workingEnvironment());
+	s->evaluate(cptr->workingEnvironment());
 	return;
     }
 
@@ -536,20 +537,20 @@ void PrintWarnings(void)
 
 static SEXP GetSrcLoc(SEXP srcref)
 {
-    SEXP sep, line, result, srcfile;
     if (TYPEOF(srcref) != INTSXP || length(srcref) < 4)
 	return ScalarString(mkChar(""));
 
-    PROTECT(srcref);
-    PROTECT(srcfile = R_GetSrcFilename(srcref));
-    SEXP e2 = PROTECT(lang2( install("basename"), srcfile));
-    PROTECT(srcfile = eval(e2, R_BaseEnv ) );
-    PROTECT(sep = ScalarString(mkChar("#")));
-    PROTECT(line = ScalarInteger(INTEGER(srcref)[0]));
-    SEXP e = PROTECT(lang4( install("paste0"), srcfile, sep, line ));
-    result = eval(e, R_BaseEnv );
-    UNPROTECT(7);
-    return result;
+    SEXP srcfile = R_GetSrcFilename(srcref);
+    static Symbol* basename = Symbol::obtain("basename");
+    Expression* e2 = new Expression(basename, { srcfile });
+    srcfile = e2->evaluate(Environment::base());
+    String* srcfilename = (*SEXP_downcast<StringVector*>(srcfile))[0];
+
+    int line = INTEGER(srcref)[0];
+
+    std::string result = StrCat(srcfilename->stdstring(), '#', line);
+    return StringVector::createScalar(String::obtain(result));
+
 }
 
 static char errbuf[BUFSIZE];
@@ -782,7 +783,7 @@ static void jump_to_top_ex(Rboolean traceback,
 		else {
 		    inError = 3;
 		    if (isLanguage(s))
-			eval(s, R_GlobalEnv);
+			s->evaluate(Environment::global());
 		    else /* expression */
 			{
 			    int i, n = LENGTH(s);
@@ -1513,18 +1514,15 @@ static SEXP findSimpleErrorHandler(void)
 static void vsignalWarning(SEXP call, const char *format, va_list ap)
 {
     char buf[BUFSIZE];
-    SEXP hooksym, hcall, qcall;
 
-    hooksym = install(".signalSimpleWarning");
+    static Symbol* hooksym = Symbol::obtain(".signalSimpleWarning");
     if (SYMVALUE(hooksym) != R_UnboundValue &&
-	SYMVALUE(R_QuoteSymbol) != R_UnboundValue) {
-	PROTECT(qcall = LCONS(R_QuoteSymbol, CONS(call, R_NilValue)));
-	PROTECT(hcall = CONS(qcall, R_NilValue));
+	SYMVALUE(R_QuoteSymbol) != R_UnboundValue)
+    {
+	Expression* qcall = new Expression(R_QuoteSymbol, { call });
 	Rvsnprintf(buf, BUFSIZE - 1, format, ap);
-	hcall = CONS(mkString(buf), hcall);
-	PROTECT(hcall = LCONS(hooksym, hcall));
-	eval(hcall, R_GlobalEnv);
-	UNPROTECT(3);
+	Expression* hcall = new Expression(hooksym, { mkString(buf), qcall });
+	hcall->evaluate(Environment::global());
     }
     else vwarningcall_dflt(call, format, ap);
 }
@@ -1560,20 +1558,15 @@ static void vsignalError(SEXP call, const char *format, va_list ap)
 	    if (!ENTRY_HANDLER(entry))
 		return; /* go to default error handling; do not reset stack */
 	    else {
-		SEXP hooksym, hcall, qcall;
 		/* protect oldstack here, not outside loop, so handler
 		   stack gets unwound in case error is protect stack
 		   overflow */
-		PROTECT(oldstack);
-		hooksym = install(".handleSimpleError");
-		PROTECT(qcall = LCONS(R_QuoteSymbol,
-				      CONS(call, R_NilValue)));
-		PROTECT(hcall = CONS(qcall, R_NilValue));
-		hcall = CONS(mkString(buf), hcall);
-		hcall = CONS(ENTRY_HANDLER(entry), hcall);
-		PROTECT(hcall = LCONS(hooksym, hcall));
-		eval(hcall, R_GlobalEnv);
-		UNPROTECT(4);
+		static Symbol* hooksym = Symbol::obtain(".handleSimpleError");
+		Expression* qcall = new Expression(R_QuoteSymbol, { call });
+		Expression* hcall = new Expression(
+		    hooksym,
+		    { ENTRY_HANDLER(entry), mkString(buf), qcall });
+		hcall->evaluate(Environment::global());
 	    }
 	}
 	else gotoExitingHandler(R_NilValue, call, entry);
@@ -1623,10 +1616,8 @@ SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const 
 		errorcall_dflt(ecall, "%s", msgstr);
 	    }
 	    else {
-		SEXP hcall = LCONS(h, CONS(cond, R_NilValue));
-		PROTECT(hcall);
-		eval(hcall, R_GlobalEnv);
-		UNPROTECT(1);
+		Expression* hcall = new Expression(h, { cond });
+		hcall->evaluate(Environment::global());
 	    }
 	}
 	else gotoExitingHandler(cond, ecall, entry);
@@ -1672,10 +1663,8 @@ static void signalInterrupt(void)
 	PROTECT(cond = getInterruptCondition());
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
-	    SEXP hcall = LCONS(h, CONS(cond, R_NilValue));
-	    PROTECT(hcall);
-	    eval(hcall, R_GlobalEnv);
-	    UNPROTECT(1);
+	    Expression* hcall = new Expression(h, { cond });
+	    hcall->evaluate(Environment::global());
 	}
 	else gotoExitingHandler(cond, R_NilValue, entry);
 	UNPROTECT(1);

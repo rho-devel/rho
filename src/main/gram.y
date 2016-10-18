@@ -44,6 +44,8 @@
 #include "rho/ExpressionVector.hpp"
 #include "rho/ProtectStack.hpp"
 
+using namespace rho;
+
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocale.h),
    but it seems true in normal locales */
@@ -76,7 +78,7 @@ static FILE *fp_parse;
 static int (*ptr_getc)(void);
 
 static int	SavedToken;
-static rho::GCRoot<>	SavedLval;
+static GCRoot<>	SavedLval;
 
 #define yyconst const
 
@@ -213,7 +215,7 @@ static int	xxungetc(int);
 static int	xxcharcount, xxcharsave;
 static int	xxlinesave, xxbytesave, xxcolsave, xxparsesave;
 
-static rho::GCRoot<>	SrcRefs;
+static GCRoot<>	SrcRefs;
 static SrcRefState ParseState;
 static PROTECT_INDEX srindex;
 
@@ -937,7 +939,7 @@ static SEXP xxfuncall(SEXP expr, SEXP args)
 	if (length(CDR(args)) == 1 && CADR(args) == R_MissingArg && TAG(CDR(args)) == R_NilValue )
 	    ans = lang1(expr);
 	else
-	    ans = LCONS(expr, CDR(args));
+            ans = new CachingExpression(expr, SEXP_downcast<PairList*>(CDR(args)));
 	UNPROTECT(1);
 	PROTECT(ans);
     }
@@ -1013,15 +1015,11 @@ static SEXP xxparen(SEXP n1, SEXP n2)
 }
 
 
-/* This should probably use CONS rather than LCONS, but
-   it shouldn't matter and we would rather not meddle
-   See PR#7055 */
-
 static SEXP xxsubscript(SEXP a1, SEXP a2, SEXP a3)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = LCONS(a2, CONS(a1, CDR(a3))));
+      PROTECT(ans = new CachingExpression(a2, PairList::cons(a1, SEXP_downcast<PairList*>(CDR(a3)))));
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(a3);
@@ -1052,7 +1050,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 	/* rho: Transform ans to class Expression: */
 	{
             anslist = ans;
-	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
+	    PROTECT(ans = new CachingExpression(CAR(anslist), SEXP_downcast<PairList*>(CDR(anslist))));
 	    SET_TAG(ans, TAG(anslist));
 	    DUPLICATE_ATTRIB(ans, anslist);
 	    UNPROTECT_PTR(anslist);
@@ -1369,7 +1367,7 @@ attribute_hidden
 SEXP R_Parse1File(FILE *fp, int gencode, ParseStatus *status)
 {
     {
-	rho::ProtectStack::Scope psscope;
+	ProtectStack::Scope psscope;
 	ParseInit();
 	ParseContextInit();
 	GenerateCode = gencode;
@@ -1395,7 +1393,7 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
 
     R_InitSrcRefState();
     {
-	rho::ProtectStack::Scope psscope;
+	ProtectStack::Scope psscope;
 	if (gencode) {
 	    keepSource = RHOCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
 	    if (keepSource) {

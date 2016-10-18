@@ -120,21 +120,16 @@ namespace {
 
 static SEXP getActiveValue(SEXP fun)
 {
-    SEXP expr = LCONS(fun, R_NilValue);
-    PROTECT(expr);
-    expr = eval(expr, R_GlobalEnv);
-    UNPROTECT(1);
-    return expr;
+    Expression* expr = new Expression(fun, {});
+    return expr->evaluate(Environment::global());
 }
 
 static void setActiveValue(SEXP fun, SEXP val)
 {
-    SEXP s_quote = install("quote");
-    SEXP arg = LCONS(s_quote, CONS(val, R_NilValue));
-    SEXP expr = LCONS(fun, CONS(arg, R_NilValue));
-    PROTECT(expr);
-    eval(expr, R_GlobalEnv);
-    UNPROTECT(1);
+    static Symbol* s_quote = Symbol::obtain("quote");
+    Expression* quoted_val = new Expression(s_quote, { val });
+    Expression* expr = new Expression(fun, { quoted_val });
+    expr->evaluate(Environment::global());
 }
 
 void Frame::Binding::assign(RObject* new_value, Origin origin)
@@ -913,28 +908,26 @@ SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltIn
 }
 #undef GET_VALUE
 
-static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
+static SEXP gfind(const char *name, Environment* env, SEXPTYPE mode,
 		  SEXP ifnotfound, int inherits)
 {
-    SEXP rval, t1, R_fcall, var;
-
-    t1 = install(name);
+    Symbol* t1 = Symbol::obtain(name);
 
     /* Search for the object - last arg is 1 to 'get' */
-    rval = findVar1mode(t1, env, mode, inherits, true);
+    SEXP rval = findVar1mode(t1, env, mode, inherits, true);
 
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {
-	    PROTECT(var = mkString(name));
-	    PROTECT(R_fcall = LCONS(ifnotfound, CONS(var, R_NilValue)));
-	    rval = eval(R_fcall, R_BaseEnv);
-	    UNPROTECT(2);
+	    SEXP var = mkString(name);
+	    Expression* R_fcall = new Expression(ifnotfound, { var });
+	    rval = R_fcall->evaluate(Environment::base());
+	    UNPROTECT(1);
 	} else
 	    rval = ifnotfound;
     }
 
     /* We need to evaluate if it is a promise */
-    if (TYPEOF(rval) == PROMSXP) rval = eval(rval, env);
+    if (TYPEOF(rval) == PROMSXP) rval = rval->evaluate(env);
     if (!ISNULL(rval) && NAMED(rval) == 0) SET_NAMED(rval, 1);
     return rval;
 }
@@ -948,7 +941,7 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
  */
 SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* ifnotfound, rho::RObject* inherits)
 {
-    SEXP ans, env;
+    SEXP ans;
     int ginherits = 0, nvals, nmode, nifnfnd;
 
     nvals = length(x);
@@ -961,7 +954,7 @@ SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltI
 	if( isNull(STRING_ELT(x, i)) || !CHAR(STRING_ELT(x, 0))[0] )
 	    error(_("invalid name in position %d"), i+1);
 
-    env = downcast_to_env(envir);
+    Environment* env = downcast_to_env(envir);
     if (!env)
 	error(_("second argument must be an environment"));
 
@@ -1403,7 +1396,7 @@ SEXP attribute_hidden do_env2list(/*const*/ rho::Expression* call, const rho::Bu
 /* This is a special .Internal */
 SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP env, ans, R_fcall, FUN, tmp, tmp2, ind;
+    SEXP env, ans, FUN, tmp, tmp2, ind;
     int i, k, k2;
     int /* boolean */ all, useNms;
 
@@ -1438,10 +1431,9 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(ind = allocVector(INTSXP, 1));
     /* tmp :=  `[`(<elist>, i) */
-    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-			CONS(Xsym, CONS(ind, R_NilValue))));
+    PROTECT(tmp = new Expression(R_Bracket2Symbol, { Xsym, ind }));
     /* fcall :=  <FUN>( tmp, ... ) */
-    PROTECT(R_fcall = LCONS(FUN, CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
+    Expression* R_fcall = new Expression(FUN, { tmp, R_DotsSymbol });
 
     defineVar(Xsym, tmp2, rho);
     SET_NAMED(tmp2, 1);
@@ -1465,7 +1457,7 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	setAttrib(ans, R_NamesSymbol, names);
 	UNPROTECT(1);
     }
-    UNPROTECT(5);
+    UNPROTECT(4);
     return(ans);
 }
 
@@ -1829,13 +1821,9 @@ const StringVector* Environment::packageName() const
 
 SEXP R_FindPackageEnv(SEXP info)
 {
-    SEXP expr, val;
-    PROTECT(info);
     static Symbol* s_findPackageEnv = Symbol::obtain("findPackageEnv");
-    PROTECT(expr = LCONS(s_findPackageEnv, CONS(info, R_NilValue)));
-    val = eval(expr, R_GlobalEnv);
-    UNPROTECT(2);
-    return val;
+    Expression* expr = new Expression(s_findPackageEnv, { info });
+    return expr->evaluate(Environment::global());
 }
 
 Environment* Environment::findPackage(const std::string& name)

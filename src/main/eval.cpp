@@ -643,8 +643,8 @@ SEXP attribute_hidden do_forceAndCall(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP e = CDDR(call);
 
     /* this would not be needed if CDDR(call) was a LANGSXP */
-    PROTECT(e = LCONS(CAR(e), CDR(e)));
-    SEXP val = R_forceAndCall(e, n, rho);
+    Expression* expr = new Expression(CAR(e), SEXP_downcast<PairList*>(CDR(e)));
+    SEXP val = R_forceAndCall(expr, n, rho);
     UNPROTECT(1);
     return val;
 }
