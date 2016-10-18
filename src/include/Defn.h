@@ -433,10 +433,6 @@ extern0 int	R_CollectWarnings INI_as(0);	/* the number of warnings */
   extern rho::GCRoot<rho::ListVector> R_Warnings;  /* the warnings and their calls */
 #endif
 extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
-#ifdef __cplusplus
-extern rho::GCRoot<> R_HandlerStack;	/* Condition handler stack */
-extern rho::GCRoot<> R_RestartStack;	/* Stack of available restarts */
-#endif
 extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
 extern0 Rboolean R_ShowWarnCalls INI_as(FALSE);

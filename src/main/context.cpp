@@ -329,11 +329,11 @@ SEXP attribute_hidden do_parentframe(/*const*/ rho::Expression* call, const rho:
 
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 {
-    volatile SEXP topExp, oldHStack;
+    volatile SEXP topExp;
     Rboolean result;
 
     PROTECT(topExp = R_CurrentExpr);
-    PROTECT(oldHStack = R_HandlerStack);
+    GCStackRoot<PairList> oldHStack(R_HandlerStack);
     R_HandlerStack = R_NilValue;
 
     try {
