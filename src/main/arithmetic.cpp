@@ -37,10 +37,6 @@
 
 #include <limits>
 
-/* interval at which to check interrupts, a guess */
-#define NINTERRUPT 10000000
-
-
 #ifdef __OpenBSD__
 /* for definition of "struct exception" in math.h */
 # define __LIBM_PRIVATE
@@ -459,15 +455,6 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     return s1;			/* never used; to keep -Wall happy */
 }
 
-/* i1 = i % n1; i2 = i % n2;
- * this macro is quite a bit faster than having real modulo calls
- * in the loop (tested on Intel and Sparc)
- */
-#define mod_iterate(n1,n2,i1,i2) for (i=i1=i2=0; i<n; \
-	i1 = (++i1 == n1) ? 0 : i1,\
-	i2 = (++i2 == n2) ? 0 : i2,\
-	++i)
-
 namespace {
     int integer_plus(int lhs, int rhs, Rboolean* naflag) {
 	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
@@ -555,16 +542,6 @@ namespace {
 }  // anonymous namespace
 
 #define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
-
-/* i1 = i % n1; i2 = i % n2;
- * this macro is quite a bit faster than having real modulo calls
- * in the loop (tested on Intel and Sparc)
- */
-#define mod_iterate(n1,n2,i1,i2) for (i=i1=i2=0; i<n; \
-	i1 = (++i1 == n1) ? 0 : i1,\
-	i2 = (++i2 == n2) ? 0 : i2,\
-	++i)
-
 
 static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 {
@@ -884,7 +861,6 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     SETUP_Math2;
 
     MOD_ITERATE2(n, na, nb, i, ia, ib, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -904,64 +880,6 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 
     return sy;
 } /* math2() */
-
-static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
-		    double (*f)(double, double, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, n, na, nb;
-    double ai, bi, *a, *b, *y;
-    int m_opt;
-    int naflag;
-
-    if (!isNumeric(sa) || !isNumeric(sb))
-	errorcall(lcall, R_MSG_NONNUM_MATH);
-
-    SETUP_Math2;
-    m_opt = asInteger(sI);
-
-    MOD_ITERATE2(n, na, nb, i, ia, ib, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	if_NA_Math2_set(y[i], ai, bi)
-	else {
-	    y[i] = f(ai, bi, m_opt);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-    FINISH_Math2;
-    return sy;
-} /* math2_1() */
-
-static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
-		    double (*f)(double, double, int, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, n, na, nb;
-    double ai, bi, *a, *b, *y;
-    int i_1, i_2;
-    int naflag;
-    if (!isNumeric(sa) || !isNumeric(sb))
-	errorcall(lcall, R_MSG_NONNUM_MATH);
-
-    SETUP_Math2;
-    i_1 = asInteger(sI1);
-    i_2 = asInteger(sI2);
-
-    MOD_ITERATE2(n, na, nb, i, ia, ib, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	if_NA_Math2_set(y[i], ai, bi)
-	else {
-	    y[i] = f(ai, bi, i_1, i_2);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-    FINISH_Math2;
-    return sy;
-} /* math2_2() */
 
 /* This is only used directly by .Internal for Bessel functions,
    so managing R_alloc stack is only prudence */
@@ -999,7 +917,6 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
     work = (double *) R_alloc(nw, sizeof(double));
 
     MOD_ITERATE2(n, na, nb, i, ia, ib, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -1016,8 +933,6 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 } /* math2B() */
 
 #define Math2(A, FUN)	  math2(CAR(A), CADR(A), FUN, call);
-#define Math2_1(A, FUN)	math2_1(CAR(A), CADR(A), CADDR(A), FUN, call);
-#define Math2_2(A, FUN) math2_2(CAR(A), CADR(A), CADDR(A), CADDDR(A), FUN, call)
 #define Math2B(A, FUN)	  math2B(CAR(A), CADR(A), FUN, call);
 
 SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -1025,7 +940,6 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (isComplex(CAR(args)) ||
 	(PRIMVAL(op) == 0 && isComplex(CADR(args))))
 	return complex_math2(call, op, args, env);
-
 
     switch (PRIMVAL(op)) {
 
@@ -1037,30 +951,6 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     case  3: return Math2(args, beta);
     case  4: return Math2(args, lchoose);
     case  5: return Math2(args, choose);
-
-    case  6: return Math2_1(args, dchisq);
-    case  7: return Math2_2(args, pchisq);
-    case  8: return Math2_2(args, qchisq);
-
-    case  9: return Math2_1(args, dexp);
-    case 10: return Math2_2(args, pexp);
-    case 11: return Math2_2(args, qexp);
-
-    case 12: return Math2_1(args, dgeom);
-    case 13: return Math2_2(args, pgeom);
-    case 14: return Math2_2(args, qgeom);
-
-    case 15: return Math2_1(args, dpois);
-    case 16: return Math2_2(args, ppois);
-    case 17: return Math2_2(args, qpois);
-
-    case 18: return Math2_1(args, dt);
-    case 19: return Math2_2(args, pt);
-    case 20: return Math2_2(args, qt);
-
-    case 21: return Math2_1(args, dsignrank);
-    case 22: return Math2_2(args, psignrank);
-    case 23: return Math2_2(args, qsignrank);
 
     case 24: return Math2B(args, bessel_j_ex);
     case 25: return Math2B(args, bessel_y_ex);
@@ -1298,63 +1188,6 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (n == nc) SHALLOW_DUPLICATE_ATTRIB(sy, sc);	\
     UNPROTECT(4)
 
-static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
-		    double (*f)(double, double, double, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, n, na, nb, nc;
-    double ai, bi, ci, *a, *b, *c, *y;
-    int i_1;
-    int naflag;
-
-    SETUP_Math3;
-    i_1 = asInteger(sI);
-
-    MOD_ITERATE3(n, na, nb, nc, i, ia, ib, ic, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	if_NA_Math3_set(y[i], ai,bi,ci)
-	else {
-	    y[i] = f(ai, bi, ci, i_1);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-
-    FINISH_Math3;
-    return sy;
-} /* math3_1 */
-
-static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
-		    double (*f)(double, double, double, int, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, n, na, nb, nc;
-    double ai, bi, ci, *a, *b, *c, *y;
-    int i_1,i_2;
-    int naflag;
-
-    SETUP_Math3;
-    i_1 = asInteger(sI);
-    i_2 = asInteger(sJ);
-
-    MOD_ITERATE3 (n, na, nb, nc, i, ia, ib, ic, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	if_NA_Math3_set(y[i], ai,bi,ci)
-	else {
-	    y[i] = f(ai, bi, ci, i_1, i_2);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-
-    FINISH_Math3;
-    return sy;
-} /* math3_2 */
-
 /* This is only used directly by .Internal for Bessel functions,
    so managing R_alloc stack is only prudence */
 static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
@@ -1381,7 +1214,6 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     work = static_cast<double *>( RHO_alloc(size_t( nw), sizeof(double)));
 
     MOD_ITERATE3 (n, na, nb, nc, i, ia, ib, ic, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1398,76 +1230,14 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     return sy;
 } /* math3B */
 
-#define Math3_1(A, FUN)	math3_1(args[0], args[1], args[2], args[3], FUN, call);
-#define Math3_2(A, FUN) math3_2(args[0], args[1], args[2], args[3], args[4], FUN, call)
 #define Math3B(A, FUN)  math3B (args[0], args[1], args[2], FUN, call);
 
 SEXP attribute_hidden do_math3(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
 {
     switch (op->variant()) {
 
-    case  1:  return Math3_1(args, dbeta);
-    case  2:  return Math3_2(args, pbeta);
-    case  3:  return Math3_2(args, qbeta);
-
-    case  4:  return Math3_1(args, dbinom);
-    case  5:  return Math3_2(args, pbinom);
-    case  6:  return Math3_2(args, qbinom);
-
-    case  7:  return Math3_1(args, dcauchy);
-    case  8:  return Math3_2(args, pcauchy);
-    case  9:  return Math3_2(args, qcauchy);
-
-    case 10:  return Math3_1(args, df);
-    case 11:  return Math3_2(args, pf);
-    case 12:  return Math3_2(args, qf);
-
-    case 13:  return Math3_1(args, dgamma);
-    case 14:  return Math3_2(args, pgamma);
-    case 15:  return Math3_2(args, qgamma);
-
-    case 16:  return Math3_1(args, dlnorm);
-    case 17:  return Math3_2(args, plnorm);
-    case 18:  return Math3_2(args, qlnorm);
-
-    case 19:  return Math3_1(args, dlogis);
-    case 20:  return Math3_2(args, plogis);
-    case 21:  return Math3_2(args, qlogis);
-
-    case 22:  return Math3_1(args, dnbinom);
-    case 23:  return Math3_2(args, pnbinom);
-    case 24:  return Math3_2(args, qnbinom);
-
-    case 25:  return Math3_1(args, dnorm);
-    case 26:  return Math3_2(args, pnorm);
-    case 27:  return Math3_2(args, qnorm);
-
-    case 28:  return Math3_1(args, dunif);
-    case 29:  return Math3_2(args, punif);
-    case 30:  return Math3_2(args, qunif);
-
-    case 31:  return Math3_1(args, dweibull);
-    case 32:  return Math3_2(args, pweibull);
-    case 33:  return Math3_2(args, qweibull);
-
-    case 34:  return Math3_1(args, dnchisq);
-    case 35:  return Math3_2(args, pnchisq);
-    case 36:  return Math3_2(args, qnchisq);
-
-    case 37:  return Math3_1(args, dnt);
-    case 38:  return Math3_2(args, pnt);
-    case 39:  return Math3_2(args, qnt);
-
-    case 40:  return Math3_1(args, dwilcox);
-    case 41:  return Math3_2(args, pwilcox);
-    case 42:  return Math3_2(args, qwilcox);
-
     case 43:  return Math3B(args, bessel_i_ex);
     case 44:  return Math3B(args, bessel_k_ex);
-
-    case 45:  return Math3_1(args, dnbinom_mu);
-    case 46:  return Math3_2(args, pnbinom_mu);
-    case 47:  return Math3_2(args, qnbinom_mu);
 
     default:
 	errorcall(call,
@@ -1475,259 +1245,3 @@ SEXP attribute_hidden do_math3(/*const*/ rho::Expression* call, const rho::Built
     }
     return nullptr;			/* never used; to keep -Wall happy */
 } /* do_math3() */
-
-/* Mathematical Functions of Four (Real) Arguments */
-
-#define if_NA_Math4_set(y,a,b,c,d)				\
-	if      (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)) y = NA_REAL;\
-	else if (ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)) y = R_NaN;
-
-#define SETUP_Math4							\
-    if(!isNumeric(sa)|| !isNumeric(sb)|| !isNumeric(sc)|| !isNumeric(sd))\
-	errorcall(lcall, R_MSG_NONNUM_MATH);				\
-									\
-    na = XLENGTH(sa);							\
-    nb = XLENGTH(sb);							\
-    nc = XLENGTH(sc);							\
-    nd = XLENGTH(sd);							\
-    if ((na == 0) || (nb == 0) || (nc == 0) || (nd == 0))		\
-	return(allocVector(REALSXP, 0));				\
-    n = na;								\
-    if (n < nb) n = nb;							\
-    if (n < nc) n = nc;							\
-    if (n < nd) n = nd;							\
-    PROTECT(sa = coerceVector(sa, REALSXP));				\
-    PROTECT(sb = coerceVector(sb, REALSXP));				\
-    PROTECT(sc = coerceVector(sc, REALSXP));				\
-    PROTECT(sd = coerceVector(sd, REALSXP));				\
-    PROTECT(sy = allocVector(REALSXP, n));				\
-    a = REAL(sa);							\
-    b = REAL(sb);							\
-    c = REAL(sc);							\
-    d = REAL(sd);							\
-    y = REAL(sy);							\
-    naflag = 0
-
-#define FINISH_Math4					\
-    if(naflag) warning(R_MSG_NA);			\
-							\
-    if (n == na) SHALLOW_DUPLICATE_ATTRIB(sy, sa);	\
-    else if (n == nb) SHALLOW_DUPLICATE_ATTRIB(sy, sb);	\
-    else if (n == nc) SHALLOW_DUPLICATE_ATTRIB(sy, sc);	\
-    else if (n == nd) SHALLOW_DUPLICATE_ATTRIB(sy, sd);	\
-    UNPROTECT(5)
-
-static SEXP math4_1(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, double (*f)(double, double, double, double, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
-    double ai, bi, ci, di, *a, *b, *c, *d, *y;
-    int i_1;
-    int naflag;
-
-    SETUP_Math4;
-    i_1 = asInteger(sI);
-
-    MOD_ITERATE4 (n, na, nb, nc, nd, i, ia, ib, ic, id, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	di = d[id];
-	if_NA_Math4_set(y[i], ai,bi,ci,di)
-	else {
-	    y[i] = f(ai, bi, ci, di, i_1);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-    FINISH_Math4;
-    return sy;
-} /* math4_1() */
-
-static SEXP math4_2(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, SEXP sJ,
-		    double (*f)(double, double, double, double, int, int), SEXP lcall)
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
-    double ai, bi, ci, di, *a, *b, *c, *d, *y;
-    int i_1, i_2;
-    int naflag;
-
-    SETUP_Math4;
-    i_1 = asInteger(sI);
-    i_2 = asInteger(sJ);
-
-    MOD_ITERATE4 (n, na, nb, nc, nd, i, ia, ib, ic, id, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	di = d[id];
-	if_NA_Math4_set(y[i], ai,bi,ci,di)
-	else {
-	    y[i] = f(ai, bi, ci, di, i_1, i_2);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-    FINISH_Math4;
-    return sy;
-} /* math4_2() */
-
-
-#define CAD3R	CADDDR
-/* This is not (yet) in Rinternals.h : */
-namespace {
-    inline SEXP CAD5R(SEXP e) {return CAR(CDR(CDR(CDR(CDR(CDR(e))))));}
-}
-
-#define Math4(A, FUN)   math4  (CAR(A), CADR(A), CADDR(A), CAD3R(A), FUN, call)
-#define Math4_1(A, FUN) math4_1(CAR(A), CADR(A), CADDR(A), CAD3R(A), CAD4R(A), \
-				FUN, call)
-#define Math4_2(A, FUN) math4_2(CAR(A), CADR(A), CADDR(A), CAD3R(A), CAD4R(A), \
-				CAD5R(A), FUN, call)
-
-
-SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    switch (PRIMVAL(op)) {
-    case  1: return Math4_1(args, dhyper);
-    case  2: return Math4_2(args, phyper);
-    case  3: return Math4_2(args, qhyper);
-
-    case  4: return Math4_1(args, dnbeta);
-    case  5: return Math4_2(args, pnbeta);
-    case  6: return Math4_2(args, qnbeta);
-    case  7: return Math4_1(args, dnf);
-    case  8: return Math4_2(args, pnf);
-    case  9: return Math4_2(args, qnf);
-#ifdef UNIMP
-    case 10: return Math4_1(args, dtukey);
-#endif
-    case 11: return Math4_2(args, ptukey);
-    case 12: return Math4_2(args, qtukey);
-    default:
-	errorcall(call,
-		  _("unimplemented real function of %d numeric arguments"), 4);
-    }
-    return op;			/* never used; to keep -Wall happy */
-}
-
-
-#ifdef WHEN_MATH5_IS_THERE/* as in ./arithmetic.h */
-
-/* Mathematical Functions of Five (Real) Arguments */
-
-#define if_NA_Math5_set(y,a,b,c,d,e)					\
-	if     (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)|| ISNA (e))	\
-		y = NA_REAL;						\
-	else if(ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)|| ISNAN(e))	\
-		y = R_NaN;
-
-static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
-{
-    SEXP sy;
-    R_xlen_t i, ia, ib, ic, id, ie, n, na, nb, nc, nd, ne;
-    double ai, bi, ci, di, ei, *a, *b, *c, *d, *e, *y;
-
-#define SETUP_Math5							\
-    if (!isNumeric(sa) || !isNumeric(sb) || !isNumeric(sc) ||		\
-	!isNumeric(sd) || !isNumeric(se))				\
-	errorcall(lcall, R_MSG_NONNUM_MATH);				\
-									\
-    na = XLENGTH(sa);							\
-    nb = XLENGTH(sb);							\
-    nc = XLENGTH(sc);							\
-    nd = XLENGTH(sd);							\
-    ne = XLENGTH(se);							\
-    if ((na == 0) || (nb == 0) || (nc == 0) || (nd == 0) || (ne == 0))	\
-	return(allocVector(REALSXP, 0));				\
-    n = na;								\
-    if (n < nb) n = nb;							\
-    if (n < nc) n = nc;							\
-    if (n < nd) n = nd;							\
-    if (n < ne) n = ne;		/* n = max(na,nb,nc,nd,ne) */		\
-    PROTECT(sa = coerceVector(sa, REALSXP));				\
-    PROTECT(sb = coerceVector(sb, REALSXP));				\
-    PROTECT(sc = coerceVector(sc, REALSXP));				\
-    PROTECT(sd = coerceVector(sd, REALSXP));				\
-    PROTECT(se = coerceVector(se, REALSXP));				\
-    PROTECT(sy = allocVector(REALSXP, n));				\
-    a = REAL(sa);							\
-    b = REAL(sb);							\
-    c = REAL(sc);							\
-    d = REAL(sd);							\
-    e = REAL(se);							\
-    y = REAL(sy);							\
-    naflag = 0
-
-    SETUP_Math5;
-
-    MOD_ITERATE5 (n, na, nb, nc, nd, ne,
-		  i, ia, ib, ic, id, ie, {
-//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	di = d[id];
-	ei = e[ie];
-	if_NA_Math5_set(y[i], ai,bi,ci,di,ei)
-	else {
-	    y[i] = f(ai, bi, ci, di, ei);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    });
-
-#define FINISH_Math5					\
-    if(naflag) warning(R_MSG_NA);			\
-							\
-    if (n == na) SHALLOW_DUPLICATE_ATTRIB(sy, sa);	\
-    else if (n == nb) SHALLOW_DUPLICATE_ATTRIB(sy, sb);	\
-    else if (n == nc) SHALLOW_DUPLICATE_ATTRIB(sy, sc);	\
-    else if (n == nd) SHALLOW_DUPLICATE_ATTRIB(sy, sd);	\
-    else if (n == ne) SHALLOW_DUPLICATE_ATTRIB(sy, se);	\
-    UNPROTECT(6)
-
-    FINISH_Math5;
-
-    return sy;
-} /* math5() */
-
-#define Math5(A, FUN) \
-	math5(CAR(A), CADR(A), CADDR(A), CAD3R(A), CAD4R(A), FUN);
-
-SEXP attribute_hidden do_math5(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    lcall = call;
-
-    switch (PRIMVAL(op)) {
-
-	/* Completely dummy for -Wall -- use math5() at all! : */
-    case -99: return Math5(args, dhyper);
-#ifdef UNIMP
-    case  2: return Math5(args, p...);
-    case  3: return Math5(args, q...);
-#endif
-    default:
-	errorcall(call,
-		  _("unimplemented real function of %d numeric arguments"), 5);
-    }
-    return op;			/* never used; to keep -Wall happy */
-} /* do_math5() */
-
-#endif /* Math5 is there */
-
-#if 0
-/* This is used for experimenting with parallelized nmath functions -- LT */
-CCODE R_get_arith_function(int which)
-{
-    switch (which) {
-    case 1: return do_math1;
-    case 2: return do_math2;
-    case 3: return do_math3;
-    case 4: return do_math4;
-    case 11: return complex_math1;
-    case 12: return complex_math2;
-    default: error("bad arith function index"); return nullptr;
-    }
-}
-#endif
