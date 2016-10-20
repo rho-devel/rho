@@ -404,7 +404,7 @@ SEXP fixup_NaRm(SEXP args)
 
 SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP a, stmp = NA_STRING /* -Wall */, scum = NA_STRING, call2;
+    SEXP a, stmp = NA_STRING /* -Wall */, scum = NA_STRING;
     double tmp = 0.0, s;
     Rcomplex z, ztmp, zcum={0.0, 0.0} /* -Wall */;
     int itmp = 0, icum = 0, int_a, real_a, empty, warn = 0 /* dummy */;
@@ -459,18 +459,15 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* match to foo(..., na.rm=FALSE) */
     PROTECT(args = fixup_NaRm(args));
-    PROTECT(call2 = shallow_duplicate(call));
-    SETCDR(call2, args);
+    Expression* call2 = new Expression(CAR(call), SEXP_downcast<PairList*>(args));
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
-	SEXP_downcast<Expression*>(call2), SEXP_downcast<Environment*>(env),
-	&arglist);
+	call2, SEXP_downcast<Environment*>(env), &arglist);
     if (dispatched.first) {
-	UNPROTECT(2);
+	UNPROTECT(1);
 	return(dispatched.second);
     }
-    UNPROTECT(1); /* call2 */
 
 #ifdef DEBUG_Summary
     REprintf("C do_summary(op%s, *): did NOT dispatch\n", PRIMNAME(op));
@@ -786,28 +783,24 @@ invalid_type:
 
 SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, call2;
+    SEXP ans;
 
     PROTECT(args = fixup_NaRm(args));
-    PROTECT(call2 = shallow_duplicate(call));
-    SETCDR(call2, args);
-
-    Expression* callx = SEXP_downcast<Expression*>(call2);
+    Expression* call2 = new Expression(CAR(call), SEXP_downcast<PairList*>(args));
     Environment* callenv = SEXP_downcast<Environment*>(env);
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
-	callx, callenv, &arglist);
+	call2, callenv, &arglist);
     if (dispatched.first) {
-	UNPROTECT(2);
+	UNPROTECT(1);
 	return(dispatched.second);
     }
-    UNPROTECT(1);
 
     PROTECT(op = findFun(install("range.default"), env));
     Closure* closure = SEXP_downcast<Closure*>(op);
-    ans = callx->invokeClosure(closure, callenv, &arglist);
-    UNPROTECT(3);
+    ans = call2->invokeClosure(closure, callenv, &arglist);
+    UNPROTECT(2);
     return(ans);
 }
 

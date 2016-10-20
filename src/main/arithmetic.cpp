@@ -991,7 +991,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)
-	->InternalDispatch(SEXP_downcast<Expression*>(call2),
+	->InternalDispatch(call2,
 			   SEXP_downcast<Environment*>(env),
 			   &arglist);
     if (dispatched.first) {

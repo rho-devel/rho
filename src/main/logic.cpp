@@ -239,7 +239,7 @@ static Logical checkValues(int op, int na_rm, int *x, R_xlen_t n)
 /* all, any */
 SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, s, t, call2;
+    SEXP ans, s, t;
     int narm, has_na = 0;
     /* initialize for behavior on empty vector
        all(logical(0)) -> TRUE
@@ -248,8 +248,8 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     Logical val = PRIMVAL(op) == _OP_ALL ? true : false;
 
     PROTECT(args = fixup_NaRm(args));
-    PROTECT(call2 = shallow_duplicate(call));
-    SETCDR(call2, args);
+    Expression* call2 = new Expression(CAR(call),
+				       SEXP_downcast<PairList*>(args));
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
