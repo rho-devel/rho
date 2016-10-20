@@ -24,7 +24,7 @@
 
 /** @file Subscripting.cpp
  *
- * Implementation of class rho::Subscripting and associated functions.
+ * Implementation of class Subscripting and associated functions.
  */
 
 #include <set>

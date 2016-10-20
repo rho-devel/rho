@@ -447,7 +447,7 @@ static SEXP bitwiseShiftR(SEXP a, SEXP b)
     return ans;
 }
 
-SEXP attribute_hidden do_bitwise(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* y_)
+SEXP attribute_hidden do_bitwise(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* y_)
 {
     switch(op->variant()) {
     case 1:
@@ -464,7 +464,7 @@ SEXP attribute_hidden do_bitwise(/*const*/ rho::Expression* call, const rho::Bui
     return nullptr;  // unreachable.
 }
 
-SEXP attribute_hidden do_bitwise_not(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a) {
+SEXP attribute_hidden do_bitwise_not(/*const*/ Expression* call, const BuiltInFunction* op, RObject* a) {
     int np = 0;
     if(isReal(a)) {a = PROTECT(coerceVector(a, INTSXP)); np++;}
     R_xlen_t i, m = XLENGTH(a);

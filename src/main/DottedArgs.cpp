@@ -24,7 +24,7 @@
 
 /** @file DottedArgs.cpp
  *
- * @brief Class rho::DottedArgs.
+ * @brief Class DottedArgs.
  */
 
 #include "rho/DottedArgs.hpp"

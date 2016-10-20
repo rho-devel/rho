@@ -159,7 +159,7 @@ static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
 static void deparse2(SEXP, SEXP, LocalParseData *);
 
-SEXP attribute_hidden do_deparse(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* expr_, rho::RObject* width_cutoff_, rho::RObject* backtick_, rho::RObject* control_, rho::RObject* nlines_)
+SEXP attribute_hidden do_deparse(/*const*/ Expression* call, const BuiltInFunction* op, RObject* expr_, RObject* width_cutoff_, RObject* backtick_, RObject* control_, RObject* nlines_)
 {
     SEXP ca1;
     int  cut0, backtick, opts, nlines;
@@ -334,7 +334,7 @@ SEXP attribute_hidden deparse1s(SEXP call)
 
 #include "Rconnections.h"
 
-SEXP attribute_hidden do_dput(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* file_, rho::RObject* control_)
+SEXP attribute_hidden do_dput(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* file_, RObject* control_)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
@@ -396,7 +396,7 @@ SEXP attribute_hidden do_dput(/*const*/ rho::Expression* call, const rho::BuiltI
     return (x_);
 }
 
-SEXP attribute_hidden do_dump(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* envir_, rho::RObject* opts_, rho::RObject* evaluate_)
+SEXP attribute_hidden do_dump(/*const*/ Expression* call, const BuiltInFunction* op, RObject* list_, RObject* file_, RObject* envir_, RObject* opts_, RObject* evaluate_)
 {
     SEXP file, names, o, objs, tval, source, outnames;
     int i, j, nobjs, nout, res;

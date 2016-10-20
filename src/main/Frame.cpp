@@ -24,7 +24,7 @@
 
 /** @file Frame.cpp
  *
- * @brief Implementation of class rho::Frame and rho::Frame::Binding.
+ * @brief Implementation of class Frame and Frame::Binding.
  */
 
 #include "rho/Frame.hpp"
@@ -279,7 +279,7 @@ namespace rho {
 	RObject* rawval;
 	if (sym->isDotDotSymbol()) {
 	    unsigned int ddv = sym->dotDotIndex();
-	    Frame::Binding* bdg = frame->binding(rho::DotsSymbol);
+	    Frame::Binding* bdg = frame->binding(DotsSymbol);
 	    if (!bdg)
 		return false;  // This is what CR does.  Is it really right?
 	    ConsCell* cc = SEXP_downcast<ConsCell*>(bdg->rawValue());

@@ -135,7 +135,7 @@ SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
 	Rf_error(_("not that many frames on the stack"));
     while (cptr) {
 	if (n == 0) {
-	    PROTECT(result = shallow_duplicate(const_cast<rho::Expression*>(cptr->call())));
+	    PROTECT(result = shallow_duplicate(const_cast<Expression*>(cptr->call())));
 	    if (cptr->sourceLocation())
 		setAttrib(result, R_SrcrefSymbol,
 			  duplicate(cptr->sourceLocation()));
@@ -172,7 +172,7 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
-SEXP attribute_hidden do_sysbrowser(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_)
+SEXP attribute_hidden do_sysbrowser(/*const*/ Expression* call, const BuiltInFunction* op, RObject* n_)
 {
     int n;
 
@@ -221,7 +221,7 @@ SEXP attribute_hidden do_sysbrowser(/*const*/ rho::Expression* call, const rho::
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP attribute_hidden do_sys(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_sys(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
@@ -297,7 +297,7 @@ SEXP attribute_hidden do_sys(/*const*/ rho::Expression* call, const rho::BuiltIn
     }
 }
 
-SEXP attribute_hidden do_parentframe(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_)
+SEXP attribute_hidden do_parentframe(/*const*/ Expression* call, const BuiltInFunction* op, RObject* n_)
 {
     ClosureContext *cptr;
 

@@ -71,7 +71,7 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
 
 // ***** C interface *****
 
-// This is not a busy list, so we don't bother to use rho::Allocator:
+// This is not a busy list, so we don't bother to use Allocator:
 static unordered_map<const RObject*, GCRoot<> > precious;
 
 void R_PreserveObject(SEXP object)

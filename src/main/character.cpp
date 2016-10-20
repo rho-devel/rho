@@ -107,7 +107,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_nzchar(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x, ans;
 
@@ -225,7 +225,7 @@ int R_nchar(SEXP string, nchar_type type_,
     return NA_INTEGER; // -Wall
 } // R_nchar()
 
-SEXP attribute_hidden do_nchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* stype, rho::RObject* allowNA_, rho::RObject* keepNA_)
+SEXP attribute_hidden do_nchar(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* stype, RObject* allowNA_, RObject* keepNA_)
 {
     SEXP d, s, x;
 
@@ -298,7 +298,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
     *buf = '\0';
 }
 
-SEXP attribute_hidden do_substr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* start_, rho::RObject* stop_)
+SEXP attribute_hidden do_substr(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* start_, RObject* stop_)
 {
     SEXP s;
     RObject* x = x_;
@@ -348,9 +348,9 @@ SEXP attribute_hidden do_substr(/*const*/ rho::Expression* call, const rho::Buil
 // .Internal( startsWith(x, prefix) )  and
 // .Internal( endsWith  (x, suffix) )
 SEXP attribute_hidden
-do_startsWith(rho::Expression* call, const rho::BuiltInFunction* op,
-	      rho::RObject* x,
-	      rho::RObject* Xfix /* 'prefix' or 'suffix' */)
+do_startsWith(Expression* call, const BuiltInFunction* op,
+	      RObject* x,
+	      RObject* Xfix /* 'prefix' or 'suffix' */)
 {
     if (!isString(x) || !isString(Xfix))
 	error(_("non-character object(s)"));
@@ -489,7 +489,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
     }
 }
 
-SEXP attribute_hidden do_substrgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* start_, rho::RObject* stop_, rho::RObject* value_)
+SEXP attribute_hidden do_substrgets(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* start_, RObject* stop_, RObject* value_)
 {
     SEXP s, x, sa, so, value, el, v_el;
     R_xlen_t i, len;
@@ -785,7 +785,7 @@ donewsc:
     return ans;
 }
 
-SEXP attribute_hidden do_abbrev(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* these_, rho::RObject* minlength_, rho::RObject* use_classes_)
+SEXP attribute_hidden do_abbrev(/*const*/ Expression* call, const BuiltInFunction* op, RObject* these_, RObject* minlength_, RObject* use_classes_)
 {
     RObject* x = these_;
 
@@ -835,7 +835,7 @@ SEXP attribute_hidden do_abbrev(/*const*/ rho::Expression* call, const rho::Buil
     return ans;
 }
 
-SEXP attribute_hidden do_makenames(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* allow__)
+SEXP attribute_hidden do_makenames(/*const*/ Expression* call, const BuiltInFunction* op, RObject* names_, RObject* allow__)
 {
     SEXP arg, ans;
     R_xlen_t i, n;
@@ -936,7 +936,7 @@ SEXP attribute_hidden do_makenames(/*const*/ rho::Expression* call, const rho::B
 }
 
 
-SEXP attribute_hidden do_tolower(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_tolower(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP x, y;
     R_xlen_t i, n;
@@ -1276,7 +1276,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
     }                                                          \
 }
 
-SEXP attribute_hidden do_chartr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* old_, rho::RObject* new_, rho::RObject* x_)
+SEXP attribute_hidden do_chartr(/*const*/ Expression* call, const BuiltInFunction* op, RObject* old_, RObject* new_, RObject* x_)
 {
     SEXP old, _new, x, y;
     R_xlen_t i, n;
@@ -1509,7 +1509,7 @@ SEXP attribute_hidden do_chartr(/*const*/ rho::Expression* call, const rho::Buil
     return(y);
 }
 
-SEXP attribute_hidden do_strtrim(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* width_)
+SEXP attribute_hidden do_strtrim(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* width_)
 {
     SEXP s, x, width;
     R_xlen_t i, len;
@@ -1582,7 +1582,7 @@ static int strtoi(SEXP s, int base)
     return int( res);
 }
 
-SEXP attribute_hidden do_strtoi(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* base_)
+SEXP attribute_hidden do_strtoi(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* base_)
 {
     SEXP ans, x, b;
     R_xlen_t i, n;
@@ -1623,7 +1623,7 @@ SEXP attribute_hidden stringSuffix(SEXP string, int fromIndex) {
     return res;
 }
 
-SEXP attribute_hidden do_strrep(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* n)
+SEXP attribute_hidden do_strrep(Expression* call, const BuiltInFunction* op, RObject* x, RObject* n)
 {
     SEXP d, s;
     R_xlen_t is, ix, in, ns, nx, nn;

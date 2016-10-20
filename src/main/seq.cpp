@@ -155,7 +155,7 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     return ans;
 }
 
-SEXP attribute_hidden do_colon(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* to_)
+SEXP attribute_hidden do_colon(/*const*/ Expression* call, const BuiltInFunction* op, RObject* from_, RObject* to_)
 {
     SEXP s1, s2;
     double n1, n2;
@@ -337,7 +337,7 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
     return a;
 }
 
-SEXP attribute_hidden do_rep_int(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* times_)
+SEXP attribute_hidden do_rep_int(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* times_)
 {
     SEXP s = x_, ncopy = times_;
     R_xlen_t nc;
@@ -391,7 +391,7 @@ SEXP attribute_hidden do_rep_int(/*const*/ rho::Expression* call, const rho::Bui
     return a;
 }
 
-SEXP attribute_hidden do_rep_len(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* length_out_)
+SEXP attribute_hidden do_rep_len(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* length_out_)
 {
     R_xlen_t ns, na;
     SEXP a, s, len;
@@ -928,7 +928,7 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_along(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_seq_along(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP ans;
 
@@ -960,7 +960,7 @@ SEXP attribute_hidden do_seq_along(/*const*/ rho::Expression* call, const rho::B
     return ans;
 }
 
-SEXP attribute_hidden do_seq_len(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* length_)
+SEXP attribute_hidden do_seq_len(/*const*/ Expression* call, const BuiltInFunction* op, RObject* length_)
 {
     SEXP ans;
     R_xlen_t len;

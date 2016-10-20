@@ -137,7 +137,7 @@ namespace {
 }  // anonymous namespace
 
 /* & | ! */
-SEXP attribute_hidden do_logic(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_logic(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     switch (op->variant()) {
     case 1:

@@ -24,7 +24,7 @@
 
 /** @file ConsCell.cpp
  *
- * @brief Class rho::ConsCell and associated C interface.
+ * @brief Class ConsCell and associated C interface.
  */
 
 #include "rho/ConsCell.hpp"
@@ -42,8 +42,8 @@ using namespace rho;
 // from C:
 namespace rho {
     namespace ForceNonInline {
-	RObject* (*car0p)(ConsCell*) = rho::car0;
-	PairList* (*tail0p)(ConsCell*) = rho::tail0;
+	RObject* (*car0p)(ConsCell*) = car0;
+	PairList* (*tail0p)(ConsCell*) = tail0;
 	SEXP (*CAARp)(SEXP e) = CAAR;
 	SEXP (*CARp)(SEXP e) = CAR;
 	SEXP (*TAGp)(SEXP e) = TAG;

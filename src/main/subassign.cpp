@@ -1454,7 +1454,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    break;
 		}
 		else if (CDR(t) == R_NilValue && val != R_NilValue) {
-		    SETCDR(t, new rho::PairList);
+		    SETCDR(t, new PairList);
 		    SET_TAG(CDR(t), nlist);
 		    SETCADR(t, val);
 		    break;

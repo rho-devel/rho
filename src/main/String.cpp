@@ -24,7 +24,7 @@
 
 /** @file String.cpp
  *
- * Implementation of class rho::String and related functions.
+ * Implementation of class String and related functions.
  */
 
 #include "rho/String.hpp"

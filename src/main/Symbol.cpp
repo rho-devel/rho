@@ -24,7 +24,7 @@
 
 /** @file Symbol.cpp
  *
- * @brief Implementation of class rho::Symbol and associated C
+ * @brief Implementation of class Symbol and associated C
  * interface.
  */
 

@@ -171,7 +171,7 @@ Rboolean Rf_isVector(SEXP s)
 
 void SETLENGTH(SEXP x, R_xlen_t v)
 {
-    rho::VectorBase* vb = dynamic_cast<rho::VectorBase*>(x);
+    VectorBase* vb = dynamic_cast<VectorBase*>(x);
     if (!vb)
 	Rf_error("SETLENGTH invoked for a non-vector.");
     vb->decreaseSizeInPlace(VectorBase::size_type(v));

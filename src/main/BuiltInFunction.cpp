@@ -24,7 +24,7 @@
 
 /** @file BuiltInFunction.cpp
  *
- * Implementation of class rho::BuiltInFunction and associated
+ * Implementation of class BuiltInFunction and associated
  * C interface.
  */
 

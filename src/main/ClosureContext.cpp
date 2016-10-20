@@ -24,7 +24,7 @@
 
 /** @file Evaluator_Context.cpp
  *
- * Implementation of class rho::Evaluator::Context.
+ * Implementation of class Evaluator::Context.
  */
 
 #include "rho/ClosureContext.hpp"

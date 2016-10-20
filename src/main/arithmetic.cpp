@@ -61,6 +61,7 @@
 #include "R_ext/Itermacros.h"
 #include "rho/ArgMatcher.hpp"
 #include "rho/BinaryFunction.hpp"
+#include "rho/ClosureContext.hpp"
 #include "rho/LogicalVector.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/IntVector.hpp"
@@ -774,7 +775,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* methods are allowed to have more than one arg */
-SEXP attribute_hidden do_trunc(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_trunc(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     call->check1arg("x"); // Checked _after_ internal dispatch.
     SEXP arg = num_args > 0 ? args[0] : R_NilValue;
@@ -936,9 +937,9 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 #define Math2(A, FUN)	  math2(x, y, FUN, call);
 #define Math2B(A, FUN)	  math2B(x, y, FUN, call);
 
-SEXP attribute_hidden do_math2(rho::Expression* call,
-			       const rho::BuiltInFunction* op,
-			       rho::RObject* x, rho::RObject* y)
+SEXP attribute_hidden do_math2(Expression* call,
+			       const BuiltInFunction* op,
+			       RObject* x, RObject* y)
 {
     if (isComplex(x) ||
 	(op->variant() == 0 && isComplex(y))) {
@@ -1014,7 +1015,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* log{2,10} are builtins */
-SEXP attribute_hidden do_log1arg(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP tmp = R_NilValue /* -Wall */;
 
@@ -1225,10 +1226,10 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 
 #define Math3B(A, FUN)  math3B (x, nu, expon_scaled, FUN, call);
 
-SEXP attribute_hidden do_math3(rho::Expression* call,
-			       const rho::BuiltInFunction* op,
-			       rho::RObject* x, rho::RObject* nu,
-			       rho::RObject* expon_scaled)
+SEXP attribute_hidden do_math3(Expression* call,
+			       const BuiltInFunction* op,
+			       RObject* x, RObject* nu,
+			       RObject* expon_scaled)
 {
     switch (op->variant()) {
 

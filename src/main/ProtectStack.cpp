@@ -24,7 +24,7 @@
 
 /** @file ProtectStack.cpp
  *
- * Implementation of class rho::ProtectStack and associated C
+ * Implementation of class ProtectStack and associated C
  * interface.
  */
 

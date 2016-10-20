@@ -1228,7 +1228,7 @@ static Rconnection newfifo(const char *description, const char *mode)
     return newconn;
 }
 
-SEXP attribute_hidden do_fifo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* blocking_, rho::RObject* encoding_)
+SEXP attribute_hidden do_fifo(/*const*/ Expression* call, const BuiltInFunction* op, RObject* description_, RObject* open_, RObject* blocking_, RObject* encoding_)
 {
 #if (defined(HAVE_MKFIFO) && defined(HAVE_FCNTL_H)) || defined(_WIN32)
     SEXP sfile, sopen, ans, connclass, enc;
@@ -1386,7 +1386,7 @@ extern Rconnection
 newWpipe(const char *description, int enc, const char *mode);
 #endif
 
-SEXP attribute_hidden do_pipe(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* encoding_)
+SEXP attribute_hidden do_pipe(/*const*/ Expression* call, const BuiltInFunction* op, RObject* description_, RObject* open_, RObject* encoding_)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *file, *open;
@@ -2006,7 +2006,7 @@ newxzfile(const char *description, const char *mode, int type, int compress)
 }
 
 /* op 0 is gzfile, 1 is bzfile, 2 is xv/lzma */
-SEXP attribute_hidden do_gzfile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* encoding_, rho::RObject* compression_)
+SEXP attribute_hidden do_gzfile(/*const*/ Expression* call, const BuiltInFunction* op, RObject* description_, RObject* open_, RObject* encoding_, RObject* compression_)
 {
     SEXP sfile, sopen, ans, connclass, enc;
     const char *file, *open;
@@ -2453,7 +2453,7 @@ static Rconnection newterminal(const char *description, const char *mode)
 }
 
 
-SEXP attribute_hidden do_stdin(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_stdin(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(0);
@@ -2467,7 +2467,7 @@ SEXP attribute_hidden do_stdin(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_stdout(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_stdout(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(R_OutputCon);
@@ -2482,7 +2482,7 @@ SEXP attribute_hidden do_stdout(/*const*/ rho::Expression* call, const rho::Buil
 }
 
 
-SEXP attribute_hidden do_stderr(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_stderr(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(2);
@@ -2500,7 +2500,7 @@ SEXP attribute_hidden do_stderr(/*const*/ rho::Expression* call, const rho::Buil
 #ifdef Win32
 # include <io.h>
 #endif
-SEXP attribute_hidden do_isatty(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_isatty(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     int con;
     /* FIXME: is this correct for consoles? */
@@ -2675,7 +2675,7 @@ static Rconnection newraw(const char *description, SEXP raw, const char *mode)
     return newconn;
 }
 
-SEXP attribute_hidden do_rawconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sfile, rho::RObject* sraw, rho::RObject* sopen)
+SEXP attribute_hidden do_rawconnection(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sfile, RObject* sraw, RObject* sopen)
 {
     SEXP ans, connclass;
     const char *desc, *open;
@@ -2709,7 +2709,7 @@ SEXP attribute_hidden do_rawconnection(/*const*/ rho::Expression* call, const rh
     return ans;
 }
 
-SEXP attribute_hidden do_rawconvalue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_rawconvalue(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con=nullptr;
     Rrawconn thisconn;
@@ -3063,7 +3063,7 @@ static Rconnection newouttext(const char *description, SEXP stext,
     return newconn;
 }
 
-SEXP attribute_hidden do_textconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* nm_, rho::RObject* object_, rho::RObject* open_, rho::RObject* env_, rho::RObject* type_)
+SEXP attribute_hidden do_textconnection(/*const*/ Expression* call, const BuiltInFunction* op, RObject* nm_, RObject* object_, RObject* open_, RObject* env_, RObject* type_)
 {
     SEXP sfile, stext, sopen, ans, connclass, venv;
     const char *desc, *open;
@@ -3121,7 +3121,7 @@ SEXP attribute_hidden do_textconnection(/*const*/ rho::Expression* call, const r
     return ans;
 }
 
-SEXP attribute_hidden do_textconvalue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_textconvalue(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con=nullptr;
     Routtextconn thisconn;
@@ -3141,7 +3141,7 @@ SEXP attribute_hidden do_textconvalue(/*const*/ rho::Expression* call, const rho
 
 
 /* socketConnection(host, port, server, blocking, open, encoding) */
-SEXP attribute_hidden do_sockconn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* host_, rho::RObject* port_, rho::RObject* server_, rho::RObject* blocking_, rho::RObject* open_, rho::RObject* encoding_, rho::RObject* timeout_)
+SEXP attribute_hidden do_sockconn(/*const*/ Expression* call, const BuiltInFunction* op, RObject* host_, RObject* port_, RObject* server_, RObject* blocking_, RObject* open_, RObject* encoding_, RObject* timeout_)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *host, *open;
@@ -3202,7 +3202,7 @@ SEXP attribute_hidden do_sockconn(/*const*/ rho::Expression* call, const rho::Bu
 /* ------------------- unz connections  --------------------- */
 
 /* see dounzip.c for the details */
-SEXP attribute_hidden do_unz(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sfile, rho::RObject* sopen, rho::RObject* enc)
+SEXP attribute_hidden do_unz(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sfile, RObject* sopen, RObject* enc)
 {
     SEXP ans, connclass;
     const char *file, *open;
@@ -3249,7 +3249,7 @@ SEXP attribute_hidden do_unz(/*const*/ rho::Expression* call, const rho::BuiltIn
 
 /* -------------- open, close, seek, truncate, flush ------------------ */
 
-SEXP attribute_hidden do_open(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* open_, rho::RObject* blocking_)
+SEXP attribute_hidden do_open(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* open_, RObject* blocking_)
 {
     int i, block;
     Rconnection con=nullptr;
@@ -3283,7 +3283,7 @@ SEXP attribute_hidden do_open(/*const*/ rho::Expression* call, const rho::BuiltI
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_isopen(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* rw_)
+SEXP attribute_hidden do_isopen(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* rw_)
 {
     Rconnection con;
     int rw, res;
@@ -3300,7 +3300,7 @@ SEXP attribute_hidden do_isopen(/*const*/ rho::Expression* call, const rho::Buil
     return ScalarLogical(res);
 }
 
-SEXP attribute_hidden do_isincomplete(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_isincomplete(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con;
 
@@ -3310,7 +3310,7 @@ SEXP attribute_hidden do_isincomplete(/*const*/ rho::Expression* call, const rho
     return ScalarLogical(con->incomplete != FALSE);
 }
 
-SEXP attribute_hidden do_isseekable(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_isseekable(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con;
 
@@ -3356,7 +3356,7 @@ static void con_destroy(int i)
 }
 
 
-SEXP attribute_hidden do_close(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* dots_)
+SEXP attribute_hidden do_close(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* dots_)
 {
     int i, j;
 
@@ -3380,7 +3380,7 @@ SEXP attribute_hidden do_close(/*const*/ rho::Expression* call, const rho::Built
 }
 
 /* seek(con, where = numeric(), origin = "start", rw = "") */
-SEXP attribute_hidden do_seek(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* connection, rho::RObject* where_, rho::RObject* origin_, rho::RObject* rw_)
+SEXP attribute_hidden do_seek(/*const*/ Expression* call, const BuiltInFunction* op, RObject* connection, RObject* where_, RObject* origin_, RObject* rw_)
 {
     int origin, rw;
     Rconnection con = nullptr;
@@ -3404,7 +3404,7 @@ SEXP attribute_hidden do_seek(/*const*/ rho::Expression* call, const rho::BuiltI
 }
 
 /* truncate(con) */
-SEXP attribute_hidden do_truncate(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_truncate(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con = nullptr;
 
@@ -3415,7 +3415,7 @@ SEXP attribute_hidden do_truncate(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_flush(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_)
+SEXP attribute_hidden do_flush(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_)
 {
     Rconnection con = nullptr;
 
@@ -3516,7 +3516,7 @@ int Rconn_printf(Rconnection con, const char *format, ...)
 
 /* readLines(con = stdin(), n = 1, ok = TRUE, warn = TRUE) */
 #define BUF_SIZE 1000
-SEXP attribute_hidden do_readLines(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* n_, rho::RObject* ok_, rho::RObject* warn_, rho::RObject* encoding_, rho::RObject* skipNul_)
+SEXP attribute_hidden do_readLines(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* n_, RObject* ok_, RObject* warn_, RObject* encoding_, RObject* skipNul_)
 {
     SEXP ans = R_NilValue, ans2;
     int ok, warn, skipNul, c, nbuf, buf_size = BUF_SIZE;
@@ -3647,7 +3647,7 @@ SEXP attribute_hidden do_readLines(/*const*/ rho::Expression* call, const rho::B
 }
 
 /* writeLines(text, con = stdout(), sep = "\n", useBytes) */
-SEXP attribute_hidden do_writelines(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* text_, rho::RObject* con_, rho::RObject* sep_, rho::RObject* useBytes_)
+SEXP attribute_hidden do_writelines(/*const*/ Expression* call, const BuiltInFunction* op, RObject* text_, RObject* con_, RObject* sep_, RObject* useBytes_)
 {
     int con_num, useBytes;
     Rboolean wasopen;
@@ -3794,7 +3794,7 @@ static SEXP rawOneString(Rbyte *bytes, R_xlen_t nbytes, R_xlen_t *np)
 
 /* readBin(con, what, n, swap) */
 #define BLOCK 8096
-SEXP attribute_hidden do_readbin(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* what_, rho::RObject* n_, rho::RObject* size_, rho::RObject* signed_, rho::RObject* endian_)
+SEXP attribute_hidden do_readbin(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* what_, RObject* n_, RObject* size_, RObject* signed_, RObject* endian_)
 {
     SEXP ans = R_NilValue, swhat;
     int size, signd, swap, sizedef= 4, mode = 1;
@@ -4060,7 +4060,7 @@ SEXP attribute_hidden do_readbin(/*const*/ rho::Expression* call, const rho::Bui
 }
 
 /* writeBin(object, con, size, swap, useBytes) */
-SEXP attribute_hidden do_writebin(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* con_, rho::RObject* size_, rho::RObject* endian_, rho::RObject* useBytes_)
+SEXP attribute_hidden do_writebin(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object_, RObject* con_, RObject* size_, RObject* endian_, RObject* useBytes_)
 {
     SEXP object, ans = R_NilValue;
     int i, j, size, swap, len, useBytes;
@@ -4404,7 +4404,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 
 
 /* readChar(con, nchars) */
-SEXP attribute_hidden do_readchar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* nchars_, rho::RObject* useBytes_)
+SEXP attribute_hidden do_readchar(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* nchars_, RObject* useBytes_)
 {
     SEXP ans = R_NilValue, onechar, nchars;
     R_xlen_t i, n, m = 0;
@@ -4475,7 +4475,7 @@ SEXP attribute_hidden do_readchar(/*const*/ rho::Expression* call, const rho::Bu
 }
 
 /* writeChar(object, con, nchars, sep, useBytes) */
-SEXP attribute_hidden do_writechar(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* con_, rho::RObject* nchars_, rho::RObject* eos_, rho::RObject* useBytes_)
+SEXP attribute_hidden do_writechar(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object_, RObject* con_, RObject* nchars_, RObject* eos_, RObject* useBytes_)
 {
     SEXP object, nchars, sep, ans = R_NilValue, si;
     R_xlen_t i, n, len;
@@ -4676,7 +4676,7 @@ void con_pushback(Rconnection con, Rboolean newLine, char *line)
 }
 
 
-SEXP attribute_hidden do_pushback(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* data_, rho::RObject* connection_, rho::RObject* newLine_, rho::RObject* encoding_)
+SEXP attribute_hidden do_pushback(/*const*/ Expression* call, const BuiltInFunction* op, RObject* data_, RObject* connection_, RObject* newLine_, RObject* encoding_)
 {
     int i, n, nexists, newLine, type;
     Rconnection con = NULL;
@@ -4721,7 +4721,7 @@ SEXP attribute_hidden do_pushback(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_pushbacklength(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* connection_)
+SEXP attribute_hidden do_pushbacklength(/*const*/ Expression* call, const BuiltInFunction* op, RObject* connection_)
 {
     Rconnection con = nullptr;
 
@@ -4729,7 +4729,7 @@ SEXP attribute_hidden do_pushbacklength(/*const*/ rho::Expression* call, const r
     return ScalarInteger(con->nPushBack);
 }
 
-SEXP attribute_hidden do_clearpushback(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* connection_)
+SEXP attribute_hidden do_clearpushback(/*const*/ Expression* call, const BuiltInFunction* op, RObject* connection_)
 {
     int j;
     Rconnection con = nullptr;
@@ -4810,7 +4810,7 @@ Rboolean attribute_hidden switch_stdout(int icon, int closeOnExit)
   return switch_or_tee_stdout(icon, closeOnExit, 0);
 }
 
-SEXP attribute_hidden do_sink(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* append_, rho::RObject* type_, rho::RObject* split_)
+SEXP attribute_hidden do_sink(/*const*/ Expression* call, const BuiltInFunction* op, RObject* file_, RObject* append_, RObject* type_, RObject* split_)
 {
   int icon, closeOnExit, errcon, tee;
 
@@ -4842,7 +4842,7 @@ SEXP attribute_hidden do_sink(/*const*/ rho::Expression* call, const rho::BuiltI
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_sinknumber(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* type_)
+SEXP attribute_hidden do_sinknumber(/*const*/ Expression* call, const BuiltInFunction* op, RObject* type_)
 {
     int errcon = asLogical(type_);
     if(errcon == NA_LOGICAL)
@@ -4878,7 +4878,7 @@ void attribute_hidden InitConnections()
 }
 
 SEXP attribute_hidden
-do_getallconnections(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+do_getallconnections(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     int i, j=0, n=0;
     SEXP ans;
@@ -4893,7 +4893,7 @@ do_getallconnections(/*const*/ rho::Expression* call, const rho::BuiltInFunction
 }
 
 SEXP attribute_hidden
-do_getconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_)
+do_getconnection(/*const*/ Expression* call, const BuiltInFunction* op, RObject* what_)
 {
     SEXP ans, connclass;
     int what;
@@ -4917,7 +4917,7 @@ do_getconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op
     return ans;
 }
 
-SEXP attribute_hidden do_sumconnection(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_)
+SEXP attribute_hidden do_sumconnection(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object_)
 {
     SEXP ans, names, tmp;
     Rconnection Rcon;
@@ -4960,7 +4960,7 @@ R_newCurlUrl(const char *description, const char * const mode, int type);
 /* op = 0: .Internal( url(description, open, blocking, encoding, method))
    op = 1: .Internal(file(description, open, blocking, encoding, method, raw))
 */
-SEXP attribute_hidden do_url(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     RHOCONST char *class2 = "url";
@@ -5465,7 +5465,7 @@ static int gzcon_fgetc(Rconnection con)
 
 
 /* gzcon(con, level, allowNonCompressed) */
-SEXP attribute_hidden do_gzcon(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* level_, rho::RObject* allowNonCompressed_)
+SEXP attribute_hidden do_gzcon(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* level_, RObject* allowNonCompressed_)
 {
     SEXP ans, connclass;
     int icon, level, allow;
@@ -5703,7 +5703,7 @@ SEXP R_decompress2(SEXP in, Rboolean *err)
 }
 
 
-SEXP attribute_hidden do_sockselect(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* socklist_, rho::RObject* write_, rho::RObject* timeout_)
+SEXP attribute_hidden do_sockselect(/*const*/ Expression* call, const BuiltInFunction* op, RObject* socklist_, RObject* write_, RObject* timeout_)
 {
     Rboolean immediate = FALSE;
     int nsock, i;
@@ -5874,7 +5874,7 @@ SEXP R_decompress3(SEXP in, Rboolean *err)
 }
 
 SEXP attribute_hidden
-do_memCompress(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* type_)
+do_memCompress(/*const*/ Expression* call, const BuiltInFunction* op, RObject* from_, RObject* type_)
 {
     SEXP ans, from;
     int type, res;
@@ -5953,7 +5953,7 @@ do_memCompress(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, 
 }
 
 SEXP attribute_hidden
-do_memDecompress(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* from_, rho::RObject* type_)
+do_memDecompress(/*const*/ Expression* call, const BuiltInFunction* op, RObject* from_, RObject* type_)
 {
     SEXP ans, from;
     int type, subtype = 0;

@@ -24,7 +24,7 @@
 
 /** @file Closure.cpp
  *
- * @brief Implementation of class rho::Closure and associated C
+ * @brief Implementation of class Closure and associated C
  * interface.
  */
 

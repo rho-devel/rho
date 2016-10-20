@@ -663,7 +663,7 @@ R_xlen_t any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
   .Internal(unique(x))		  [op=1]
    .Internal(anyDuplicated(x))	  [op=2]
 */
-SEXP attribute_hidden do_duplicated(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_duplicated(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x, incomp, dup, ans;
     int fromLast, nmax = NA_INTEGER;
@@ -977,7 +977,7 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 
 
 // .Internal(match(x, table, nomatch, incomparables)) :
-SEXP attribute_hidden do_match(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* table, rho::RObject* nomatch_, rho::RObject* incomparables)
+SEXP attribute_hidden do_match(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x, RObject* table, RObject* nomatch_, RObject* incomparables)
 {
     if ((!isVector(x) && !isNull(x))
 	|| (!isVector(table) && !isNull(table)))
@@ -1006,7 +1006,7 @@ SEXP attribute_hidden do_match(/*const*/ rho::Expression* call, const rho::Built
  * Empty strings are unmatched			      BDR 2000/2/16
  */
 
-SEXP attribute_hidden do_pmatch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* table_, rho::RObject* nomatch_, rho::RObject* duplicates_ok_)
+SEXP attribute_hidden do_pmatch(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* table_, RObject* nomatch_, RObject* duplicates_ok_)
 {
     SEXP ans, input, target;
     int mtch, n_target, mtch_count, dups_ok, no_match;
@@ -1151,7 +1151,7 @@ SEXP attribute_hidden do_pmatch(/*const*/ rho::Expression* call, const rho::Buil
 /* Partial Matching of Strings */
 /* Based on Therneau's charmatch. */
 
-SEXP attribute_hidden do_charmatch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* table_, rho::RObject* nomatch_)
+SEXP attribute_hidden do_charmatch(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* table_, RObject* nomatch_)
 {
     SEXP ans, input, target;
     const char *ss, *st;
@@ -1412,7 +1412,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = new rho::Expression);
+    PROTECT(rval = new Expression);
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(3);
@@ -1568,7 +1568,7 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     return ans;
 }
 
-SEXP attribute_hidden do_rowsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* group_, rho::RObject* unique_groups_, rho::RObject* na_rm_, rho::RObject* unique_group_names_)
+SEXP attribute_hidden do_rowsum(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* group_, RObject* unique_groups_, RObject* na_rm_, RObject* unique_group_names_)
 {
     if(op->variant() == 1)
 	return rowsum_df(x_, group_, unique_groups_, na_rm_,
@@ -1614,7 +1614,7 @@ static SEXP duplicated2(SEXP x, HashData *d)
     return ans;
 }
 
-SEXP attribute_hidden do_makeunique(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* sep_)
+SEXP attribute_hidden do_makeunique(/*const*/ Expression* call, const BuiltInFunction* op, RObject* names_, RObject* sep_)
 {
     SEXP names, sep, ans, dup, newx;
     int i, cnt, *cnts, dp;
@@ -1730,7 +1730,7 @@ static R_INLINE double ru()
 }
 
 // sample.int(.) --> .Internal(sample2(n, size)) :
-SEXP attribute_hidden do_sample2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* size_)
+SEXP attribute_hidden do_sample2(/*const*/ Expression* call, const BuiltInFunction* op, RObject* n_, RObject* size_)
 {
     SEXP ans;
     double dn = asReal(n_);

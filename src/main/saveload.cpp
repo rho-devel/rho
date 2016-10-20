@@ -1947,7 +1947,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 }
 
 /* Only used for version 1 saves */
-SEXP attribute_hidden do_save(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* envir_, rho::RObject* eval_promises_)
+SEXP attribute_hidden do_save(/*const*/ Expression* call, const BuiltInFunction* op, RObject* list_, RObject* file_, RObject* ascii_, RObject* version_, RObject* envir_, RObject* eval_promises_)
 {
     /* save(list, file, ascii, version, environment) */
 
@@ -2066,7 +2066,7 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 }
 
 /* This is only used for version 1 or earlier formats */
-SEXP attribute_hidden do_load(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* envir_)
+SEXP attribute_hidden do_load(/*const*/ Expression* call, const BuiltInFunction* op, RObject* file_, RObject* envir_)
 {
     SEXP fname, aenv;
     GCStackRoot<> val;
@@ -2214,7 +2214,7 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
    with either a pairlist or list.
 */
 
-SEXP attribute_hidden do_saveToConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* con_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* envir_, rho::RObject* eval_promises_)
+SEXP attribute_hidden do_saveToConn(/*const*/ Expression* call, const BuiltInFunction* op, RObject* list_, RObject* con_, RObject* ascii_, RObject* version_, RObject* envir_, RObject* eval_promises_)
 {
     /* saveToConn(list, conn, ascii, version, environment) */
 
@@ -2319,7 +2319,7 @@ SEXP attribute_hidden do_saveToConn(/*const*/ rho::Expression* call, const rho::
 extern int R_ReadItemDepth;
 extern int R_InitReadItemDepth;
 
-SEXP attribute_hidden do_loadFromConn2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* envir_, rho::RObject* verbose_)
+SEXP attribute_hidden do_loadFromConn2(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* envir_, RObject* verbose_)
 {
     /* loadFromConn2(conn, environment, verbose) */
 

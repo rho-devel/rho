@@ -190,7 +190,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
-SEXP attribute_hidden do_provCommand (/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* /* const* */ args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_provCommand (/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* /* const* */ args, int num_args, const PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -211,7 +211,7 @@ SEXP attribute_hidden do_provCommand (/*const*/ rho::Expression* call, const rho
 }
 
 SEXP attribute_hidden
-do_provenance_graph(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+do_provenance_graph(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -221,7 +221,7 @@ do_provenance_graph(/*const*/ rho::Expression* call, const rho::BuiltInFunction*
     if (nargs != 1)
 	Rf_error(_("%d arguments passed to 'provenance.graph' which requires 1"),
 		 nargs);
-    // SEXP arg1 = CAR((rho::RObject*) args);
+    // SEXP arg1 = CAR((RObject*) args);
     const RObject* arg1 = args[0];
     if (!arg1 || arg1->sexptype() != STRSXP)
 	    Rf_error(_("invalid 'names' argument"));

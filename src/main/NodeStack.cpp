@@ -24,7 +24,7 @@
 
 /** @file NodeStack.cpp
  *
- * Implementation of class rho::NodeStack.
+ * Implementation of class NodeStack.
  */
 
 #include "rho/NodeStack.hpp"

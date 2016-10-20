@@ -1327,7 +1327,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
-SEXP attribute_hidden do_asCharacterFactor(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
+SEXP attribute_hidden do_asCharacterFactor(Expression* call, const BuiltInFunction* op, RObject* x)
 {
     return Rf_asCharacterFactor(x);
 }
@@ -1360,7 +1360,7 @@ SEXP Rf_asCharacterFactor(SEXP x)
 }
 
 
-SEXP attribute_hidden do_asatomic(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_asatomic(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP ans, x;
 
@@ -1398,7 +1398,7 @@ SEXP attribute_hidden do_asatomic(/*const*/ rho::Expression* call, const rho::Bu
 
 /* NB: as.vector is used for several other as.xxxx, including
    as.expression, as.list, as.pairlist, as.symbol, (as.single) */
-SEXP attribute_hidden do_asvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* mode)
+SEXP attribute_hidden do_asvector(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x, RObject* mode)
 {
     SEXP ans;
     SEXPTYPE type;
@@ -1471,7 +1471,7 @@ SEXP attribute_hidden do_asvector(/*const*/ rho::Expression* call, const rho::Bu
 }
 
 
-SEXP attribute_hidden do_asfunction(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* envir_)
+SEXP attribute_hidden do_asfunction(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* envir_)
 {
     SEXP arglist, envir, names, args, pargs, body;
     int i, n;
@@ -1516,7 +1516,7 @@ SEXP attribute_hidden do_asfunction(/*const*/ rho::Expression* call, const rho::
 
 
 /* primitive */
-SEXP attribute_hidden do_ascall(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* args)
+SEXP attribute_hidden do_ascall(/*const*/ Expression* call, const BuiltInFunction* op, RObject* args)
 {
     SEXP ap, ans, names;
     int i, n;
@@ -1712,7 +1712,7 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_typeof(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     return Rf_type2rstr(TYPEOF(x_));
 }
@@ -1720,7 +1720,7 @@ SEXP attribute_hidden do_typeof(/*const*/ rho::Expression* call, const rho::Buil
 /* Define many of the <primitive> "is.xxx" functions :
    Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or ../include/Rinlinedfuns.h
 */
-SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_is(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     switch (op->variant()) {
     case NILSXP:	/* is.null */
@@ -1864,7 +1864,7 @@ SEXP attribute_hidden do_is(/*const*/ rho::Expression* call, const rho::BuiltInF
  */
 
 // is.vector(x, mode) :
-SEXP attribute_hidden do_isvector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* mode_)
+SEXP attribute_hidden do_isvector(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* mode_)
 {
     SEXP ans, a, x;
     const char *stype;
@@ -1938,7 +1938,7 @@ namespace {
     }
 }
     
-SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_isna(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -2155,7 +2155,7 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_isnan(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
@@ -2212,7 +2212,7 @@ SEXP attribute_hidden do_isnan(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_isfinite(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
@@ -2267,7 +2267,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ rho::Expression* call, const rho::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_isinfinite(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_isinfinite(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP ans, x, names, dims;
     double xr, xi;
@@ -2356,7 +2356,7 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (result);
 }
 
-SEXP attribute_hidden do_docall(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_, rho::RObject* args_, rho::RObject* envir_)
+SEXP attribute_hidden do_docall(/*const*/ Expression* call, const BuiltInFunction* op, RObject* what_, RObject* args_, RObject* envir_)
 {
     SEXP c, fun, names, envir;
     int i, n;
@@ -2696,13 +2696,13 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     return obj;
 }
 
-SEXP attribute_hidden R_do_set_class(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* klass)
+SEXP attribute_hidden R_do_set_class(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object, RObject* klass)
 {
     return R_set_class(object, klass, call);
 }
 
 /* primitive */
-SEXP attribute_hidden do_storage_mode(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* obj, rho::RObject* value)
+SEXP attribute_hidden do_storage_mode(/*const*/ Expression* call, const BuiltInFunction* op, RObject* obj, RObject* value)
 {
 /* storage.mode(obj) <- value */
     SEXP ans;

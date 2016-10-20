@@ -93,7 +93,7 @@ static int scmp(SEXP x, SEXP y, Rboolean nalast)
     return Scollate(x, y);
 }
 
-bool rho::String::Comparator::operator()(const String* l,
+bool String::Comparator::operator()(const String* l,
 					  const String* r) const
 {
     return scmp(const_cast<String*>(l), const_cast<String*>(r),
@@ -181,7 +181,7 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
     return FALSE;/* sorted */
 } // isUnsorted()
 
-SEXP attribute_hidden do_isunsorted(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* strictly_)
+SEXP attribute_hidden do_isunsorted(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x, RObject* strictly_)
 {
     int strictly = asLogical(strictly_);
     if(strictly == NA_LOGICAL)
@@ -327,7 +327,7 @@ void revsort(double *a, int *ib, int n)
 }
 
 
-SEXP attribute_hidden do_sort(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* decreasing_)
+SEXP attribute_hidden do_sort(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* decreasing_)
 {
     SEXP ans;
     Rboolean decreasing;
@@ -606,7 +606,7 @@ Psort0(SEXP x, R_xlen_t lo, R_xlen_t hi, R_xlen_t *ind, int nind)
 
 
 /* FUNCTION psort(x, indices) */
-SEXP attribute_hidden do_psort(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* partial_)
+SEXP attribute_hidden do_psort(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* partial_)
 {
     SEXP x = x_, p = partial_;
 
@@ -1317,7 +1317,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* FUNCTION: rank(x, length, ties.method) */
-SEXP attribute_hidden do_rank(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_rank(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP rank, x;
     int *ik = nullptr /* -Wall */;

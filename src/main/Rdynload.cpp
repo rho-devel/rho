@@ -887,7 +887,7 @@ static void GetFullDLLPath(SEXP call, char *buf, const char *const path)
   call routines from "incomplete" DLLs.
  */
 
-SEXP attribute_hidden do_dynload(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* local_, rho::RObject* now_, rho::RObject* dots_)
+SEXP attribute_hidden do_dynload(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* local_, RObject* now_, RObject* dots_)
 {
     char buf[2 * PATH_MAX];
     DllInfo *info;
@@ -903,7 +903,7 @@ SEXP attribute_hidden do_dynload(/*const*/ rho::Expression* call, const rho::Bui
     return(Rf_MakeDLLInfo(info));
 }
 
-SEXP attribute_hidden do_dynunload(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_dynunload(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     char buf[2 * PATH_MAX];
 
@@ -1316,7 +1316,7 @@ R_getRegisteredRoutines(SEXP dll)
 }
 
 SEXP attribute_hidden
-do_getSymbolInfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_, rho::RObject* package_, rho::RObject* with_registration_info_)
+do_getSymbolInfo(/*const*/ Expression* call, const BuiltInFunction* op, RObject* name_, RObject* package_, RObject* with_registration_info_)
 {
     const char *package = "", *name;
     R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {nullptr}, nullptr};
@@ -1347,7 +1347,7 @@ do_getSymbolInfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op
 
 /* .Internal(getLoadedDLLs()) */
 SEXP attribute_hidden
-do_getDllTable(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+do_getDllTable(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, nm;
 
@@ -1376,7 +1376,7 @@ do_getDllTable(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
 }
 
 SEXP attribute_hidden
-do_getRegisteredRoutines(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* info_)
+do_getRegisteredRoutines(/*const*/ Expression* call, const BuiltInFunction* op, RObject* info_)
 {
     const char * const names[] = {".C", ".Call", ".Fortran", ".External"};
 

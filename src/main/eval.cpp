@@ -1173,9 +1173,9 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-RObject* attribute_hidden do_paren(rho::Expression* call,
-				   const rho::BuiltInFunction* op,
-				   rho::RObject* x_)
+RObject* attribute_hidden do_paren(Expression* call,
+				   const BuiltInFunction* op,
+				   RObject* x_)
 {
     return x_;
 }
@@ -2074,7 +2074,7 @@ SEXP R_ClosureExpr(SEXP p)
     return BODY(p);
 }
 
-SEXP attribute_hidden do_loadfile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_loadfile(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP file, s;
     FILE *fp;
@@ -2094,7 +2094,7 @@ SEXP attribute_hidden do_loadfile(/*const*/ rho::Expression* call, const rho::Bu
     return s;
 }
 
-SEXP attribute_hidden do_savefile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_savefile(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     FILE *fp;
 
@@ -2113,7 +2113,7 @@ SEXP attribute_hidden do_savefile(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_setnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* num_threads_)
+SEXP attribute_hidden do_setnumthreads(/*const*/ Expression* call, const BuiltInFunction* op, RObject* num_threads_)
 {
     int old = R_num_math_threads, newi;
     newi = Rf_asInteger(num_threads_);
@@ -2122,7 +2122,7 @@ SEXP attribute_hidden do_setnumthreads(/*const*/ rho::Expression* call, const rh
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_setmaxnumthreads(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* num_threads_)
+SEXP attribute_hidden do_setmaxnumthreads(/*const*/ Expression* call, const BuiltInFunction* op, RObject* num_threads_)
 {
     int old = R_max_num_math_threads, newi;
     newi = Rf_asInteger(num_threads_);
