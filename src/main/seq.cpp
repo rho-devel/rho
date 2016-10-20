@@ -39,6 +39,7 @@
 #include <R_ext/Itermacros.h>
 
 #include "RBufferUtils.h"
+#include "rho/ArgMatcher.hpp"
 #include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
 
@@ -611,10 +612,9 @@ done:
 /* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans, x, times = R_NilValue /* -Wall */;
+    SEXP ans, x, times, length_out, each_, ignored;
     int each = 1, nprotect = 3;
     R_xlen_t i, lx, len = NA_INTEGER, nt;
-    static SEXP do_rep_formals = NULL;
 
     /* includes factors, POSIX[cl]t, Date */
     if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 0))
@@ -627,37 +627,35 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
        so we manage the argument matching ourselves.  We pretend this is
        rep(x, times, length.out, each, ...)
     */
-    if (do_rep_formals == NULL)
-	do_rep_formals = allocFormalsList5(install("x"), install("times"),
-					   install("length.out"),
-					   install("each"), R_DotsSymbol);
-    PROTECT(args = matchArgs(do_rep_formals, args, call));
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher(
+	{ "x", "times", "length.out", "each", "..." });
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    matcher->match(&arglist, { &x, &times, &length_out, &each_, &ignored });
 
-    x = CAR(args);
     /* supported in R 2.15.x */
     if (TYPEOF(x) == LISTSXP)
 	errorcall(call, "replication of pairlists is defunct");
 
     lx = xlength(x);
 
-    double slen = asReal(CADDR(args));
+    double slen = asReal(length_out);
     if (R_FINITE(slen)) {
 	if(slen < 0)
 	    errorcall(call, _("invalid '%s' argument"), "length.out");
 	len = R_xlen_t( slen);
     } else {
-	len = asInteger(CADDR(args));
+	len = asInteger(length_out);
 	if(len != NA_INTEGER && len < 0)
 	    errorcall(call, _("invalid '%s' argument"), "length.out");
     }
-    if(length(CADDR(args)) != 1)
+    if(length(length_out) != 1)
 	warningcall(call, _("first element used of '%s' argument"),
 		    "length.out");
 
-    each = asInteger(CADDDR(args));
+    each = asInteger(each_);
     if(each != NA_INTEGER && each < 0)
 	errorcall(call, _("invalid '%s' argument"), "each");
-    if(length(CADDDR(args)) != 1)
+    if(length(each_) != 1)
 	warningcall(call, _("first element used of '%s' argument"), "each");
     if(each == NA_INTEGER) each = 1;
 
@@ -682,8 +680,8 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 	nt = 1;
     } else {
 	R_xlen_t sum = 0;
-	if(CADR(args) == R_MissingArg) PROTECT(times = ScalarInteger(1));
-	else PROTECT(times = coerceVector(CADR(args), INTSXP));
+	if(times == R_MissingArg) PROTECT(times = ScalarInteger(1));
+	else PROTECT(times = coerceVector(times, INTSXP));
 	nprotect++;
 	nt = XLENGTH(times);
 	if(nt != 1 && nt != lx * each)
@@ -735,11 +733,10 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* to match seq.default */
 SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans = R_NilValue /* -Wall */, from, to, by, len, along;
+    SEXP ans = R_NilValue /* -Wall */, from, to, by, len, along, ignored;
     int nargs = length(args), lf;
     Rboolean One = RHOCONSTRUCT(Rboolean, nargs == 1);
     R_xlen_t i, lout = NA_INTEGER;
-    static SEXP do_seq_formals = NULL;
 
     if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 1))
 	return(ans);
@@ -748,17 +745,11 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
        We pretend this is
        seq(from, to, by, length.out, along.with, ...)
     */
-    if (do_seq_formals == NULL)
-	do_seq_formals = allocFormalsList6(install("from"), install("to"),
-					   install("by"), install("length.out"),
-					   install("along.with"), R_DotsSymbol);
-    PROTECT(args = matchArgs(do_seq_formals, args, call));
-
-    from = CAR(args); args = CDR(args);
-    to = CAR(args); args = CDR(args);
-    by = CAR(args); args = CDR(args);
-    len = CAR(args); args = CDR(args);
-    along = CAR(args);
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher(
+	{ "from", "to", "by", "length.out", "along.with", "..." });
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    matcher->match(&arglist,
+		   { &from, &to, &by, &len, &along, &ignored });
 
     if(One && from != R_MissingArg) {
 	lf = length(from);

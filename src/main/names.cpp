@@ -329,7 +329,7 @@ new BuiltInFunction("cospi",	do_math1,	47,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x", 
 new BuiltInFunction("sinpi",	do_math1,	48,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::GROUP_MATH),
 new BuiltInFunction("tanpi",	do_math1,	49,	1,	1,	{PP_FUNCALL, PREC_FN,	0}, "x", Dispatch::GROUP_MATH),
 
-/* Mathematical Functions of Two Numeric (+ 1-2 int) Variables */
+/* Mathematical Functions of Two Numeric Variables */
 
 new BuiltInFunction("atan2",	do_math2,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 
@@ -337,10 +337,6 @@ new BuiltInFunction("lbeta",	do_math2,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("beta",	do_math2,	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("lchoose",	do_math2,	4,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("choose",	do_math2,	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
-
-/*
-  This is most of the do_math[23]
-*/
 new BuiltInFunction("besselJ",	do_math2,	24,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("besselY",	do_math2,	25,	11,	2,	{PP_FUNCALL, PREC_FN,	0}),
 

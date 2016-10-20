@@ -138,6 +138,24 @@ public:
     virtual void dottedArgs(const FormalData& formal,
 			    ArgIndices arg_indices,
 			    const ArgList* all_args) = 0;
+
+    static DottedArgs* makeDottedArgs(ArgIndices arg_indices,
+				      const ArgList* all_args) {
+	DottedArgs* result = nullptr;
+	ConsCell* dots = nullptr;
+	for (int index : arg_indices) {
+	    RObject* value = all_args->get(index);
+	    const RObject* tag = all_args->getTag(index);
+	    if (dots) {
+		PairList* next_item = new PairList(value, nullptr, tag);
+		dots->setTail(next_item);
+		dots = next_item;
+	    } else {
+		dots = result = new DottedArgs(value, nullptr, tag);
+	    }
+	}
+	return result;
+    }
 };
 
 void ArgMatcher::matchWithCache(const ArgList* supplied,
@@ -210,24 +228,43 @@ public:
 	    return;
 	}
 
-	ConsCell* dots = nullptr;
-	for (int index : arg_indices) {
-	    RObject* value = all_args->get(index);
-	    const RObject* tag = all_args->getTag(index);
-	    if (dots) {
-		PairList* next_item = new PairList(value, nullptr, tag);
-		dots->setTail(next_item);
-		dots = next_item;
-	    } else {
-		dots = new DottedArgs(value, nullptr, tag);
-		m_target_env->frame()->bind(DotsSymbol, dots,
-					    Frame::Binding::EXPLICIT);
-	    }
-	}
+	DottedArgs* dots = makeDottedArgs(arg_indices, all_args);
+	m_target_env->frame()->bind(DotsSymbol, dots,
+				    Frame::Binding::EXPLICIT);
     }
 
 private:
     Environment* m_target_env;
+};
+
+class InitializerListMatchCallback : public ArgMatcher::MatchCallback
+{
+public:
+    InitializerListMatchCallback(
+	std::initializer_list<RObject**> matched_values)
+	: m_matched_values(matched_values) {}
+
+    void matchedArgument(const FormalData& formal,
+			 int arg_index, RObject* value) override {
+	*(m_matched_values.begin()[formal.index]) = value;
+    }
+
+    void defaultValue(const FormalData& formal) override {
+	*(m_matched_values.begin()[formal.index]) = R_MissingArg;
+    }
+
+    void dottedArgs(const FormalData& formal,
+		    ArgIndices arg_indices,
+		    const ArgList* all_args) override {
+	if (arg_indices.empty()) {
+	    *(m_matched_values.begin()[formal.index]) = R_MissingArg;
+	} else {
+	    *(m_matched_values.begin()[formal.index])
+		= makeDottedArgs(arg_indices, all_args);
+	}
+    }
+private:
+    std::initializer_list<RObject**> m_matched_values;
 };
 
 class RecordArgMatchInfoCallback : public ArgMatcher::MatchCallback
@@ -322,6 +359,13 @@ const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
 void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 {
     ClosureMatchCallback callback(target_env);
+    match(supplied, &callback);
+}
+
+void ArgMatcher::match(const ArgList* supplied,
+		       std::initializer_list<RObject**> matched_values) const
+{
+    InitializerListMatchCallback callback(matched_values);
     match(supplied, &callback);
 }
 
@@ -543,6 +587,7 @@ PairList* ArgMatcher::makePairList(std::initializer_list<const char*> arg_names)
     auto result_iter = result->begin();
     for (const char* arg : arg_names) {
 	result_iter->setTag(Symbol::obtain(arg));
+	result_iter->setCar(R_MissingArg);
 	++result_iter;
     }
     return result;

@@ -32,6 +32,7 @@
 #include <Internal.h>
 #include <Rmath.h>
 #include "basedecl.h"
+#include "rho/ArgMatcher.hpp"
 #include "rho/GCStackRoot.hpp"
 
 using namespace rho;
@@ -1255,48 +1256,42 @@ fairly minor.  LT */
 
 SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP argList, s, t, tag = R_NilValue, alist, ans;
+    SEXP tag = R_NilValue, alist, ans, x, which, exact_;
     const char *str;
     int nargs = length(args), exact = 0;
     enum { NONE, PARTIAL, PARTIAL2, FULL } match = NONE;
-    static SEXP do_attr_formals = NULL;
 
-    if (do_attr_formals == NULL)
-	do_attr_formals = allocFormalsList3(install("x"), install("which"),
-					    R_ExactSymbol);
-
-    argList = matchArgs(do_attr_formals, args, call);
+    /* argument matching */
+    static GCRoot<ArgMatcher> matcher
+	= new ArgMatcher({ "x", "which", "exact" });
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    matcher->match(&arglist, { &x, &which, &exact_ });
 
     if (nargs < 2 || nargs > 3)
 	errorcall(call, "either 2 or 3 arguments are required");
 
-    /* argument matching */
-    PROTECT(argList);
-    s = CAR(argList);
-    t = CADR(argList);
-    if (!isString(t))
+    if (!isString(which))
 	errorcall(call, _("'which' must be of mode character"));
-    if (length(t) != 1)
+    if (length(which) != 1)
 	errorcall(call, _("exactly one attribute 'which' must be given"));
 
-    if (TYPEOF(s) == ENVSXP)
+    if (TYPEOF(x) == ENVSXP)
 	R_CheckStack(); /* in case attributes might lead to a cycle */
 
-    if(nargs == 3) {
-	exact = asLogical(CADDR(args));
+    if(exact_ != R_MissingArg) {
+	exact = asLogical(exact_);
 	if(exact == NA_LOGICAL) exact = 0;
     }
 
-
-    if(STRING_ELT(t, 0) == NA_STRING) {
+    if(STRING_ELT(which, 0) == NA_STRING) {
 	UNPROTECT(1);
 	return R_NilValue;
     }
-    str = translateChar(STRING_ELT(t, 0));
+    str = translateChar(STRING_ELT(which, 0));
     size_t n = strlen(str);
 
     /* try to find a match among the attributes list */
-    for (alist = ATTRIB(s); alist != R_NilValue; alist = CDR(alist)) {
+    for (alist = ATTRIB(x); alist != R_NilValue; alist = CDR(alist)) {
 	SEXP tmp = TAG(alist);
 	const char *s = CHAR(PRINTNAME(tmp));
 	if (! strncmp(s, str, n)) {
@@ -1336,7 +1331,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* no match on other attributes and a possible
 	       partial match on "names" */
 	    tag = R_NamesSymbol;
-	    PROTECT(t = getAttrib(s, tag));
+	    SEXP t = PROTECT(getAttrib(x, tag));
 	    if(t != R_NilValue && R_warn_partial_match_attr)
 		warningcall(call, _("partial match of '%s' to '%s'"), str,
 			    CHAR(PRINTNAME(tag)));
@@ -1349,7 +1344,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	       query is ambiguous and we return R_NilValue.  If there is no
 	       "names" attribute, then the partially matched one, which is
 	       the current value of tag, can be used. */
-	    if (getAttrib(s, R_NamesSymbol) != R_NilValue) {
+	    if (getAttrib(x, R_NamesSymbol) != R_NilValue) {
 		UNPROTECT(1);
 		return R_NilValue;
 	    }
@@ -1364,7 +1359,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	warningcall(call, _("partial match of '%s' to '%s'"), str,
 		    CHAR(PRINTNAME(tag)));
 
-    ans =  getAttrib(s, tag);
+    ans =  getAttrib(x, tag);
     UNPROTECT(1);
     return ans;
 }
@@ -1432,20 +1427,20 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(obj);
 
     /* argument matching */
-    static SEXP do_attrgets_formals
-	= allocFormalsList3(install("x"), install("which"), install("value"));
-    SEXP argList = matchArgs(do_attrgets_formals, args, call);
-    PROTECT(argList);
+    static GCRoot<ArgMatcher> matcher
+	= new ArgMatcher({ "x", "which", "value" });
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    SEXP ignored, name, value;
+    matcher->match(&arglist, { &ignored, &name, &value });
 
-    SEXP name = CADR(argList);
     if (!isValidString(name) || STRING_ELT(name, 0) == NA_STRING)
 	error(_("'name' must be non-null character string"));
     /* TODO?  if (isFactor(obj) && !strcmp(asChar(name), "levels"))
      * ---         if(any_duplicated(CADDR(args)))
      *                  error(.....)
      */
-    setAttrib(obj, name, CADDR(args));
-    UNPROTECT(2);
+    setAttrib(obj, name, value);
+    UNPROTECT(1);
     SET_NAMED(obj, 0);
     return obj;
 }

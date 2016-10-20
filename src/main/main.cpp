@@ -57,6 +57,7 @@
 
 #include <locale.h>
 
+#include "rho/ArgMatcher.hpp"
 #include "rho/Browser.hpp"
 #include "rho/ClosureContext.hpp"
 #include "rho/CommandTerminated.hpp"
@@ -1266,38 +1267,35 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int savestack;
     GCStackRoot<> topExp(R_CurrentExpr);
-    SEXP ap;
     RObject* ans = nullptr;
 
     /* Cannot call checkArity(op, args), because "op" may be a closure  */
     /* or a primitive other than "browser".  */
 
     /* argument matching */
-    GCStackRoot<> argList; 
-    PROTECT(ap = list4(nullptr, nullptr, nullptr, nullptr));
-    SET_TAG(ap,  install("text"));
-    SET_TAG(CDR(ap), install("condition"));
-    SET_TAG(CDDR(ap), install("expr"));
-    SET_TAG(CDDDR(ap), install("skipCalls"));
-    argList = matchArgs(ap, args, call);
-    UNPROTECT(1);
-    /* substitute defaults */
-    if(CAR(argList) == R_MissingArg)
-	SETCAR(argList, mkString(""));
-    if(CADR(argList) == R_MissingArg)
-	SETCAR(CDR(argList), R_NilValue);
-    if(CADDR(argList) == R_MissingArg)
-	SETCAR(CDDR(argList), ScalarLogical(1));
-    if(CADDDR(argList) == R_MissingArg)
-	SETCAR(CDDDR(argList), ScalarInteger(0));
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    static GCRoot<ArgMatcher> matcher
+	= new ArgMatcher({ "text", "condition", "expr", "skipcalls" });
+    SEXP text, condition, expr, skipcalls;
+    matcher->match(&arglist, { &text, &condition, &expr, &skipcalls });
 
+    /* substitute defaults */
+    if (text == R_MissingArg)
+	text = mkString("");
+    if(condition == R_MissingArg)
+	condition = R_NilValue;
+    if(expr == R_MissingArg)
+	expr = ScalarLogical(1);
+    if(skipcalls == R_MissingArg)
+	skipcalls = ScalarInteger(0);
 
     /* return if 'expr' is not TRUE */
-    if( !asLogical(CADDR(argList)) ) {
+    if( !asLogical(expr) ) {
 	return R_NilValue;
     }
 
-    Browser browser(CAR(argList), CADR(argList));
+    // TODO: skipcalls isn't being used here.
+    Browser browser(text, condition);
 
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */

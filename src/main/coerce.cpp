@@ -47,6 +47,7 @@
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
+#include "rho/ArgMatcher.hpp"
 #include "rho/Expression.hpp"
 #include "rho/ExpressionVector.hpp"
 #include "rho/GCStackRoot.hpp"
@@ -2019,20 +2020,17 @@ SEXP attribute_hidden do_isna(/*const*/ rho::Expression* call, const rho::BuiltI
 }
 
 // Check if x has missing values; the anyNA.default() method
-static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
+static Rboolean anyNA(SEXP call, SEXP op, SEXP x, bool recursive,
+		      SEXP env)
 /* Original code:
    Copyright 2012 Google Inc. All Rights Reserved.
    Author: Tim Hesterberg <rocket@google.com>
    Distributed under GPL 2 or later
 */
 {
-    SEXP x = CAR(args);
     SEXPTYPE xT = TYPEOF(x);
-    Rboolean isList = Rboolean(xT == VECSXP || xT == LISTSXP),
-	recursive = FALSE;
+    Rboolean isList = Rboolean(xT == VECSXP || xT == LISTSXP);
 
-    if (isList && length(args) > 1)
-	recursive = Rboolean(Rf_asLogical(CADR(args)));
     if (OBJECT(x) || (isList && !recursive)) {
 	SEXP e0 = PROTECT(Rf_lang2(Rf_install("is.na"), x));
 	SEXP e = PROTECT(Rf_lang2(Rf_install("any"), e0));
@@ -2084,13 +2082,14 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
     case LISTSXP:
     {
 	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_shallow_duplicate(args));
+	args2 = PROTECT(Rf_list2(x, Rf_ScalarLogical(recursive)));
 	call2 = PROTECT(Rf_shallow_duplicate(call));
 	for (i = 0; i < n; i++, x = CDR(x)) {
-	    SETCAR(args2, CAR(x)); SETCADR(call2, CAR(x));
+	    SETCADR(call2, CAR(x));
 	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
 				   MissingArgHandling::Keep, 1)
-		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
+		 && Rf_asLogical(ans))
+		|| anyNA(call2, op, CAR(x), recursive, env)) {
 		UNPROTECT(2);
 		return TRUE;
 	    }
@@ -2101,13 +2100,15 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
     case VECSXP:
     {
 	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_shallow_duplicate(args));
+	args2 = PROTECT(Rf_list2(x, Rf_ScalarLogical(recursive)));
 	call2 = PROTECT(Rf_shallow_duplicate(call));
 	for (i = 0; i < n; i++) {
 	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
 	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
 				   MissingArgHandling::Keep, 1)
-		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
+		 && Rf_asLogical(ans))
+		|| anyNA(call2, op, VECTOR_ELT(x, i), recursive, env))
+	    {
 		UNPROTECT(2);
 		return TRUE;
 	    }
@@ -2126,8 +2127,6 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
-    static SEXP do_anyNA_formals = NULL;
-
     if (length(args) < 1 || length(args) > 2)
 	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
 
@@ -2137,18 +2136,20 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if(length(args) == 1) {
 	SEXP_downcast<Expression*>(call)->check1arg("x");
- 	ans = Rf_ScalarLogical(anyNA(call, op, args, rho));
+	bool recursive = false;
+ 	ans = Rf_ScalarLogical(anyNA(call, op, CAR(args), recursive, rho));
    } else {
 	/* This is a primitive, so we manage argument matching ourselves.
 	   But this takes a little time.
 	 */
-	if (do_anyNA_formals == NULL)
-	    do_anyNA_formals = Rf_allocFormalsList2(Rf_install("x"),
-						    R_RecursiveSymbol);
-	PROTECT(args = Rf_matchArgs(do_anyNA_formals, args, call));
-	if(CADR(args) ==  R_MissingArg) SETCADR(args, Rf_ScalarLogical(FALSE));
-	ans = Rf_ScalarLogical(anyNA(call, op, args, rho));
-	UNPROTECT(1);
+	static GCRoot<ArgMatcher> matcher
+	    = new ArgMatcher({ "x", "recursive" });
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	SEXP x, recursive_;
+	matcher->match(&arglist, { &x, &recursive_ });
+	bool recursive = recursive_ == R_MissingArg
+	    ? false : Rf_asLogical(recursive_);
+	ans = Rf_ScalarLogical(anyNA(call, op, x, recursive, rho));
     }
     return ans;
 }
@@ -2485,7 +2486,7 @@ SEXP attribute_hidden Rf_substituteList(SEXP el, SEXP rho)
 	    else if (TYPEOF(h) == DOTSXP)
 		h = Rf_substituteList(h, R_NilValue);
 	    else
-		Rf_error(_("'...' used in an incorrect context"));
+ 		Rf_error(_("'...' used in an incorrect context"));
 	} else {
 	    h = Rf_substitute(CAR(el), rho);
 	    if (Rf_isLanguage(el))
@@ -2513,21 +2514,18 @@ SEXP attribute_hidden Rf_substituteList(SEXP el, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP argList, env, s, t;
-    static SEXP do_substitute_formals = NULL;
-
-    if (do_substitute_formals == NULL)
-        do_substitute_formals = Rf_allocFormalsList2(Rf_install("expr"),
-						     Rf_install("env"));
-
+    SEXP expr, env;
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "expr", "env" });
+    
     /* argument matching */
-    PROTECT(argList = Rf_matchArgs(do_substitute_formals, args, call));
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    matcher->match(&arglist, { &expr, &env });
 
     /* set up the environment for substitution */
-    if (CADR(argList) == R_MissingArg)
+    if (env == R_MissingArg)
 	env = rho;
     else
-	env = Rf_eval(CADR(argList), rho);
+	env = Rf_eval(env, rho);
     if (env == R_GlobalEnv)	/* For historical reasons, don't substitute in R_GlobalEnv */
 	env = R_NilValue;
     else if (TYPEOF(env) == VECSXP)
@@ -2537,10 +2535,8 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (env != R_NilValue && TYPEOF(env) != ENVSXP)
 	Rf_errorcall(call, _("invalid environment specified"));
 
-    PROTECT(env);
-    PROTECT(t = CONS(Rf_duplicate(CAR(argList)), R_NilValue));
-    s = Rf_substituteList(t, env);
-    UNPROTECT(3);
+    SEXP t = CONS(Rf_duplicate(expr), R_NilValue);
+    SEXP s = Rf_substituteList(t, env);
     return CAR(s);
 }
 
