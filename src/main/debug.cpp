@@ -225,20 +225,16 @@ void RObject::traceMemory(const RObject* src1, const RObject* src2,
 SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
-    SEXP object, previous, ans, argList;
+    SEXP object, previous, ans;
     char buffer[21];
-    static SEXP do_retracemem_formals = NULL;
 
-    if (do_retracemem_formals == NULL)
-	do_retracemem_formals = allocFormalsList2(install("x"),
-						  R_PreviousSymbol);
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "x", "previous" });
+    matcher->match(&arglist, { &object, &previous });
+    if (object == R_MissingArg)
+	object = R_NilValue;
+    if (previous == R_MissingArg)
+	previous = R_NilValue;
 
-    PROTECT(argList =  matchArgs(do_retracemem_formals, args, call));
-    if(CAR(argList) == R_MissingArg) SETCAR(argList, R_NilValue);
-    if(CADR(argList) == R_MissingArg) SETCAR(CDR(argList), R_NilValue);
-
-    object = CAR(arglist);
-    previous = CADR(arglist);
     if(!isNull(previous) && !isString(previous))
 	    errorcall(call, _("invalid '%s' argument"), "previous");
 
@@ -260,7 +256,6 @@ SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 	    memtrace_stack_dump();
 	}
     }
-    UNPROTECT(1);
     return ans;
 #else
     R_Visible = RHO_FALSE; /* for consistency with other case */

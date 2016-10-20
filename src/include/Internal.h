@@ -27,7 +27,7 @@
 /* Names of  .Internal(.) and .Primitive(.)  R functions
  *
  * Must all return SEXP because of CCODE in Defn.h.
- * do_math*() and do_cmathfuns are in ../main/arithmetic.h
+ * do_cmathfuns are in ../main/arithmetic.h
  */
 
 #ifndef R_INTERNAL_H
@@ -261,7 +261,10 @@ rho::quick_builtin do_mapply;
 SEXP do_match(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* table, rho::RObject* nomatch_, rho::RObject* incomparables);
 SEXP do_matchcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_matprod(SEXP, SEXP, SEXP, SEXP);
+SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
+SEXP do_math2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y);
 SEXP do_Math2(SEXP, SEXP, SEXP, SEXP);  // Special
+SEXP do_math3(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* nu, rho::RObject* expon_scaled);
 SEXP do_matrix(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vals, rho::RObject* nrow, rho::RObject* ncol, rho::RObject* byrow_, rho::RObject* dimnames, rho::RObject* miss_nr_, rho::RObject* miss_nc_);
 SEXP do_maxcol(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* m_, rho::RObject* ties_method_);
 SEXP do_memoryprofile(rho::Expression* call, const rho::BuiltInFunction* op);

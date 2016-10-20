@@ -59,6 +59,7 @@
 #include <math.h>
 
 #include "R_ext/Itermacros.h"
+#include "rho/ArgMatcher.hpp"
 #include "rho/BinaryFunction.hpp"
 #include "rho/LogicalVector.hpp"
 #include "rho/GCStackRoot.hpp"
@@ -932,16 +933,19 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
     return sy;
 } /* math2B() */
 
-#define Math2(A, FUN)	  math2(CAR(A), CADR(A), FUN, call);
-#define Math2B(A, FUN)	  math2B(CAR(A), CADR(A), FUN, call);
+#define Math2(A, FUN)	  math2(x, y, FUN, call);
+#define Math2B(A, FUN)	  math2B(x, y, FUN, call);
 
-SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_math2(rho::Expression* call,
+			       const rho::BuiltInFunction* op,
+			       rho::RObject* x, rho::RObject* y)
 {
-    if (isComplex(CAR(args)) ||
-	(PRIMVAL(op) == 0 && isComplex(CADR(args))))
-	return complex_math2(call, op, args, env);
-
-    switch (PRIMVAL(op)) {
+    if (isComplex(x) ||
+	(op->variant() == 0 && isComplex(y))) {
+	return complex_math2(call, const_cast<BuiltInFunction*>(op),
+			     Rf_list2(x, y), nullptr);
+    }
+    switch (op->variant()) {
 
     case  0: return Math2(args, atan2);
     case 10001: return Math2(args, fround);// round(),  ../nmath/fround.c
@@ -960,7 +964,7 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 	errorcall(call,
 		  _("unimplemented real function of %d numeric arguments"), 2);
     }
-    return op;			/* never used; to keep -Wall happy */
+    return nullptr;			/* never used; to keep -Wall happy */
 }
 
 
@@ -968,22 +972,17 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 /* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP res, call2;
-    int n, nprotect = 2;
-    static SEXP do_Math2_formals = NULL;
-
     if (Rf_length(args) >= 2 &&
 	isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
 	double digits = 0;
 	if(PRIMVAL(op) == 10004) digits = 6.0; // for signif()
-	PROTECT(args = list2(CAR(args), ScalarReal(digits))); nprotect++;
+	args = list2(CAR(args), ScalarReal(digits));
     }
 
-    PROTECT(args = evalListKeepMissing(args, env));
-    PROTECT(call2 = lang2(CAR(call), nullptr));
-    SETCDR(call2, args);
-
-    n = Rf_length(args);
+    args = evalListKeepMissing(args, env);
+    Expression* call2 = new Expression(CAR(call),
+				       SEXP_downcast<PairList*>(args));
+    int n = Rf_length(args);
     if (n != 1 && n != 2)
         error(ngettext("%d argument passed to '%s' which requires 1 or 2 arguments",
                        "%d arguments passed to '%s'which requires 1 or 2 arguments", n),
@@ -995,28 +994,23 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 			   SEXP_downcast<Environment*>(env),
 			   &arglist);
     if (dispatched.first) {
-	res = dispatched.second;
-    } else {
-	if(n == 1) {
-	    double digits = 0.0;
-	    if(PRIMVAL(op) == 10004) digits = 6.0;
-	    SETCDR(args, CONS(ScalarReal(digits), R_NilValue));
-	} else {
-	    /* If named, do argument matching by name */
-	    if (TAG(args) != R_NilValue || TAG(CDR(args)) != R_NilValue) {
-	        if (do_Math2_formals == NULL)
-                    do_Math2_formals = allocFormalsList2(install("x"),
-							 install("digits"));
-		PROTECT(args = matchArgs(do_Math2_formals, args, call));
-		nprotect++;
-	    }
-	    if (Rf_length(CADR(args)) == 0)
-		errorcall(call, _("invalid second argument of length 0"));
-	}
-	res = do_math2(call, op, args, env);
+	return dispatched.second;
     }
-    UNPROTECT(nprotect);
-    return res;
+
+    if(n == 1) {
+	double digits = PRIMVAL(op) == 10001 ? 0 : 6;
+	return do_math2(SEXP_downcast<Expression*>(call),
+			SEXP_downcast<const BuiltInFunction*>(op),
+			CAR(args), ScalarReal(digits));
+    }
+
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "x", "digits" });
+    SEXP x, digits;
+    matcher->match(&arglist, { &x, &digits} );
+    if (Rf_length(digits) == 0)
+	errorcall(call, _("invalid second argument of length 0"));
+    return do_math2(SEXP_downcast<Expression*>(call),
+		    SEXP_downcast<const BuiltInFunction*>(op), x, digits);
 }
 
 /* log{2,10} are builtins */
@@ -1098,12 +1092,8 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    static SEXP do_log_formals = NULL;
-    static SEXP R_x_Symbol = NULL;
-    if (do_log_formals == NULL) {
-	R_x_Symbol = install("x");
-	do_log_formals = allocFormalsList2(R_x_Symbol, R_BaseSymbol);
-    }
+    static SEXP R_x_Symbol = Symbol::obtain("x");
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "x", "base" });
 
     if (n == 1) {
 	if (CAR(args) == R_MissingArg ||
@@ -1127,24 +1117,27 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* match argument names if supplied */
 	/* will signal an error unless there are one or two arguments */
 	/* after the match, Rf_length(args) will be 2 */
-	PROTECT(args = matchArgs(do_log_formals, args, call));
+	ArgList arglist1(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	SEXP x, base;
+	matcher->match(&arglist1, { &x, &base });
 
-	if(CAR(args) == R_MissingArg)
+	if(x == R_MissingArg)
 	    error(_("argument \"%s\" is missing, with no default"), "x");
-	if (CADR(args) == R_MissingArg)
-	    SETCADR(args, ScalarReal(DFLT_LOG_BASE));
+	if (base == R_MissingArg)
+	    base = ScalarReal(DFLT_LOG_BASE);
 
+	args = Rf_list2(x, base);
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
 	auto dispatched = builtin->InternalDispatch(callx, env, &arglist);
 	if (dispatched.first) {
 	    res = dispatched.second;
 	} else {
-	    if (Rf_length(CADR(args)) == 0)
+	    if (Rf_length(base) == 0)
 		errorcall(call, _("invalid argument 'base' of length 0"));
-	    if (isComplex(CAR(args)) || isComplex(CADR(args)))
+	    if (isComplex(x) || isComplex(base))
 		res = complex_math2(call, op, args, env);
 	    else
-		res = math2(CAR(args), CADR(args), logbase, call);
+		res = math2(x, base, logbase, call);
 	}
 	UNPROTECT(2);
 	return res;
@@ -1230,9 +1223,12 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     return sy;
 } /* math3B */
 
-#define Math3B(A, FUN)  math3B (args[0], args[1], args[2], FUN, call);
+#define Math3B(A, FUN)  math3B (x, nu, expon_scaled, FUN, call);
 
-SEXP attribute_hidden do_math3(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_math3(rho::Expression* call,
+			       const rho::BuiltInFunction* op,
+			       rho::RObject* x, rho::RObject* nu,
+			       rho::RObject* expon_scaled)
 {
     switch (op->variant()) {
 

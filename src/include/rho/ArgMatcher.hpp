@@ -39,6 +39,8 @@
 #include "rho/Promise.hpp"
 #include "rho/String.hpp"
 
+#undef match
+
 namespace rho {
     class ArgMatchInfo;
     class Environment;
@@ -190,6 +192,9 @@ namespace rho {
 
         void match(Environment* target_env, const ArgList* supplied,
 		   const ArgMatchInfo* matching) const;
+
+	void match(const ArgList* supplied,
+		   std::initializer_list<RObject**> matched_values) const;
 
 	/** @brief Number of formal arguments.
 	 *

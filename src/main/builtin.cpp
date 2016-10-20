@@ -34,6 +34,7 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
+#include "rho/ArgMatcher.hpp"
 #include "rho/ClosureContext.hpp"
 #include "rho/ExpressionVector.hpp"
 
@@ -125,19 +126,17 @@ SEXP attribute_hidden do_makelazy(/*const*/ rho::Expression* call, const rho::Bu
 SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     ClosureContext *ctxt;
-    SEXP code, oldcode, tmp, argList;
+    SEXP code, oldcode, tmp, add;
     int addit = 0;
-    static SEXP do_onexit_formals = NULL;
 
     checkArity(op, args);
-    if (do_onexit_formals == NULL)
-	do_onexit_formals = allocFormalsList2(install("expr"), install("add"));
-
-    PROTECT(argList =  matchArgs(do_onexit_formals, args, call));
-    if (CAR(argList) == R_MissingArg) code = R_NilValue;
-    else code = CAR(argList);
-    if (CADR(argList) != R_MissingArg) {
-	addit = asLogical(eval(CADR(args), rho));
+    static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "expr", "add" });
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    matcher->match(&arglist, { &code, &add });
+    if (code == R_MissingArg)
+	code = R_NilValue;
+    if (add != R_MissingArg) {
+	addit = asLogical(eval(add, rho));
 	if (addit == NA_INTEGER)
 	    errorcall(call, _("invalid '%s' argument"), "add");
     }
