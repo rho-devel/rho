@@ -24,7 +24,7 @@
 
 /** @file ExternalPointer.cpp
  *
- * @brief Class rho::ExternalPointer and associated C interface.
+ * @brief Class ExternalPointer and associated C interface.
  */
 
 #include "rho/ExternalPointer.hpp"
@@ -78,21 +78,21 @@ SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 
 void R_SetExternalPtrAddr(SEXP s, void *p)
 {
-    rho::ExternalPointer& ep
-	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
+    ExternalPointer& ep
+	= *SEXP_downcast<ExternalPointer*>(s);
     ep.setPtr(p);
 }
 
 void R_SetExternalPtrTag(SEXP s, SEXP tag)
 {
-    rho::ExternalPointer& ep
-	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
+    ExternalPointer& ep
+	= *SEXP_downcast<ExternalPointer*>(s);
     ep.setTag(tag);
 }
 
 void R_SetExternalPtrProtected(SEXP s, SEXP p)
 {
-    rho::ExternalPointer& ep
-	= *rho::SEXP_downcast<rho::ExternalPointer*>(s);
+    ExternalPointer& ep
+	= *SEXP_downcast<ExternalPointer*>(s);
     ep.setProtege(p);
 }

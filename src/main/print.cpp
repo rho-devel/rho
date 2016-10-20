@@ -117,7 +117,7 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_invisible(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     switch (num_args) {
     case 0:
@@ -132,7 +132,7 @@ SEXP attribute_hidden do_invisible(/*const*/ rho::Expression* call, const rho::B
 }
 
 /* This is *only* called via outdated R_level prmatrix() : */
-SEXP attribute_hidden do_prmatrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* rowlab_, rho::RObject* collab_, rho::RObject* quote_, rho::RObject* right_, rho::RObject* na_print_)
+SEXP attribute_hidden do_prmatrix(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* rowlab_, RObject* collab_, RObject* quote_, RObject* right_, RObject* na_print_)
 {
     int quote;
     SEXP x, rowlab, collab, naprint;
@@ -168,7 +168,7 @@ SEXP attribute_hidden do_prmatrix(/*const*/ rho::Expression* call, const rho::Bu
 }/* do_prmatrix */
 
 /* .Internal( print.function(f, useSource, ...)) */
-SEXP attribute_hidden do_printfunction(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_printfunction(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP s = args[0];
@@ -227,7 +227,7 @@ void PrintLanguage(SEXP s, Rboolean useSource)
 
 /* .Internal(print.default(x, digits, quote, na.print, print.gap,
 			   right, max, useS4)) */
-SEXP attribute_hidden do_printdefault(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_printdefault(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x, naprint;
     int tryS4;

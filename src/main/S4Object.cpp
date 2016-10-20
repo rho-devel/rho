@@ -24,7 +24,7 @@
 
 /** @file S4Object.cpp
  *
- * @brief Class rho::S4Object and associated C interface.
+ * @brief Class S4Object and associated C interface.
  */
 
 #include "rho/S4Object.hpp"

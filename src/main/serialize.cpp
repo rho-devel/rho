@@ -2072,7 +2072,7 @@ static SEXP CallHook(SEXP x, SEXP fun)
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden
-do_serializeToConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* con_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* refhook_)
+do_serializeToConn(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object_, RObject* con_, RObject* ascii_, RObject* version_, RObject* refhook_)
 {
     /* serializeToConn(object, conn, ascii, version, hook) */
 
@@ -2141,7 +2141,7 @@ do_serializeToConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* 
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden 
-do_unserializeFromConn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* refhook_)
+do_unserializeFromConn(/*const*/ Expression* call, const BuiltInFunction* op, RObject* con_, RObject* refhook_)
 {
     /* unserializeFromConn(conn, hook) */
 
@@ -2527,7 +2527,7 @@ static char names[NC][PATH_MAX];
 static char *ptr[NC];
 
 SEXP attribute_hidden
-do_lazyLoadDBflush(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_)
+do_lazyLoadDBflush(/*const*/ Expression* call, const BuiltInFunction* op, RObject* file_)
 {
     int i;
     const char *cfile = CHAR(STRING_ELT(file_, 0));
@@ -2721,7 +2721,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
    If the result is a promise, then the promise is forced. */
 
 SEXP attribute_hidden
-do_lazyLoadDBfetch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* key_, rho::RObject* file_, rho::RObject* compressed_, rho::RObject* hook_)
+do_lazyLoadDBfetch(/*const*/ Expression* call, const BuiltInFunction* op, RObject* key_, RObject* file_, RObject* compressed_, RObject* hook_)
 {
     SEXP key, file, compsxp, hook;
     PROTECT_INDEX vpi;
@@ -2755,20 +2755,20 @@ do_lazyLoadDBfetch(/*const*/ rho::Expression* call, const rho::BuiltInFunction* 
 }
 
 SEXP attribute_hidden
-do_getVarsFromFrame(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* env_, rho::RObject* force_promises_)
+do_getVarsFromFrame(/*const*/ Expression* call, const BuiltInFunction* op, RObject* vars_, RObject* env_, RObject* force_promises_)
 {
     return R_getVarsFromFrame(vars_, env_, force_promises_);
 }
 
 
 SEXP attribute_hidden
-do_lazyLoadDBinsertValue(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* value, rho::RObject* file, rho::RObject* ascii, rho::RObject* compsxp, rho::RObject* hook)
+do_lazyLoadDBinsertValue(/*const*/ Expression* call, const BuiltInFunction* op, RObject* value, RObject* file, RObject* ascii, RObject* compsxp, RObject* hook)
 {
     return R_lazyLoadDBinsertValue(value, file, ascii, compsxp, hook);
 }
 
 SEXP attribute_hidden
-do_serialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection, rho::RObject* type, rho::RObject* version, rho::RObject* hook)
+do_serialize(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object, RObject* connection, RObject* type, RObject* version, RObject* hook)
 {
     if(op->variant() == 1)
 	return R_serializeb(object, connection, type, version, hook);
@@ -2777,7 +2777,7 @@ do_serialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rh
 }
 
 SEXP attribute_hidden
-do_unserialize(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection)
+do_unserialize(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object, RObject* connection)
 {
     return R_unserialize(object, connection);
 }

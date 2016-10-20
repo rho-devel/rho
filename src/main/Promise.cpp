@@ -24,7 +24,7 @@
 
 /** @file Promise.cpp
  *
- * @brief Implementation of class rho::Promise and associated C
+ * @brief Implementation of class Promise and associated C
  * interface.
  */
 

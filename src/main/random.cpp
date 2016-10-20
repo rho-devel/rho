@@ -202,7 +202,7 @@ static R_INLINE double ru()
 /* do_sample - probability sampling with/without replacement.
    .Internal(sample(n, size, replace, prob))
 */
-SEXP attribute_hidden do_sample(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* size_, rho::RObject* replace_, rho::RObject* prob_)
+SEXP attribute_hidden do_sample(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* size_, RObject* replace_, RObject* prob_)
 {
     SEXP x, y, sn, sk, prob, sreplace;
 

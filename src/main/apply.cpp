@@ -315,7 +315,7 @@ static SEXP do_one(SEXP X, SEXP FUN, SEXP classes, SEXP deflt,
     else return lazy_duplicate(deflt);
 }
 
-SEXP attribute_hidden do_rapply(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_rapply(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP X, FUN, classes, deflt, how, ans, names;
     int i, n;
@@ -370,7 +370,7 @@ static Rboolean islistfactor(SEXP X)
 
 /* is this a tree with only factor leaves? */
 
-SEXP attribute_hidden do_islistfactor(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* recursive_)
+SEXP attribute_hidden do_islistfactor(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* recursive_)
 {
     SEXP X;
     Rboolean lans = TRUE, recursive;

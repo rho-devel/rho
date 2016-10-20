@@ -96,7 +96,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-SEXP attribute_hidden do_regFinaliz(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* e_, rho::RObject* f_, rho::RObject* onexit_)
+SEXP attribute_hidden do_regFinaliz(/*const*/ Expression* call, const BuiltInFunction* op, RObject* e_, RObject* f_, RObject* onexit_)
 {
     int onexit;
 
@@ -129,7 +129,7 @@ void R_gc_torture(int gap, int wait, Rboolean inhibit)
     }
 }
 
-SEXP attribute_hidden do_gctorture(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_)
+SEXP attribute_hidden do_gctorture(/*const*/ Expression* call, const BuiltInFunction* op, RObject* on_)
 {
     int gap;
     SEXP old = ScalarLogical(gc_force_wait > 0);
@@ -147,7 +147,7 @@ SEXP attribute_hidden do_gctorture(/*const*/ rho::Expression* call, const rho::B
     return old;
 }
 
-SEXP attribute_hidden do_gctorture2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* step_, rho::RObject* wait_, rho::RObject* inhibit_release_)
+SEXP attribute_hidden do_gctorture2(/*const*/ Expression* call, const BuiltInFunction* op, RObject* step_, RObject* wait_, RObject* inhibit_release_)
 {
     int gap, wait;
     Rboolean inhibit;
@@ -161,7 +161,7 @@ SEXP attribute_hidden do_gctorture2(/*const*/ rho::Expression* call, const rho::
     return old;
 }
 
-SEXP attribute_hidden do_gcinfo(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_)
+SEXP attribute_hidden do_gcinfo(/*const*/ Expression* call, const BuiltInFunction* op, RObject* verbose_)
 {
     std::ostream* report_os = GCManager::setReporting(nullptr);
     int want_reporting = asLogical(verbose_);
@@ -185,7 +185,7 @@ void attribute_hidden get_current_mem(size_t *smallvsize,
     return;
 }
 
-SEXP attribute_hidden do_gc(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_, rho::RObject* reset_)
+SEXP attribute_hidden do_gc(/*const*/ Expression* call, const BuiltInFunction* op, RObject* verbose_, RObject* reset_)
 {
     std::ostream* report_os
 	= GCManager::setReporting(asLogical(verbose_) ? &std::cerr : nullptr);
@@ -209,7 +209,7 @@ SEXP attribute_hidden do_gc(/*const*/ rho::Expression* call, const rho::BuiltInF
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
-SEXP attribute_hidden do_gctime(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_gctime(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP ans;
     if (num_args == 0)
@@ -259,7 +259,7 @@ void InitMemory()
     GCManager::setReporting(R_Verbose ? &std::cerr : nullptr);
     GCManager::setGCThreshold(R_VSize);
 
-    ::rho::initializeMemorySubsystem();
+    ::initializeMemorySubsystem();
 }
 
 
@@ -421,7 +421,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memoryprofile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_memoryprofile(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));

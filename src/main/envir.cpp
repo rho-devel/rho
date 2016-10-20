@@ -686,7 +686,7 @@ namespace rho {
   do_assign : .Internal(assign(x, value, envir, inherits))
 
 */
-SEXP attribute_hidden do_assign(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_, rho::RObject* envir_, rho::RObject* inherits_)
+SEXP attribute_hidden do_assign(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* value_, RObject* envir_, RObject* inherits_)
 {
     SEXP name=R_NilValue, val, aenv;
     int ginherits = 0;
@@ -717,7 +717,7 @@ SEXP attribute_hidden do_assign(/*const*/ rho::Expression* call, const rho::Buil
 /**
  * do_list2env : .Internal(list2env(x, envir))
   */
-SEXP attribute_hidden do_list2env(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* envir_)
+SEXP attribute_hidden do_list2env(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* envir_)
 {
     SEXP x, xnms, envir;
     int n;
@@ -771,7 +771,7 @@ static int RemoveVariable(SEXP name, SEXP env)
     return found;
 }
 
-SEXP attribute_hidden do_remove(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* envir_, rho::RObject* inherits_)
+SEXP attribute_hidden do_remove(/*const*/ Expression* call, const BuiltInFunction* op, RObject* list_, RObject* envir_, RObject* inherits_)
 {
     /* .Internal(remove(list, envir, inherits)) */
 
@@ -821,7 +821,7 @@ SEXP attribute_hidden do_remove(/*const*/ rho::Expression* call, const rho::Buil
 
 */
 
-SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_get(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP rval, genv, t1 = R_NilValue;
     SEXPTYPE gmode;
@@ -939,7 +939,7 @@ static SEXP gfind(const char *name, Environment* env, SEXPTYPE mode,
  *
  * @return  a list of the same length as x, a character vector (of names).
  */
-SEXP attribute_hidden do_mget(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* ifnotfound, rho::RObject* inherits)
+SEXP attribute_hidden do_mget(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x, RObject* envir, RObject* mode, RObject* ifnotfound, RObject* inherits)
 {
     SEXP ans;
     int ginherits = 0, nvals, nmode, nifnfnd;
@@ -1094,7 +1094,7 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 */
 
 
-SEXP attribute_hidden do_globalenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_globalenv(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return R_GlobalEnv;
 }
@@ -1108,7 +1108,7 @@ SEXP attribute_hidden do_globalenv(/*const*/ rho::Expression* call, const rho::B
 */
 
 
-SEXP attribute_hidden do_baseenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_baseenv(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return R_BaseEnv;
 }
@@ -1122,7 +1122,7 @@ SEXP attribute_hidden do_baseenv(/*const*/ rho::Expression* call, const rho::Bui
 */
 
 
-SEXP attribute_hidden do_emptyenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_emptyenv(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return R_EmptyEnv;
 }
@@ -1138,7 +1138,7 @@ SEXP attribute_hidden do_emptyenv(/*const*/ rho::Expression* call, const rho::Bu
 
 */
 
-SEXP attribute_hidden do_attach(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* what_, rho::RObject* pos_, rho::RObject* name_)
+SEXP attribute_hidden do_attach(/*const*/ Expression* call, const BuiltInFunction* op, RObject* what_, RObject* pos_, RObject* name_)
 {
     GCStackRoot<Environment> env_to_attach;
 
@@ -1188,7 +1188,7 @@ SEXP attribute_hidden do_attach(/*const*/ rho::Expression* call, const rho::Buil
 
 */
 
-SEXP attribute_hidden do_detach(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pos_)
+SEXP attribute_hidden do_detach(/*const*/ Expression* call, const BuiltInFunction* op, RObject* pos_)
 {
     int pos = asInteger(pos_);
 
@@ -1205,7 +1205,7 @@ SEXP attribute_hidden do_detach(/*const*/ rho::Expression* call, const rho::Buil
 
 */
 
-SEXP attribute_hidden do_search(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_search(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     SEXP ans, name, t;
     int i, n;
@@ -1321,7 +1321,7 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
 }
 
 // .Internal(ls(envir, all.names, sorted)) :
-SEXP attribute_hidden do_ls(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* envir_, rho::RObject* all_names_, rho::RObject* sorted_)
+SEXP attribute_hidden do_ls(/*const*/ Expression* call, const BuiltInFunction* op, RObject* envir_, RObject* all_names_, RObject* sorted_)
 {
     RObject* env = envir_;
 
@@ -1360,7 +1360,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
 
 /* transform an environment into a named list: as.list.environment(.) */
 
-SEXP attribute_hidden do_env2list(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* all_names_, rho::RObject* sorted_)
+SEXP attribute_hidden do_env2list(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* all_names_, RObject* sorted_)
 {
     Environment* env = simple_as_environment(x_);
     if(!env)
@@ -1476,7 +1476,7 @@ R_xlen_t Rf_envxlength(SEXP rho)
 
 */
 
-SEXP attribute_hidden do_builtins(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* internal_)
+SEXP attribute_hidden do_builtins(/*const*/ Expression* call, const BuiltInFunction* op, RObject* internal_)
 {
     SEXP ans;
     int intern, nelts;
@@ -1535,7 +1535,7 @@ static SEXP pos2env(int pos, SEXP call)
 }
 
 /* this is primitive */
-SEXP attribute_hidden do_pos2env(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pos)
+SEXP attribute_hidden do_pos2env(/*const*/ Expression* call, const BuiltInFunction* op, RObject* pos)
 {
     SEXP env;
     int i, npos;
@@ -1577,7 +1577,7 @@ static SEXP matchEnvir(SEXP call, const char *what)
 
 /* This is primitive */
 SEXP attribute_hidden
-do_as_environment(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* arg)
+do_as_environment(/*const*/ Expression* call, const BuiltInFunction* op, RObject* arg)
 {
     if(isEnvironment(arg))
 	return arg;
@@ -1642,7 +1642,7 @@ Rboolean R_EnvironmentIsLocked(SEXP env)
     return Rboolean(envir->frame()->isLocked());
 }
 
-SEXP do_lockEnv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_, rho::RObject* bindings_)
+SEXP do_lockEnv(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_, RObject* bindings_)
 {
     SEXP frame;
     Rboolean bindings;
@@ -1652,7 +1652,7 @@ SEXP do_lockEnv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op,
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_envIsLocked(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
+SEXP attribute_hidden do_envIsLocked(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_)
 {
     return ScalarLogical(R_EnvironmentIsLocked(env_));
 }
@@ -1737,7 +1737,7 @@ Rboolean R_HasFancyBindings(SEXP rho)
     return FALSE;
 }
 
-SEXP attribute_hidden do_lockBnd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sym_, rho::RObject* env_)
+SEXP attribute_hidden do_lockBnd(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sym_, RObject* env_)
 {
     SEXP sym, env;
     sym = sym_;
@@ -1755,7 +1755,7 @@ SEXP attribute_hidden do_lockBnd(/*const*/ rho::Expression* call, const rho::Bui
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_bndIsLocked(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sym_, rho::RObject* env_)
+SEXP attribute_hidden do_bndIsLocked(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sym_, RObject* env_)
 {
     SEXP sym, env;
     sym = sym_;
@@ -1763,7 +1763,7 @@ SEXP attribute_hidden do_bndIsLocked(/*const*/ rho::Expression* call, const rho:
     return ScalarLogical(R_BindingIsLocked(sym, env));
 }
 
-SEXP attribute_hidden do_mkActiveBnd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sym_, rho::RObject* fun_, rho::RObject* env_)
+SEXP attribute_hidden do_mkActiveBnd(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sym_, RObject* fun_, RObject* env_)
 {
     SEXP sym, fun, env;
     sym = sym_;
@@ -1773,7 +1773,7 @@ SEXP attribute_hidden do_mkActiveBnd(/*const*/ rho::Expression* call, const rho:
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_bndIsActive(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* sym_, rho::RObject* env_)
+SEXP attribute_hidden do_bndIsActive(/*const*/ Expression* call, const BuiltInFunction* op, RObject* sym_, RObject* env_)
 {
     SEXP sym, env;
     sym = sym_;
@@ -1852,7 +1852,7 @@ Rboolean R_IsNamespaceEnv(SEXP rho)
     else return FALSE;
 }
 
-SEXP attribute_hidden do_isNSEnv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* ns_)
+SEXP attribute_hidden do_isNSEnv(/*const*/ Expression* call, const BuiltInFunction* op, RObject* ns_)
 {
     return R_IsNamespaceEnv(ns_) ? mkTrue() : mkFalse();
 }
@@ -1920,7 +1920,7 @@ static SEXP checkNSname(SEXP call, SEXP name)
     return name;
 }
 
-SEXP attribute_hidden do_regNS(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_, rho::RObject* env_)
+SEXP attribute_hidden do_regNS(/*const*/ Expression* call, const BuiltInFunction* op, RObject* name_, RObject* env_)
 {
     SEXP name, val;
     name = checkNSname(call, name_);
@@ -1931,7 +1931,7 @@ SEXP attribute_hidden do_regNS(/*const*/ rho::Expression* call, const rho::Built
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_unregNS(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* nsname_)
+SEXP attribute_hidden do_unregNS(/*const*/ Expression* call, const BuiltInFunction* op, RObject* nsname_)
 {
     SEXP name;
     name = checkNSname(call, nsname_);
@@ -1941,7 +1941,7 @@ SEXP attribute_hidden do_unregNS(/*const*/ rho::Expression* call, const rho::Bui
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_getRegNS(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_)
+SEXP attribute_hidden do_getRegNS(/*const*/ Expression* call, const BuiltInFunction* op, RObject* name_)
 {
     SEXP name, val;
     name = checkNSname(call, coerceVector(name_, SYMSXP));
@@ -1961,12 +1961,12 @@ SEXP attribute_hidden do_getRegNS(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue; // -Wall
 }
 
-SEXP attribute_hidden do_getNSRegistry(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_getNSRegistry(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return R_NamespaceRegistry;
 }
 
-SEXP attribute_hidden do_importIntoEnv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* impenv_, rho::RObject* impnames_, rho::RObject* expenv_, rho::RObject* expnames_)
+SEXP attribute_hidden do_importIntoEnv(/*const*/ Expression* call, const BuiltInFunction* op, RObject* impenv_, RObject* impnames_, RObject* expenv_, RObject* expnames_)
 {
     /* This function copies values of variables from one environment
        to another environment, possibly with different names.
@@ -2027,7 +2027,7 @@ SEXP attribute_hidden do_importIntoEnv(/*const*/ rho::Expression* call, const rh
 }
 
 
-SEXP attribute_hidden do_envprofile(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
+SEXP attribute_hidden do_envprofile(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_)
 {
     /* Return a list containing profiling information given a hashed
        environment.  For non-hashed environments, this function

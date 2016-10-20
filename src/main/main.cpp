@@ -1379,7 +1379,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP attribute_hidden do_quit(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* save_, rho::RObject* status_, rho::RObject* runLast_)
+SEXP attribute_hidden do_quit(/*const*/ Expression* call, const BuiltInFunction* op, RObject* save_, RObject* status_, RObject* runLast_)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;

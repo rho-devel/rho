@@ -76,7 +76,7 @@ R_xlen_t asVecSize(SEXP x)
     return -999;  /* which gives error in the caller */
 }
 
-SEXP attribute_hidden do_delayed(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_, rho::RObject* eval_env_, rho::RObject* assign_env_)
+SEXP attribute_hidden do_delayed(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* value_, RObject* eval_env_, RObject* assign_env_)
 {
     if (!isString(x_) || length(x_) == 0)
 	error(_("invalid first argument"));
@@ -96,7 +96,7 @@ SEXP attribute_hidden do_delayed(/*const*/ rho::Expression* call, const rho::Bui
 }
 
 /* makeLazy(names, values, expr, eenv, aenv) */
-SEXP attribute_hidden do_makelazy(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* vals_, rho::RObject* expr_, rho::RObject* db_, rho::RObject* envir_)
+SEXP attribute_hidden do_makelazy(/*const*/ Expression* call, const BuiltInFunction* op, RObject* vars_, RObject* vals_, RObject* expr_, RObject* db_, RObject* envir_)
 {
     SEXP names, values, val, expr, eenv, aenv, expr0;
     R_xlen_t i;
@@ -222,7 +222,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_formals(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
+SEXP attribute_hidden do_formals(/*const*/ Expression* call, const BuiltInFunction* op, RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return duplicate(FORMALS(fun_));
@@ -230,7 +230,7 @@ SEXP attribute_hidden do_formals(/*const*/ rho::Expression* call, const rho::Bui
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_body(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
+SEXP attribute_hidden do_body(/*const*/ Expression* call, const BuiltInFunction* op, RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return duplicate(BODY(fun_));
@@ -242,7 +242,7 @@ namespace rho {
     Environment* simple_as_environment(RObject* arg, bool allow_null = false);
 }
 
-SEXP attribute_hidden do_envir(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* fun_)
+SEXP attribute_hidden do_envir(/*const*/ Expression* call, const BuiltInFunction* op, RObject* fun_)
 {
     if (TYPEOF(fun_) == CLOSXP)
 	return CLOENV(fun_);
@@ -251,7 +251,7 @@ SEXP attribute_hidden do_envir(/*const*/ rho::Expression* call, const rho::Built
     else return getAttrib(fun_, R_DotEnvSymbol);
 }
 
-SEXP attribute_hidden do_envirgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* s, rho::RObject* env)
+SEXP attribute_hidden do_envirgets(/*const*/ Expression* call, const BuiltInFunction* op, RObject* s, RObject* env)
 {
     if (TYPEOF(s) == CLOSXP && (env = simple_as_environment(env)) != nullptr) {
 	if(MAYBE_SHARED(s))
@@ -271,7 +271,7 @@ SEXP attribute_hidden do_envirgets(/*const*/ rho::Expression* call, const rho::B
  *
  * @return a newly created environment()
  */
-SEXP attribute_hidden do_newenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* hash_, rho::RObject* parent_, rho::RObject* size_)
+SEXP attribute_hidden do_newenv(/*const*/ Expression* call, const BuiltInFunction* op, RObject* hash_, RObject* parent_, RObject* size_)
 {
     SEXP size, ans;
     int hash;
@@ -292,7 +292,7 @@ SEXP attribute_hidden do_newenv(/*const*/ rho::Expression* call, const rho::Buil
     return ans;
 }
 
-SEXP attribute_hidden do_parentenv(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
+SEXP attribute_hidden do_parentenv(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_)
 {
     Environment* arg = simple_as_environment(env_);
     if (!arg)
@@ -320,7 +320,7 @@ static Rboolean R_IsImportsEnv(SEXP env)
 	return FALSE;
 }
 
-SEXP attribute_hidden do_parentenvgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_, rho::RObject* value_)
+SEXP attribute_hidden do_parentenvgets(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_, RObject* value_)
 {
     Environment* env = simple_as_environment(env_);
     if (!env)
@@ -340,7 +340,7 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ rho::Expression* call, const rh
     return(env);
 }
 
-SEXP attribute_hidden do_envirName(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* env_)
+SEXP attribute_hidden do_envirName(/*const*/ Expression* call, const BuiltInFunction* op, RObject* env_)
 {
     SEXP ans=mkString(""), res;
 
@@ -452,7 +452,7 @@ static void cat_cleanup(cat_info* pci)
 #endif
 }
 
-SEXP attribute_hidden do_cat(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* file_, rho::RObject* sep_, rho::RObject* fill_, rho::RObject* labels_, rho::RObject* append_)
+SEXP attribute_hidden do_cat(/*const*/ Expression* call, const BuiltInFunction* op, RObject* dots_, RObject* file_, RObject* sep_, RObject* fill_, RObject* labels_, RObject* append_)
 {
     cat_info ci;
     SEXP objs, file, fill, sepr, labs, s;
@@ -677,7 +677,7 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* vector(mode="logical", length=0) */
-SEXP attribute_hidden do_makevector(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* mode_, rho::RObject* length_)
+SEXP attribute_hidden do_makevector(/*const*/ Expression* call, const BuiltInFunction* op, RObject* mode_, RObject* length_)
 {
     R_xlen_t len;
     SEXP s;
@@ -826,7 +826,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
 }
 
 
-SEXP attribute_hidden do_lengthgets(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
+SEXP attribute_hidden do_lengthgets(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* value_)
 {
     SEXP x = x_;
 

@@ -24,7 +24,7 @@
 
 /** @file LoopBailout.cpp
  *
- * @brief Implementation of class rho::LoopBailout.
+ * @brief Implementation of class LoopBailout.
  */
 
 #include "rho/LoopBailout.hpp"

@@ -69,7 +69,7 @@ void ProvenanceTracker::CommandScope::monitorWrite(const Frame::Binding &bdg)
     GCStackRoot<Provenance> prov(new Provenance(sym, m_chronicle));
     if (m_xenogenetic)
 	prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
-    rho::Frame::Binding& ncbdg = const_cast<rho::Frame::Binding&>(bdg);
+    Frame::Binding& ncbdg = const_cast<Frame::Binding&>(bdg);
     ncbdg.setProvenance(prov);
     m_chronicle->writeBinding(prov);
 }

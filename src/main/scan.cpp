@@ -824,7 +824,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
     return ans;
 }
 
-SEXP attribute_hidden do_scan(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* what_, rho::RObject* nmax_, rho::RObject* sep_, rho::RObject* dec_, rho::RObject* quote_, rho::RObject* skip_, rho::RObject* nlines_, rho::RObject* na_strings_, rho::RObject* flush_, rho::RObject* fill_, rho::RObject* strip_white_, rho::RObject* quiet_, rho::RObject* blank_lines_skip_, rho::RObject* multi_line_, rho::RObject* comment_char_, rho::RObject* allowEscapes_, rho::RObject* encoding_, rho::RObject* skipNul_)
+SEXP attribute_hidden do_scan(/*const*/ Expression* call, const BuiltInFunction* op, RObject* file_, RObject* what_, RObject* nmax_, RObject* sep_, RObject* dec_, RObject* quote_, RObject* skip_, RObject* nlines_, RObject* na_strings_, RObject* flush_, RObject* fill_, RObject* strip_white_, RObject* quiet_, RObject* blank_lines_skip_, RObject* multi_line_, RObject* comment_char_, RObject* allowEscapes_, RObject* encoding_, RObject* skipNul_)
 {
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline,
@@ -992,7 +992,7 @@ SEXP attribute_hidden do_scan(/*const*/ rho::Expression* call, const rho::BuiltI
     return ans;
 }
 
-SEXP attribute_hidden do_readln(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* prompt_)
+SEXP attribute_hidden do_readln(/*const*/ Expression* call, const BuiltInFunction* op, RObject* prompt_)
 {
     int c;
     char buffer[MAXELTSIZE], *bufp = buffer;

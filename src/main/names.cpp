@@ -903,7 +903,7 @@ SEXP attribute_hidden R_Primitive(const char *primname)
     return BuiltInFunction::obtainPrimitive(primname);
 }
 
-SEXP attribute_hidden do_primitive(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_)
+SEXP attribute_hidden do_primitive(/*const*/ Expression* call, const BuiltInFunction* op, RObject* name_)
 {
     SEXP name, prim;
     name = name_;

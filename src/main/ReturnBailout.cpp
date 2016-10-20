@@ -24,7 +24,7 @@
 
 /** @file ReturnBailout.cpp
  *
- * @brief Implementation of class rho::ReturnBailout.
+ * @brief Implementation of class ReturnBailout.
  */
 
 #include "rho/ReturnBailout.hpp"

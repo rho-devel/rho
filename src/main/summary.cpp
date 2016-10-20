@@ -813,7 +813,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 
 // which.min(x) : The index (starting at 1), of the first min(x) in x
 // which.max(x) : The index (starting at 1), of the first max(x) in x
-SEXP attribute_hidden do_first_min(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_first_min(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP sx = x_, ans;
     R_xlen_t i, n, indx = -1;
@@ -903,7 +903,7 @@ SEXP attribute_hidden do_first_min(/*const*/ rho::Expression* call, const rho::B
 }
 
 /* which(x) : indices of non-NA TRUE values in x */
-SEXP attribute_hidden do_which(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_which(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP v, v_nms, ans, ans_nms = R_NilValue;
     int i, j = 0, len, *buf;
@@ -941,7 +941,7 @@ SEXP attribute_hidden do_which(/*const*/ rho::Expression* call, const rho::Built
 /* op = 0 is pmin, op = 1 is pmax
    NULL and logicals are handled as if they had been coerced to integer.
  */
-SEXP attribute_hidden do_pmin(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_pmin(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x, ans;
     int narm;

@@ -24,7 +24,7 @@
 
 /** @file Evaluator_Context.cpp
  *
- * Implementation of class rho::Evaluator::Context.
+ * Implementation of class Evaluator::Context.
  *
  * @note The long name Evaluator_Context.cpp is used rather than
  * Context.cpp because the latter would differ only in case from the

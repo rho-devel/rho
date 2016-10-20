@@ -550,7 +550,7 @@ SEXP nthcdr(SEXP s, int n)
 
 
 /* This is a primitive (with no arguments) */
-SEXP attribute_hidden do_nargs(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_nargs(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     ClosureContext *cptr = ClosureContext::innermost();
     int nargs = NA_INTEGER;
@@ -629,7 +629,7 @@ static void isort_with_index(int *x, int *indx, int n)
    The return value is a list with 4 elements (xi, yi, x.alone, y.alone),
    which are index vectors for rows of x or y.
 */
-SEXP attribute_hidden do_merge(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* xinds_, rho::RObject* yinds_, rho::RObject* all_x_, rho::RObject* all_y_)
+SEXP attribute_hidden do_merge(/*const*/ Expression* call, const BuiltInFunction* op, RObject* xinds_, RObject* yinds_, RObject* all_x_, RObject* all_y_)
 {
     SEXP xi, yi, ansx, ansy, ans;
     int nx = 0, ny = 0, i, j, k, nx_lone = 0, ny_lone = 0;
@@ -747,7 +747,7 @@ SEXP static intern_getwd(void)
     return(rval);
 }
 
-SEXP attribute_hidden do_getwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_getwd(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return(intern_getwd());
 }
@@ -757,7 +757,7 @@ SEXP attribute_hidden do_getwd(/*const*/ rho::Expression* call, const rho::Built
 # include <direct.h> /* for chdir, via io.h */
 #endif
 
-SEXP attribute_hidden do_setwd(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dir)
+SEXP attribute_hidden do_setwd(/*const*/ Expression* call, const BuiltInFunction* op, RObject* dir)
 {
     if (!isValidString(dir))
 	error(_("character argument expected"));
@@ -822,7 +822,7 @@ SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_basename(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
+SEXP attribute_hidden do_basename(/*const*/ Expression* call, const BuiltInFunction* op, RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char  buf[PATH_MAX], *p, fsp = FILESEP[0];
@@ -903,7 +903,7 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(ans);
 }
 #else
-SEXP attribute_hidden do_dirname(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_)
+SEXP attribute_hidden do_dirname(/*const*/ Expression* call, const BuiltInFunction* op, RObject* path_)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
     char buf[PATH_MAX], *p, fsp = FILESEP[0];
@@ -1030,7 +1030,7 @@ extern "C" const char *getTZinfo(void)
 
 
 /* encodeString(x, w, quote, justify) */
-SEXP attribute_hidden do_encodeString(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* width_, rho::RObject* quote_, rho::RObject* na_encode_, rho::RObject* justify_)
+SEXP attribute_hidden do_encodeString(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* width_, RObject* quote_, RObject* na_encode_, RObject* justify_)
 {
     SEXP ans, x, s;
     R_xlen_t i, len;
@@ -1090,7 +1090,7 @@ SEXP attribute_hidden do_encodeString(/*const*/ rho::Expression* call, const rho
     return ans;
 }
 
-SEXP attribute_hidden do_encoding(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_encoding(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP ans, x;
     R_xlen_t i, n;
@@ -1111,7 +1111,7 @@ SEXP attribute_hidden do_encoding(/*const*/ rho::Expression* call, const rho::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_setencoding(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_)
+SEXP attribute_hidden do_setencoding(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* value_)
 {
     SEXP x, enc, tmp;
     int m;
@@ -1364,7 +1364,7 @@ Rboolean utf8Valid(const char *str)
     return  RHOCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
 }
 
-SEXP attribute_hidden do_validUTF8(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
+SEXP attribute_hidden do_validUTF8(Expression* call, const BuiltInFunction* op, RObject* x)
 {
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
@@ -1376,7 +1376,7 @@ SEXP attribute_hidden do_validUTF8(rho::Expression* call, const rho::BuiltInFunc
     return ans;
 }
 
-SEXP attribute_hidden do_validEnc(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x)
+SEXP attribute_hidden do_validEnc(Expression* call, const BuiltInFunction* op, RObject* x)
 {
     if (!isString(x))
 	error(_("invalid '%s' argument"), "x");
@@ -1756,7 +1756,7 @@ double R_atof(const char *str)
 
 /* enc2native and enc2utf8, but they are the same in a UTF-8 locale */
 /* primitive */
-SEXP attribute_hidden do_enc2(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* ans)
+SEXP attribute_hidden do_enc2(/*const*/ Expression* call, const BuiltInFunction* op, RObject* ans)
 {
     SEXP el;
     R_xlen_t i;
@@ -2152,7 +2152,7 @@ bincode(double *x, R_xlen_t n, double *breaks, int nb,
 }
 
 /* 'breaks' cannot be a long vector as the return codes are integer. */
-SEXP attribute_hidden do_bincode(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* breaks_, rho::RObject* right_, rho::RObject* include_lowest_)
+SEXP attribute_hidden do_bincode(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* breaks_, RObject* right_, RObject* include_lowest_)
 {
     SEXP x, breaks, right, lowest;
     x = x_;
@@ -2177,7 +2177,7 @@ SEXP attribute_hidden do_bincode(/*const*/ rho::Expression* call, const rho::Bui
     return codes;
 }
 
-SEXP attribute_hidden do_tabulate(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* bin_, rho::RObject* nbins_)
+SEXP attribute_hidden do_tabulate(/*const*/ Expression* call, const BuiltInFunction* op, RObject* bin_, RObject* nbins_)
 {
     SEXP in = bin_, nbin = nbins_;
     if (TYPEOF(in) != INTSXP)  error("invalid input");
@@ -2198,7 +2198,7 @@ SEXP attribute_hidden do_tabulate(/*const*/ rho::Expression* call, const rho::Bu
  *                         xt  x    right             inside       leftOp
  * x can be a long vector but xt cannot since the result is integer
 */
-SEXP attribute_hidden do_findinterval(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vec_, rho::RObject* x_, rho::RObject* rightmost_closed_, rho::RObject* all_inside_, rho::RObject* left_op_)
+SEXP attribute_hidden do_findinterval(/*const*/ Expression* call, const BuiltInFunction* op, RObject* vec_, RObject* x_, RObject* rightmost_closed_, RObject* all_inside_, RObject* left_op_)
 {
     SEXP xt, x, right, inside, leftOp;
     xt = vec_;
@@ -2239,7 +2239,7 @@ SEXP attribute_hidden do_findinterval(/*const*/ rho::Expression* call, const rho
 # undef ERROR
 #endif
 #include <R_ext/Applic.h>
-SEXP attribute_hidden do_pretty(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* min_, rho::RObject*  max_, rho::RObject*  n_, rho::RObject*  min_n_, rho::RObject*  shrink_sml_, rho::RObject*  bias_, rho::RObject*  eps_correct_)
+SEXP attribute_hidden do_pretty(/*const*/ Expression* call, const BuiltInFunction* op, RObject* min_, RObject*  max_, RObject*  n_, RObject*  min_n_, RObject*  shrink_sml_, RObject*  bias_, RObject*  eps_correct_)
 {
     SEXP ans, nm, hi;
     double l = asReal(min_);
@@ -2286,7 +2286,7 @@ static void
 str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	   const char *format, const char *flag, char **result);
 
-SEXP attribute_hidden do_formatC(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject*  mode_, rho::RObject*  width_, rho::RObject*  digits_, rho::RObject*  format_, rho::RObject*  flag_, rho::RObject*  i_strlen_)
+SEXP attribute_hidden do_formatC(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject*  mode_, RObject*  width_, RObject*  digits_, RObject*  format_, RObject*  flag_, RObject*  i_strlen_)
 {
     SEXP x = x_;
     if (!isVector(x)) error(_("'x' must be a vector"));

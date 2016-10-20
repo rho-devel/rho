@@ -97,7 +97,7 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace & debug state */
 
-SEXP attribute_hidden do_traceOnOff(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_)
+SEXP attribute_hidden do_traceOnOff(/*const*/ Expression* call, const BuiltInFunction* op, RObject* on_)
 {
     SEXP onOff = on_;
     bool trace = op->variant() == 0;  // Otherwise it's debug.
@@ -130,7 +130,7 @@ R_current_debugging_state() { return Rboolean(Closure::debuggingEnabled()); }
 /* report when a traced object is duplicated */
 
 #ifdef R_MEMORY_PROFILING
-SEXP attribute_hidden do_tracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_tracemem(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP object;
     char buffer[21];
@@ -152,7 +152,7 @@ SEXP attribute_hidden do_tracemem(/*const*/ rho::Expression* call, const rho::Bu
 }
 
 
-SEXP attribute_hidden do_untracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_untracemem(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP object;
 
@@ -163,12 +163,12 @@ SEXP attribute_hidden do_untracemem(/*const*/ rho::Expression* call, const rho::
 
 #else
 
-SEXP attribute_hidden do_tracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_tracemem(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }
 
-SEXP attribute_hidden do_untracemem(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_untracemem(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     errorcall(call, _("R was not compiled with support for memory profiling"));
 }

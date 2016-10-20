@@ -720,7 +720,7 @@ void NORET errorcall(SEXP call, const char *format,...)
     va_end(ap);
 }
 
-SEXP attribute_hidden do_geterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+SEXP attribute_hidden do_geterrmessage(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     return Rf_ScalarString(mkChar(errbuf));
 }
@@ -865,7 +865,7 @@ void NORET jump_to_toplevel()
 /* #define DEBUG_GETTEXT 1 */
 
 /* gettext(domain, string) */
-SEXP attribute_hidden do_gettext(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* dots_, rho::RObject* domain_)
+SEXP attribute_hidden do_gettext(/*const*/ Expression* call, const BuiltInFunction* op, RObject* dots_, RObject* domain_)
 {
 #ifdef ENABLE_NLS
     const char *domain = "", *cfn;
@@ -967,7 +967,7 @@ SEXP attribute_hidden do_gettext(/*const*/ rho::Expression* call, const rho::Bui
 }
 
 /* ngettext(n, msg1, msg2, domain) */
-SEXP attribute_hidden do_ngettext(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* msg1_, rho::RObject* msg2_, rho::RObject* domain_)
+SEXP attribute_hidden do_ngettext(/*const*/ Expression* call, const BuiltInFunction* op, RObject* n_, RObject* msg1_, RObject* msg2_, RObject* domain_)
 {
 #ifdef ENABLE_NLS
     const char *domain = "", *cfn;;
@@ -1034,7 +1034,7 @@ SEXP attribute_hidden do_ngettext(/*const*/ rho::Expression* call, const rho::Bu
 
 
 /* bindtextdomain(domain, dirname) */
-SEXP attribute_hidden do_bindtextdomain(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* domain_, rho::RObject* dirname_)
+SEXP attribute_hidden do_bindtextdomain(/*const*/ Expression* call, const BuiltInFunction* op, RObject* domain_, RObject* dirname_)
 {
 #ifdef ENABLE_NLS
     char *res;
@@ -1266,7 +1266,7 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 
-SEXP attribute_hidden do_traceback(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_traceback(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     int skip;
 
@@ -1469,7 +1469,7 @@ namespace {
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* classes, rho::RObject* handlers, rho::RObject* parentenv, rho::RObject* target, rho::RObject* calling_)
+SEXP attribute_hidden do_addCondHands(/*const*/ Expression* call, const BuiltInFunction* op, RObject* classes, RObject* handlers, RObject* parentenv, RObject* target, RObject* calling_)
 {
     int calling = asLogical(calling_);
 
@@ -1589,7 +1589,7 @@ static PairList* findConditionHandler(SEXP cond)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_signalCondition(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* cond, rho::RObject* msg, rho::RObject* ecall)
+SEXP attribute_hidden do_signalCondition(/*const*/ Expression* call, const BuiltInFunction* op, RObject* cond, RObject* msg, RObject* ecall)
 {
     PairList* list;
     GCStackRoot<PairList> oldstack(R_HandlerStack);
@@ -1682,7 +1682,7 @@ R_InsertRestartHandlers(ClosureContext *cptr, Rboolean browser)
     UNPROTECT(2);
 }
 
-SEXP attribute_hidden do_dfltWarn(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_, rho::RObject* call_)
+SEXP attribute_hidden do_dfltWarn(/*const*/ Expression* call, const BuiltInFunction* op, RObject* message_, RObject* call_)
 {
     const char *msg;
     SEXP ecall;
@@ -1696,7 +1696,7 @@ SEXP attribute_hidden do_dfltWarn(/*const*/ rho::Expression* call, const rho::Bu
     return R_NilValue;
 }
 
-SEXP attribute_hidden NORET do_dfltStop(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_, rho::RObject* call_)
+SEXP attribute_hidden NORET do_dfltStop(/*const*/ Expression* call, const BuiltInFunction* op, RObject* message_, RObject* call_)
 {
     const char *msg;
     SEXP ecall;
@@ -1714,7 +1714,7 @@ SEXP attribute_hidden NORET do_dfltStop(/*const*/ rho::Expression* call, const r
  * Restart Handling
  */
 
-SEXP attribute_hidden do_getRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* i_)
+SEXP attribute_hidden do_getRestart(/*const*/ Expression* call, const BuiltInFunction* op, RObject* i_)
 {
     int i;
     SEXP list;
@@ -1745,7 +1745,7 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_addRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* restart)
+SEXP attribute_hidden do_addRestart(/*const*/ Expression* call, const BuiltInFunction* op, RObject* restart)
 {
     CHECK_RESTART(restart);
     push_restart(restart);
@@ -1780,13 +1780,13 @@ static void NORET invokeRestart(SEXP r, SEXP arglist)
     }
 }
 
-SEXP attribute_hidden NORET do_invokeRestart(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* r_, rho::RObject* args_)
+SEXP attribute_hidden NORET do_invokeRestart(/*const*/ Expression* call, const BuiltInFunction* op, RObject* r_, RObject* args_)
 {
     CHECK_RESTART(r_);
     invokeRestart(r_, args_);
 }
 
-SEXP attribute_hidden do_seterrmessage(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* message_)
+SEXP attribute_hidden do_seterrmessage(/*const*/ Expression* call, const BuiltInFunction* op, RObject* message_)
 {
     SEXP msg;
 
@@ -1798,7 +1798,7 @@ SEXP attribute_hidden do_seterrmessage(/*const*/ rho::Expression* call, const rh
 }
 
 SEXP attribute_hidden
-do_printDeferredWarnings(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op)
+do_printDeferredWarnings(/*const*/ Expression* call, const BuiltInFunction* op)
 {
     R_PrintDeferredWarnings();
     return R_NilValue;

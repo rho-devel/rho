@@ -71,7 +71,7 @@ SEXP GetColNames(SEXP dimnames)
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_matrix(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vals, rho::RObject* nrow, rho::RObject* ncol, rho::RObject* byrow_, rho::RObject* dimnames, rho::RObject* miss_nr_, rho::RObject* miss_nc_)
+SEXP attribute_hidden do_matrix(/*const*/ Expression* call, const BuiltInFunction* op, RObject* vals, RObject* nrow, RObject* ncol, RObject* byrow_, RObject* dimnames, RObject* miss_nr_, RObject* miss_nc_)
 {
     SEXP ans;
     int nr = 1, nc = 1;
@@ -298,7 +298,7 @@ SEXP DropDims(SEXP x)
     return vb;
 }
 
-SEXP attribute_hidden do_drop(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_drop(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     GCStackRoot<> x;
     SEXP xdims;
@@ -320,7 +320,7 @@ SEXP attribute_hidden do_drop(/*const*/ rho::Expression* call, const rho::BuiltI
 
 /* Length of Primitive Objects */
 
-SEXP attribute_hidden do_length(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_length(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x = args[0];
 
@@ -397,7 +397,7 @@ static SEXP do_lengths_long(SEXP x, Expression* call, Environment* rho)
     return ans;
 }
 
-SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_lengths(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP x = args[0], ans;
     R_xlen_t x_len, i;
@@ -446,7 +446,7 @@ SEXP attribute_hidden do_lengths(/*const*/ rho::Expression* call, const rho::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_rowscols(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_rowscols(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP x, ans;
     int i, j, nr, nc;
@@ -648,7 +648,7 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 }
 
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
-SEXP do_crossprod(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y)
+SEXP do_crossprod(Expression* call, const BuiltInFunction* op, RObject* x, RObject* y)
 {
     int ldx, ldy, nrx, ncx, nry, ncy;
     SEXPTYPE mode;
@@ -971,7 +971,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 			SEXP_downcast<BuiltInFunction*>(op), x, y);
 }
 
-SEXP attribute_hidden do_transpose(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_)
+SEXP attribute_hidden do_transpose(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_)
 {
     SEXP a, r, dims, dimnames, dimnamesnames = R_NilValue,
 	ndimnamesnames, rnames, cnames;
@@ -1113,7 +1113,7 @@ SEXP attribute_hidden do_transpose(/*const*/ rho::Expression* call, const rho::B
 	lj += iip[itmp] * stride[itmp];
 
 /* aperm (a, perm, resize = TRUE) */
-SEXP attribute_hidden do_aperm(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a_, rho::RObject* perm_, rho::RObject* resize_)
+SEXP attribute_hidden do_aperm(/*const*/ Expression* call, const BuiltInFunction* op, RObject* a_, RObject* perm_, RObject* resize_)
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
@@ -1291,7 +1291,7 @@ SEXP attribute_hidden do_aperm(/*const*/ rho::Expression* call, const rho::Built
 }
 
 /* colSums(x, n, p, na.rm) and friends */
-SEXP attribute_hidden do_colsum(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* X_, rho::RObject* n_, rho::RObject* p_, rho::RObject* na_rm_)
+SEXP attribute_hidden do_colsum(/*const*/ Expression* call, const BuiltInFunction* op, RObject* X_, RObject* n_, RObject* p_, RObject* na_rm_)
 {
     SEXP x, ans = R_NilValue;
     int type;
@@ -1463,7 +1463,7 @@ SEXP attribute_hidden do_colsum(/*const*/ rho::Expression* call, const rho::Buil
 */
 
 /* array(data, dim, dimnames) */
-SEXP attribute_hidden do_array(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* data_, rho::RObject* dim_, rho::RObject* dimnames_)
+SEXP attribute_hidden do_array(/*const*/ Expression* call, const BuiltInFunction* op, RObject* data_, RObject* dim_, RObject* dimnames_)
 {
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
@@ -1575,7 +1575,7 @@ SEXP attribute_hidden do_array(/*const*/ rho::Expression* call, const rho::Built
     return ans;
 }
 
-SEXP attribute_hidden do_diag(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* nrow_, rho::RObject* ncol_)
+SEXP attribute_hidden do_diag(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* nrow_, RObject* ncol_)
 {
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
@@ -1634,7 +1634,7 @@ SEXP attribute_hidden do_diag(/*const*/ rho::Expression* call, const rho::BuiltI
 
 
 /* backsolve(r, b, k, upper.tri, transpose) */
-SEXP attribute_hidden do_backsolve(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* r_, rho::RObject* x_, rho::RObject* k_, rho::RObject* upper_tri_, rho::RObject* transpose_)
+SEXP attribute_hidden do_backsolve(/*const*/ Expression* call, const BuiltInFunction* op, RObject* r_, RObject* x_, RObject* k_, RObject* upper_tri_, RObject* transpose_)
 {
     int nprot = 1;
 
@@ -1678,7 +1678,7 @@ SEXP attribute_hidden do_backsolve(/*const*/ rho::Expression* call, const rho::B
 }
 
 /* max.col(m, ties.method) */
-SEXP attribute_hidden do_maxcol(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* m_, rho::RObject* ties_method_)
+SEXP attribute_hidden do_maxcol(/*const*/ Expression* call, const BuiltInFunction* op, RObject* m_, RObject* ties_method_)
 {
     SEXP m = m_;
     int method = asInteger(ties_method_);

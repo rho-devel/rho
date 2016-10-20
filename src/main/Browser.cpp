@@ -24,7 +24,7 @@
 
 /** @file Browser.cpp
  *
- * Implementation of class rho::Browser.
+ * Implementation of class Browser.
  */
 
 #include "rho/Browser.hpp"

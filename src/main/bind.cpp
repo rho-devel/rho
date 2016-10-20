@@ -914,7 +914,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 } /* do_c */
 
 
-SEXP attribute_hidden do_unlist(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject*  recursive_, rho::RObject*  use_names_)
+SEXP attribute_hidden do_unlist(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject*  recursive_, RObject*  use_names_)
 {
     SEXP ans, t;
     SEXPTYPE mode;

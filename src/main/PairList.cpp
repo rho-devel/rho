@@ -24,7 +24,7 @@
 
 /** @file PairList.cpp
  *
- * @brief Class rho::PairList and associated C interface.
+ * @brief Class PairList and associated C interface.
  */
 
 #include "rho/PairList.hpp"

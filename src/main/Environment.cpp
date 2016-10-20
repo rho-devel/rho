@@ -84,7 +84,7 @@ class Environment::Cache : public google::dense_hash_map<
     const Symbol*, Frame::Binding*,
     PointerHash,
     std::equal_to<const Symbol*>,
-    rho::Allocator<std::pair<const Symbol* const,
+    Allocator<std::pair<const Symbol* const,
 			      Frame::Binding*> >
     >
 { };
@@ -421,7 +421,7 @@ namespace rho {
 	    const Symbol* sym = *it;
 	    const RObject* val = frame->binding(sym)->rawValue();
 	    cout << '\"' << sym->name()->stdstring()
-		 << "\" (\'rho::RObject\'*)" << val;
+		 << "\" (\'RObject\'*)" << val;
 	    if (val)
 		cout << " [" << typeid(*val).name() << ']';
 	    cout << '\n';

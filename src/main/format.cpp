@@ -74,7 +74,7 @@ unsigned int rho::stringWidth(unsigned int minwidth, const String* string)
 
 // Designed for use with std::accumulate():
 unsigned int rho::stringWidthQuote(unsigned int minwidth,
-				    const String* string)
+				   const String* string)
 {
     unsigned int width = R_print.na_width;
     if (string != NA_STRING)

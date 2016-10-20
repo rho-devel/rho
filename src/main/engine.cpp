@@ -38,6 +38,8 @@
 #include "rho/RAllocStack.hpp"
 #include "rho/Expression.hpp"
 
+using namespace rho;
+
 int R_GE_getVersion()
 {
     return R_GE_version;
@@ -2783,7 +2785,6 @@ void GEplayDisplayList(pGEDevDesc dd)
 	savedDevice = curDevice();
 	selectDevice(devnum);
 	while (theList != R_NilValue && plotok) {
-            using namespace rho;
             Expression* theOperation
                 = dynamic_cast<Expression*>(CAR(theList));
             // We can't call the_expression->evaluate() here, because the
@@ -3063,7 +3064,7 @@ void GEonExit()
 int GEstring_to_pch(SEXP pch)
 {
     int ipch = NA_INTEGER;
-    static rho::GCRoot<> last_pch = nullptr;
+    static GCRoot<> last_pch = nullptr;
     static int last_ipch = 0;
 
     if (pch == NA_STRING) return NA_INTEGER;

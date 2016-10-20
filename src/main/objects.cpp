@@ -812,7 +812,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* primitive */
-SEXP attribute_hidden do_unclass(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object)
+SEXP attribute_hidden do_unclass(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object)
 {
     switch(TYPEOF(object)) {
     case ENVSXP:
@@ -895,7 +895,7 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
     return rval;
 }
 
-SEXP attribute_hidden do_inherits(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* what_, rho::RObject* which_)
+SEXP attribute_hidden do_inherits(/*const*/ Expression* call, const BuiltInFunction* op, RObject* x_, RObject* what_, RObject* which_)
 {
     return inherits3(/* x = */ x_,
 		     /* what = */ what_,
@@ -1065,7 +1065,7 @@ Rboolean isMethodsDispatchOn(void)
    It seems it is not currently called with onOff = TRUE (and would
    not have worked prior to 3.0.2).
 */ 
-SEXP attribute_hidden do_S4on(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* rho, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_S4on(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
 {
     if(num_args == 0) return Rf_ScalarLogical(isMethodsDispatchOn());
     return R_isMethodsDispatchOn(args[0]);
@@ -1119,7 +1119,7 @@ static SEXP get_this_generic(RObject* const* args, int num_args);
 
 
 
-SEXP attribute_hidden do_standardGeneric(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_standardGeneric(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
@@ -1554,7 +1554,7 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 	    Rf_getAttrib(klass, R_PackageSymbol) != R_NilValue) ? TRUE: FALSE;
 }
 
-SEXP attribute_hidden do_setS4Object(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object_, rho::RObject* flag_, rho::RObject* complete_)
+SEXP attribute_hidden do_setS4Object(/*const*/ Expression* call, const BuiltInFunction* op, RObject* object_, RObject* flag_, RObject* complete_)
 {
     SEXP object = object_;
     int flag = Rf_asLogical(flag_), complete = Rf_asInteger(complete_);

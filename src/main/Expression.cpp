@@ -24,7 +24,7 @@
 
 /** @file Expression.cpp
  *
- * @brief Class rho::Expression and associated C interface.
+ * @brief Class Expression and associated C interface.
  */
 #define R_NO_REMAP
 
