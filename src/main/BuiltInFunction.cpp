@@ -260,7 +260,7 @@ BuiltInFunction::InternalDispatch(const Expression* call,
     for (int i = 0; i < num_args; i++) {
 	args_array[i] = args->get(i);
     }
-    return InternalDispatch(call, env, num_args, args_array, args->list());
+    return InternalDispatch(call, env, num_args, args_array, args->tags());
 }
 
 const char* BuiltInFunction::GetInternalGroupDispatchName() const

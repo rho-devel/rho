@@ -980,16 +980,16 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 	args = list2(CAR(args), ScalarReal(digits));
     }
 
-    args = evalListKeepMissing(args, env);
-    Expression* call2 = new Expression(CAR(call),
-				       SEXP_downcast<PairList*>(args));
-    int n = Rf_length(args);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    arglist.evaluate(SEXP_downcast<Environment*>(env),
+		     MissingArgHandling::Keep);
+    Expression* call2 = new Expression(CAR(call), arglist);
+    int n = arglist.size();
     if (n != 1 && n != 2)
         error(ngettext("%d argument passed to '%s' which requires 1 or 2 arguments",
                        "%d arguments passed to '%s'which requires 1 or 2 arguments", n),
               n, PRIMNAME(op));
 
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)
 	->InternalDispatch(call2,
 			   SEXP_downcast<Environment*>(env),
@@ -1002,7 +1002,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 	double digits = PRIMVAL(op) == 10001 ? 0 : 6;
 	return do_math2(SEXP_downcast<Expression*>(call),
 			SEXP_downcast<const BuiltInFunction*>(op),
-			CAR(args), ScalarReal(digits));
+			arglist.get(0), ScalarReal(digits));
     }
 
     static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "x", "digits" });
@@ -1024,8 +1024,7 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
 
     static RObject* log_symbol = Symbol::obtain("log");
     ArgList arglist2({ args[0], tmp }, ArgList::EVALUATED);
-    Expression* call2 = new Expression(log_symbol,
-				       const_cast<PairList*>(arglist2.list()));
+    Expression* call2 = new Expression(log_symbol, arglist2);
     auto dispatch = op->InternalDispatch(call2, env, &arglist2);
     if (dispatch.first) {
 	return dispatch.second;
@@ -1050,8 +1049,10 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
    contain missing arguments.  */
 SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    args = evalListKeepMissing(args, env);
-    return  do_log_builtin(call, op, args, env);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    arglist.evaluate(SEXP_downcast<Environment*>(env),
+		     MissingArgHandling::Keep);
+    return do_log_builtin(call, op, const_cast<PairList*>(arglist.list()), env);
 }
 
 SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)

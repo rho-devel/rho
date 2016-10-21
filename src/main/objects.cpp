@@ -90,10 +90,10 @@ static RObject* GetObject(ClosureContext *cptr)
     // follows CR, but does not appear to be documented in the R
     // language definition.)
     {
-	const PairList* pargs = cptr->promiseArgs();
-	if (!pargs)
+	const ArgList& args = cptr->promiseArgs();
+	if (args.size() == 0)
 	    return R_NilValue;
-	return forceIfPromise(pargs->car());
+	return forceIfPromise(args.get(0));
     }
 }
 
@@ -190,8 +190,7 @@ int Rf_isBasicClass(const char *ss) {
 }
 
 
-// Note the fourth argument is not used.
-int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
+int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
 		 SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
 {
     Environment* env = SEXP_downcast<Environment*>(rho);
@@ -244,7 +243,6 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	clos->stripFormals(newframe);
     }
 
-    GCStackRoot<const PairList> matchedarg(cptr->promiseArgs());
     GCStackRoot<S3Launcher>
 	m(S3Launcher::create(obj, generic, "", callenv, defenv, true));
     if (!m)
@@ -254,8 +252,9 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     m->addMethodBindings(newframe);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(m->symbol());
-    ArgList arglist(matchedarg, ArgList::PROMISED);
-    *ans = applyMethod(newcall, m->function(), &arglist, env, newframe);
+    *ans = applyMethod(newcall, m->function(),
+		       const_cast<ArgList*>(&cptr->promiseArgs()),
+		       env, newframe);
     return 1;
 }
 
@@ -365,7 +364,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Try invoking method:
     SEXP ans;
-    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, nullptr,
+    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call,
 		     env, callenv, defenv, &ans) != 1) {
 	// Failed, so prepare error message:
 	std::string cl;
@@ -522,7 +521,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	{
 	    RObject* ac
 		= Rf_matchArgs(const_cast<PairList*>(formals),
-			       const_cast<PairList*>(cptr->promiseArgs()),
+			       const_cast<PairList*>(cptr->promiseArgs().list()),
 			       call);
 	    actuals = static_cast<PairList*>(ac);
 	}
@@ -568,8 +567,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	{
 	    matchedarg = PairList::cons(nullptr);  // Dummy first element
 	    PairList* t = matchedarg;
-	    for (const PairList* s = cptr->promiseArgs(); s; s = s->tail()) {
-		t->setTail(PairList::cons(s->car(), nullptr, s->tag()));
+	    for (const ConsCell& s : cptr->promiseArgs().getArgs()) {
+		t->setTail(PairList::cons(s.car(), nullptr, s.tag()));
 		t = t->tail();
 	    }
 	    matchedarg = matchedarg->tail();  // Discard dummy element
@@ -1421,16 +1420,12 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
    already been evaluated.
  */
 std::pair<bool, SEXP> attribute_hidden
-R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
-		    Rboolean promisedArgs)
+R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
+		    const rho::ArgList& arglist, rho::Environment* callenv)
 {
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    ArgList arglist(SEXP_downcast<PairList*>(args),
-		    promisedArgs ? ArgList::PROMISED : ArgList::EVALUATED);
-    Environment* callenv = SEXP_downcast<Environment*>(rho);
     SEXP value;
     GCStackRoot<> mlist;
-    int offset = PRIMOFFSET(op);
+    int offset = op->offset();
     if(offset < 0 || offset > curMaxOffset)
 	Rf_error(_("invalid primitive operation given for dispatch"));
     prim_methods_t current = prim_methods[offset];
@@ -1443,14 +1438,15 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	// R_preserveobject, so later we can just grab mlist from
 	// prim_mlist 
 	do_set_prim_method(op, "suppressed", R_NilValue, mlist);
-	mlist = get_primitive_methods(op, rho);
+	mlist = get_primitive_methods(op, callenv);
 	do_set_prim_method(op, "set", R_NilValue, mlist);
 	current = prim_methods[offset]; // as revised by do_set_prim_method
     }
     mlist = prim_mlist[offset];
     if(mlist && !Rf_isNull(mlist)
        && quick_method_check_ptr) {
-	value = (*quick_method_check_ptr)(args, mlist, op);
+	value = (*quick_method_check_ptr)(const_cast<PairList*>(arglist.list()),
+					  mlist, op);
 	if(Rf_isPrimitive(value))
 	    return std::pair<bool, SEXP>(false, nullptr);
 	if(Rf_isFunction(value)) {
@@ -1459,7 +1455,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    }
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = callx->invokeClosure(func, callenv, &arglist);
+	    value = call->invokeClosure(func, callenv,
+					const_cast<ArgList*>(&arglist));
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1472,7 +1469,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = callx->invokeClosure(func, callenv, &arglist);
+    value = call->invokeClosure(func, callenv, const_cast<ArgList*>(&arglist));
     // Only occurs if func() didn't throw an exception.
     prim_methods[offset] = current;
     if (value == deferred_default_object)

@@ -30,6 +30,7 @@
 #ifndef CLOSURECONTEXT_HPP
 #define CLOSURECONTEXT_HPP 1
 
+#include "rho/ArgList.hpp"
 #include "rho/FunctionContext.hpp"
 
 namespace rho {
@@ -73,20 +74,27 @@ namespace rho {
 	 *          assignments create bindings, and in which default
 	 *          values of parameters are evaluated.
 	 *
-	 * @param promise_args Pointer, possibly null, to the list of
-	 *          arguments to the call, each wrapped in a Promise.
+	 * @param promise_args The list of arguments to the call, each
+	 *          wrapped in a Promise.
 	 */
 	ClosureContext(const Expression* the_call, Environment* call_env,
 		       const FunctionBase* function, Environment* working_env,
-		       const PairList* promise_args)
+		       const ArgList& promise_args)
 	    : FunctionContext(the_call, call_env, function),
 	      m_interrupts_suspended(R_interrupts_suspended),
 	      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
-	      m_working_env(working_env), m_promise_args(promise_args)
+	      m_working_env(working_env),
+	      m_promise_args(promise_args.list(), promise_args.status())
 	{
 	    setType(CLOSURE);
 	}
 
+	ClosureContext(const Expression* the_call, Environment* call_env,
+		       const FunctionBase* function, Environment* working_env,
+		       const PairList* promise_args)
+	    : ClosureContext(the_call, call_env, function, working_env,
+			     ArgList(promise_args, ArgList::PROMISED))
+	{}
 
 	~ClosureContext() {
 	    R_RestartStack = m_restartstack;
@@ -140,7 +148,7 @@ namespace rho {
 	 * @return pointer, possibly null, to the list of arguments to
 	 * the call, each wrapped in a Promise.
 	 */
-	const PairList* promiseArgs() const
+	const ArgList& promiseArgs() const
 	{
 	    return m_promise_args;
 	}
@@ -186,7 +194,7 @@ namespace rho {
 	GCStackRoot<PairList> m_handlerstack;
 	GCStackRoot<PairList> m_restartstack;
 	GCStackRoot<Environment> m_working_env;
-	GCStackRoot<const PairList> m_promise_args;
+	ArgList m_promise_args;
 	GCStackRoot<> m_onexit;
     };
 }  // namespace rho

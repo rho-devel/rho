@@ -313,11 +313,11 @@ ArgMatchInfoCache createMatchInfoCache() {
 
 }  // namespace
 
-ArgMatchInfo::ArgMatchInfo(int num_formals, const PairList* args)
+ArgMatchInfo::ArgMatchInfo(int num_formals, const ArgList& args)
     : m_num_formals(num_formals), m_values(num_formals, -1)
  {
-    for (const PairList* arg = args; arg; arg = arg->tail()) {
-	m_tags.push_back(SEXP_downcast<const Symbol*>(arg->tag()));
+     for (const ConsCell& arg : args.getArgs()) {
+	m_tags.push_back(SEXP_downcast<const Symbol*>(arg.tag()));
     }
 }
 
@@ -343,7 +343,7 @@ const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
     if (args->has3Dots())
 	return nullptr;
 
-    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), args->list());
+    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), *args);
     RecordArgMatchInfoCallback callback(matching);
     match(args, &callback);
 
@@ -383,10 +383,11 @@ void ArgMatcher::matchByPosition(const ArgList* supplied,
 	= m_dots_position == -1 ? m_formal_data.size() : m_dots_position;
     unsigned int supplied_index = 0;
     unsigned int formals_index = 0;
-    const PairList* s;
-    for (s = supplied->list();
-	 s && (formals_index < num_formals);
-	 s = s->tail(), ++supplied_index, ++formals_index)
+    ArgList::const_iterator s = supplied->getArgs().begin();
+    const ArgList::const_iterator end = supplied->getArgs().end();
+    for ( ;
+	 (s != end) && (formals_index < num_formals);
+	 ++s, ++formals_index, ++supplied_index)
     {
 	callback->matchedArgument(m_formal_data[formals_index],
 				  supplied_index, s->car());
@@ -402,15 +403,15 @@ void ArgMatcher::matchByPosition(const ArgList* supplied,
     if (has3Dots()) {
 	// Pass unmatched arguments.
 	vector<int> dotted_arg_indices;
-	for (; s; ++supplied_index, s = s->tail()) {
+	for (; s != end; ++supplied_index, ++s) {
 	    dotted_arg_indices.push_back(supplied_index);
 	}
 	callback->dottedArgs(m_formal_data[m_dots_position],
 			     boost::make_iterator_range(dotted_arg_indices),
 			     supplied);
     } else {
-	if (s) {
-	    unusedArgsError(s);
+	if (s != end) {
+	    unusedArgsError(&*s);
 	}
     }
 }
@@ -430,10 +431,10 @@ void ArgMatcher::match(const ArgList* supplied,
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (const PairList* s = supplied->list(); s; s = s->tail(), ++sindex) {
-	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
+	for (const ConsCell& s : supplied->getArgs()) {
+	    const Symbol* tag = static_cast<const Symbol*>(s.tag());
 	    const String* name = (tag ? tag->name() : nullptr);
-	    RObject* value = s->car();
+	    RObject* value = s.car();
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
 		   : m_formal_index.end());
@@ -449,6 +450,7 @@ void ArgMatcher::match(const ArgList* supplied,
 		    = {tag, value, fmit, sindex};
 		supplied_list.push_back(supplied_data);
 	    }
+	    ++sindex;
 	}
     }
     // Partial matches by tag:

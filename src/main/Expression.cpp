@@ -190,7 +190,7 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       ArgList* arglist) const
 {
     bool evaluated = arglist->status() == ArgList::EVALUATED;
-    const PairList* tags = arglist->list();
+    const PairList* tags = arglist->tags();
     switch(func->arity()) {
     case 0:
 	return evaluateFixedArityBuiltIn(func, env, tags, evaluated);
@@ -254,7 +254,7 @@ RObject* Expression::evaluateDirectBuiltInCall(
 
     prepareToInvokeBuiltIn(func);
     return func->invoke(this, env, evaluated_arg_array, num_evaluated_args,
-                        arglist->list());
+                        arglist->tags());
 }
 
 RObject* Expression::evaluateIndirectBuiltInCall(
@@ -267,7 +267,7 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     }
 
     // Check the number of arguments.
-    int num_evaluated_args = listLength(arglist->list());
+    int num_evaluated_args = arglist->size();
     func->checkNumArgs(num_evaluated_args, this);
 
     // Check that any naming requirements on the first arg are satisfied.
@@ -297,7 +297,7 @@ void Expression::matchArgsIntoEnvironment(const Closure* func,
 {
     const ArgMatcher* matcher = func->matcher();
     ClosureContext context(this, calling_env, func, func->environment(),
-			   arglist->list());
+			   *arglist);
     matcher->match(execution_env, arglist);
 }
 
@@ -325,7 +325,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     {
       // Evaluate the function.
       ClosureContext context(this, calling_env, func,
-                             execution_env, arglist.list());
+                             execution_env, arglist);
       result = func->execute(execution_env);
     }
 
@@ -395,7 +395,7 @@ void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
 
     if (m_cache.m_function == func
 	&& m_cache.m_arg_match_info
-	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist->list()))
+	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist->tags()))
     {
 	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
 	return;
@@ -404,7 +404,7 @@ void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
     // We weren't able to cache a matching, probably because getArgs()
     // contains '...'.  Run the full matching algorithm instead.
     ClosureContext context(this, calling_env, func, func->environment(),
-			   arglist->list());
+			   *arglist);
     matcher->match(execution_env, arglist);
 }
 

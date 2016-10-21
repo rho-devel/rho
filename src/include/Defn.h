@@ -71,6 +71,11 @@
 #include "rho/ArgList.hpp"
 #include "rho/Frame.hpp"
 #include "rho/ListVector.hpp"
+
+namespace rho {
+    class BuiltInFunction;
+}
+
 extern "C" {
 #endif
 
@@ -772,7 +777,9 @@ void R_InitialData(void);
 
 #ifdef __cplusplus
 }  // extern "C"
-std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+std::pair<bool, SEXP>
+R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
+		    const rho::ArgList&, rho::Environment* env);
 int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
 		      rho::MissingArgHandling, int);
 
@@ -866,7 +873,7 @@ void Rf_unbindVar(SEXP, SEXP);
 void unmarkPhase(void);
 #endif
 SEXP R_LookupMethod(SEXP, SEXP, SEXP, SEXP);
-int Rf_usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
+int Rf_usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
 SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP, Rboolean);
 
 /* ../main/bind.c */

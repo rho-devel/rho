@@ -963,8 +963,13 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP s;
 	/* Remove argument names to ensure positional matching */
 	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
+
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
 	std::pair<bool, SEXP> pr
-	    = R_possible_dispatch(call, op, args, rho, FALSE);
+	    = R_possible_dispatch(SEXP_downcast<Expression*>(call),
+				  SEXP_downcast<BuiltInFunction*>(op),
+				  arglist,
+				  SEXP_downcast<Environment*>(rho));
 	if (pr.first) return pr.second;
     }
     return do_crossprod(SEXP_downcast<Expression*>(call),

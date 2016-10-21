@@ -557,7 +557,7 @@ SEXP attribute_hidden do_nargs(/*const*/ Expression* call, const BuiltInFunction
     while (cptr && cptr->workingEnvironment() != rho)
 	cptr = ClosureContext::innermost(cptr->nextOut());
     if (cptr)
-	nargs = length(RHO_C_CAST(PairList*, cptr->promiseArgs()));
+	nargs = cptr->promiseArgs().size();
     return ScalarInteger(nargs);
 }
 

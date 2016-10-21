@@ -87,7 +87,7 @@ namespace rho {
 			return *this;
 		}
 		m_arg = m_arg->tail();
-		if (m_arg && m_arg->car() == DotsSymbol) {
+		if (m_env && m_arg && m_arg->car() == DotsSymbol) {
 		    handleDots();
 		}
 		return *this;
@@ -308,6 +308,15 @@ namespace rho {
          */
         const RObject* getTag(int position) const;
 
+	/** @brief Iterator through the argument list, leaving '...' unchanged.
+	 *
+	 * @return iterator_range that iterates through the list of arguments.
+	 */
+	boost::iterator_range<const_iterator> getArgs() const {
+	    return boost::make_iterator_range(const_iterator(m_list, nullptr),
+					      const_iterator::end(nullptr));
+	}
+
 	/** @brief Iterator through the argument list, expanding '...'.
 	 *
 	 * @return iterator_range that iterates through the list of arguments.
@@ -333,6 +342,11 @@ namespace rho {
 	    return m_list;
 	}
 
+	const PairList* tags() const
+	{
+	    return m_list;
+	}
+	
 	/** @brief Merge in new argument values..
 	 *
 	 * This function is used in implementing NextMethod.  If any
