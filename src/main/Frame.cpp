@@ -68,13 +68,11 @@ Frame::Binding::forcedValue2() const
     RObject* val = m_value;
     if (val && val->sexptype() == PROMSXP) {
 	Promise* prom = static_cast<Promise*>(val);
-	if (prom->environment()) {
-	    GCStackRoot<Promise> promrt(prom);
+	if (!prom->evaluated()) {
 	    frame()->monitorRead(*this);
-	    val = Evaluator::evaluate(val, nullptr);
 	    promise_forced = true;
 	}
-	val = prom->value();
+	val = Evaluator::evaluate(prom, nullptr);
     }
     return make_pair(val, promise_forced);
 }
