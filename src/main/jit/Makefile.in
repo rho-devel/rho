@@ -31,9 +31,8 @@ ALL_CPPFLAGS = $(LLVM_CPPFLAGS) $(GC_CPPFLAGS) $(R_XTRA_CPPFLAGS) \
 	$(CPPFLAGS) $(SPARSEHASH_CPPFLAGS) $(DEFS) -DDISABLE_PROTECT_MACROS
 
 SOURCES_CXX = \
-	CompiledExpression.cpp CompiledFrame.cpp \
+	CompiledExpression.cpp \
 	Compiler.cpp CompilerContext.cpp \
-	FrameDescriptor.cpp \
 	Globals.cpp MCJITMemoryManager.cpp Optimization.cpp Runtime.cpp \
 	TypeBuilder.cpp
 

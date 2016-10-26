@@ -43,6 +43,7 @@ ListFrame::ListFrame(size_t size, bool check_list_size)
 {
     m_used_bindings_size = 0;
     m_overflow = nullptr;
+    m_descriptor = nullptr;
 
     if (check_list_size && size > kMaxListSize) {
 	size_t overflow_size = size - kMaxListSize;
@@ -55,8 +56,9 @@ ListFrame::ListFrame(size_t size, bool check_list_size)
 }
 
 ListFrame::ListFrame(const ListFrame &pattern)
-    : ListFrame(pattern.size())
+    : ListFrame(pattern.size(), false)
 {
+    m_descriptor = pattern.m_descriptor;
     importBindings(&pattern);
     if (pattern.isLocked())
 	lock(false);
@@ -106,6 +108,19 @@ void ListFrame::visitBindings(std::function<void(const Binding*)> f) const
 ListFrame* ListFrame::clone() const
 {
     return new ListFrame(*this);
+}
+
+void ListFrame::detachReferents()
+{
+    Frame::detachReferents();
+    m_descriptor.detach();
+}
+
+void ListFrame::visitReferents(const_visitor* v) const
+{
+    Frame::visitReferents(v);
+    if (m_descriptor)
+	(*v)(m_descriptor);
 }
 
 void ListFrame::lockBindings()
@@ -163,22 +178,33 @@ bool ListFrame::v_erase(const Symbol* symbol)
 
 Frame::Binding* ListFrame::v_obtainBinding(const Symbol* symbol)
 {
-    // If the binding exists, return that.
-    Frame::Binding* binding = v_binding(symbol);
-    if (binding) {
-	return binding;
-    }
 
-    // Otherwise return the first unused space in the array if any.
-    for (size_t i = 0; i < m_bindings_size; ++i) {
-	if (!isSet(m_bindings[i])) {
-	    // Found an unused spot.
-	    m_used_bindings_size = std::max(m_used_bindings_size, i + 1);
-	    return &m_bindings[i];
+    if (m_descriptor)
+    {
+	// Use the prellocated location.
+	int location = m_descriptor->getLocation(symbol);
+	if (location != -1) {
+	    return m_bindings + location;
+	}
+    } else
+    {
+	// If the binding exists, return that.
+	Frame::Binding* binding = v_binding(symbol);
+	if (binding) {
+	    return binding;
+	}
+
+        // Otherwise return the first unused space in the array if any.
+	for (size_t i = 0; i < m_bindings_size; ++i) {
+	    if (!isSet(m_bindings[i])) {
+		// Found an unused spot.
+		m_used_bindings_size = std::max(m_used_bindings_size, i + 1);
+		return &m_bindings[i];
+	    }
 	}
     }
 
-    // Otherwise go to the overflow.
+    // If all else fails, go to the overflow.
     if (!m_overflow) {
 	m_overflow = new map;
     }

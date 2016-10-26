@@ -36,6 +36,7 @@
 
 #include "rho/Allocator.hpp"
 #include "rho/Frame.hpp"
+#include "rho/FrameDescriptor.hpp"
 
 namespace rho {
     /** @brief Lightweight implementation of rho::Frame.
@@ -59,14 +60,53 @@ namespace rho {
 	explicit ListFrame(size_t list_size = kDefaultListSize,
 			   bool check_list_size = true);
 	ListFrame(const ListFrame &pattern);
-	
+
+	ListFrame* create(const FrameDescriptor* descriptor);
+
+	// Binding must exist, or returns null.
+	Binding* binding(int location)
+	{
+	    assert(m_descriptor != nullptr);
+	    assert(location >= 0);
+	    assert(location < m_descriptor->getNumberOfSymbols());
+	    Binding* binding = m_bindings + location;
+	    if (isSet(*binding)) {
+		return binding;
+	    } else {
+		return nullptr;
+	    }
+	}
+
+	const Binding* binding(int location) const
+	{
+	    return const_cast<ListFrame*>(this)->binding(location);
+	}
+
+	Binding* obtainBinding(const Symbol* symbol, int location)
+	{
+	    assert(m_descriptor != nullptr);
+	    assert(location >= 0);
+	    assert(location < m_descriptor->getNumberOfSymbols());
+	    Binding* binding = m_bindings + location;
+	    if (!isSet(*binding)) {
+		initializeBinding(binding, symbol);
+	    }
+	    return binding;
+	}
+
+	const FrameDescriptor* getDescriptor() const
+	{
+	    return m_descriptor;
+	}
+
         // Virtual functions of Frame (qv):
 	void visitBindings(std::function<void(const Binding*)> f)
 	    const override;
 	ListFrame* clone() const override;
 	void lockBindings() override;
 	std::size_t size() const override;
-
+	void detachReferents() override;
+	void visitReferents(const_visitor* v) const override;
     protected:
 
 	// The main array that bindings are stored in.
@@ -76,11 +116,13 @@ namespace rho {
 	Binding* m_bindings;
 	size_t m_bindings_size;
 	size_t m_used_bindings_size;
-	
+	GCEdge<const FrameDescriptor> m_descriptor;
+
 	// The default size of the array to create.
 	static const size_t kDefaultListSize = 16;
 	// The largest array to create.  Since the array must be searched
-	// with a linear scan, we don't want to allow it to get too big.
+	// with a linear scan, we don't want to allow it to get too big unless
+	// we have a FrameDescriptor.
 	static const size_t kMaxListSize = 64;
 
 	// Used to store any bindings that don't fit in m_bindings.

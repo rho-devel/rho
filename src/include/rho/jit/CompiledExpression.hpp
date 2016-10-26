@@ -29,7 +29,7 @@
 #include "rho/GCEdge.hpp"
 #include "rho/GCNode.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/FrameDescriptor.hpp"
 
 namespace llvm {
 
@@ -45,8 +45,6 @@ class Frame;
 class RObject;
 
 namespace JIT {
-
-class FrameDescriptor;
 
 class CompiledExpression : public GCNode {
 public:
