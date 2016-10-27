@@ -31,9 +31,12 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include "rho/Allocator.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/GCNode.hpp"
 #include "rho/Provenance.hpp"
 #include "rho/Symbol.hpp"
+#include <unordered_map>
 
 namespace rho {
     class Environment;
@@ -393,8 +396,33 @@ namespace rho {
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
-	};  // Frame::Binding
 
+	    /** @brief Has this binding been set to a value?
+	     *
+	     * In this case, R_MissingValue etc all count as being 'set'.
+	     * Unset bindings are a private implementation detail of Frame and
+	     * should never escape from the Frame object.
+	     *
+	     * @return true iff this Binding has been set.
+	     */
+	    bool isSet() const
+	    {
+		return m_frame != nullptr;
+	    }
+
+	    void unset() {
+		// Matches the constructor.
+		m_frame = nullptr;
+		m_symbol = nullptr;
+		m_origin = MISSING;
+		m_active = false;
+		m_locked = false;
+		m_value = Symbol::missingArgument();
+#ifdef PROVENANCE_TRACKING
+		m_provenance = nullptr;
+#endif
+	    }
+	};  // Frame::Binding
 
 	/** @brief Function type for read and write monitors.
 	 *
@@ -402,10 +430,9 @@ namespace rho {
 	 */
 	typedef void (*monitor)(const Binding&);
 
-	Frame()
-	    : m_cache_count(0), m_locked(false), m_no_special_symbols(true),
-	      m_read_monitored(false), m_write_monitored(false)
-	{}
+	Frame(size_t size = 16, bool check_list_size = true);
+
+	Frame(const FrameDescriptor* descriptor);
 
 	/** @brief Copy constructor.
 	 *
@@ -416,11 +443,7 @@ namespace rho {
 	 * The copy will be locked if \a source is locked.  However,
 	 * the copy will not have a read or write monitor.
 	 */
-	Frame(const Frame& source)
-	    : m_cache_count(0), m_locked(source.m_locked),
-	      m_no_special_symbols(source.m_no_special_symbols),
-	      m_read_monitored(false), m_write_monitored(false)
-	{}
+	Frame(const Frame& source);
 
 	/** @brief Get contents as a PairList.
 	 *
@@ -491,15 +514,57 @@ namespace rho {
 	 * pointer if it was not found..
 	 */
 	const Binding* binding(const Symbol* symbol) const {
-	    if (symbol->isSpecialSymbol() && m_no_special_symbols)
+	    return const_cast<Frame*>(this)->binding(symbol);
+	}
+
+	/** @brief Access binding of an already-defined Symbol.
+	 *
+	 * This function provides a pointer to the Binding of a
+	 * Symbol.  In this variant the pointer is non-const, and
+	 * consequently the calling code can use it to modify the
+	 * Binding (provided the Binding is not locked).
+	 *
+	 * @param location assigned to the Symbol in the FrameDescriptor.
+	 *
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not set.
+	 */
+	Binding* binding(int location)
+	{
+	    assert(m_descriptor != nullptr);
+	    assert(location >= 0);
+	    assert(location < m_descriptor->getNumberOfSymbols());
+	    Binding* binding = m_bindings + location;
+	    if (binding->isSet()) {
+		return binding;
+	    } else {
 		return nullptr;
-	    return v_binding(symbol);
+	    }
+	}
+
+	/** @brief Access const binding of an already-defined Symbol.
+	 *
+	 * This function provides a pointer to a PairList element
+	 * representing the binding of a symbol.  In this variant the
+	 * pointer is const, and consequently the calling code can use
+	 * it only to examine the binding.
+	 *
+	 * @param symbol The Symbol for which a mapping is sought.
+	 *
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not found..
+	 */
+	const Binding* binding(int location) const {
+	    return const_cast<Frame*>(this)->binding(location);
 	}
 
 	/** @brief Call a function for all of a Frame object's Bindings.
 	 */
-	virtual void visitBindings(std::function<void(const Binding*)> f) const
-	    = 0;
+	void visitBindings(std::function<void(const Binding*)> f) const;
+
+	/** @brief Call a function for all of a Frame object's Bindings.
+	 */
+	void modifyBindings(std::function<void(Binding*)> f);
 
 	/** @brief Remove all symbols from the Frame.
 	 *
@@ -524,7 +589,7 @@ namespace rho {
 	 * type facility to return a pointer to the type of object
 	 * being cloned.
 	 */
-	virtual Frame* clone() const = 0;
+	Frame* clone() const;
 
 	/** @brief Enable monitored reading of Symbol values.
 	 *
@@ -624,7 +689,7 @@ namespace rho {
 	 *
 	 * It is permitted to apply this function to a locked Frame.
 	 */
-	virtual void lockBindings() = 0;
+	void lockBindings();
 
 	/** @brief Get or create a Binding for a Symbol.
 	 *
@@ -642,6 +707,32 @@ namespace rho {
 	 * @return Pointer to the required Binding.
 	 */
 	Binding* obtainBinding(const Symbol* symbol);
+
+	/** @brief Get or create a Binding for a Symbol.
+	 *
+	 * If the Frame already contains a Binding for a specified
+	 * Symbol, the function returns it.  Otherwise a Binding to
+	 * the null pointer is created, and a pointer to that Binding
+	 * returned.
+	 *
+	 * An error is raised if a new Binding needs to be created and
+	 * the Frame is locked.
+	 *
+	 * @param symbol The Symbol for which a Binding is to be
+	 *          obtained.
+	 * @param location assigned to the Symbol in the FrameDescriptor.
+	 *
+	 * @return Pointer to the required Binding.
+	 */
+	Binding* obtainBinding(const Symbol* symbol, int location) {
+	    Frame::Binding* binding = m_bindings + location;
+	    if (!binding->isSet()) {
+		initializeBindingIfUnlocked(binding, symbol);
+		m_used_bindings_size = std::max(m_used_bindings_size,
+						(unsigned char)(location + 1));
+	    }
+	    return binding;
+	}
 
 	/** @brief Import a Binding from another Frame into this one.
 	 *
@@ -722,7 +813,7 @@ namespace rho {
 	 * @return the number of Symbols for which Bindings exist in
 	 * this Frame.
 	 */
-	virtual std::size_t size() const = 0;
+	std::size_t size() const;
 
 	/** @brief Symbols bound by this Frame.
 	 *
@@ -735,15 +826,57 @@ namespace rho {
         std::vector<const Symbol*> symbols(bool include_dotsymbols,
 					   bool sorted = false) const;
 
+	const FrameDescriptor* getDescriptor() const
+	{
+	    return m_descriptor;
+	}
+
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
-    protected:
-	// Declared protected to ensure that Frame objects are created
+    private:
+	friend class Environment;
+
+	static monitor s_read_monitor, s_write_monitor;
+
+	// The default size of the array to create.
+	static const size_t kDefaultListSize = 16;
+	// The largest array to create.  Since the array must be searched
+	// with a linear scan, we don't want to allow it to get too big unless
+	// we have a FrameDescriptor.
+	static const size_t kMaxListSize = 64;
+
+	// The main array that bindings are stored in.
+	// Note that the array cannot be moved or expanded, as there is a
+	// bunch of code (most notably the global cache) that keeps pointers
+	// to bindings.
+	Binding* m_bindings;
+	GCEdge<const FrameDescriptor> m_descriptor;
+
+	// The size of the m_bindings array.
+	unsigned char m_bindings_size;
+        // The number of currently used elements in the m_bindings array.
+	unsigned char m_used_bindings_size;
+        // Number of cached Environments of which this is the Frame.  Normally
+	// either 0 or 1.
+	unsigned char m_cache_count;
+	bool m_locked                  : 1;
+	bool m_no_special_symbols      : 1;
+	mutable bool m_read_monitored  : 1;
+	mutable bool m_write_monitored : 1;
+
+	// Used to store any bindings that don't fit in m_bindings.
+	// Usually this is nullptr.
+	typedef std::unordered_map<const Symbol*, Binding,
+				   std::hash<const Symbol*>,
+				   std::equal_to<const Symbol*>,
+				   rho::Allocator<std::pair<const Symbol* const,
+							    Binding>>>
+	    map;
+	map* m_overflow;
+
+        // Declared private to ensure that Frame objects are created
 	// only using 'new':
-	~Frame()
-	{
-	    statusChanged(nullptr);
-	}
+	~Frame();
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -759,21 +892,10 @@ namespace rho {
 	}
 
 	void initializeBinding(Binding* binding, const Symbol* symbol);
+	void initializeBindingIfUnlocked(Binding* binding, const Symbol* symbol);
 
 	// Virtual function of GCNode:
 	void detachReferents() override;
-    private:
-	friend class Environment;
-
-	static monitor s_read_monitor, s_write_monitor;
-
-	unsigned char m_cache_count;  // Number of cached Environments
-			// of which this is the Frame.  Normally
-			// either 0 or 1.
-	bool m_locked                  : 1;
-	bool m_no_special_symbols      : 1;
-	mutable bool m_read_monitored  : 1;
-	mutable bool m_write_monitored : 1;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -807,12 +929,7 @@ namespace rho {
 		s_write_monitor(bdg);
 	}
 
-	// Implementation dependent auxiliary functions:
-	virtual void v_clear() = 0;
-	virtual bool v_erase(const Symbol* symbol) = 0;
-	virtual Binding* v_obtainBinding(const Symbol* symbol) = 0;
-	virtual Binding* v_binding(const Symbol* symbol) = 0;
-	virtual const Binding* v_binding(const Symbol* symbol) const = 0;
+	Binding* v_binding(const Symbol* symbol);
     };
 
     /** @brief Incorporate bindings defined by a PairList into a Frame.

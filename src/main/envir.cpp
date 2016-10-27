@@ -103,7 +103,7 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "rho/ClosureContext.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/ListVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
@@ -195,7 +195,7 @@ int attribute_hidden R_Newhashpjw(const char *s)
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
-    GCStackRoot<Frame> frame(new ListFrame);
+    GCStackRoot<Frame> frame(new Frame);
     return new Environment(enc, frame);
 }
 
@@ -1151,7 +1151,7 @@ SEXP attribute_hidden do_attach(/*const*/ Expression* call, const BuiltInFunctio
     StringVector* name = SEXP_downcast<StringVector*>(name_);
 
     if (isNewList(what_)) {
-	GCStackRoot<Frame> frame(new ListFrame);
+	GCStackRoot<Frame> frame(new Frame);
 	GCStackRoot<Environment> newenv(new Environment(nullptr, frame));
 
 	const ListVector* elements = SEXP_downcast<ListVector*>(what_);

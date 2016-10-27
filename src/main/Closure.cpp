@@ -38,7 +38,7 @@
 #include "rho/Expression.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/PlainContext.hpp"
 #include "rho/ReturnBailout.hpp"
 #include "rho/ReturnException.hpp"
@@ -151,7 +151,7 @@ Environment* Closure::createExecutionEnv() const {
 #ifdef ENABLE_LLVM_JIT
         m_compiled_body ? m_compiled_body->createFrame():
 #endif
-        new ListFrame;
+        new Frame;
     return new Environment(environment(), frame);
 }
 

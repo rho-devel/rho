@@ -44,7 +44,7 @@
 #include "rho/Expression.hpp"
 #include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/LogicalVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
@@ -1351,7 +1351,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	}
 	/* Allocate the environments */
 	for (count = 0; count < env_count; ++count) {
-	    GCStackRoot<Frame> frame(new ListFrame);
+	    GCStackRoot<Frame> frame(new Frame);
 	    SET_VECTOR_ELT(env_table, count, new Environment(nullptr, frame));
 	}
 

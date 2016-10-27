@@ -130,6 +130,52 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 	m_frame->monitorWrite(*this);
 }
 
+Frame::Frame(size_t size, bool check_list_size)
+    : m_descriptor(), m_bindings_size(0), m_used_bindings_size(0),
+      m_cache_count(0), m_locked(false), m_no_special_symbols(true),
+      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr)
+{
+    if (check_list_size && size > kMaxListSize) {
+	size_t overflow_size = size - kMaxListSize;
+	m_overflow = new map(overflow_size);
+	size = kMaxListSize;
+    }
+    if (size > std::numeric_limits<decltype(m_bindings_size)>::max()) {
+	size = std::numeric_limits<decltype(m_bindings_size)>::max();
+    }
+
+    m_bindings = new Binding[size];
+    m_bindings_size = size;
+}
+
+Frame::Frame(const FrameDescriptor* descriptor)
+    : Frame(descriptor->getNumberOfSymbols(), false)
+{
+    m_descriptor = descriptor;
+}
+
+Frame::Frame(const Frame& source)
+    : m_descriptor(source.m_descriptor), m_bindings_size(source.m_bindings_size),
+      m_used_bindings_size(0), m_cache_count(0), m_locked(source.m_locked),
+      m_no_special_symbols(source.m_no_special_symbols),
+      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr)
+{
+    m_bindings = new Binding[m_bindings_size];
+    importBindings(&source);
+    if (source.isLocked())
+	lock(false);
+}
+
+Frame::~Frame() {
+    statusChanged(nullptr);
+    delete[] m_bindings;
+    delete m_overflow;
+}
+
+Frame* Frame::clone() const {
+    return new Frame(*this);
+}
+
 vector<const Symbol*> Frame::symbols(bool include_dotsymbols,
 				     bool sorted) const
 {
@@ -162,6 +208,36 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 #endif
 }
 
+std::size_t Frame::size() const
+{
+  std::size_t result = 0;
+  for (int i = 0; i < m_used_bindings_size; ++i) {
+      if (m_bindings[i].isSet()) {
+	  result++;
+      }
+  }
+  if (m_overflow) {
+    result += m_overflow->size();
+  }
+  return result;
+}
+
+Frame::Binding* Frame::v_binding(const Symbol* symbol)
+{
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].symbol() == symbol && m_bindings[i].isSet())
+	    return &m_bindings[i];
+    }
+    if (m_overflow) {
+	auto location = m_overflow->find(symbol);
+	if (location != m_overflow->end()) {
+	    return &location->second;
+	}
+    }
+    return nullptr;
+}
+
+
 PairList* Frame::asPairList() const
 {
     GCStackRoot<PairList> ans(nullptr);
@@ -174,23 +250,45 @@ PairList* Frame::asPairList() const
 void Frame::clear()
 {
     statusChanged(nullptr);
-    v_clear();
+
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	m_bindings[i].unset();
+    }
+    if (m_overflow) {
+	delete m_overflow;
+	m_overflow = nullptr;
+    }
+
     m_no_special_symbols = true;
 }
 
 void Frame::detachReferents()
 {
-    v_clear();
+    clear();
+    m_descriptor.detach();
 }
 
 bool Frame::erase(const Symbol* symbol)
 {
     if (isLocked())
 	Rf_error(_("cannot remove bindings from a locked frame"));
-    bool ans = v_erase(symbol);
-    if (ans)
-	statusChanged(symbol);
-    return ans;
+
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].symbol() == symbol && m_bindings[i].isSet())
+	{
+	    m_bindings[i].unset();
+	    statusChanged(symbol);
+	    return true;
+	}
+    }
+
+    if (m_overflow) {
+	if (m_overflow->erase(symbol)) {
+	    statusChanged(symbol);
+	    return true;
+	}
+    }
+    return false;
 }
 
 void Frame::enableReadMonitoring(bool on) const
@@ -215,10 +313,7 @@ void Frame::flush(const Symbol* sym)
 void Frame::initializeBinding(Frame::Binding* binding,
 			      const Symbol* symbol)
 {
-    if (isLocked()) {
-	v_erase(symbol);
-	Rf_error(_("cannot add bindings to a locked frame"));
-    }
+    assert(!isLocked());
     binding->initialize(this, symbol);
     statusChanged(symbol);
     if (symbol->isSpecialSymbol()) {
@@ -226,13 +321,67 @@ void Frame::initializeBinding(Frame::Binding* binding,
     }
 }
 
+void Frame::initializeBindingIfUnlocked(Frame::Binding* binding,
+					const Symbol* symbol)
+{
+    if (isLocked()) {
+	Rf_error(_("cannot add bindings to a locked frame"));
+    }
+    initializeBinding(binding, symbol);
+}
+
 Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
 {
-    Binding* ans = v_obtainBinding(symbol);
-    if (!ans->frame()) {
-	initializeBinding(ans, symbol);
+    Frame::Binding* binding = nullptr;
+    if (isLocked()) {
+	// If the frame is locked, we can only return pre-existing bindings.
+	Frame::Binding* binding = Frame::binding(symbol);
+	if (!binding) {
+	    Rf_error(_("cannot add bindings to a locked frame"));
+	}
+	return binding;
     }
-    return ans;
+    
+    if (m_descriptor)
+    {
+	// Use the pressigned location.
+	int location = m_descriptor->getLocation(symbol);
+	if (location != -1) {
+	    binding = m_bindings + location;
+	    m_used_bindings_size = std::max(m_used_bindings_size,
+					    (unsigned char)(location + 1));
+	}
+    } else
+    {
+	// If the binding exists, return that.
+	binding = Frame::binding(symbol);
+	if (binding)
+	    return binding;
+	
+        // Otherwise return the first unused space in the array if any.
+	for (unsigned char i = 0; i < m_bindings_size; ++i) {
+	    if (!m_bindings[i].isSet()) {
+		// Found an unused spot.
+		m_used_bindings_size = std::max(m_used_bindings_size,
+						(unsigned char)(i + 1));
+		binding = &m_bindings[i];
+		break;
+	    }
+	}
+    }
+
+    // If all else fails, go to the overflow.
+    if (!binding) {
+	if (!m_overflow) {
+	    m_overflow = new map;
+	}
+	binding = &((*m_overflow)[symbol]);
+    }
+
+    if (!binding->frame()) {
+	initializeBinding(binding, symbol);
+    }
+    return binding;
 }
 
 void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
@@ -246,17 +395,49 @@ void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
 }
 
 void Frame::importBindings(const Frame* frame, bool quiet) {
-    Frame* to_frame = this;
     frame->visitBindings([=](const Binding* binding) {
-	    to_frame->importBinding(binding, quiet);
+	    importBinding(binding, quiet);
 	});
 }
+
+void Frame::visitBindings(std::function<void(const Binding*)> f) const
+{
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].isSet())
+	    f(&m_bindings[i]);
+    }
+    if (m_overflow) {
+	for (const auto& entry : *m_overflow) {
+	    f(&entry.second);
+	}
+    }
+}
+
+void Frame::modifyBindings(std::function<void(Binding*)> f)
+{
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].isSet())
+	    f(&m_bindings[i]);
+    }
+    if (m_overflow) {
+	for (auto& entry : *m_overflow) {
+	    f(&entry.second);
+	}
+    }
+}
+
+void Frame::lockBindings() {
+    modifyBindings([](Binding* binding) { binding->setLocking(true); });
+}
+
 
 void Frame::visitReferents(const_visitor* v) const
 {
     visitBindings([=](const Binding* binding) {
 	    binding->visitReferents(v);
 	});
+    if (m_descriptor)
+	(*v)(m_descriptor);
 }
 
 namespace rho {

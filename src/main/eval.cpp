@@ -54,7 +54,7 @@
 #include "rho/DottedArgs.hpp"
 #include "rho/ExpressionVector.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/LoopBailout.hpp"
 #include "rho/LoopException.hpp"
 #include "rho/Promise.hpp"
@@ -663,7 +663,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(new ListFrame);
+    GCStackRoot<Frame> newframe(new Frame);
     GCStackRoot<Environment>
 	newrho(new Environment(func->environment(), newframe));
     Frame* tof = newrho->frame();
@@ -1901,7 +1901,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<Frame> frame(new ListFrame);
+	    GCStackRoot<Frame> frame(new Frame);
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist);
@@ -2032,7 +2032,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(new ListFrame);
+    GCStackRoot<Frame> supp_frame(new Frame);
     // Set up special method bindings:
     m->addMethodBindings(supp_frame);
 

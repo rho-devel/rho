@@ -44,7 +44,7 @@ SOURCES_CXX = \
 	GCManager.cpp GCNode.cpp GCNodeAllocator.cpp GCRoot.cpp \
 	GCStackFrameBoundary.cpp GCStackRoot.cpp \
 	IntVector.cpp inspect.cpp \
-	ListFrame.cpp ListVector.cpp Logical.cpp LogicalVector.cpp \
+	ListVector.cpp Logical.cpp LogicalVector.cpp \
 	LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \

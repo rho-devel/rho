@@ -46,8 +46,8 @@
 #undef match
 
 #include "rho/CommandTerminated.hpp"
+#include "rho/Frame.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
 #include "rho/PairList.hpp"
 #include "rho/Symbol.hpp"
 
@@ -172,9 +172,9 @@ namespace {
 		{
 		    Promise* prom = static_cast<Promise*>(value);
 		    cout << "Promise("
-			 << getString(prom->valueGenerator())
+			 << getString(PRCODE(prom))
 			 << ", ";
-		    Environment* env = prom->environment();
+		    SEXP env = PRENV(prom);
 		    if (env == fenv)
 			cout << "fenv)";
 		    else {
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
     Evaluator evalr;
 
     // Set up Environments:
-    GCStackRoot<Frame> ff(new ListFrame);
+    GCStackRoot<Frame> ff(new Frame);
     GCStackRoot<Environment> fenvrt(new Environment(0, ff));
     fenv = fenvrt;
     // Process formals:

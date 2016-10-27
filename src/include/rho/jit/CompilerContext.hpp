@@ -43,12 +43,12 @@ namespace rho {
 
     class Closure;
     class Environment;
+    class FrameDescriptor;
     class Symbol;
 
 namespace JIT {
 
 class Compiler;
-class FrameDescriptor;
 class MCJITMemoryManager;
 struct OptimizationOptions;
 

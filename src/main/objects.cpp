@@ -43,7 +43,7 @@
 #include "rho/ClosureContext.hpp"
 #include "rho/DottedArgs.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ReturnBailout.hpp"
 #include "rho/S3Launcher.hpp"
@@ -235,7 +235,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(new ListFrame);
+    GCStackRoot<Frame> newframe(new Frame);
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
@@ -270,7 +270,7 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
     static GCRoot<ArgMatcher>
 	matcher(ArgMatcher::make(genericsym, objectsym));
     
-    GCStackRoot<Frame> matchframe(new ListFrame);
+    GCStackRoot<Frame> matchframe(new Frame);
     GCStackRoot<Environment>
 	matchenv(new Environment(nullptr, matchframe));
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
@@ -775,7 +775,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(new ListFrame);
+    GCStackRoot<Frame> method_bindings(new Frame);
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;

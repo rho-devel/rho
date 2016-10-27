@@ -29,11 +29,11 @@
 #include "rho/jit/CompilerContext.hpp"
 
 #include "rho/jit/Compiler.hpp"
-#include "rho/jit/FrameDescriptor.hpp"
 #include "rho/jit/OptimizationOptions.hpp"
 #include "rho/BuiltInFunction.hpp"
 #include "rho/Closure.hpp"
 #include "rho/Frame.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/LoopException.hpp"
 
 using llvm::BasicBlock;

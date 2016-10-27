@@ -19,8 +19,8 @@
 
 #include <iostream>
 #include "rho/Environment.hpp"
+#include "rho/Frame.hpp"
 #include "rho/IntVector.hpp"
-#include "rho/ListFrame.hpp"
 #include "rho/PairList.hpp"
 #include "rho/RealVector.hpp"
 #include "rho/Expression.hpp"
@@ -41,7 +41,6 @@ int main() {
 	 << "\nsizeof(Expression): " << sizeof(Expression)
 	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
 	 << "\nsizeof(Frame): " << sizeof(Frame)
-	 << "\nsizeof(ListFrame): " << sizeof(ListFrame)
 	 << "\nsizeof(Environment): " << sizeof(Environment) << '\n';
     return 0;
 }

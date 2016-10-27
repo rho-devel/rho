@@ -47,7 +47,7 @@
 #include "rho/ExpressionVector.hpp"
 #include "rho/ExternalPointer.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/WeakRef.hpp"
 #include "sparsehash/dense_hash_map"
 
@@ -1451,7 +1451,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCStackRoot<Frame> frame(new ListFrame);
+	    GCStackRoot<Frame> frame(new Frame);
 	    GCStackRoot<Environment> env(new Environment(nullptr, frame));
 
 	    /* MUST register before filling in */
