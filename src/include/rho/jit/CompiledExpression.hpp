@@ -26,6 +26,7 @@
 
 #include <memory>
 
+#include "rho/ArgList.hpp"
 #include "rho/GCEdge.hpp"
 #include "rho/GCNode.hpp"
 #include "rho/GCStackRoot.hpp"
@@ -56,7 +57,7 @@ public:
 	return m_function(env);
     }
 
-    Frame* createFrame() const;
+    Frame* createFrame(const ArgList& promised_args) const;
 
     bool hasMatchingFrameLayout(const Environment* env) const;
 

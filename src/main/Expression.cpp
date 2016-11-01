@@ -291,13 +291,12 @@ RObject* Expression::invokeClosure(const Closure* func,
 }
 
 void Expression::matchArgsIntoEnvironment(const Closure* func,
-					      Environment* calling_env,
-					      ArgList* arglist,
-					      Environment* execution_env) const
+					  Environment* calling_env,
+					  ArgList* arglist,
+					  Environment* execution_env) const
 {
     const ArgMatcher* matcher = func->matcher();
-    ClosureContext context(this, calling_env, func, func->environment(),
-			   *arglist);
+    ClosureContext context(this, calling_env, func, execution_env);
     matcher->match(execution_env, arglist);
 }
 
@@ -311,7 +310,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     ArgList arglist(parglist->list(), parglist->status());
     arglist.wrapInPromises(calling_env, this);
 
-    Environment* execution_env = func->createExecutionEnv();
+    Environment* execution_env = func->createExecutionEnv(arglist);
     matchArgsIntoEnvironment(func, calling_env, &arglist, execution_env);
 
     // If this is a method call, merge in supplementary bindings and modify
@@ -324,8 +323,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     RObject* result;
     {
       // Evaluate the function.
-      ClosureContext context(this, calling_env, func,
-                             execution_env, arglist);
+      ClosureContext context(this, calling_env, func, execution_env);
       result = func->execute(execution_env);
     }
 
@@ -403,8 +401,7 @@ void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
 
     // We weren't able to cache a matching, probably because getArgs()
     // contains '...'.  Run the full matching algorithm instead.
-    ClosureContext context(this, calling_env, func, func->environment(),
-			   *arglist);
+    ClosureContext context(this, calling_env, func, execution_env);
     matcher->match(execution_env, arglist);
 }
 

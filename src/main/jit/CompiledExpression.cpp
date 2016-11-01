@@ -149,8 +149,8 @@ void CompiledExpression::visitReferents(const_visitor* v) const {
     GCNode::visitReferents(v);
 }
 
-Frame* CompiledExpression::createFrame() const {
-  return new Frame(m_frame_descriptor);
+Frame* CompiledExpression::createFrame(const ArgList& promised_args) const {
+    return new Frame(m_frame_descriptor, promised_args);
 }
 
 bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const

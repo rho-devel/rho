@@ -661,13 +661,20 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     Environment* callenv = SEXP_downcast<Environment*>(rho);
     const Frame* fromf = callenv->frame();
 
+    /* Find the calling context. */
+    ClosureContext* cptr = ClosureContext::innermost();
+
+    /* The calling environment should either be the environment of the
+       generic, rho, or the environment of the caller of the generic,
+       the current sysparent. */
+    Environment* callerenv = cptr->callEnvironment(); /* or rho? */
+
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(new Frame);
+    GCStackRoot<Frame> newframe(new Frame(cptr->promiseArgs()));
     GCStackRoot<Environment>
 	newrho(new Environment(func->environment(), newframe));
-    Frame* tof = newrho->frame();
-
+    
     // Propagate bindings of the formal arguments of the generic to
     // newrho, but replace defaulted arguments with those appropriate
     // to the method:
@@ -679,7 +686,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	static const Symbol* syms[]
 	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, nullptr};
 	for (const Symbol** symp = syms; *symp; ++symp) {
-	    tof->importBinding(fromf->binding(*symp));
+	    newframe->importBinding(fromf->binding(*symp));
 	}
     }
 
@@ -690,25 +697,16 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	    = {DotGenericSymbol, DotMethodsSymbol, nullptr};
 	for (const Symbol** symp = syms; *symp; ++symp) {
 	    const Frame::Binding* frombdg = callenv->findBinding(*symp);
-	    tof->importBinding(frombdg);
+	    newframe->importBinding(frombdg);
 	}
     }
-
-    /* Find the calling context. */
-    ClosureContext* cptr = ClosureContext::innermost();
-
-    /* The calling environment should either be the environment of the
-       generic, rho, or the environment of the caller of the generic,
-       the current sysparent. */
-    Environment* callerenv = cptr->callEnvironment(); /* or rho? */
 
     // Set up context and perform evaluation.  Note that ans needs to
     // be protected in case the destructor of ClosureContext executes
     // an on.exit function.
     GCStackRoot<> ans;
     {
-	ClosureContext ctxt(cptr->call(), callerenv, func,
-			    newrho, cptr->promiseArgs());
+	ClosureContext ctxt(cptr->call(), callerenv, func, newrho);
 	ans = func->execute(newrho);
     }
     return ans;
@@ -1713,8 +1711,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    Environment* call_env = SEXP_downcast<Environment*>(rho);
 	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	    Environment* working_env = SEXP_downcast<Environment*>(env);
-	    PairList* promargs = SEXP_downcast<PairList*>(args);
-	    ClosureContext cntxt(callx, call_env, func, working_env, promargs);
+	    ClosureContext cntxt(callx, call_env, func, working_env);
 	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		expr = Rf_eval(expr, env);
@@ -1738,8 +1735,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    Environment* call_env = SEXP_downcast<Environment*>(rho);
 	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	    Environment* working_env = SEXP_downcast<Environment*>(env);
-	    PairList* promargs = SEXP_downcast<PairList*>(args);
-	    ClosureContext cntxt(callx, call_env, func, working_env, promargs);
+	    ClosureContext cntxt(callx, call_env, func, working_env);
 	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		for (i = 0 ; i < n ; i++) {
@@ -1901,10 +1897,9 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<Frame> frame(new Frame);
+	    GCStackRoot<Frame> frame(new Frame(arglist));
 	    Environment* working_env = new Environment(callenv, frame);
-	    ClosureContext cntxt(callx, callenv, func,
-				 working_env, arglist);
+	    ClosureContext cntxt(callx, callenv, func, working_env);
 	    const char* generic = func->name();
 	    int um = Rf_usemethod(generic, x, call,
 				  working_env, callenv, R_BaseEnv, ans);

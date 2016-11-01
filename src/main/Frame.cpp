@@ -131,9 +131,14 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 }
 
 Frame::Frame(size_t size, bool check_list_size)
+    : Frame(ArgList(nullptr, ArgList::PROMISED), size, check_list_size)
+{}
+
+Frame::Frame(const ArgList& promised_args, size_t size, bool check_list_size)
     : m_descriptor(), m_bindings_size(0), m_used_bindings_size(0),
       m_cache_count(0), m_locked(false), m_no_special_symbols(true),
-      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr)
+      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
+      m_promised_args(promised_args.list(), promised_args.status())
 {
     if (check_list_size && size > kMaxListSize) {
 	size_t overflow_size = size - kMaxListSize;
@@ -146,10 +151,11 @@ Frame::Frame(size_t size, bool check_list_size)
 
     m_bindings = new Binding[size];
     m_bindings_size = size;
+    m_promised_args_protect = m_promised_args.list();
 }
 
-Frame::Frame(const FrameDescriptor* descriptor)
-    : Frame(descriptor->getNumberOfSymbols(), false)
+Frame::Frame(const FrameDescriptor* descriptor, const ArgList& promised_args)
+    : Frame(promised_args, descriptor->getNumberOfSymbols(), false)
 {
     m_descriptor = descriptor;
 }
@@ -158,12 +164,15 @@ Frame::Frame(const Frame& source)
     : m_descriptor(source.m_descriptor), m_bindings_size(source.m_bindings_size),
       m_used_bindings_size(0), m_cache_count(0), m_locked(source.m_locked),
       m_no_special_symbols(source.m_no_special_symbols),
-      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr)
+      m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
+      m_promised_args(source.m_promised_args.list(),
+		      source.m_promised_args.status())
 {
     m_bindings = new Binding[m_bindings_size];
     importBindings(&source);
     if (source.isLocked())
 	lock(false);
+    m_promised_args_protect = m_promised_args.list();
 }
 
 Frame::~Frame() {
@@ -438,6 +447,8 @@ void Frame::visitReferents(const_visitor* v) const
 	});
     if (m_descriptor)
 	(*v)(m_descriptor);
+    if (m_promised_args_protect)
+	(*v)(m_promised_args_protect);
 }
 
 namespace rho {

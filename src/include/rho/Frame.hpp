@@ -32,6 +32,7 @@
 #define RFRAME_HPP
 
 #include "rho/Allocator.hpp"
+#include "rho/ArgList.hpp"
 #include "rho/FrameDescriptor.hpp"
 #include "rho/GCNode.hpp"
 #include "rho/Provenance.hpp"
@@ -431,8 +432,9 @@ namespace rho {
 	typedef void (*monitor)(const Binding&);
 
 	Frame(size_t size = 16, bool check_list_size = true);
-
-	Frame(const FrameDescriptor* descriptor);
+	Frame(const ArgList& promised_args,
+	      size_t size = 16, bool check_list_size = true);
+	Frame(const FrameDescriptor* descriptor, const ArgList& promised_args);
 
 	/** @brief Copy constructor.
 	 *
@@ -566,6 +568,17 @@ namespace rho {
 	 */
 	void modifyBindings(std::function<void(Binding*)> f);
 
+	/** @brief Call arguments wrapped in Promises.
+	 *
+	 * @return If this frame is the working frame of a closure,
+	 *    then returns the list of arguments to the call, each wrapped in
+	 *    a Promise.  Otherwise the return value is undefined.
+	 */
+	const ArgList& promiseArgs() const
+	{
+	    return m_promised_args;
+	}
+	
 	/** @brief Remove all symbols from the Frame.
 	 *
 	 * Raises an error if the Frame is locked.
@@ -837,7 +850,6 @@ namespace rho {
 	friend class Environment;
 
 	static monitor s_read_monitor, s_write_monitor;
-
 	// The default size of the array to create.
 	static const size_t kDefaultListSize = 16;
 	// The largest array to create.  Since the array must be searched
@@ -851,7 +863,7 @@ namespace rho {
 	// to bindings.
 	Binding* m_bindings;
 	GCEdge<const FrameDescriptor> m_descriptor;
-
+	
 	// The size of the m_bindings array.
 	unsigned char m_bindings_size;
         // The number of currently used elements in the m_bindings array.
@@ -874,6 +886,10 @@ namespace rho {
 	    map;
 	map* m_overflow;
 
+	// The arguments that were passed in to the closure.
+	ArgList m_promised_args;
+	GCEdge<const PairList> m_promised_args_protect;
+	
         // Declared private to ensure that Frame objects are created
 	// only using 'new':
 	~Frame();

@@ -78,23 +78,14 @@ namespace rho {
 	 *          wrapped in a Promise.
 	 */
 	ClosureContext(const Expression* the_call, Environment* call_env,
-		       const FunctionBase* function, Environment* working_env,
-		       const ArgList& promise_args)
+		       const FunctionBase* function, Environment* working_env)
 	    : FunctionContext(the_call, call_env, function),
 	      m_interrupts_suspended(R_interrupts_suspended),
 	      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
-	      m_working_env(working_env),
-	      m_promise_args(promise_args.list(), promise_args.status())
+	      m_working_env(working_env)
 	{
 	    setType(CLOSURE);
 	}
-
-	ClosureContext(const Expression* the_call, Environment* call_env,
-		       const FunctionBase* function, Environment* working_env,
-		       const PairList* promise_args)
-	    : ClosureContext(the_call, call_env, function, working_env,
-			     ArgList(promise_args, ArgList::PROMISED))
-	{}
 
 	~ClosureContext() {
 	    R_RestartStack = m_restartstack;
@@ -150,7 +141,7 @@ namespace rho {
 	 */
 	const ArgList& promiseArgs() const
 	{
-	    return m_promise_args;
+	    return m_working_env->frame()->promiseArgs();
 	}
 
 	/** @brief Designate an on.exit object.
@@ -194,7 +185,6 @@ namespace rho {
 	GCStackRoot<PairList> m_handlerstack;
 	GCStackRoot<PairList> m_restartstack;
 	GCStackRoot<Environment> m_working_env;
-	ArgList m_promise_args;
 	GCStackRoot<> m_onexit;
     };
 }  // namespace rho
