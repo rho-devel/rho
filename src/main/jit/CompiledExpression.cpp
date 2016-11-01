@@ -91,6 +91,14 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 	compiler.CreateRet(return_value);
     }
 
+    // Empty dead-code blocks are ill-formed.  Add terminators.
+    for (llvm::BasicBlock& block : *function) {
+	if (block.empty()) {
+	    compiler.SetInsertPoint(&block);
+	    compiler.CreateUnreachable();
+	}
+    }
+
     // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
 
