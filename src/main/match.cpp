@@ -141,13 +141,13 @@ void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
     unusedArgsError(unused_list);
 }
 
-void ArgMatcher::unusedArgsError(const PairList* unused_list)
+void ArgMatcher::unusedArgsError(const ConsCell* unused_list)
 {
     // Prepare error message:
     GCStackRoot<StringVector>
 	argstrv(static_cast<StringVector*>(
 		    Rf_deparse1line(
-			const_cast<PairList*>(unused_list), FALSE)));
+			const_cast<ConsCell*>(unused_list), FALSE)));
     // '+ 4' is to remove 'list' from 'list(badTag1, ...' :
     const char* errdetails = (*argstrv)[0]->c_str() + 4;
     Rf_error(_("unused argument(s) %s"), errdetails);

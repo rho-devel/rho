@@ -617,8 +617,10 @@ SEXP R_forceAndCall(SEXP e, int n, SEXP rho)
 	arglist.wrapInPromises(env);
 
 	// Force the promises.
-	const ConsCell* cell = arglist.list();
-	for (int i = 0; i < n && cell; i++, cell = cell->tail()) {
+	int i = 0;
+	auto args = arglist.getArgs();
+	for (auto cell = args.begin(); i < n && cell != args.end(); ++cell, ++i)
+	{
 	    SEXP p = cell->car();
 	    if (TYPEOF(p) == PROMSXP)
 		Rf_eval(p, rho);
@@ -1790,9 +1792,8 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    const PairList* argspl = (cptr ? cptr->promiseArgs()
-			      : SEXP_downcast<PairList*>(args));
-    ArgList arglist(argspl, ArgList::PROMISED);
+    ClosureContext* args_cptr = cptr;
+
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1800,6 +1801,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (cptr == nullptr)
 	Rf_error(_("'Recall' called from outside a closure"));
+    const ArgList& arglist = args_cptr->promiseArgs();
 
     /* If the function has been recorded in the context, use it
        otherwise search for it by name or evaluate the expression
@@ -1815,7 +1817,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Rf_error(_("'Recall' called from outside a closure"));
     Closure* closure = SEXP_downcast<Closure*>(s);
     ans = cptr->call()->invokeClosure(closure, cptr->callEnvironment(),
-                                      &arglist);
+                                      const_cast<ArgList*>(&arglist));
     UNPROTECT(1);
     return ans;
 }
@@ -1875,9 +1877,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 
 	    /* This means S4 dispatch */
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(callx, func,
-				      const_cast<PairList*>(arglist.list()),
-				      callenv, TRUE);
+		= R_possible_dispatch(callx, func, arglist, callenv);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
@@ -1904,10 +1904,9 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 	    GCStackRoot<Frame> frame(new ListFrame);
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func,
-				 working_env, arglist.list());
+				 working_env, arglist);
 	    const char* generic = func->name();
 	    int um = Rf_usemethod(generic, x, call,
-				  const_cast<PairList*>(arglist.list()),
 				  working_env, callenv, R_BaseEnv, ans);
 	    if (um)
 		return 1;
@@ -1958,9 +1957,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	    arglist.stripTags();
 	if (R_has_methods(opfun)) {
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(callx, opfun,
-				      const_cast<PairList*>(arglist.list()),
-				      callenv, FALSE);
+		= R_possible_dispatch(callx, opfun, arglist, callenv);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;

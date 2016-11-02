@@ -362,7 +362,7 @@ namespace rho {
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in supplied_list.
 	static void unusedArgsError(const SuppliedList& supplied_list);
-	static void unusedArgsError(const PairList* supplied_list);
+	static void unusedArgsError(const ConsCell* supplied_list);
 
 	static PairList* makePairList(
 	    std::initializer_list<const char*> arg_names);
@@ -370,7 +370,7 @@ namespace rho {
 
     class ArgMatchInfo {
     public:
-	ArgMatchInfo(int num_formals, const PairList* args);
+	ArgMatchInfo(int num_formals, const ArgList& args);
 
 	bool arglistTagsMatch(const PairList* args) const;
 

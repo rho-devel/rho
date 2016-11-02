@@ -31,6 +31,7 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
+#include "rho/ArgList.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/PairList.hpp"
 
@@ -74,6 +75,10 @@ namespace rho {
 
 	Expression(RObject* function,
 		   std::initializer_list<RObject*> unnamed_args);
+
+	Expression(RObject* function,
+		   const ArgList& arglist)
+	    : Expression(function, const_cast<PairList*>(arglist.list())) {}
 
 	/** @brief Copy constructor.
 	 *
