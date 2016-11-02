@@ -618,15 +618,16 @@ SEXP R_forceAndCall(SEXP e, int n, SEXP rho)
 
 	// Force the promises.
 	int i = 0;
-	for (const ConsCell& cell : arglist.getArgs()) {
-	    SEXP p = cell.car();
+	auto args = arglist.getArgs();
+	for (auto cell = args.begin(); i < n && cell != args.end(); ++cell, ++i)
+	{
+	    SEXP p = cell->car();
 	    if (TYPEOF(p) == PROMSXP)
 		Rf_eval(p, rho);
 	    else if (p == R_MissingArg)
 		Rf_errorcall(e, _("argument %d is empty"), i + 1);
 	    else
 		Rf_error("something weird happened");
-	    i++;
 	}
 	result = call->invokeClosure(closure, env, &arglist);
     }
