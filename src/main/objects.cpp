@@ -265,20 +265,14 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
 static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
 				  ClosureContext* cptr,
 				  StringVector** generic, GCStackRoot<>* obj) {
-    static Symbol* genericsym(Symbol::obtain("generic"));
-    static Symbol* objectsym(Symbol::obtain("object"));
-    static GCRoot<ArgMatcher>
-	matcher(ArgMatcher::make(genericsym, objectsym));
-    
-    GCStackRoot<Frame> matchframe(new Frame);
-    GCStackRoot<Environment>
-	matchenv(new Environment(nullptr, matchframe));
+    static GCRoot<ArgMatcher> matcher(new ArgMatcher({ "generic", "object" }));
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    matcher->match(matchenv, &arglist);
+    RObject* genval;
+    RObject* objval;
+    matcher->match(&arglist, { &genval, &objval });
 
     // "generic":
     {
-	RObject* genval = matchenv->frame()->binding(genericsym)->forcedValue();
 	if (genval == Symbol::missingArgument())
 	    Rf_errorcall(call, _("there must be a 'generic' argument"));
 	if (genval->sexptype() == STRSXP)
@@ -292,7 +286,6 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
 
     // "object":
     {
-	RObject* objval = matchenv->frame()->binding(objectsym)->forcedValue();
 	if (objval != Symbol::missingArgument()) {
 	    *obj = Evaluator::evaluate(objval, argsenv);
 	}
