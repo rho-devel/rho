@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
     Evaluator evalr;
 
     // Set up Environments:
-    GCStackRoot<Frame> ff(new Frame);
+    GCStackRoot<Frame> ff(Frame::normalFrame());
     GCStackRoot<Environment> fenvrt(new Environment(0, ff));
     fenv = fenvrt;
     // Process formals:

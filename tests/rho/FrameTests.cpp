@@ -172,7 +172,7 @@ TEST_P(FrameTest, DotSymbols) {
 // TODO(kmillar): add more tests.
 
 static Frame* MakeBasicFrame() {
-    return new Frame();
+    return Frame::normalFrame();
 }
 INSTANTIATE_TEST_CASE_P(SimpleFrameTest,
 			FrameTest,
@@ -182,7 +182,8 @@ static Frame* MakeEmptyCompiledFrame() {
   GCStackRoot<FrameDescriptor> descriptor(
       new FrameDescriptor(std::initializer_list<const Symbol*>{},
 			  std::initializer_list<const Symbol*>{}));
-  return new Frame(descriptor, ArgList(nullptr, ArgList::PROMISED));
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(EmptyCompiledFrameTest,
 			FrameTest,
@@ -196,7 +197,8 @@ static Frame* MakeOneItemCompiledFrame1() {
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_1") },
           std::initializer_list<const Symbol*>{}));
-  return new Frame(descriptor, ArgList(nullptr, ArgList::PROMISED));
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest1,
 			FrameTest,
@@ -208,7 +210,8 @@ static Frame* MakeOneItemCompiledFrame2() {
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_2") },
           std::initializer_list<const Symbol*>{}));
-  return new Frame(descriptor, ArgList(nullptr, ArgList::PROMISED));
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
 			FrameTest,
@@ -220,7 +223,8 @@ static Frame* MakeOneItemCompiledFrame3() {
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_3") },
           std::initializer_list<const Symbol*>{}));
-    return new Frame(descriptor, ArgList(nullptr, ArgList::PROMISED));
+    return Frame::closureWorkingFrame(descriptor,
+                                      ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest3,
 			FrameTest,

@@ -1451,7 +1451,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCStackRoot<Frame> frame(new Frame);
+	    GCStackRoot<Frame> frame(Frame::normalFrame());
 	    GCStackRoot<Environment> env(new Environment(nullptr, frame));
 
 	    /* MUST register before filling in */

@@ -195,7 +195,7 @@ int attribute_hidden R_Newhashpjw(const char *s)
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
-    GCStackRoot<Frame> frame(new Frame);
+    GCStackRoot<Frame> frame(Frame::normalFrame());
     return new Environment(enc, frame);
 }
 
@@ -1151,7 +1151,7 @@ SEXP attribute_hidden do_attach(/*const*/ Expression* call, const BuiltInFunctio
     StringVector* name = SEXP_downcast<StringVector*>(name_);
 
     if (isNewList(what_)) {
-	GCStackRoot<Frame> frame(new Frame);
+        GCStackRoot<Frame> frame(Frame::normalFrame());
 	GCStackRoot<Environment> newenv(new Environment(nullptr, frame));
 
 	const ListVector* elements = SEXP_downcast<ListVector*>(what_);

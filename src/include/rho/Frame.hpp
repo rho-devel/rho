@@ -431,12 +431,27 @@ namespace rho {
 	 */
 	typedef void (*monitor)(const Binding&);
 
+     private:
 	Frame(size_t size = 16, bool check_list_size = true);
 	Frame(const ArgList& promised_args,
 	      size_t size = 16, bool check_list_size = true);
 	Frame(const FrameDescriptor* descriptor, const ArgList& promised_args);
+     public:
+        static Frame* closureWorkingFrame(const FrameDescriptor* descriptor,
+                                          const ArgList& promised_args) {
+          return new Frame(descriptor, promised_args);
+        }
+        static Frame* closureWorkingFrame(const ArgList& promised_args,
+                                          size_t size = 16,
+                                          bool check_list_size = true) {
+          return new Frame(promised_args, size, check_list_size);
+        }
+        static Frame* normalFrame(size_t size = 16,
+                                  bool check_list_size = true) {
+          return new Frame(size, check_list_size);
+        }
 
-	/** @brief Copy constructor.
+       /** @brief Copy constructor.
 	 *
 	 * The copy will define the same mapping from Symbols to R
 	 * objects as \a source; neither the R objects, nor of course

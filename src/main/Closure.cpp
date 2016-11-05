@@ -151,7 +151,7 @@ Environment* Closure::createExecutionEnv(const ArgList& arglist) const {
 #ifdef ENABLE_LLVM_JIT
         m_compiled_body ? m_compiled_body->createFrame(arglist):
 #endif
-        new Frame(arglist);
+        Frame::closureWorkingFrame(arglist);
     return new Environment(environment(), frame);
 }
 

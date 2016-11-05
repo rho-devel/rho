@@ -235,12 +235,14 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(new Frame);
+    GCStackRoot<Frame> method_bindings;
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
-	newframe = generic_wk_env->frame()->clone();
-	clos->stripFormals(newframe);
+	method_bindings = generic_wk_env->frame()->clone();
+	clos->stripFormals(method_bindings);
+    } else {
+      method_bindings = Frame::normalFrame(6);
     }
 
     GCStackRoot<S3Launcher>
@@ -249,12 +251,12 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
 	return 0;
     if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
 	SET_RSTEP(m->function(), 1);
-    m->addMethodBindings(newframe);
+    m->addMethodBindings(method_bindings);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(m->symbol());
     *ans = applyMethod(newcall, m->function(),
 		       const_cast<ArgList*>(&cptr->promiseArgs()),
-		       env, newframe);
+		       env, method_bindings);
     return 1;
 }
 
@@ -768,7 +770,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(new Frame);
+    GCStackRoot<Frame> method_bindings(Frame::normalFrame(6));
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;

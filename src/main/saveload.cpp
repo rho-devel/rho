@@ -1351,7 +1351,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	}
 	/* Allocate the environments */
 	for (count = 0; count < env_count; ++count) {
-	    GCStackRoot<Frame> frame(new Frame);
+            GCStackRoot<Frame> frame(Frame::normalFrame());
 	    SET_VECTOR_ELT(env_table, count, new Environment(nullptr, frame));
 	}
 

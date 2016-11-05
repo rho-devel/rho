@@ -114,7 +114,7 @@ Environment* Executor::newTestEnv()
     // Every evaluation is done in a freshly created environment, so that
     // side effects don't propogate.
     // Only the base environment is visible from this environment.
-    GCStackRoot<Frame> frame(new Frame());
+    GCStackRoot<Frame> frame(Frame::normalFrame());
     return new Environment(Environment::base(), frame);
 }
 

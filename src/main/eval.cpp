@@ -671,7 +671,8 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(new Frame(cptr->promiseArgs()));
+    GCStackRoot<Frame> newframe(
+        Frame::closureWorkingFrame(cptr->promiseArgs()));
     GCStackRoot<Environment>
 	newrho(new Environment(func->environment(), newframe));
     
@@ -1897,7 +1898,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<Frame> frame(new Frame(arglist));
+	    GCStackRoot<Frame> frame(Frame::closureWorkingFrame(arglist));
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func, working_env);
 	    const char* generic = func->name();
@@ -2027,7 +2028,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(new Frame);
+    GCStackRoot<Frame> supp_frame(Frame::normalFrame(6));
     // Set up special method bindings:
     m->addMethodBindings(supp_frame);
 

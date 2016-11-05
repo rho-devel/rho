@@ -150,7 +150,7 @@ void CompiledExpression::visitReferents(const_visitor* v) const {
 }
 
 Frame* CompiledExpression::createFrame(const ArgList& promised_args) const {
-    return new Frame(m_frame_descriptor, promised_args);
+    return Frame::closureWorkingFrame(m_frame_descriptor, promised_args);
 }
 
 bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const
