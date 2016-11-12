@@ -1202,7 +1202,7 @@ attribute_hidden
 void R_InitSrcRefState(void)
 {
     if (busy) {
-        SrcRefState *prev = static_cast<SrcRefState*>(malloc(sizeof(SrcRefState)));
+        SrcRefState *prev = new SrcRefState;
     	PutSrcRefState(prev);
 	ParseState.prevState = prev;
 	ParseState.data = NULL;
@@ -1255,7 +1255,7 @@ void R_FinalizeSrcRefState(void)
     if (ParseState.prevState) {
         SrcRefState *prev = ParseState.prevState;
     	UseSrcRefState(prev);
-    	free(prev);
+    	delete prev;
     } else
         busy = FALSE;
 }
