@@ -32,16 +32,16 @@
 #define RPROMISE_H
 
 #include "rho/RObject.hpp"
-// Just to pick up define of BYTECODE:
-#include "rho/Evaluator.hpp"
-#include "rho/Environment.hpp"
-#include "rho/Expression.hpp"
+#include "rho/RObject.hpp"
 #include "rho/Symbol.hpp"
 
 extern "C"
 void SET_PRVALUE(SEXP x, SEXP v);
 
 namespace rho {
+    class Environment;
+    class Promise;
+
     /** @brief Mechanism for deferred evaluation.
      *
      * This class is used to handle function arguments within R's lazy
@@ -68,20 +68,36 @@ namespace rho {
 	 *          value of the Promise is immediately set to be \a
 	 *          valgen itself.
 	 */
-	PromiseData(const RObject* valgen, Environment* env)
-	    : m_under_evaluation(false), m_interrupted(false)
-	{
-	    m_value = Symbol::unboundValue();
-	    m_valgen = valgen;
-	    m_environment = env;
-	}
-      
+	PromiseData(const RObject* valgen, Environment* env);
+
+        PromiseData(Promise* value);
+
+        PromiseData();
+        ~PromiseData();
+
+        //* @brief Move constructor.
+        PromiseData(PromiseData&&);
+        // @brief Move assignment operator.
+        PromiseData& operator=(PromiseData&& other);
+
+        // PromiseData objects cannot be copied, only moved.  This helps
+        // enforce that the promise is only evaluated once.
+        PromiseData(const PromiseData&) = delete;
+        PromiseData& operator=(const PromiseData&) = delete;
+
 	static PromiseData createEvaluatedPromise(const RObject* expression,
 						  RObject* evaluated_value) {
 	    PromiseData result(expression, nullptr);
 	    result.m_value = evaluated_value;
 	    return result;
 	}
+
+        /** @brief Convert this object into a full Promise object.
+         *
+         * Moves this object's state into a heap-allocated Promise object and
+         * return that object.
+         */
+        Promise* asPromise();
 
 	/** @brief Force the Promise.
 	 *
@@ -98,6 +114,11 @@ namespace rho {
 	 */
 	RObject* evaluate();
 
+	//* @brief Has this promise been evaluated yet?
+	bool evaluated() const {
+          return getThis()->m_environment == nullptr;
+	}
+
 	/** @brief Not for general use.
 	 *
 	 * This function is used by ::isMissingArgument().  It
@@ -111,11 +132,21 @@ namespace rho {
 	void visitReferents(GCNode::const_visitor* v) const;
 	void detachReferents();
     private:
+        // A PromiseData object has two possible representations.  It can either
+        // store the data itself, or it might hold a pointer to a Promise
+        // object.  The former representation is more efficient and should be
+        // prefered where possible.  Once a promise has been evaluated, the
+        // PromiseData object may switch back to the first representation.
+
+        // To save space, m_value is overloaded.  In the first representation,
+        // it stores the evaluated value of the promise.  In the second, it
+        // stores the pointer to the Promise.
 	GCEdge<> m_value;
 	GCEdge<const RObject> m_valgen;
 	GCEdge<Environment> m_environment;
 	mutable bool m_under_evaluation;
 	mutable bool m_interrupted;
+        bool m_is_pointer_to_promise;
 
 	/** @brief Set value of the Promise.
 	 *
@@ -126,6 +157,9 @@ namespace rho {
 	 * @param val Value to be associated with the Promise.
 	 */
 	void setValue(RObject* val);
+
+        PromiseData* getThis();
+        const PromiseData* getThis() const;
 
 	friend class Promise;
 	friend int ::PRSEEN(SEXP x);
@@ -161,8 +195,9 @@ namespace rho {
 	    : RObject(PROMSXP),
 	      m_data(valgen, env) {}
 
-	Promise(const PromiseData& value)
-	    : RObject(PROMSXP), m_data(value)
+	Promise(PromiseData&& value)
+	    : RObject(PROMSXP),
+              m_data(std::forward<PromiseData>(value))
 	{}
 
 	static Promise* createEvaluatedPromise(const RObject* expression,
@@ -216,7 +251,7 @@ namespace rho {
 
 	//* @brief Has this promise been evaluated yet?
 	bool evaluated() const {
-	    return m_data.m_environment == nullptr;
+	    return m_data.evaluated();
 	}
 
 	const char* typeName() const override;
@@ -233,6 +268,8 @@ namespace rho {
 	    RObject::detachReferents();
 	}
     private:
+	friend class PromiseData;
+
 	PromiseData m_data;
 
 	friend RObject* ::PRCODE(RObject*);
@@ -267,7 +304,7 @@ namespace rho {
 	    return m_data.m_valgen;
 	}
 
-    	/** @brief Set value of the Promise.
+	/** @brief Set value of the Promise.
 	 *
 	 * Once the value is set to something other than
 	 * Symbol::unboundValue(), the environment pointer is set
@@ -303,6 +340,17 @@ namespace rho {
 	    object = static_cast<Promise*>(object)->force();
 	return object;
     }
+
+    inline PromiseData* PromiseData::getThis() {
+        return m_is_pointer_to_promise
+            ? &static_cast<Promise*>(m_value.get())->m_data : this;
+    }
+
+    inline const PromiseData* PromiseData::getThis() const {
+        return m_is_pointer_to_promise
+            ? &static_cast<const Promise*>(m_value.get())->m_data : this;
+    }
+
 }  // namespace rho
 
 extern "C" {
@@ -338,21 +386,6 @@ extern "C" {
 	return const_cast<RObject*>(prom.valueGenerator());
     }
 
-    /** @brief Access the environment of a rho::Promise.
-     *
-     * @param x Pointer to a rho::Promise (checked).
-     *
-     * @return Pointer to the environment in which the rho::Promise
-     *         is to be  evaluated.  Set to a null pointer when the
-     *         rho::Promise has been evaluated.
-     */
-    inline SEXP PRENV(SEXP x)
-    {
-	using namespace rho;
-	const Promise& prom = *SEXP_downcast<Promise*>(x);
-	return prom.environment();
-    }
-
     /** @brief Access the value of a rho::Promise.
      *
      * @param x Pointer to a rho::Promise (checked).
@@ -379,18 +412,6 @@ extern "C" {
      * @todo Replace this with a method call to evaluate the promise.
      */
     void SET_PRVALUE(SEXP x, SEXP v);
-
-    // PREXPR() behaves similarly to valueGenerator(), but has special
-    // (but apparently undocumented) behaviour if m_valgen (PRCODE) is
-    // bytecode.  My guess is that if the bytecode evaluates to a
-    // symbol, PREXPR returns that symbol, otherwise R_NilValue.
-#ifdef BYTECODE
-    SEXP R_PromiseExpr(SEXP);
-#define PREXPR(e) R_PromiseExpr(e)
-#else
-#define PREXPR(e) PRCODE(e)
-#endif
-
 }
 
 #endif /* RPROMISE_H */

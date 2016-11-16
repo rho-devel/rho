@@ -33,6 +33,7 @@
 #include "rho/DottedArgs.hpp"
 #include "rho/Environment.hpp"
 #include "rho/Evaluator.hpp"
+#include "rho/Expression.hpp"
 #include "rho/Promise.hpp"
 #include "rho/errors.hpp"
 

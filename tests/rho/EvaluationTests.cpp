@@ -27,6 +27,7 @@
 #include "rho/Closure.hpp"
 #include "rho/CommandTerminated.hpp"
 #include "rho/Evaluator.hpp"
+#include "rho/Expression.hpp"
 #include "rho/Frame.hpp"
 #include "rho/ListVector.hpp"
 #include "Defn.h"

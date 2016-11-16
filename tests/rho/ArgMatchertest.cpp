@@ -46,6 +46,8 @@
 #undef match
 
 #include "rho/CommandTerminated.hpp"
+#include "rho/Environment.hpp"
+#include "rho/Evaluator.hpp"
 #include "rho/Frame.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/PairList.hpp"

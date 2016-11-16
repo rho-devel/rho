@@ -33,6 +33,7 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "rho/Bailout.hpp"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/PlainContext.hpp"
 #include "rho/StackChecker.hpp"
@@ -49,6 +50,31 @@ namespace rho {
     }
 }
 
+PromiseData::PromiseData(const RObject* valgen, Environment* env)
+    : m_under_evaluation(false), m_interrupted(false),
+      m_is_pointer_to_promise(false)
+{
+    m_value = Symbol::unboundValue();
+    m_valgen = valgen;
+    m_environment = env;
+}
+
+PromiseData::PromiseData(Promise* value)
+    : m_is_pointer_to_promise(true)
+{
+    m_value = value;
+}
+
+PromiseData::~PromiseData() = default;
+PromiseData::PromiseData(PromiseData&&) = default;
+PromiseData& PromiseData::operator=(PromiseData&& other) = default;
+
+Promise* PromiseData::asPromise() {
+    Promise* promise = new Promise(std::move(*this));
+    *this = PromiseData(promise);
+    return promise;
+}
+
 void PromiseData::detachReferents()
 {
     m_value.detach();
@@ -58,6 +84,9 @@ void PromiseData::detachReferents()
 
 RObject* PromiseData::evaluate()
 {
+    if (m_is_pointer_to_promise) {
+        return getThis()->evaluate();
+    }
     if (m_value == Symbol::unboundValue()) {
 	// Force promise:
 	if (m_interrupted) {
@@ -88,6 +117,10 @@ RObject* PromiseData::evaluate()
 
 bool PromiseData::isMissingSymbol() const
 {
+    if (m_is_pointer_to_promise) {
+        return getThis()->isMissingSymbol();
+    }
+
     bool ans = false;
     /* This is wrong but I'm not clear why - arr
     if (m_value == Symbol::missingArgument())
@@ -169,4 +202,9 @@ int PRSEEN(SEXP x) {
     return prom->m_data.m_under_evaluation
 	|| prom->m_data.m_interrupted
 	|| prom->m_data.m_environment == R_NilValue;
+}
+
+SEXP PRENV(SEXP x) {
+    const Promise& prom = *SEXP_downcast<Promise*>(x);
+    return prom.environment();
 }
