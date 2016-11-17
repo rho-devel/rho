@@ -671,11 +671,10 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(
-        Frame::closureWorkingFrame(cptr->promiseArgs()));
-    GCStackRoot<Environment>
-	newrho(new Environment(func->environment(), newframe));
-    
+    const ArgList& args = cptr->promiseArgs();
+    GCStackRoot<Environment> newrho(func->createExecutionEnv(args));
+    Frame* newframe = newrho->frame();
+
     // Propagate bindings of the formal arguments of the generic to
     // newrho, but replace defaulted arguments with those appropriate
     // to the method:
@@ -1890,14 +1889,14 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, SEXP args,
 	       refactored so the contexts around the Rf_usemethod() calls
 	       in this file can be removed.
 
-	       Using rho for current and calling environment can be
+	       Using callenv for current and calling environment can be
 	       confusing for things like sys.parent() calls captured
 	       in promises (Gabor G had an example of this).  Also,
 	       since the context is established without a SETJMP using
 	       an R-accessible environment allows a segfault to be
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
-	       new environment rho1 is created and used.  LT */
+	       new environment working_env is created and used.  LT */
 	    GCStackRoot<Frame> frame(Frame::closureWorkingFrame(arglist));
 	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func, working_env);
