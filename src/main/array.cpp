@@ -345,16 +345,8 @@ SEXP attribute_hidden do_length(/*const*/ Expression* call, const BuiltInFunctio
     return ScalarInteger(length(x));
 }
 
-R_len_t attribute_hidden dispatch_length(RObject* x, Expression* call,
-                                         Environment* rho) {
-    R_xlen_t len = dispatch_xlength(x, call, rho);
-#ifdef LONG_VECTOR_SUPPORT
-    if (len > INT_MAX) return R_BadLongVector(x, __FILE__, __LINE__);
-#endif
-    return (R_len_t) len;
-}
-
-R_xlen_t attribute_hidden dispatch_xlength(RObject* x, Expression* /*call*/,
+R_xlen_t attribute_hidden dispatch_xlength(RObject* x,
+                                           const Expression* /*call*/,
                                            Environment* rho)
 {
     static BuiltInFunction* length_op
@@ -959,7 +951,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x = CAR(args), y = CADR(args);
 
     if ((IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
-	&& R_has_methods(op)) {
+	&& R_has_methods(SEXP_downcast<BuiltInFunction*>(op))) {
 	SEXP s;
 	/* Remove argument names to ensure positional matching */
 	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);

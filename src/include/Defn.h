@@ -772,21 +772,32 @@ void Rf_InitFunctionHashing(void);
 void Rf_InitGlobalEnv(void);
 Rboolean R_current_trace_state(void);
 Rboolean R_current_debug_state(void);
-Rboolean R_has_methods(SEXP);
 void R_InitialData(void);
 
 #ifdef __cplusplus
 }  // extern "C"
-std::pair<bool, SEXP>
-R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
-		    const rho::ArgList&, rho::Environment* env);
-int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
-		      rho::MissingArgHandling, int);
+bool R_has_methods(const rho::BuiltInFunction* func);
 
-R_xlen_t dispatch_xlength(rho::RObject* object, rho::Expression* call,
+std::pair<bool, SEXP>
+R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
+		    const rho::ArgList&, rho::Environment* env);
+std::pair<bool, SEXP>
+Rf_DispatchOrEval(const rho::Expression* call, const rho::BuiltInFunction* op,
+                  rho::ArgList* args, rho::Environment* env,
+                  rho::MissingArgHandling dropmissing);
+std::pair<bool, SEXP>
+Rf_DispatchGroup(const char *group, const rho::Expression* call,
+                 const rho::BuiltInFunction* op,
+                 rho::ArgList&& args, rho::Environment* env);
+std::pair<bool, SEXP> Rf_usemethod(const char* generic,
+                                   const rho::RObject* object,
+                                   const rho::Expression* call,
+                                   rho::Environment* env,
+                                   rho::Environment* callenv,
+                                   rho::Environment* defenv);
+R_xlen_t dispatch_xlength(rho::RObject* object,
+                          const rho::Expression* call,
                           rho::Environment* rho);
-R_len_t dispatch_length(rho::RObject* object, rho::Expression* call,
-                        rho::Environment* rho);
 extern "C" {
 #endif
 
@@ -873,7 +884,6 @@ void Rf_unbindVar(SEXP, SEXP);
 void unmarkPhase(void);
 #endif
 SEXP R_LookupMethod(SEXP, SEXP, SEXP, SEXP);
-int Rf_usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
 SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP, Rboolean);
 
 /* ../main/bind.c */

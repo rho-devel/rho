@@ -190,17 +190,18 @@ int Rf_isBasicClass(const char *ss) {
 }
 
 
-int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
-		 SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
+std::pair<bool, SEXP> Rf_usemethod(const char* generic,
+                                   const rho::RObject* object,
+                                   const rho::Expression* call,
+                                   rho::Environment* env,
+                                   rho::Environment* callenv,
+                                   rho::Environment* defenv)
 {
-    Environment* env = SEXP_downcast<Environment*>(rho);
-    Environment* callenv = SEXP_downcast<Environment*>(callrho);
-    Environment* defenv = SEXP_downcast<Environment*>(defrho);
     assert(generic != nullptr);
 
     // Get the ClosureContext which UseMethod was called from.
     ClosureContext* cptr = ClosureContext::innermost();
-    if (!cptr || cptr->workingEnvironment() != rho)
+    if (!cptr || cptr->workingEnvironment() != env)
 	Rf_error(_("'UseMethod' used in an inappropriate fashion"));
 
     // Determine the functor:
@@ -246,18 +247,18 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call,
     }
 
     GCStackRoot<S3Launcher>
-	m(S3Launcher::create(obj, generic, "", callenv, defenv, true));
+	m(S3Launcher::create(object, generic, "", callenv, defenv, true));
     if (!m)
-	return 0;
+        return std::make_pair(false, nullptr);
     if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
 	SET_RSTEP(m->function(), 1);
     m->addMethodBindings(method_bindings);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(m->symbol());
-    *ans = applyMethod(newcall, m->function(),
-		       const_cast<ArgList*>(&cptr->promiseArgs()),
-		       env, method_bindings);
-    return 1;
+    SEXP result =  applyMethod(newcall, m->function(),
+                               const_cast<ArgList*>(&cptr->promiseArgs()),
+                               env, method_bindings);
+    return std::make_pair(true, result);
 }
 
 /* While UseMethod is a primitive, it is documented as using normal argument
@@ -358,9 +359,10 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Try invoking method:
-    SEXP ans;
-    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call,
-		     env, callenv, defenv, &ans) != 1) {
+    auto dispatched = Rf_usemethod(Rf_translateChar((*generic)[0]), obj,
+                                   SEXP_downcast<Expression*>(call),
+                                   argsenv, callenv, defenv);
+    if (!dispatched.first) {
 	// Failed, so prepare error message:
 	std::string cl;
 	GCStackRoot<StringVector>
@@ -382,8 +384,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Prepare return value:
     {
-	GCStackRoot<> ansrt(ans);
-	ReturnBailout* rbo = new ReturnBailout(argsenv, ans);
+	ReturnBailout* rbo = new ReturnBailout(argsenv, dispatched.second);
 	Evaluator::Context* callctxt
 	    = Evaluator::Context::innermost()->nextOut();
 	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
@@ -1311,18 +1312,18 @@ SEXP do_set_prim_method(SEXP op, const char *code_string, SEXP fundef,
     return value;
 }
 
-static SEXP get_primitive_methods(SEXP op, SEXP rho)
+static SEXP get_primitive_methods(const BuiltInFunction* op, SEXP rho)
 {
     SEXP f, e, val;
     int nprotect = 0;
-    f = PROTECT(Rf_ScalarString(Rf_mkChar(PRIMNAME(op)))); nprotect++;
+    f = PROTECT(Rf_ScalarString(Rf_mkChar(op->name()))); nprotect++;
     PROTECT(e = Rf_allocVector(LANGSXP, 2)); nprotect++;
     SETCAR(e, Rf_install("getGeneric"));
     val = CDR(e); SETCAR(val, f);
     val = Rf_eval(e, rho);
     /* a rough sanity check that this looks like a generic function */
     if(TYPEOF(val) != CLOSXP || !IS_S4_OBJECT(val))
-	Rf_error(_("object returned as generic function \"%s\" does not appear to be one"), PRIMNAME(op));
+        Rf_error(_("object returned as generic function \"%s\" does not appear to be one"), op->name());
     UNPROTECT(nprotect);
     return CLOENV(val);
 }
@@ -1372,16 +1373,16 @@ static SEXP get_this_generic(RObject* const* args, int num_args)
    only whether methods are currently being dispatched and, if so,
    whether methods are currently defined for this op. */
 attribute_hidden
-Rboolean R_has_methods(SEXP op)
+bool R_has_methods(const BuiltInFunction* op)
 {
     R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr(); int offset;
     if(NOT_METHODS_DISPATCH_PTR(ptr))
 	return(FALSE);
-    if(!op || TYPEOF(op) == CLOSXP) /* except for primitives, just test for the package */
+    if(!op || op->sexptype() == CLOSXP) /* except for primitives, just test for the package */
 	return(TRUE);
     if(!allowPrimitiveMethods) /* all primitives turned off by a call to R_set_prim */
 	return FALSE;
-    offset = PRIMOFFSET(op);
+    offset = op->offset();
     if(offset > curMaxOffset || prim_methods[offset] == NO_METHODS
        || prim_methods[offset] == SUPPRESSED)
 	return(FALSE);
@@ -1415,7 +1416,7 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
    already been evaluated.
  */
 std::pair<bool, SEXP> attribute_hidden
-R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
+R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
 		    const rho::ArgList& arglist, rho::Environment* callenv)
 {
     SEXP value;
@@ -1432,16 +1433,19 @@ R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
 	// method table.	The entries will be preserved via
 	// R_preserveobject, so later we can just grab mlist from
 	// prim_mlist 
-	do_set_prim_method(op, "suppressed", R_NilValue, mlist);
+        do_set_prim_method(const_cast<BuiltInFunction*>(op), "suppressed",
+                           R_NilValue, mlist);
 	mlist = get_primitive_methods(op, callenv);
-	do_set_prim_method(op, "set", R_NilValue, mlist);
+	do_set_prim_method(const_cast<BuiltInFunction*>(op), "set",
+                           R_NilValue, mlist);
 	current = prim_methods[offset]; // as revised by do_set_prim_method
     }
     mlist = prim_mlist[offset];
     if(mlist && !Rf_isNull(mlist)
        && quick_method_check_ptr) {
 	value = (*quick_method_check_ptr)(const_cast<PairList*>(arglist.list()),
-					  mlist, op);
+					  mlist,
+                                          const_cast<BuiltInFunction*>(op));
 	if(Rf_isPrimitive(value))
 	    return std::pair<bool, SEXP>(false, nullptr);
 	if(Rf_isFunction(value)) {
@@ -1460,7 +1464,7 @@ R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
     if(!fundef || TYPEOF(fundef) != CLOSXP)
 	Rf_error(_("primitive function \"%s\" has been set for methods"
 		" but no generic function supplied"),
-	      PRIMNAME(op));
+                 op->name());
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
@@ -1604,13 +1608,14 @@ SEXP Rf_asS4(SEXP s, Rboolean flag, int complete)
 }
 
 S3Launcher*
-S3Launcher::create(RObject* object, std::string generic, std::string group,
+S3Launcher::create(const RObject* object, std::string generic, std::string group,
 		   Environment* call_env, Environment* table_env,
 		   bool allow_default)
 {
     GCStackRoot<S3Launcher>
 	ans(new S3Launcher(generic, group, call_env, table_env));
-    ans->m_classes = static_cast<StringVector*>(R_data_class2(object));
+    ans->m_classes = static_cast<StringVector*>(R_data_class2(
+        const_cast<RObject*>(object)));
 
     // Look for pukka method.  Need to interleave looking for generic
     // and group methods, e.g. if class(x) is c("foo", "bar") then

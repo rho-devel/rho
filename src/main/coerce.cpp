@@ -2020,8 +2020,8 @@ SEXP attribute_hidden do_isna(/*const*/ Expression* call, const BuiltInFunction*
 }
 
 // Check if x has missing values; the anyNA.default() method
-static Rboolean anyNA(SEXP call, SEXP op, SEXP x, bool recursive,
-		      SEXP env)
+static Rboolean anyNA(const Expression* call, const BuiltInFunction* op,
+                      SEXP x, bool recursive, Environment* env)
 /* Original code:
    Copyright 2012 Google Inc. All Rights Reserved.
    Author: Tim Hesterberg <rocket@google.com>
@@ -2081,39 +2081,42 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP x, bool recursive,
     // The next two cases are only used if recursive = TRUE
     case LISTSXP:
     {
-	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_list2(x, Rf_ScalarLogical(recursive)));
-	call2 = PROTECT(Rf_shallow_duplicate(call));
+        ArgList args2({ x, Rf_ScalarLogical(recursive) },
+                      ArgList::EVALUATED);
+	Expression* call2 = new Expression(call->car(), args2);
 	for (i = 0; i < n; i++, x = CDR(x)) {
 	    SETCADR(call2, CAR(x));
-	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
-				   MissingArgHandling::Keep, 1)
-		 && Rf_asLogical(ans))
-		|| anyNA(call2, op, CAR(x), recursive, env)) {
-		UNPROTECT(2);
-		return TRUE;
+            args2.set(i, CAR(x));
+            auto dispatched = Rf_DispatchOrEval(call2, op, &args2, env,
+                                                MissingArgHandling::Keep);
+            if (dispatched.first) {
+                if (Rf_asLogical(dispatched.second)) {
+                    return TRUE;
+                }
+            } else if (anyNA(call2, op, CAR(x), recursive, env)) {
+                    return TRUE;
 	    }
 	}
-	UNPROTECT(2);
 	break;
     }
     case VECSXP:
     {
-	SEXP call2, args2, ans;
-	args2 = PROTECT(Rf_list2(x, Rf_ScalarLogical(recursive)));
-	call2 = PROTECT(Rf_shallow_duplicate(call));
+        ArgList args2({ x, Rf_ScalarLogical(recursive) },
+                      ArgList::EVALUATED);
+	Expression* call2 = new Expression(call->car(), args2);
 	for (i = 0; i < n; i++) {
-	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
-	    if ((Rf_DispatchOrEval(call2, op, args2, env, &ans,
-				   MissingArgHandling::Keep, 1)
-		 && Rf_asLogical(ans))
-		|| anyNA(call2, op, VECTOR_ELT(x, i), recursive, env))
-	    {
-		UNPROTECT(2);
-		return TRUE;
+            args2.set(0, VECTOR_ELT(x, i));
+            SETCADR(call2, VECTOR_ELT(x, i));
+            auto dispatched = Rf_DispatchOrEval(call2, op, &args2, env,
+                                                MissingArgHandling::Keep);
+            if (dispatched.first) {
+                if (Rf_asLogical(dispatched.second)) {
+                    return TRUE;
+                }
+            } else if (anyNA(call2, op, VECTOR_ELT(x, i), recursive, env)) {
+                    return TRUE;
 	    }
 	}
-	UNPROTECT(2);
 	break;
     }
 
@@ -2126,32 +2129,39 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP x, bool recursive,
 
 SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans;
-    if (length(args) < 1 || length(args) > 2)
+    const Expression* callx = SEXP_downcast<const Expression*>(call);
+    const BuiltInFunction* func = SEXP_downcast<const BuiltInFunction*>(op);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    if (arglist.size() < 1 || arglist.size() > 2)
 	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
 
-    if (Rf_DispatchOrEval(call, op, args, rho, &ans,
-			  MissingArgHandling::Keep, 1))
-	return ans;
+    auto dispatched = Rf_DispatchOrEval(callx,
+                                        SEXP_downcast<const BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(rho),
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
 
-    if(length(args) == 1) {
-	SEXP_downcast<Expression*>(call)->check1arg("x");
+    if (arglist.size() == 1) {
+	callx->check1arg("x");
 	bool recursive = false;
- 	ans = Rf_ScalarLogical(anyNA(call, op, CAR(args), recursive, rho));
+ 	return Rf_ScalarLogical(anyNA(callx, func, arglist.get(0), recursive,
+                                      env));
    } else {
 	/* This is a primitive, so we manage argument matching ourselves.
 	   But this takes a little time.
 	 */
 	static GCRoot<ArgMatcher> matcher
 	    = new ArgMatcher({ "x", "recursive" });
-	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
 	SEXP x, recursive_;
 	matcher->match(&arglist, { &x, &recursive_ });
 	bool recursive = recursive_ == R_MissingArg
 	    ? false : Rf_asLogical(recursive_);
-	ans = Rf_ScalarLogical(anyNA(call, op, x, recursive, rho));
+	return Rf_ScalarLogical(anyNA(callx, func, x, recursive, env));
     }
-    return ans;
 }
 
 

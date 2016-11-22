@@ -1387,14 +1387,16 @@ static void check_slot_assign(SEXP obj, SEXP input, SEXP value, SEXP env)
 SEXP attribute_hidden do_slotgets(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /*  attr@nlist  <-  value  */
-
-    SEXP obj, input, nlist, ans, value;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    SEXP input;
     
-    nlist = CADR(args);
+    SEXP nlist = arglist.get(1);
     if (isSymbol(nlist))
 	input = Rf_ScalarString(PRINTNAME(nlist));
-    else if(isString(nlist) )
-	input = Rf_ScalarString(STRING_ELT(nlist, 0));
+    else if(isString(nlist)) {
+        input = length(nlist) == 1
+            ? nlist : Rf_ScalarString(STRING_ELT(nlist, 0));
+    }
     else {
 	error(_("invalid type '%s' for slot name"),
 	      type2char(TYPEOF(nlist)));
@@ -1403,14 +1405,19 @@ SEXP attribute_hidden do_slotgets(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(input);
     
     /* replace the second argument with a string */
-    SETCADR(args, input);
+    arglist.set(1, input);
     UNPROTECT(1); // 'input' is now protected
     
-    if(DispatchOrEval(call, op, args, env, &ans, MissingArgHandling::Keep, 0))
-	return(ans);
-    
-    PROTECT(obj = CAR(ans));
-    PROTECT(value = CADDR(ans));
+    auto disptached = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
+                                        SEXP_downcast<BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(env),
+                                        MissingArgHandling::Keep);
+    if (disptached.first)
+        return disptached.second;
+
+    RObject* obj = arglist.get(0);
+    RObject* value = arglist.get(2);
     check_slot_assign(obj, input, value, env);
     value = R_do_slot_assign(obj, input, value);
     UNPROTECT(2);

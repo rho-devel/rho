@@ -799,16 +799,16 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans;
-
     /* Attempt method dispatch. */
-
-    if (DispatchOrEval(call, op, args, env, &ans, MissingArgHandling::Drop, 1))
-	return(ans);
-    PROTECT(ans);
-    SEXP res = do_c_dflt(call, op, ans, env);
-    UNPROTECT(1);
-    return res;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = DispatchOrEval(SEXP_downcast<const Expression*>(call),
+                                     SEXP_downcast<const BuiltInFunction*>(op),
+                                     &arglist,
+                                     SEXP_downcast<Environment*>(env),
+                                     MissingArgHandling::Drop);
+    if (dispatched.first)
+      return dispatched.second;
+    return do_c_dflt(call, op, const_cast<PairList*>(arglist.list()), env);
 }
 
 SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)

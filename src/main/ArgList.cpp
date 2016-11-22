@@ -180,6 +180,16 @@ RObject* ArgList::get(int position) const {
     return cell ? cell->car() : nullptr;
 }
 
+void ArgList::set(int position, RObject* value) {
+    ConsCell* cell = m_list.get();
+    for (int i = 0; i < position && cell != nullptr; i++) {
+	cell = cell->tail();
+    }
+    if (cell) {
+        cell->setCar(value);
+    }
+}
+
 const RObject* ArgList::getTag(int position) const {
     ConsCell* cell = m_list.get();
     for (int i = 0; i < position && cell != nullptr; i++) {

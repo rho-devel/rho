@@ -304,6 +304,10 @@ namespace rho {
          */
         RObject* get(int position) const;
 
+        /** @brief Set the argument at the specified position.
+         */
+        void set(int position, RObject* value);
+
         /** @brief Return the tag at the specified position.
          */
         const RObject* getTag(int position) const;
@@ -337,11 +341,11 @@ namespace rho {
 	 * @return pointer, possibly null, to the list of arguments in
 	 * their current state.
 	 */
-	const PairList* list() const
+      const PairList* list() const
 	{
 	    return m_list;
 	}
-
+      
 	const PairList* tags() const
 	{
 	    return m_list;
@@ -474,22 +478,28 @@ namespace rho {
 			    const Expression* call = nullptr);
 
     private:
-	const PairList* const m_orig_list;  // Pointer to the argument
-	  // list supplied to the constructor. 
-	GCStackRoot<PairList> m_list;  // The current argument list. The
-	  // class code should never modify the PairList supplied as
-	  // an argument to the constructor, even though the
-	  // constructor casts const away when it initialises this
-	  // data member.
-	GCStackRoot<> m_first_arg;  // If the first argument needed to
-	  // be evaluated in a call to firstArg(), this is a pointer
-	  // to the resulting value, and m_first_arg_env points to the
-	  // Environment in which evaluation took place.  Both
-	  // pointers are reset to null once the first argument has
-	  // been processed in a subsequent call to evaluate() or
-	  // wrapInPromises(). 
-	GCStackRoot<Environment> m_first_arg_env;
-	Status m_status;
+        // Pointer to the argument list supplied to the constructor.
+        const PairList* const m_orig_list;
+
+        // The current argument list. The class code should never modify the
+        // PairList supplied as an argument to the constructor, even though the
+        // constructor casts const away when it initialises this data member.
+        GCStackRoot<PairList> m_list;
+
+        // If the first argument needed to be evaluated in a call to
+        // firstArg(), this is a pointer to the resulting value, and
+        // m_first_arg_env points to the Environment in which evaluation
+        // took place.  Both pointers are reset to null once the first
+        // argument has been processed in a subsequent call to evaluate() or
+        // converted to a promise.
+        GCStackRoot<> m_first_arg;
+        GCStackRoot<Environment> m_first_arg_env;
+
+        // wrapInPromises() defers actual promise creation, storing the promise
+        // environment here.  Promise objects are created only when needed.
+        GCStackRoot<Environment> m_promise_env;
+
+        Status m_status;
 
 	RObject* evaluateSingleArgument(const RObject* arg,
 					Environment* env,

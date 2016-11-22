@@ -290,29 +290,22 @@ BuiltInFunction::RealInternalDispatch(const Expression* call,
     PairList* pargs = PairList::make(num_args, evaluated_args);
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);
-    RObject* result = nullptr;
-    bool dispatched;
 
     switch(m_dispatch_type) {
     case DispatchType::INTERNAL:
-	dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
-				       const_cast<BuiltInFunction*>(this),
-				       const_cast<PairList*>(arglist.list()),
-				       env, &result, MissingArgHandling::Drop,
-				       1);
-	break;
+      return Rf_DispatchOrEval(call, this, &arglist, env,
+                               MissingArgHandling::Drop);
     case DispatchType::GROUP_MATH:
     case DispatchType::GROUP_OPS:
     case DispatchType::GROUP_COMPLEX:
     case DispatchType::GROUP_SUMMARY:
-	dispatched = Rf_DispatchGroup(GetInternalGroupDispatchName(),
-				      const_cast<Expression*>(call),
-				      const_cast<BuiltInFunction*>(this),
-				      const_cast<PairList*>(arglist.list()),
-				      env, &result);
+	return Rf_DispatchGroup(GetInternalGroupDispatchName(),
+                                call, this,
+                                std::move(arglist),
+                                env);
 	break;
     default:
 	Rf_error("Internal error: Unexepcted group dispatch type");
     }
-    return std::make_pair(dispatched, result);
+    return std::make_pair(false, nullptr);
 }

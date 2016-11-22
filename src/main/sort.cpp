@@ -1416,20 +1416,20 @@ SEXP attribute_hidden do_rank(/*const*/ Expression* call, const BuiltInFunction*
 
 SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP fn, ans;
-
-    if(DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 1))
-	return ans;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
+                                        SEXP_downcast<BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(rho),
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
     /* otherwise dispatch the default method */
-    PROTECT(fn = findFun(install("xtfrm.default"), rho));
+    RObject* fn = findFun(install("xtfrm.default"), rho);
 
     Closure* closure = SEXP_downcast<Closure*>(fn);
     Expression* callx = SEXP_downcast<Expression*>(call);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
 
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    ans = callx->invokeClosure(closure, callenv, &arglist);
-    UNPROTECT(1);
-    return ans;
-
+    return callx->invokeClosure(closure, callenv, &arglist);
 }
