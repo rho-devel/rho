@@ -42,8 +42,6 @@
 using namespace rho;
 
 #define NIL -1
-#define ARGUSED(x) LEVELS(x)
-#define SET_ARGUSED(x,v) SETLEVELS(x,v)
 
 /* interval at which to check interrupts */
 #define NINTERRUPT 1000000
@@ -1244,7 +1242,7 @@ static SEXP StripUnmatched(SEXP s)
 {
     if (s == R_NilValue) return s;
 
-    if (CAR(s) == R_MissingArg && !ARGUSED(s) ) {
+    if (CAR(s) == R_MissingArg) {
 	return StripUnmatched(CDR(s));
     }
     else if (CAR(s) == R_DotsSymbol ) {
@@ -1272,16 +1270,12 @@ static SEXP ExpandDots(SEXP s, int expdots)
 	if (expdots) {
 	    r = CAR(s);
 	    while (CDR(r) != R_NilValue ) {
-		SET_ARGUSED(r, 1);
 		r = CDR(r);
 	    }
-	    SET_ARGUSED(r, 1);
 	    SETCDR(r, ExpandDots(CDR(s), expdots));
 	    return CAR(s);
 	}
     }
-    else
-	SET_ARGUSED(s, 0);
     SETCDR(s, ExpandDots(CDR(s), expdots));
     return s;
 }

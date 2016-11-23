@@ -551,16 +551,13 @@ namespace rho {
 	// formerly hosted in the 'gp' field of sxpinfo_struct.
 	unsigned m_missing     : 2;
 	
-	// Similarly the following three obsolescent fields squeezed
+	// Similarly the following obsolescent fields squeezed
 	// in here are used only in connection with objects of class
 	// PairList (and only rarely then), so they would more
 	// logically be placed in that class (and formerly were within
 	// rho).
-	// 'Scratchpad' field used in handling argument lists,
-	// formerly hosted in the 'gp' field of sxpinfo_struct.
-	unsigned m_argused    : 2;
 
-	// Used when the contents of an Environment are represented as
+        // Used when the contents of an Environment are represented as
 	// a PairList, for example during serialization and
 	// deserialization, and formerly hosted in the gp field of
 	// sxpinfo_struct.
@@ -598,7 +595,7 @@ namespace rho {
 
 inline rho::RObject::RObject(SEXPTYPE stype)
     : m_type(stype & s_sexptype_mask), m_named(0),
-      m_memory_traced(false), m_missing(0), m_argused(0),
+      m_memory_traced(false), m_missing(0),
       m_active_binding(false), m_binding_locked(false)
 {}
 
