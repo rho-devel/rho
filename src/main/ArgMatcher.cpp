@@ -267,6 +267,47 @@ private:
     std::initializer_list<RObject**> m_matched_values;
 };
 
+class PairListMatchCallback : public ArgMatcher::MatchCallback
+{
+ public:
+  PairListMatchCallback(int size) : m_values(size) {}
+
+    void matchedArgument(const FormalData& formal,
+			 int arg_index, RObject* value) override {
+        add(formal, value);
+    }
+
+    void defaultValue(const FormalData& formal) override {
+        add(formal, R_MissingArg);
+    }
+
+    void dottedArgs(const FormalData& formal,
+		    ArgIndices arg_indices,
+		    const ArgList* all_args) override {
+	if (arg_indices.empty()) {
+            add(formal, R_MissingArg);
+	} else {
+            add(formal, makeDottedArgs(arg_indices, all_args));
+        }
+    }
+
+    void add(const FormalData& formal, RObject* value) {
+        m_values[formal.index] = std::make_pair(formal.symbol, value);
+    }
+
+    PairList* get() {
+        PairList* list = nullptr;
+        while (!m_values.empty()) {
+            RObject* value = m_values.back().second;
+            list = new PairList(value, list, m_values.back().first);
+            m_values.pop_back();
+        }
+        return list;
+    }
+ private:
+    std::vector<std::pair<const Symbol*, RObject*>> m_values;
+};
+
 class RecordArgMatchInfoCallback : public ArgMatcher::MatchCallback
 {
 public:
@@ -374,6 +415,14 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied,
 {
     ClosureMatchCallback callback(target_env);
     matchWithCache(supplied, &callback, matching);
+}
+
+PairList* ArgMatcher::matchToPairList(const ArgList* supplied,
+                                      const Expression* expression) const
+{
+    PairListMatchCallback callback(numFormals());
+    match(supplied, &callback);
+    return callback.get();
 }
 
 void ArgMatcher::matchByPosition(const ArgList* supplied,

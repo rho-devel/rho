@@ -33,6 +33,7 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
+#include "rho/ArgMatcher.hpp"
 #include "rho/ClosureContext.hpp"
 #include "rho/DottedArgs.hpp"
 #include "rho/Promise.hpp"
@@ -970,7 +971,7 @@ SEXP matchE(SEXP itable, SEXP ix, int nmatch, SEXP env)
 }
 
 /* used from other code, not here: */
-SEXP match(SEXP itable, SEXP ix, int nmatch)
+SEXP Rf_match(SEXP itable, SEXP ix, int nmatch)
 {
     return match5(itable, ix, nmatch, nullptr, R_BaseEnv);
 }
@@ -1394,7 +1395,10 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
     }
-    rlist = matchArgs(formals, actuals, call);
+    ArgList actuals_list(SEXP_downcast<PairList*>(actuals), ArgList::RAW);
+    ArgMatcher* matcher = new ArgMatcher(SEXP_downcast<PairList*>(formals));
+    rlist = matcher->matchToPairList(&actuals_list,
+                                     SEXP_downcast<Expression*>(call));
 
     /* Attach the argument names as tags */
 

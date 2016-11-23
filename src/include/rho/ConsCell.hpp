@@ -538,7 +538,10 @@ namespace rho {
 	// allocated only using 'new':
 	virtual ~PairList() HOT_FUNCTION;
 
-    private:
+        PairList(SEXPTYPE type, RObject* cr, PairList* tail, const RObject* tag)
+            : ConsCell(type, cr, tail, tag) {}
+
+     private:
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor
 	// proper.  The second parameter is simply to provide a

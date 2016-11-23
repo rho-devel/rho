@@ -511,22 +511,17 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
-    const PairList* formals = genclos->matcher()->formalArgs();
-    GCStackRoot<PairList> actuals;
+    const ArgMatcher* matcher = genclos->matcher();
+    GCStackRoot<PairList> actuals(
+        matcher->matchToPairList(&cptr->promiseArgs(),
+                     SEXP_downcast<Expression*>(call)));
     {
-	{
-	    RObject* ac
-		= Rf_matchArgs(const_cast<PairList*>(formals),
-			       const_cast<PairList*>(cptr->promiseArgs().list()),
-			       call);
-	    actuals = static_cast<PairList*>(ac);
-	}
-
 	bool dots = false;
 	{
 	    const PairList* s;
 	    PairList* t;
-	    for (s = formals, t = actuals; s; s = s->tail(), t = t->tail()) {
+	    for (s = matcher->formalArgs(), t = actuals;
+                 s; s = s->tail(), t = t->tail()) {
 		t->setTag(s->tag());
 		if (t->tag() == DotsSymbol)
 		    dots = true;

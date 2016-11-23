@@ -196,6 +196,9 @@ namespace rho {
 	void match(const ArgList* supplied,
 		   std::initializer_list<RObject**> matched_values) const;
 
+        PairList* matchToPairList(const ArgList* supplied,
+                                  const Expression* call) const;
+
 	/** @brief Number of formal arguments.
 	 *
 	 * @return the number of formal arguments. '<tt>...</tt>' is

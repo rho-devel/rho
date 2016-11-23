@@ -612,7 +612,6 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 # define mat2indsub		Rf_mat2indsub
 # define matchArg		Rf_matchArg
 # define matchArgExact		Rf_matchArgExact
-# define matchArgs		Rf_matchArgs
 # define matchPar		Rf_matchPar
 # define Mbrtowc		Rf_mbrtowc
 # define mbtoucs		Rf_mbtoucs
@@ -798,6 +797,7 @@ std::pair<bool, SEXP> Rf_usemethod(const char* generic,
 R_xlen_t dispatch_xlength(rho::RObject* object,
                           const rho::Expression* call,
                           rho::Environment* rho);
+
 extern "C" {
 #endif
 
@@ -822,7 +822,6 @@ SEXP Rf_makeSubscript(SEXP, SEXP, R_xlen_t *, SEXP);
 SEXP Rf_markKnown(const char *, SEXP);
 SEXP Rf_mat2indsub(SEXP, SEXP, SEXP);
 SEXP Rf_matchArgExact(SEXP, SEXP*);
-SEXP Rf_matchArgs(SEXP, SEXP, SEXP);
 SEXP Rf_mkCLOSXP(SEXP, SEXP, SEXP);
 SEXP Rf_mkFalse(void);
 SEXP Rf_mkPROMISE(SEXP, SEXP);
