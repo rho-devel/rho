@@ -605,7 +605,7 @@ done:
     return a;
 }
 
-/* We are careful to use evalListKeepMissing here (inside
+/* We are careful to use MissingArgHandling::Keep here (inside
    DispatchOrEval) to avoid dropping missing arguments so e.g.
    rep(1:3,,8) matches length.out */
 

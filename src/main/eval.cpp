@@ -1593,22 +1593,6 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-/* Evaluate each expression in "el" in the environment "rho".  This is
-   a naturally recursive algorithm, but we use the iterative form below
-   because it is does not cause growth of the pointer protection stack,
-   and because it is a little more efficient.
-*/
-
-/* used in arithmetic.c, seq.c */
-SEXP attribute_hidden Rf_evalListKeepMissing(SEXP el, SEXP rho)
-{
-    ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
-    arglist.evaluate(SEXP_downcast<Environment*>(rho),
-		     MissingArgHandling::Keep);
-    return const_cast<PairList*>(arglist.list());
-}
-
-
 static SEXP VectorToPairListNamed(SEXP x)
 {
     SEXP xptr, xnew, xnames;

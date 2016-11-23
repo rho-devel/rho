@@ -566,7 +566,6 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
 # define ErrorMessage		Rf_ErrorMessage
-# define evalListKeepMissing	Rf_evalListKeepMissing
 # define factorsConform		Rf_factorsConform
 # define findcontext		Rf_findcontext
 # define findVar1		Rf_findVar1
@@ -755,7 +754,6 @@ SEXP dispatch_subset2(SEXP, R_xlen_t, SEXP, SEXP);
 SEXP duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated3(SEXP, SEXP, Rboolean);
-SEXP Rf_evalListKeepMissing(SEXP, SEXP);
 int Rf_factorsConform(SEXP, SEXP);
 SEXP Rf_findVar1(SEXP, SEXP, SEXPTYPE, int);
 void Rf_FrameClassFix(SEXP);
