@@ -334,10 +334,7 @@ namespace rho {
 	    }
 
 	    assert(m_function);
-            return m_function(const_cast<Expression*>(call),
-                              const_cast<BuiltInFunction*>(this),
-                              const_cast<PairList*>(args->list()),
-                              env);
+            return callBuiltInWithCApi(m_function, call, this, *args, env);
         }
 
         RObject* invoke(const Expression* call, Environment* env,
@@ -394,6 +391,11 @@ namespace rho {
 	    return m_first_arg_name;
 	}
 
+        static SEXP callBuiltInWithCApi(CCODE builtin,
+                                        const Expression* call,
+                                        const FunctionBase* op,
+                                        const ArgList& args,
+                                        Environment* env);
     private:
 	// The type of internal dispatch (if any) that the function does..
 	enum class DispatchType {

@@ -246,6 +246,17 @@ const char* BuiltInFunction::typeName() const
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
 
+RObject* BuiltInFunction::callBuiltInWithCApi(CCODE builtin,
+                                              const Expression* call,
+                                              const FunctionBase* op,
+                                              const ArgList& args,
+                                              Environment* env) {
+  return (*builtin)(const_cast<Expression*>(call),
+                    const_cast<FunctionBase*>(op),
+                    const_cast<PairList*>(args.list()),
+                    env);
+}
+
 std::pair<bool, RObject*>
 BuiltInFunction::InternalDispatch(const Expression* call,
 				  Environment* env,

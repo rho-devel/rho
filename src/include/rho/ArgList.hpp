@@ -160,6 +160,8 @@ namespace rho {
 	ArgList(std::initializer_list<RObject*> args, Status status)
 	    : ArgList(PairList::make(args.size(), args.begin()), status) { }
 
+        explicit ArgList(const ArgList&);
+
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
 	 * Except as regards the handling of ... and missing values
@@ -541,10 +543,7 @@ namespace rho {
 	void wrapInForcedPromises(Environment* env,
 				  const ArgList* evaluated_values);
 
-	// Not implemented.  Declared private to suppress
-	// compiler-generated versions:
-	ArgList(const ArgList&);
-	ArgList& operator=(const ArgList&);
+        ArgList& operator=(const ArgList&) = delete;
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
 	static const Symbol* coerceTag(const RObject* tag);

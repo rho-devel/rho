@@ -1031,8 +1031,8 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
     }
 
     if (isComplex(args[0]))
-	return complex_math2(call2, const_cast<BuiltInFunction*>(op),
-			     const_cast<PairList*>(arglist2.list()), env);
+      return BuiltInFunction::callBuiltInWithCApi(complex_math2,
+                                                  call2, op, arglist2, env);
     else
 	return math2(args[0], tmp, logbase, call);
 }
@@ -1049,10 +1049,13 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
    contain missing arguments.  */
 SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    Environment* envx = SEXP_downcast<Environment*>(env);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    arglist.evaluate(SEXP_downcast<Environment*>(env),
-		     MissingArgHandling::Keep);
-    return do_log_builtin(call, op, const_cast<PairList*>(arglist.list()), env);
+    arglist.evaluate(envx, MissingArgHandling::Keep);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_log_builtin,
+        SEXP_downcast<Expression*>(call),
+        SEXP_downcast<BuiltInFunction*>(op), arglist, envx);
 }
 
 SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)

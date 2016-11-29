@@ -138,7 +138,7 @@ Frame::Frame(const ArgList& promised_args, size_t size, bool check_list_size)
     : m_descriptor(), m_bindings_size(0), m_used_bindings_size(0),
       m_cache_count(0), m_locked(false), m_no_special_symbols(true),
       m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
-      m_promised_args(promised_args.list(), promised_args.status())
+      m_promised_args(promised_args)
 {
     if (check_list_size && size > kMaxListSize) {
 	size_t overflow_size = size - kMaxListSize;
@@ -165,8 +165,7 @@ Frame::Frame(const Frame& source)
       m_used_bindings_size(0), m_cache_count(0), m_locked(source.m_locked),
       m_no_special_symbols(source.m_no_special_symbols),
       m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
-      m_promised_args(source.m_promised_args.list(),
-		      source.m_promised_args.status())
+      m_promised_args(source.m_promised_args)
 {
     m_bindings = new Binding[m_bindings_size];
     importBindings(&source);

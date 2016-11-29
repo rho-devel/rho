@@ -373,11 +373,11 @@ static int ExtractExactArg(SEXP args)
 /* The "[" subset operator. */
 SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
-                                       SEXP_downcast<BuiltInFunction*>(op),
-                                       &arglist,
-                                       SEXP_downcast<Environment*>(rho),
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
                                        MissingArgHandling::Keep);
     if (dispatched.first) {
         RObject* ans = dispatched.second;
@@ -388,7 +388,8 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* Method dispatch has failed, we now */
     /* run the generic internal code. */
-    return do_subset_dflt(call, op, const_cast<PairList*>(arglist.list()), rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subset_dflt, expression, function, arglist, envx);
 }
 
 static R_INLINE R_xlen_t scalarIndex(SEXP s)
@@ -600,11 +601,11 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
-                                        SEXP_downcast<BuiltInFunction*>(op),
-                                        &arglist,
-                                        SEXP_downcast<Environment*>(rho),
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
                                         MissingArgHandling::Keep);
     if (dispatched.first) {
         SEXP ans = dispatched.second;
@@ -613,7 +614,8 @@ SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return(ans);
     }
 
-    return do_subset2_dflt(call, op, const_cast<PairList*>(arglist.list()), rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subset2_dflt, expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,

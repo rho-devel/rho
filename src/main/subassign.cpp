@@ -860,16 +860,17 @@ static int SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 
 SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
-                                        SEXP_downcast<BuiltInFunction*>(op),
-                                        &arglist,
-                                        SEXP_downcast<Environment*>(rho),
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
                                         MissingArgHandling::Keep);
     if (dispatched.first)
         return dispatched.second;
-    return do_subassign_dflt(call, op, const_cast<PairList*>(arglist.list()),
-                             rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subassign_dflt,
+        expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
@@ -998,17 +999,18 @@ static SEXP DeleteOneVectorListItem(SEXP x, R_xlen_t which)
  * args[3] = replacement values */
 SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
-                                        SEXP_downcast<BuiltInFunction*>(op),
-                                        &arglist,
-                                        SEXP_downcast<Environment*>(rho),
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
                                         MissingArgHandling::Keep);
     if (dispatched.first)
         return dispatched.second;
 
-    return do_subassign2_dflt(call, op, const_cast<PairList*>(arglist.list()),
-                              rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subassign2_dflt,
+        expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden

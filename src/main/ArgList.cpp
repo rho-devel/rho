@@ -42,6 +42,9 @@ using namespace rho;
 
 // Implementation of ArgList::coerceTag() is in coerce.cpp
 
+ArgList::ArgList(const ArgList& other)
+    : ArgList(other.list(), other.status()) {}
+
 PairList* ArgList::append(RObject* value, const RObject* tag,
 			  PairList* last_element) {
     PairList* object = PairList::cons(value, nullptr, tag);

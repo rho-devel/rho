@@ -399,20 +399,20 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
    them if they are not already there
 */
 
-static SEXP fixcall(SEXP call, SEXP args)
+static SEXP fixcall(Expression* call, const ArgList& args)
 {
-    SEXP s, t;
+    SEXP s;
     int found;
 
-    for(t = args; t != R_NilValue; t = CDR(t)) {
-	if(TAG(t) != R_NilValue) {
+    for(auto& arg : args.getArgs()) {
+        if(arg.tag() != R_NilValue) {
 		found = 0;
 		for(s = call; CDR(s) != R_NilValue; s = CDR(s))
-		    if(TAG(CDR(s)) == TAG(t)) found = 1;
+                    if(TAG(CDR(s)) == arg.tag()) found = 1;
 		if( !found ) {
 			SETCDR(s, Rf_allocList(1));
-			SET_TAG(CDR(s), TAG(t));
-			SETCAR(CDR(s), Rf_duplicate(CAR(t)));
+			SET_TAG(CDR(s), const_cast<RObject*>(arg.tag()));
+			SETCAR(CDR(s), Rf_duplicate(arg.car()));
 		}
 	}
     }
@@ -760,8 +760,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
 	    newarglist.merge(newargs);
 	    newcall
-		= static_cast<Expression*>(fixcall(newcall,
-						   const_cast<PairList*>(newarglist.list())));
+		= static_cast<Expression*>(fixcall(newcall, newarglist));
 	}
     }
 
