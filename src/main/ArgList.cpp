@@ -181,13 +181,10 @@ RObject* ArgList::get(int position) const {
 }
 
 void ArgList::set(int position, RObject* value) {
-    ConsCell* cell = m_list.get();
-    for (int i = 0; i < position && cell != nullptr; i++) {
-	cell = cell->tail();
-    }
-    if (cell) {
-        cell->setCar(value);
-    }
+    assert(position < size());
+    auto cell = mutable_list()->begin();
+    std::advance(cell, position);
+    cell->setCar(value);
 }
 
 const RObject* ArgList::getTag(int position) const {
@@ -196,6 +193,13 @@ const RObject* ArgList::getTag(int position) const {
 	cell = cell->tail();
     }
     return cell ? cell->tag() : nullptr;
+}
+
+void ArgList::setTag(int position, const Symbol* tag) {
+    assert(position < size());
+    auto cell = mutable_list()->begin();
+    std::advance(cell, position);
+    cell->setTag(tag);
 }
 
 bool ArgList::has3Dots() const {
@@ -222,8 +226,20 @@ bool ArgList::hasTags() const {
 
 void ArgList::stripTags()
 {
-    for (PairList* p = mutable_list(); p; p = p->tail())
-	p->setTag(nullptr);
+    for (auto& item : *mutable_list()) {
+        item.setTag(nullptr);
+    }
+}
+
+void ArgList::erase(int pos) {
+    assert(pos < size());
+    if (pos == 0) {
+        m_list = mutable_list()->tail();
+        return;
+    }
+    auto prev = mutable_list()->begin();
+    std::advance(prev, pos - 1);
+    prev->setTail(prev->tail()->tail());
 }
 
 const Symbol* ArgList::tag2Symbol(const RObject* tag)

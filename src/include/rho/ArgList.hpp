@@ -312,6 +312,15 @@ namespace rho {
          */
         const RObject* getTag(int position) const;
 
+        /** @brief Set the tag at the specified position.
+         */
+        void setTag(int position, const Symbol* tag);
+
+        /** @brief Remove the argument at the specified position.  Invalidates
+         *     any existing iterators.
+         */
+        void erase(int position);
+
 	/** @brief Iterator through the argument list, leaving '...' unchanged.
 	 *
 	 * @return iterator_range that iterates through the list of arguments.
@@ -341,11 +350,11 @@ namespace rho {
 	 * @return pointer, possibly null, to the list of arguments in
 	 * their current state.
 	 */
-      const PairList* list() const
+	const PairList* list() const
 	{
 	    return m_list;
 	}
-      
+
 	const PairList* tags() const
 	{
 	    return m_list;
