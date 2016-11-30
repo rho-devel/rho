@@ -55,7 +55,7 @@ R:
 graphics-pkg: grDevices-pkg
 stats-pkg: graphics-pkg grDevices-pkg utils-pkg
 datasets-pkg: stats-pkg
-methods-pkg: utils-pkg stats-pkg
+methods-pkg: utils-pkg stats-pkg datasets-pkg
 grid-pkg: grDevices-pkg stats-pkg utils-pkg
 splines-pkg: graphics-pkg stats-pkg
 stats4-pkg: graphics-pkg methods-pkg stats-pkg splines-pkg
