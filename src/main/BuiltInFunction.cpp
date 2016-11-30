@@ -304,8 +304,7 @@ BuiltInFunction::RealInternalDispatch(const Expression* call,
 
     switch(m_dispatch_type) {
     case DispatchType::INTERNAL:
-      return Rf_DispatchOrEval(call, this, &arglist, env,
-                               MissingArgHandling::Drop);
+      return Rf_Dispatch(call, this, arglist, env);
     case DispatchType::GROUP_MATH:
     case DispatchType::GROUP_OPS:
     case DispatchType::GROUP_COMPLEX:

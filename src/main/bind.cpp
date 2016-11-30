@@ -802,11 +802,10 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* Attempt method dispatch. */
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    auto dispatched = DispatchOrEval(SEXP_downcast<const Expression*>(call),
-                                     SEXP_downcast<const BuiltInFunction*>(op),
-                                     &arglist,
-                                     SEXP_downcast<Environment*>(env),
-                                     MissingArgHandling::Drop);
+    auto dispatched = Rf_Dispatch(SEXP_downcast<const Expression*>(call),
+                                  SEXP_downcast<const BuiltInFunction*>(op),
+                                  arglist,
+                                  SEXP_downcast<Environment*>(env));
     if (dispatched.first)
       return dispatched.second;
     return do_c_dflt(call, op, std::move(arglist), env);

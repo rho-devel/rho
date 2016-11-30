@@ -782,6 +782,10 @@ std::pair<bool, SEXP>
 Rf_DispatchOrEval(const rho::Expression* call, const rho::BuiltInFunction* op,
                   rho::ArgList* args, rho::Environment* env,
                   rho::MissingArgHandling dropmissing);
+// Like DispatchOrEval, but args have already been evaluated.
+std::pair<bool, SEXP>
+Rf_Dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
+            const rho::ArgList& args, rho::Environment* env);
 std::pair<bool, SEXP>
 Rf_DispatchGroup(const char *group, const rho::Expression* call,
                  const rho::BuiltInFunction* op,

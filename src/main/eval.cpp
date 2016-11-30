@@ -1819,11 +1819,13 @@ static bool isDefaultMethod(const Expression* call) {
 /* Rf_DispatchOrEval is used in internal functions which dispatch to
  * object methods (e.g. "[" or "[[").  The code either builds promises
  * and dispatches to the appropriate method, or it evaluates the
- * (unevaluated) arguments it comes in with and returns them so that
- * the generic built-in C code can continue.
+ * (unevaluated) arguments it comes in with and returns to the caller.
 
  * To call this an ugly hack would be to insult all existing ugly hacks
  * at large in the world.
+ *
+ * Functions that use this are:
+ *   [, [[, $, [<-, [[<-, $<-, @<-, rep
  */
 attribute_hidden
 std::pair<bool, SEXP>
@@ -1840,7 +1842,7 @@ Rf_DispatchOrEval(const Expression* call, const BuiltInFunction* func,
     // factor is that the first argument might come in with a "..."
     // and that there might be other arguments in the "..." as well.
     // LT
-
+    assert(arglist->status() == ArgList::RAW);
     GCStackRoot<> x(arglist->firstArg(callenv).second);
 
     // try to dispatch on the object
@@ -1885,8 +1887,46 @@ Rf_DispatchOrEval(const Expression* call, const BuiltInFunction* func,
                 return dispatched;
 	}
     }
-    if (arglist->status() != ArgList::EVALUATED)
-	arglist->evaluate(callenv, dropmissing);
+    arglist->evaluate(callenv, dropmissing);
+    return std::make_pair(false, nullptr);
+}
+
+attribute_hidden
+std::pair<bool, SEXP>
+Rf_Dispatch(const Expression* call, const BuiltInFunction* func,
+            const ArgList& arglist, Environment* callenv)
+{
+    assert(arglist.status() == ArgList::EVALUATED);
+    GCStackRoot<> x(arglist.get(0));
+
+    // try to dispatch on the object
+    if (x && x->hasClass()) {
+	// Try for formal method.
+	if (x->isS4Object() && R_has_methods(func)) {
+	    // create a promise to pass down to applyClosure
+            ArgList promises(arglist);
+            promises.wrapInPromises(callenv, call);
+
+	    /* This means S4 dispatch */
+            auto pr = R_possible_dispatch(call, func, promises, callenv);
+	    if (pr.first) {
+                return pr;
+	    }
+	}
+	if (!isDefaultMethod(call)) {
+            ArgList promises(arglist);
+            promises.wrapInPromises(callenv, call);
+	    GCStackRoot<Frame> frame(Frame::closureWorkingFrame(promises));
+	    Environment* working_env = new Environment(callenv, frame);
+	    ClosureContext cntxt(call, callenv, func, working_env);
+	    const char* generic = func->name();
+            auto dispatched = Rf_usemethod(generic, x, call,
+                                           working_env, callenv,
+                                           Environment::base());
+	    if (dispatched.first)
+                return dispatched;
+	}
+    }
     return std::make_pair(false, nullptr);
 }
 

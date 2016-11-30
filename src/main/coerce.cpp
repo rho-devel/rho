@@ -2087,8 +2087,7 @@ static Rboolean anyNA(const Expression* call, const BuiltInFunction* op,
 	for (i = 0; i < n; i++, x = CDR(x)) {
 	    SETCADR(call2, CAR(x));
             args2.set(i, CAR(x));
-            auto dispatched = Rf_DispatchOrEval(call2, op, &args2, env,
-                                                MissingArgHandling::Keep);
+            auto dispatched = Rf_Dispatch(call2, op, args2, env);
             if (dispatched.first) {
                 if (Rf_asLogical(dispatched.second)) {
                     return TRUE;
@@ -2107,8 +2106,7 @@ static Rboolean anyNA(const Expression* call, const BuiltInFunction* op,
 	for (i = 0; i < n; i++) {
             args2.set(0, VECTOR_ELT(x, i));
             SETCADR(call2, VECTOR_ELT(x, i));
-            auto dispatched = Rf_DispatchOrEval(call2, op, &args2, env,
-                                                MissingArgHandling::Keep);
+            auto dispatched = Rf_Dispatch(call2, op, args2, env);
             if (dispatched.first) {
                 if (Rf_asLogical(dispatched.second)) {
                     return TRUE;
@@ -2137,11 +2135,10 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (arglist.size() < 1 || arglist.size() > 2)
 	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
 
-    auto dispatched = Rf_DispatchOrEval(callx,
-                                        SEXP_downcast<const BuiltInFunction*>(op),
-                                        &arglist,
-                                        SEXP_downcast<Environment*>(rho),
-                                        MissingArgHandling::Keep);
+    auto dispatched = Rf_Dispatch(callx,
+                                  SEXP_downcast<const BuiltInFunction*>(op),
+                                  arglist,
+                                  SEXP_downcast<Environment*>(rho));
     if (dispatched.first)
         return dispatched.second;
 

@@ -210,8 +210,7 @@ static std::pair<bool, SEXP> dispatch_asvector(SEXP x, const Expression* call,
         = BuiltInFunction::obtainPrimitive("as.vector");
     static GCRoot<> any = mkString("any");
     ArgList args({ x, any }, ArgList::EVALUATED);
-    return Rf_DispatchOrEval(call, op, &args, rho,
-                             MissingArgHandling::Keep);
+    return Rf_Dispatch(call, op, args, rho);
 }
 
 

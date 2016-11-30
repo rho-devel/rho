@@ -741,11 +741,10 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t i, lout = NA_INTEGER;
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
-                                        SEXP_downcast<BuiltInFunction*>(op),
-                                        &arglist,
-                                        SEXP_downcast<Environment*>(rho),
-                                        MissingArgHandling::Keep);
+    auto dispatched = Rf_Dispatch(SEXP_downcast<Expression*>(call),
+                                  SEXP_downcast<BuiltInFunction*>(op),
+                                  arglist,
+                                  SEXP_downcast<Environment*>(rho));
     if (dispatched.first)
         return dispatched.second;
 
