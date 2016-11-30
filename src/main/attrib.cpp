@@ -1265,7 +1265,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
     static GCRoot<ArgMatcher> matcher
 	= new ArgMatcher({ "x", "which", "exact" });
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    matcher->match(&arglist, { &x, &which, &exact_ });
+    matcher->match(arglist, { &x, &which, &exact_ });
 
     if (nargs < 2 || nargs > 3)
 	errorcall(call, "either 2 or 3 arguments are required");
@@ -1438,7 +1438,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	= new ArgMatcher({ "x", "which", "value" });
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     SEXP ignored, name, value;
-    matcher->match(&arglist, { &ignored, &name, &value });
+    matcher->match(arglist, { &ignored, &name, &value });
 
     if (!isValidString(name) || STRING_ELT(name, 0) == NA_STRING)
 	error(_("'name' must be non-null character string"));

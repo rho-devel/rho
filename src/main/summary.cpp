@@ -463,7 +463,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
-	call2, SEXP_downcast<Environment*>(env), &arglist);
+	call2, SEXP_downcast<Environment*>(env), arglist);
     if (dispatched.first) {
 	UNPROTECT(1);
 	return(dispatched.second);
@@ -791,7 +791,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
-	call2, callenv, &arglist);
+	call2, callenv, arglist);
     if (dispatched.first) {
 	UNPROTECT(1);
 	return(dispatched.second);
@@ -799,7 +799,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PROTECT(op = findFun(install("range.default"), env));
     Closure* closure = SEXP_downcast<Closure*>(op);
-    ans = call2->invokeClosure(closure, callenv, &arglist);
+    ans = call2->invokeClosure(closure, callenv, arglist);
     UNPROTECT(2);
     return(ans);
 }

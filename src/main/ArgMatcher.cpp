@@ -137,15 +137,15 @@ public:
 
     virtual void dottedArgs(const FormalData& formal,
 			    ArgIndices arg_indices,
-			    const ArgList* all_args) = 0;
+			    const ArgList& all_args) = 0;
 
     static DottedArgs* makeDottedArgs(ArgIndices arg_indices,
-				      const ArgList* all_args) {
+				      const ArgList& all_args) {
 	DottedArgs* result = nullptr;
 	ConsCell* dots = nullptr;
 	for (int index : arg_indices) {
-	    RObject* value = all_args->get(index);
-	    const RObject* tag = all_args->getTag(index);
+	    RObject* value = all_args.get(index);
+	    const RObject* tag = all_args.getTag(index);
 	    if (dots) {
 		PairList* next_item = new PairList(value, nullptr, tag);
 		dots->setTail(next_item);
@@ -158,7 +158,7 @@ public:
     }
 };
 
-void ArgMatcher::matchWithCache(const ArgList* supplied,
+void ArgMatcher::matchWithCache(const ArgList& supplied,
 				MatchCallback* callback,
 				const ArgMatchInfo* matching) const
 {
@@ -167,7 +167,7 @@ void ArgMatcher::matchWithCache(const ArgList* supplied,
 	int sindex = matching->getSindex(findex);
 	if (sindex >= 0) {
 	    // This assumes that random access in an ArgList is O(1).
-	    callback->matchedArgument(fdata, sindex, supplied->get(sindex));
+	    callback->matchedArgument(fdata, sindex, supplied.get(sindex));
 	}
 	else if (fdata.symbol != R_DotsSymbol) {
 	    callback->defaultValue(fdata);
@@ -222,7 +222,7 @@ public:
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args) override {
+		    const ArgList& all_args) override {
 	if (arg_indices.empty()) {
 	    m_target_env->frame()->obtainBinding(DotsSymbol);
 	    return;
@@ -255,7 +255,7 @@ public:
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args) override {
+		    const ArgList& all_args) override {
 	if (arg_indices.empty()) {
 	    *(m_matched_values.begin()[formal.index]) = R_MissingArg;
 	} else {
@@ -283,7 +283,7 @@ class PairListMatchCallback : public ArgMatcher::MatchCallback
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args) override {
+		    const ArgList& all_args) override {
 	if (arg_indices.empty()) {
             add(formal, R_MissingArg);
 	} else {
@@ -324,7 +324,7 @@ public:
 
     void dottedArgs(const FormalData& formal,
 		    ArgIndices arg_indices,
-		    const ArgList* all_args) override {
+		    const ArgList& all_args) override {
 	m_matching->m_values.insert(m_matching->m_values.end(),
 				    arg_indices.begin(), arg_indices.end());
     }
@@ -378,13 +378,13 @@ bool ArgMatchInfo::arglistTagsMatch(const PairList* args) const {
 
 
 
-const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
+const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList& args) const {
     static ArgMatchInfoCache s_interned_match_infos = createMatchInfoCache();
 
-    if (args->has3Dots())
+    if (args.has3Dots())
 	return nullptr;
 
-    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), *args);
+    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), args);
     RecordArgMatchInfoCallback callback(matching);
     match(args, &callback);
 
@@ -397,27 +397,27 @@ const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList *args) const {
     return *inserted.first;
 }
 
-void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
+void ArgMatcher::match(Environment* target_env, const ArgList& supplied) const
 {
     ClosureMatchCallback callback(target_env);
     match(supplied, &callback);
 }
 
-void ArgMatcher::match(const ArgList* supplied,
+void ArgMatcher::match(const ArgList& supplied,
 		       std::initializer_list<RObject**> matched_values) const
 {
     InitializerListMatchCallback callback(matched_values);
     match(supplied, &callback);
 }
 
-void ArgMatcher::match(Environment* target_env, const ArgList* supplied,
+void ArgMatcher::match(Environment* target_env, const ArgList& supplied,
 		       const ArgMatchInfo* matching) const
 {
     ClosureMatchCallback callback(target_env);
     matchWithCache(supplied, &callback, matching);
 }
 
-PairList* ArgMatcher::matchToPairList(const ArgList* supplied,
+PairList* ArgMatcher::matchToPairList(const ArgList& supplied,
                                       const Expression* expression) const
 {
     PairListMatchCallback callback(numFormals());
@@ -425,15 +425,15 @@ PairList* ArgMatcher::matchToPairList(const ArgList* supplied,
     return callback.get();
 }
 
-void ArgMatcher::matchByPosition(const ArgList* supplied,
+void ArgMatcher::matchByPosition(const ArgList& supplied,
 				 MatchCallback* callback) const
 {
     const size_t num_formals
 	= m_dots_position == -1 ? m_formal_data.size() : m_dots_position;
     unsigned int supplied_index = 0;
     unsigned int formals_index = 0;
-    ArgList::const_iterator s = supplied->getArgs().begin();
-    const ArgList::const_iterator end = supplied->getArgs().end();
+    ArgList::const_iterator s = supplied.getArgs().begin();
+    const ArgList::const_iterator end = supplied.getArgs().end();
     for ( ;
 	 (s != end) && (formals_index < num_formals);
 	 ++s, ++formals_index, ++supplied_index)
@@ -465,11 +465,11 @@ void ArgMatcher::matchByPosition(const ArgList* supplied,
     }
 }
 
-void ArgMatcher::match(const ArgList* supplied,
+void ArgMatcher::match(const ArgList& supplied,
 		       MatchCallback* callback) const
 {
     // Short-circuit if none of the arguments are named.
-    if (!supplied->hasTags()) {
+    if (!supplied.hasTags()) {
 	matchByPosition(supplied, callback);
 	return;
     }
@@ -480,7 +480,7 @@ void ArgMatcher::match(const ArgList* supplied,
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (const ConsCell& s : supplied->getArgs()) {
+	for (const ConsCell& s : supplied.getArgs()) {
 	    const Symbol* tag = static_cast<const Symbol*>(s.tag());
 	    const String* name = (tag ? tag->name() : nullptr);
 	    RObject* value = s.car();

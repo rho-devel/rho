@@ -1391,7 +1391,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     ArgList actuals_list(SEXP_downcast<PairList*>(actuals), ArgList::RAW);
     ArgMatcher* matcher = new ArgMatcher(SEXP_downcast<PairList*>(formals));
-    rlist = matcher->matchToPairList(&actuals_list,
+    rlist = matcher->matchToPairList(actuals_list,
                                      SEXP_downcast<Expression*>(call));
 
     /* Attach the argument names as tags */

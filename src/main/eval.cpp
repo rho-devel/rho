@@ -610,7 +610,7 @@ SEXP R_forceAndCall(SEXP e, int n, SEXP rho)
 
     BuiltInFunction* builtin = dynamic_cast<BuiltInFunction*>(fun);
     if (builtin) {
-	result = call->applyBuiltIn(builtin, env, &arglist);
+	result = call->applyBuiltIn(builtin, env, arglist);
     } else if (TYPEOF(fun) == CLOSXP) {
 	Closure* closure = SEXP_downcast<Closure*>(fun);
 
@@ -629,7 +629,7 @@ SEXP R_forceAndCall(SEXP e, int n, SEXP rho)
 	    else
 		Rf_error("something weird happened");
 	}
-	result = call->invokeClosure(closure, env, &arglist);
+	result = call->invokeClosure(closure, env, arglist);
     }
     else {
        Rf_error(_("attempt to apply non-function"));
@@ -1797,7 +1797,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Rf_error(_("'Recall' called from outside a closure"));
     Closure* closure = SEXP_downcast<Closure*>(s);
     ans = cptr->call()->invokeClosure(closure, cptr->callEnvironment(),
-                                      const_cast<ArgList*>(&arglist));
+                                      arglist);
     UNPROTECT(1);
     return ans;
 }
@@ -2038,7 +2038,7 @@ Rf_DispatchGroup(const char *group, const Expression* call,
 	if (isOps)
             args.stripTags();
 	Closure* func = SEXP_downcast<Closure*>(m->function());
-	auto ans = newcall->invokeClosure(func, callenv, &args, supp_frame);
+	auto ans = newcall->invokeClosure(func, callenv, args, supp_frame);
         return std::make_pair(true, ans);
     }
 }

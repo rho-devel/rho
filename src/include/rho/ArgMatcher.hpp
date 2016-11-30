@@ -188,15 +188,15 @@ namespace rho {
 	 *          the supplied arguments, which must have had
 	 *          ArgList::wrapInPromises() applied.
 	 */
-	void match(Environment* target_env, const ArgList* supplied) const;
+	void match(Environment* target_env, const ArgList& supplied) const;
 
-        void match(Environment* target_env, const ArgList* supplied,
+        void match(Environment* target_env, const ArgList& supplied,
 		   const ArgMatchInfo* matching) const;
 
-	void match(const ArgList* supplied,
+	void match(const ArgList& supplied,
 		   std::initializer_list<RObject**> matched_values) const;
 
-        PairList* matchToPairList(const ArgList* supplied,
+        PairList* matchToPairList(const ArgList& supplied,
                                   const Expression* call) const;
 
 	/** @brief Number of formal arguments.
@@ -224,7 +224,7 @@ namespace rho {
 	 * @param args An arglist with the pattern of tags to match against.
 	 *           The values of the arguments are ignored.
 	 */
-	const ArgMatchInfo* createMatchInfo(const ArgList* args) const;
+	const ArgMatchInfo* createMatchInfo(const ArgList& args) const;
 
 	/** @brief Copy formal bindings from one Environment to another.
 	 *
@@ -344,10 +344,10 @@ namespace rho {
 	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 
-        void match(const ArgList* supplied, MatchCallback* callback) const;
-        void matchWithCache(const ArgList* supplied, MatchCallback* callback,
+        void match(const ArgList& supplied, MatchCallback* callback) const;
+        void matchWithCache(const ArgList& supplied, MatchCallback* callback,
 			    const ArgMatchInfo* matching) const;
-        void matchByPosition(const ArgList* supplied, MatchCallback* callback)
+        void matchByPosition(const ArgList& supplied, MatchCallback* callback)
 	    const;
 
 	// Return true if 'shorter' is a prefix of 'longer', or is

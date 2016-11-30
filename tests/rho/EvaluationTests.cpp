@@ -187,7 +187,7 @@ public:
 	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
 	GCStackRoot<Expression> call(new Expression(closure));
-	return call->invokeClosure(closure, env, &args);
+	return call->invokeClosure(closure, env, args);
     }
 };
 

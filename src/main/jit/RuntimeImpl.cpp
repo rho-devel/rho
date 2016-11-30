@@ -139,7 +139,7 @@ RObject* rho_runtime_callFunction(const FunctionBase* function,
     IncrementStackDepthScope scope;
 
     ArgList arglist(args, ArgList::RAW);
-    return call->evaluateFunctionCall(function, environment, &arglist);
+    return call->evaluateFunctionCall(function, environment, arglist);
 }
 
 void rho_runtime_do_break(Environment* environment) {

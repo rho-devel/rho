@@ -316,7 +316,7 @@ namespace rho {
 	}
 
 	RObject* invoke(const Expression* call, Environment* env,
-                        ArgList* args) const
+                        const ArgList& args) const
 	{
 	    // Handle internal generic functions.
 	    static BuiltInFunction* length_fn
@@ -334,7 +334,7 @@ namespace rho {
 	    }
 
 	    assert(m_function);
-            return callBuiltInWithCApi(m_function, call, this, *args, env);
+            return callBuiltInWithCApi(m_function, call, this, args, env);
         }
 
         RObject* invoke(const Expression* call, Environment* env,
@@ -406,7 +406,7 @@ namespace rho {
         std::pair<bool, RObject*>
         InternalDispatch(const Expression* call,
 			 Environment* env,
-			 ArgList* evaluated_args) const;
+			 const ArgList& evaluated_args) const;
 
         // This works like DispatchOrEval in the case where the arguments
         // have already been evaluated.
@@ -554,18 +554,18 @@ namespace rho {
 	    }
 	}
 
-	bool needsDispatch(const ArgList* evaluated_args) const
+	bool needsDispatch(const ArgList& evaluated_args) const
 	{
 	    if (!isInternalGeneric())
 		return false;
-	    switch(evaluated_args->size()) {
+	    switch(evaluated_args.size()) {
 	    case 0:
 		return false;
 	    case 1:
-		return needsDispatch(evaluated_args->get(0));
+		return needsDispatch(evaluated_args.get(0));
 	    default:
-		return needsDispatch(evaluated_args->get(0),
-				     evaluated_args->get(1));
+		return needsDispatch(evaluated_args.get(0),
+				     evaluated_args.get(1));
 	    }
 	}
 

@@ -260,18 +260,18 @@ RObject* BuiltInFunction::callBuiltInWithCApi(CCODE builtin,
 std::pair<bool, RObject*>
 BuiltInFunction::InternalDispatch(const Expression* call,
 				  Environment* env,
-				  ArgList* args) const
+				  const ArgList& args) const
 {
     assert(m_dispatch_type != DispatchType::NONE);
-    assert(args->status() == ArgList::EVALUATED);
+    assert(args.status() == ArgList::EVALUATED);
 
-    size_t num_args = args->size();
+    size_t num_args = args.size();
     RObject** args_array = static_cast<RObject**>(
 	alloca(num_args * sizeof(RObject*)));
     for (int i = 0; i < num_args; i++) {
-	args_array[i] = args->get(i);
+	args_array[i] = args.get(i);
     }
-    return InternalDispatch(call, env, num_args, args_array, args->tags());
+    return InternalDispatch(call, env, num_args, args_array, args.tags());
 }
 
 const char* BuiltInFunction::GetInternalGroupDispatchName() const

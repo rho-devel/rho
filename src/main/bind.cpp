@@ -1158,7 +1158,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     } else
       arglist.erase(0); // keeping deparse.level for S4 dispatch
     if (method != R_NilValue) { // found an S3 or S4 method
-	return callx->evaluateFunctionCall(method, callenv, &arglist);
+	return callx->evaluateFunctionCall(method, callenv, arglist);
     }
 
     /* Dispatch based on class membership has failed. */

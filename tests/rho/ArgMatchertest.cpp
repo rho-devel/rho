@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
     }
     // Perform match and show result:
     try {
-	matcher->match(fenv, &supplied);
+	matcher->match(fenv, supplied);
     } catch (CommandTerminated) {
     	cerr << "ArgMatchertest: Error encountered while matching arguments" << endl;
 	return 0;

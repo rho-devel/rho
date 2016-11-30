@@ -98,7 +98,7 @@ static RObject* GetObject(ClosureContext *cptr)
 }
 
 static RObject* applyMethod(const Expression* call, const FunctionBase* func,
-			    ArgList* arglist, Environment* env,
+                            const ArgList& arglist, Environment* env,
 			    Frame* method_bindings)
 {
     if (func->sexptype() == CLOSXP) {
@@ -256,7 +256,7 @@ std::pair<bool, SEXP> Rf_usemethod(const char* generic,
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(m->symbol());
     SEXP result =  applyMethod(newcall, m->function(),
-                               const_cast<ArgList*>(&cptr->promiseArgs()),
+                               cptr->promiseArgs(),
                                env, method_bindings);
     return std::make_pair(true, result);
 }
@@ -272,7 +272,7 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
     RObject* genval;
     RObject* objval;
-    matcher->match(&arglist, { &genval, &objval });
+    matcher->match(arglist, { &genval, &objval });
 
     // "generic":
     {
@@ -513,7 +513,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        the actuals, expanding any ... that occurs */
     const ArgMatcher* matcher = genclos->matcher();
     GCStackRoot<PairList> actuals(
-        matcher->matchToPairList(&cptr->promiseArgs(),
+        matcher->matchToPairList(cptr->promiseArgs(),
                      SEXP_downcast<Expression*>(call)));
     {
 	bool dots = false;
@@ -797,7 +797,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    method_bindings->bind(DotGroupSymbol, dotgroup);
     }
 
-    return applyMethod(newcall, nextfun, &newarglist, callenv, method_bindings);
+    return applyMethod(newcall, nextfun, newarglist, callenv, method_bindings);
 }
 
 /* primitive */
@@ -1448,8 +1448,7 @@ R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
 	    }
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = call->invokeClosure(func, callenv,
-					const_cast<ArgList*>(&arglist));
+	    value = call->invokeClosure(func, callenv, arglist);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1462,7 +1461,7 @@ R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = call->invokeClosure(func, callenv, const_cast<ArgList*>(&arglist));
+    value = call->invokeClosure(func, callenv, arglist);
     // Only occurs if func() didn't throw an exception.
     prim_methods[offset] = current;
     if (value == deferred_default_object)

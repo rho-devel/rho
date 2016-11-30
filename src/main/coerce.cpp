@@ -2157,7 +2157,7 @@ SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
 	static GCRoot<ArgMatcher> matcher
 	    = new ArgMatcher({ "x", "recursive" });
 	SEXP x, recursive_;
-	matcher->match(&arglist, { &x, &recursive_ });
+	matcher->match(arglist, { &x, &recursive_ });
 	bool recursive = recursive_ == R_MissingArg
 	    ? false : Rf_asLogical(recursive_);
 	return Rf_ScalarLogical(anyNA(callx, func, x, recursive, env));
@@ -2529,7 +2529,7 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     
     /* argument matching */
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    matcher->match(&arglist, { &expr, &env });
+    matcher->match(arglist, { &expr, &env });
 
     /* set up the environment for substitution */
     if (env == R_MissingArg)

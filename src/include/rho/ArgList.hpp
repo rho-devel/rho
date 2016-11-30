@@ -258,7 +258,7 @@ namespace rho {
 	void evaluateToArray(Environment* env,
 			     int num_args, RObject** evaluated_args,
 			     MissingArgHandling allow_missing
-			         = MissingArgHandling::Error);
+			         = MissingArgHandling::Error) const;
 
 	/** @brief Get the first argument.
 	 *
@@ -503,8 +503,8 @@ namespace rho {
         // took place.  Both pointers are reset to null once the first
         // argument has been processed in a subsequent call to evaluate() or
         // converted to a promise.
-        GCStackRoot<> m_first_arg;
-        GCStackRoot<Environment> m_first_arg_env;
+        mutable GCStackRoot<> m_first_arg;
+        mutable GCStackRoot<Environment> m_first_arg_env;
 
         // wrapInPromises() defers actual promise creation, storing the promise
         // environment here.  Promise objects are created only when needed.
@@ -515,7 +515,7 @@ namespace rho {
 	RObject* evaluateSingleArgument(const RObject* arg,
 					Environment* env,
 					MissingArgHandling allow_missing,
-					int arg_number);
+					int arg_number) const;
 
 	void setList(PairList* list) {
 	    m_list = list;
@@ -541,7 +541,7 @@ namespace rho {
 			 PairList* last_element);
 
 	void wrapInForcedPromises(Environment* env,
-				  const ArgList* evaluated_values);
+				  const ArgList& evaluated_values);
 
         ArgList& operator=(const ArgList&) = delete;
 

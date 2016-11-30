@@ -632,7 +632,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     */
     static GCRoot<ArgMatcher> matcher = new ArgMatcher(
 	{ "x", "times", "length.out", "each", "..." });
-    matcher->match(&arglist, { &x, &times, &length_out, &each_, &ignored });
+    matcher->match(arglist, { &x, &times, &length_out, &each_, &ignored });
 
     /* supported in R 2.15.x */
     if (TYPEOF(x) == LISTSXP)
@@ -755,7 +755,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     */
     static GCRoot<ArgMatcher> matcher = new ArgMatcher(
 	{ "from", "to", "by", "length.out", "along.with", "..." });
-    matcher->match(&arglist,
+    matcher->match(arglist,
 		   { &from, &to, &by, &len, &along, &ignored });
 
     if(One && from != R_MissingArg) {

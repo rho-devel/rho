@@ -1431,5 +1431,5 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     Expression* callx = SEXP_downcast<Expression*>(call);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
 
-    return callx->invokeClosure(closure, callenv, &arglist);
+    return callx->invokeClosure(closure, callenv, arglist);
 }
