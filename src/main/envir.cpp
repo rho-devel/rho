@@ -132,7 +132,7 @@ static void setActiveValue(SEXP fun, SEXP val)
     expr->evaluate(Environment::global());
 }
 
-void Frame::Binding::assign(RObject* new_value, Origin origin)
+void Frame::Binding::assignSlow(RObject* new_value, Origin origin)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),

@@ -56,16 +56,12 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
-RObject* Frame::Binding::forcedValue() const
-{
-    return forcedValue2().first;
-}
-
 pair<RObject*, bool>
-Frame::Binding::forcedValue2() const
+Frame::Binding::forcedValueSlow() const
 {
     bool promise_forced = false;
     RObject* val = m_value;
+
     if (val && val->sexptype() == PROMSXP) {
 	Promise* prom = static_cast<Promise*>(val);
 	if (!prom->evaluated()) {
@@ -116,7 +112,7 @@ void Frame::Binding::setFunction(FunctionBase* function, Origin origin)
     m_frame->monitorWrite(*this);
 }
 
-void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
+void Frame::Binding::handleSetValueError() const
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
@@ -124,33 +120,30 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
     if (isActive())
 	Rf_error(_("internal error: use %s for active bindings"),
 		 "setFunction()");
-    m_value = new_value;
-    m_origin = origin;
-    if (!quiet)
-	m_frame->monitorWrite(*this);
 }
 
 Frame::Frame(size_t size, bool check_list_size)
     : Frame(ArgList(nullptr, ArgList::PROMISED), size, check_list_size)
 {}
 
-Frame::Frame(const ArgList& promised_args, size_t size, bool check_list_size)
+Frame::Frame(const ArgList& promised_args, size_t num_bindings,
+	     bool check_list_size)
     : m_descriptor(), m_bindings_size(0), m_used_bindings_size(0),
       m_cache_count(0), m_locked(false), m_no_special_symbols(true),
       m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
       m_promised_args(promised_args)
 {
-    if (check_list_size && size > kMaxListSize) {
-	size_t overflow_size = size - kMaxListSize;
+    if (check_list_size && num_bindings > kMaxListSize) {
+	size_t overflow_size = num_bindings - kMaxListSize;
 	m_overflow = new map(overflow_size);
-	size = kMaxListSize;
+	num_bindings = kMaxListSize;
     }
-    if (size > std::numeric_limits<decltype(m_bindings_size)>::max()) {
-	size = std::numeric_limits<decltype(m_bindings_size)>::max();
+    if (num_bindings > std::numeric_limits<decltype(m_bindings_size)>::max()) {
+	num_bindings = std::numeric_limits<decltype(m_bindings_size)>::max();
     }
 
-    m_bindings = new Binding[size];
-    m_bindings_size = size;
+    m_bindings = new Binding[num_bindings];
+    m_bindings_size = num_bindings;
     m_promised_args_protect = m_promised_args.list();
 }
 
@@ -160,6 +153,7 @@ Frame::Frame(const FrameDescriptor* descriptor, const ArgList& promised_args)
     m_descriptor = descriptor;
 }
 
+// NB: this is always a normal frame, never an execution frame.
 Frame::Frame(const Frame& source)
     : m_descriptor(source.m_descriptor), m_bindings_size(source.m_bindings_size),
       m_used_bindings_size(0), m_cache_count(0), m_locked(source.m_locked),

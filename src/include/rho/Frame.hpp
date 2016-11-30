@@ -35,6 +35,7 @@
 #include "rho/ArgList.hpp"
 #include "rho/FrameDescriptor.hpp"
 #include "rho/GCNode.hpp"
+#include "rho/Promise.hpp"
 #include "rho/Provenance.hpp"
 #include "rho/Symbol.hpp"
 #include <unordered_map>
@@ -145,7 +146,15 @@ namespace rho {
 	     *
 	     * @param origin Origin of the newly-assigned value.
 	     */
-	    void assign(RObject* new_value, Origin origin = EXPLICIT);
+	    void assign(RObject* new_value, Origin origin = EXPLICIT) {
+		if (isLocked() || isActive()) {
+		    assignSlow(new_value, origin);
+		} else {
+		    m_origin = origin;
+		    m_value = new_value;
+		    m_frame->monitorWrite(*this);
+		}
+	    }
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -167,7 +176,12 @@ namespace rho {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    RObject* forcedValue() const;
+	    RObject* forcedValue() const {
+                if (m_value && m_value->sexptype() == PROMSXP) {
+                  return forcedValueSlow().first;
+		}
+		return m_value;
+	    }
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -192,7 +206,12 @@ namespace rho {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue2() const;
+	    std::pair<RObject*, bool> forcedValue2() const {
+		if (m_value && m_value->sexptype() == PROMSXP) {
+		    return forcedValueSlow();
+		}
+		return std::make_pair(m_value, false);
+	    }
 
 	    /** @brief Get pointer to Frame.
 	     *
@@ -291,7 +310,7 @@ namespace rho {
 	     */
 	    RObject* rawValue() const
 	    {
-	    	if (m_frame)
+		if (m_frame)
 		    m_frame->monitorRead(*this);
 		return m_value;
 	    }
@@ -352,7 +371,16 @@ namespace rho {
 	     * @param quiet Don't trigger monitor.
 	     */
 	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
-	                  bool quiet = false);
+	                  bool quiet = false)
+	    {
+		if (isLocked() || isActive()) {
+		    handleSetValueError();
+		}
+		m_value = new_value;
+		m_origin = origin;
+		if (!quiet)
+		    m_frame->monitorWrite(*this);
+	    }
 
 	    /** @brief Bound symbol.
 	     *
@@ -398,6 +426,10 @@ namespace rho {
 	    bool m_active;
 	    bool m_locked;
 
+	    std::pair<RObject*, bool> forcedValueSlow() const;
+	    void assignSlow(RObject* new_value, Origin origin);
+	    void handleSetValueError() const;
+
 	    /** @brief Has this binding been set to a value?
 	     *
 	     * In this case, R_MissingValue etc all count as being 'set'.
@@ -439,16 +471,16 @@ namespace rho {
      public:
         static Frame* closureWorkingFrame(const FrameDescriptor* descriptor,
                                           const ArgList& promised_args) {
-          return new Frame(descriptor, promised_args);
+            return new Frame(descriptor, promised_args);
         }
         static Frame* closureWorkingFrame(const ArgList& promised_args,
                                           size_t size = 16,
-                                          bool check_list_size = true) {
-          return new Frame(promised_args, size, check_list_size);
+					  bool check_list_size = true) {
+            return new Frame(promised_args, size, check_list_size);
         }
         static Frame* normalFrame(size_t size = 16,
                                   bool check_list_size = true) {
-          return new Frame(size, check_list_size);
+            return new Frame(size, check_list_size);
         }
 
        /** @brief Copy constructor.
@@ -593,7 +625,7 @@ namespace rho {
 	{
 	    return m_promised_args;
 	}
-	
+
 	/** @brief Remove all symbols from the Frame.
 	 *
 	 * Raises an error if the Frame is locked.
@@ -861,7 +893,7 @@ namespace rho {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
-    private:
+     private:
 	friend class Environment;
 
 	static monitor s_read_monitor, s_write_monitor;
@@ -878,7 +910,7 @@ namespace rho {
 	// to bindings.
 	Binding* m_bindings;
 	GCEdge<const FrameDescriptor> m_descriptor;
-	
+
 	// The size of the m_bindings array.
 	unsigned char m_bindings_size;
         // The number of currently used elements in the m_bindings array.
@@ -904,7 +936,7 @@ namespace rho {
 	// The arguments that were passed in to the closure.
 	ArgList m_promised_args;
 	GCEdge<const PairList> m_promised_args_protect;
-	
+
         // Declared private to ensure that Frame objects are created
 	// only using 'new':
 	~Frame();
