@@ -113,8 +113,8 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 			     RObject* value)
 {
     if (origin == Frame::Binding::DEFAULTED) {
-	if (fdata.value != Symbol::missingArgument())
-	    value = new Promise(fdata.value, target_env);
+	if (fdata.default_value != Symbol::missingArgument())
+	    value = new Promise(fdata.default_value, target_env);
     }
     Frame::Binding* bdg = target_env->frame()->obtainBinding(fdata.symbol);
     // Don't trump a previous binding with Symbol::missingArgument() :
@@ -160,7 +160,7 @@ public:
 
 void ArgMatcher::matchWithCache(const ArgList& supplied,
 				MatchCallback* callback,
-				const ArgMatchInfo* matching) const
+				const ArgMatchCache* matching) const
 {
     for (int findex = 0; findex < m_formal_data.size(); findex++) {
 	const FormalData& fdata = m_formal_data[findex];
@@ -178,8 +178,8 @@ void ArgMatcher::matchWithCache(const ArgList& supplied,
     }
 }
 
-struct ArgMatchInfo::Hash {
-    size_t operator()(const ArgMatchInfo* item) const {
+struct ArgMatchCache::Hash {
+    size_t operator()(const ArgMatchCache* item) const {
 	size_t seed = 0;
 	boost::hash_combine(seed, item->m_num_formals);
 	boost::hash_combine(seed, item->m_values);
@@ -210,11 +210,11 @@ public:
 
     void defaultValue(const FormalData& formal) override
     {
-    	if (formal.value == Symbol::missingArgument()) {
+    	if (formal.default_value == Symbol::missingArgument()) {
     	    // Create a value bound to Symbol::missingArgument()
     	    m_target_env->frame()->obtainBinding(formal.symbol);
 	} else {
-	    RObject* value = new Promise(formal.value, m_target_env);
+	    RObject* value = new Promise(formal.default_value, m_target_env);
 	    m_target_env->frame()->bind(formal.symbol, value,
 					Frame::Binding::DEFAULTED);
 	}
@@ -311,7 +311,7 @@ class PairListMatchCallback : public ArgMatcher::MatchCallback
 class RecordArgMatchInfoCallback : public ArgMatcher::MatchCallback
 {
 public:
-    RecordArgMatchInfoCallback(ArgMatchInfo* matching) : m_matching(matching) {}
+    RecordArgMatchInfoCallback(ArgMatchCache* matching) : m_matching(matching) {}
 
     void matchedArgument(const FormalData& formal,
 			 int arg_index, RObject* value) override {
@@ -329,7 +329,7 @@ public:
 				    arg_indices.begin(), arg_indices.end());
     }
 private:
-    ArgMatchInfo* m_matching;
+    ArgMatchCache* m_matching;
 };
 
 template<class T>
@@ -342,19 +342,9 @@ struct DereferencedEquality {
     }
 };
 
-typedef google::dense_hash_set<const ArgMatchInfo*, ArgMatchInfo::Hash,
-			       DereferencedEquality<ArgMatchInfo>>
-	ArgMatchInfoCache;
-
-ArgMatchInfoCache createMatchInfoCache() {
-    ArgMatchInfoCache cache;
-    cache.set_empty_key(nullptr);
-    return cache;
-}
-
 }  // namespace
 
-ArgMatchInfo::ArgMatchInfo(int num_formals, const ArgList& args)
+ArgMatchCache::ArgMatchCache(int num_formals, const ArgList& args)
     : m_num_formals(num_formals), m_values(num_formals, -1)
  {
      for (const ConsCell& arg : args.getArgs()) {
@@ -362,39 +352,27 @@ ArgMatchInfo::ArgMatchInfo(int num_formals, const ArgList& args)
     }
 }
 
-bool ArgMatchInfo::arglistTagsMatch(const PairList* args) const {
-    const PairList* arg = args;
-    size_t index;
-    for (index = 0; index < m_tags.size() && arg != nullptr;
-	 ++index, arg = arg->tail()) {
-	if (m_tags[index] != args->tag())
+bool ArgMatchCache::arglistTagsMatch(const ArgList& args) const {
+  if (m_tags.size() != args.size())
+      return false;
+  for (int index = 0; index < m_tags.size(); ++index) {
+      if (m_tags[index] != args.getTag(index))
 	    return false;
-    }
-    if (index != m_tags.size() || arg != nullptr) {
-	return false;
     }
     return true;
 }
 
-
-
-const ArgMatchInfo* ArgMatcher::createMatchInfo(const ArgList& args) const {
-    static ArgMatchInfoCache s_interned_match_infos = createMatchInfoCache();
-
+const ArgMatchCache* ArgMatcher::createMatchCache(const ArgList& args) const {
     if (args.has3Dots())
 	return nullptr;
 
-    ArgMatchInfo* matching = new ArgMatchInfo(numFormals(), args);
+    ArgMatchCache* matching = new ArgMatchCache(numFormals(), args);
+    matching->m_matcher = this;
     RecordArgMatchInfoCallback callback(matching);
     match(args, &callback);
 
-    // If there is an existing ArgMatchInfo with the same values, use that
-    // instead to conserve memory use.
-    auto inserted = s_interned_match_infos.insert(matching);
-    if (!inserted.second) {
-	delete matching;
-    }
-    return *inserted.first;
+    // TODO: intern the values to conserve memory use.
+    return matching;
 }
 
 void ArgMatcher::match(Environment* target_env, const ArgList& supplied) const
@@ -411,10 +389,19 @@ void ArgMatcher::match(const ArgList& supplied,
 }
 
 void ArgMatcher::match(Environment* target_env, const ArgList& supplied,
-		       const ArgMatchInfo* matching) const
+		       GCEdge<const ArgMatchCache>* cache) const
 {
+    if (!*cache
+        || (*cache)->m_matcher != this
+        || !(*cache)->arglistTagsMatch(supplied))
+    {
+        *cache = createMatchCache(supplied);
+    }
+    if (!cache)
+      match(target_env, supplied);
+
     ClosureMatchCallback callback(target_env);
-    matchWithCache(supplied, &callback, matching);
+    matchWithCache(supplied, &callback, cache->get());
 }
 
 PairList* ArgMatcher::matchToPairList(const ArgList& supplied,
@@ -605,7 +592,7 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 	} else {
 	    // Discard generic's defaults:
 	    makeBinding(toenv, fdata, Frame::Binding::DEFAULTED,
-			fdata.value);
+			fdata.default_value);
 	}
     }
     // m_formal_data excludes '...', so:

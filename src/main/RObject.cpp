@@ -323,7 +323,6 @@ protected:
     virtual ~PaddedPairList() {}
 
     void* m_unused_padding_1;
-    void* m_unused_padding_2;
 };
 
 }  // anonymous namespace

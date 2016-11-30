@@ -369,15 +369,14 @@ CachingExpression* CachingExpression::clone() const
 
 void CachingExpression::visitReferents(const_visitor* v) const
 {
-    const GCNode* function = m_cache.m_function.get();
     Expression::visitReferents(v);
-    if (function)
-	(*v)(function);
+    if (m_cached_matching_info)
+        (*v)(m_cached_matching_info);
 }
 
 void CachingExpression::detachReferents()
 {
-    m_cache.m_function = nullptr;
+    m_cached_matching_info = nullptr;
     Expression::detachReferents();
 }
 
@@ -387,30 +386,8 @@ void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
                                           Environment* execution_env) const
 {
     const ArgMatcher* matcher = func->matcher();
-
-    if (!m_cache.m_function) {
-	// TODO: Don't cache the matching the first time that the function is
-	// called.  This eliminates additional work and storage for
-	// functions that are only called once.
-	ArgList args(getArgs(), ArgList::RAW);
-	m_cache.m_arg_match_info = matcher->createMatchInfo(args);
-	m_cache.m_function = func;
-    }
-
-    if (m_cache.m_function == func
-	&& m_cache.m_arg_match_info
-	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist.tags()))
-    {
-	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
-	return;
-    }
-
-    // We weren't able to cache a matching, probably because getArgs()
-    // contains '...'.  Run the full matching algorithm instead.
-    ClosureContext context(this, calling_env, func, execution_env);
-    matcher->match(execution_env, arglist);
+    matcher->match(execution_env, arglist, &m_cached_matching_info);
 }
-
 
 // ***** C interface *****
 

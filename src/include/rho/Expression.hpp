@@ -32,12 +32,12 @@
 #define EXPRESSION_H
 
 #include "rho/ArgList.hpp"
+#include "rho/ArgMatcher.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/PairList.hpp"
 
 namespace rho {
     class ArgList;
-    class ArgMatchInfo;
     class BuiltInFunction;
     class Closure;
     class Frame;
@@ -264,10 +264,7 @@ namespace rho {
 	// Object used for recording details from previous evaluations of
 	// this expression, for the purpose of optimizing future evaluations.
 	// In the future, this will likely include type recording as well.
-        mutable struct {
-	    GCEdge<const FunctionBase> m_function;
-            const ArgMatchInfo* m_arg_match_info;
-	} m_cache;
+        mutable GCEdge<const ArgMatchCache> m_cached_matching_info;
 
 	void matchArgsIntoEnvironment(const Closure* func,
 				      Environment* calling_env,
