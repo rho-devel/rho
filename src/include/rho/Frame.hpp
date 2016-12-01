@@ -407,6 +407,12 @@ namespace rho {
 	     */
 	    RObject* unforcedValue() const;
 
+            //* @brief Is the value bound to the symbol a promise?
+            bool isPromise() const {
+              return m_value == argumentTag()
+                  || (m_value && m_value->sexptype() == PROMSXP);
+            }
+
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
 	     * This function conducts a visitor to those objects
