@@ -110,12 +110,12 @@ RObject* Expression::evaluate(Environment* env)
     FunctionBase* function = getFunction(env);
 
     ArgList arglist(tail(), ArgList::RAW);
-    return evaluateFunctionCall(function, env, &arglist);
+    return evaluateFunctionCall(function, env, arglist);
 }
 
 RObject* Expression::evaluateFunctionCall(const FunctionBase* func,
                                           Environment* env,
-                                          ArgList* raw_arglist) const
+                                          const ArgList& raw_arglist) const
 {
     func->maybeTrace(this);
 
@@ -130,7 +130,8 @@ RObject* Expression::evaluateFunctionCall(const FunctionBase* func,
 }
 
 RObject* Expression::applyBuiltIn(const BuiltInFunction* builtin,
-                                  Environment* env, ArgList* raw_arglist) const
+                                  Environment* env, const ArgList& raw_arglist)
+    const
 {
     RObject* result;
 
@@ -187,21 +188,21 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Envir
 
 RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       Environment* env,
-					       ArgList* arglist) const
+					       const ArgList& arglist) const
 {
-    bool evaluated = arglist->status() == ArgList::EVALUATED;
-    const PairList* tags = arglist->tags();
+    bool evaluated = arglist.status() == ArgList::EVALUATED;
+    const PairList* tags = arglist.tags();
     switch(func->arity()) {
     case 0:
 	return evaluateFixedArityBuiltIn(func, env, tags, evaluated);
 /*  This macro expands out to:
     case 1:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist->get(1));
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1));
     case 2:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist->get(1), arglist->get(2));
+	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1), arglist.get(2));
     ...
 */
-#define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist->get(N)
+#define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist.get(N)
 #define CASE_STATEMENT(Z, N, IGNORED)              \
     case N:                                        \
 	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
@@ -218,7 +219,7 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 }
 
 RObject* Expression::evaluateBuiltInCall(
-    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
     if (func->hasDirectCall() || func->hasFixedArityCall())
         return evaluateDirectBuiltInCall(func, env, arglist);
@@ -227,13 +228,16 @@ RObject* Expression::evaluateBuiltInCall(
 }
 
 RObject* Expression::evaluateDirectBuiltInCall(
-    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (arglist->has3Dots())
-        arglist->evaluate(env);
+    if (arglist.has3Dots()) {
+        ArgList expanded_args(arglist);
+        expanded_args.evaluate(env);
+        return evaluateDirectBuiltInCall(func, env, expanded_args);
+    }
 
     // Check the number of arguments.
-    int num_evaluated_args = arglist->size();
+    int num_evaluated_args = arglist.size();
     func->checkNumArgs(num_evaluated_args, this);
 
     // Check that any naming requirements on the first arg are satisfied.
@@ -250,24 +254,26 @@ RObject* Expression::evaluateDirectBuiltInCall(
         num_evaluated_args * sizeof(RObject*));
 
     // Copy the arguments to the stack, evaluating if necessary.
-    arglist->evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
+    arglist.evaluateToArray(env, num_evaluated_args, evaluated_arg_array);
 
     prepareToInvokeBuiltIn(func);
     return func->invoke(this, env, evaluated_arg_array, num_evaluated_args,
-                        arglist->tags());
+                        arglist.tags());
 }
 
 RObject* Expression::evaluateIndirectBuiltInCall(
-    const BuiltInFunction* func, Environment* env, ArgList* arglist) const
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
     if (func->sexptype() == BUILTINSXP
-	&& arglist->status() != ArgList::EVALUATED)
+	&& arglist.status() != ArgList::EVALUATED)
     {
-      arglist->evaluate(env);
+      ArgList evaluated_args(arglist);
+      evaluated_args.evaluate(env);
+      return evaluateIndirectBuiltInCall(func, env, evaluated_args);
     }
 
     // Check the number of arguments.
-    int num_evaluated_args = arglist->size();
+    int num_evaluated_args = arglist.size();
     func->checkNumArgs(num_evaluated_args, this);
 
     // Check that any naming requirements on the first arg are satisfied.
@@ -282,7 +288,7 @@ RObject* Expression::evaluateIndirectBuiltInCall(
 
 RObject* Expression::invokeClosure(const Closure* func,
                                    Environment* calling_env,
-                                   ArgList* arglist,
+                                   const ArgList& arglist,
                                    const Frame* method_bindings) const
 {
   return GCStackFrameBoundary::withStackFrameBoundary(
@@ -291,28 +297,27 @@ RObject* Expression::invokeClosure(const Closure* func,
 }
 
 void Expression::matchArgsIntoEnvironment(const Closure* func,
-					      Environment* calling_env,
-					      ArgList* arglist,
-					      Environment* execution_env) const
+					  Environment* calling_env,
+					  const ArgList& arglist,
+					  Environment* execution_env) const
 {
     const ArgMatcher* matcher = func->matcher();
-    ClosureContext context(this, calling_env, func, func->environment(),
-			   *arglist);
+    ClosureContext context(this, calling_env, func, execution_env);
     matcher->match(execution_env, arglist);
 }
 
 RObject* Expression::invokeClosureImpl(const Closure* func,
                                        Environment* calling_env,
-                                       ArgList* parglist,
+                                       const ArgList& parglist,
                                        const Frame* method_bindings) const
 {
-    // We can't modify *parglist, as it's on the other side of a
+    // We can't modify parglist, as it's on the other side of a
     // GCStackFrameboundary, so make a copy instead.
-    ArgList arglist(parglist->list(), parglist->status());
+    ArgList arglist(parglist);
     arglist.wrapInPromises(calling_env, this);
 
-    Environment* execution_env = func->createExecutionEnv();
-    matchArgsIntoEnvironment(func, calling_env, &arglist, execution_env);
+    Environment* execution_env = func->createExecutionEnv(arglist);
+    matchArgsIntoEnvironment(func, calling_env, arglist, execution_env);
 
     // If this is a method call, merge in supplementary bindings and modify
     // calling_env.
@@ -324,8 +329,7 @@ RObject* Expression::invokeClosureImpl(const Closure* func,
     RObject* result;
     {
       // Evaluate the function.
-      ClosureContext context(this, calling_env, func,
-                             execution_env, arglist);
+      ClosureContext context(this, calling_env, func, execution_env);
       result = func->execute(execution_env);
     }
 
@@ -365,49 +369,25 @@ CachingExpression* CachingExpression::clone() const
 
 void CachingExpression::visitReferents(const_visitor* v) const
 {
-    const GCNode* function = m_cache.m_function.get();
     Expression::visitReferents(v);
-    if (function)
-	(*v)(function);
+    if (m_cached_matching_info)
+        (*v)(m_cached_matching_info);
 }
 
 void CachingExpression::detachReferents()
 {
-    m_cache.m_function = nullptr;
+    m_cached_matching_info = nullptr;
     Expression::detachReferents();
 }
 
 void CachingExpression::matchArgsIntoEnvironment(const Closure* func,
                                           Environment* calling_env,
-                                          ArgList* arglist,
+                                          const ArgList& arglist,
                                           Environment* execution_env) const
 {
     const ArgMatcher* matcher = func->matcher();
-
-    if (!m_cache.m_function) {
-	// TODO: Don't cache the matching the first time that the function is
-	// called.  This eliminates additional work and storage for
-	// functions that are only called once.
-	ArgList args(getArgs(), ArgList::RAW);
-	m_cache.m_arg_match_info = matcher->createMatchInfo(&args);
-	m_cache.m_function = func;
-    }
-
-    if (m_cache.m_function == func
-	&& m_cache.m_arg_match_info
-	&& m_cache.m_arg_match_info->arglistTagsMatch(arglist->tags()))
-    {
-	matcher->match(execution_env, arglist, m_cache.m_arg_match_info);
-	return;
-    }
-
-    // We weren't able to cache a matching, probably because getArgs()
-    // contains '...'.  Run the full matching algorithm instead.
-    ClosureContext context(this, calling_env, func, func->environment(),
-			   *arglist);
-    matcher->match(execution_env, arglist);
+    matcher->match(execution_env, arglist, &m_cached_matching_info);
 }
-
 
 // ***** C interface *****
 

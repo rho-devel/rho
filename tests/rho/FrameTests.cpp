@@ -23,15 +23,8 @@
 
 #include "gtest/gtest.h"
 #include "rho/Frame.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/RealVector.hpp"
-
-#ifdef ENABLE_LLVM_JIT
-#include "rho/jit/CompiledFrame.hpp"
-#include "rho/jit/FrameDescriptor.hpp"
-using rho::JIT::CompiledFrame;
-using rho::JIT::FrameDescriptor;
-#endif
 
 using namespace rho;
 
@@ -178,19 +171,19 @@ TEST_P(FrameTest, DotSymbols) {
 
 // TODO(kmillar): add more tests.
 
-static Frame* MakeListFrame() {
-    return new ListFrame();
+static Frame* MakeBasicFrame() {
+    return Frame::normalFrame();
 }
-INSTANTIATE_TEST_CASE_P(ListFrameTest,
+INSTANTIATE_TEST_CASE_P(SimpleFrameTest,
 			FrameTest,
-			::testing::Values(MakeListFrame));
+			::testing::Values(MakeBasicFrame));
 
-#ifdef ENABLE_LLVM_JIT
 static Frame* MakeEmptyCompiledFrame() {
   GCStackRoot<FrameDescriptor> descriptor(
       new FrameDescriptor(std::initializer_list<const Symbol*>{},
 			  std::initializer_list<const Symbol*>{}));
-    return new CompiledFrame(descriptor);
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(EmptyCompiledFrameTest,
 			FrameTest,
@@ -204,7 +197,8 @@ static Frame* MakeOneItemCompiledFrame1() {
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_1") },
           std::initializer_list<const Symbol*>{}));
-    return new CompiledFrame(descriptor);
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest1,
 			FrameTest,
@@ -216,7 +210,8 @@ static Frame* MakeOneItemCompiledFrame2() {
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_2") },
           std::initializer_list<const Symbol*>{}));
-    return new CompiledFrame(descriptor);
+  return Frame::closureWorkingFrame(descriptor,
+                                    ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
 			FrameTest,
@@ -224,14 +219,14 @@ INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
 			    MakeOneItemCompiledFrame2));
 
 static Frame* MakeOneItemCompiledFrame3() {
-  GCStackRoot<FrameDescriptor> descriptor(
+    GCStackRoot<FrameDescriptor> descriptor(
       new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_3") },
           std::initializer_list<const Symbol*>{}));
-    return new CompiledFrame(descriptor);
+    return Frame::closureWorkingFrame(descriptor,
+                                      ArgList(nullptr, ArgList::PROMISED));
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest3,
 			FrameTest,
 			::testing::Values(
 			    MakeOneItemCompiledFrame3));
-#endif

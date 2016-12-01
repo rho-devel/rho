@@ -2794,7 +2794,7 @@ void GEplayDisplayList(pGEDevDesc dd)
 		BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
 		ArgList arglist(theOperation->getArgs(),
 				ArgList::EVALUATED);
-		theOperation->applyBuiltIn(builtin, nullptr, &arglist);
+		theOperation->applyBuiltIn(builtin, nullptr, arglist);
 		/* Check with each graphics system that the plotting went ok
 		 */
 		if (!GEcheckState(dd)) {

@@ -203,16 +203,14 @@ static SEXP embedInVector(SEXP v, SEXP call)
     return (ans);
 }
 
-static Rboolean dispatch_asvector(SEXP *x, SEXP call, SEXP rho)
+static std::pair<bool, SEXP> dispatch_asvector(SEXP x, const Expression* call,
+                                               Environment* rho)
 {
-    static SEXP op = R_Primitive("as.vector");
-    SEXP args;
-    Rboolean ans;
-    PROTECT(args = list2(*x, mkString("any")));
-    ans = Rboolean(
-	DispatchOrEval(call, op, args, rho, x, MissingArgHandling::Keep, 1));
-    UNPROTECT(1);
-    return ans;
+    static GCRoot<BuiltInFunction> op
+        = BuiltInFunction::obtainPrimitive("as.vector");
+    static GCRoot<> any = mkString("any");
+    ArgList args({ x, any }, ArgList::EVALUATED);
+    return Rf_Dispatch(call, op, args, rho);
 }
 
 
@@ -376,10 +374,15 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call, SEXP rho)
     case 1525: /* complex   <- S4 */
     case 1625: /* character <- S4 */
     case 2425: /* raw       <- S4 */
-        if (dispatch_asvector(y, call, rho)) {
-            return SubassignTypeFix(x, y, level, call, rho);
-        }
-        
+      {
+          auto dispatched = dispatch_asvector(*y,
+                                              SEXP_downcast<Expression*>(call),
+                                              SEXP_downcast<Environment*>(rho));
+          if (dispatched.first) {
+              *y = dispatched.second;
+              return SubassignTypeFix(x, y, level, call, rho);
+          }
+      }
     default:
 	error(_("incompatible types (from %s to %s) in subassignment type fix"),
 	      type2char(RHOCONSTRUCT(SEXPTYPE, which%100)), type2char(RHOCONSTRUCT(SEXPTYPE, which/100)));
@@ -847,32 +850,6 @@ static int SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
     }
 }
 
-/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
-   Also defined in subset.c */
-static R_INLINE
-int R_DispatchOrEvalSP(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP *ans)
-{
-    SEXP prom = NULL;
-    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
-	SEXP x = eval(CAR(args), rho);
-	PROTECT(x);
-	if (! OBJECT(x)) {
-	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
-	    UNPROTECT(1);
-	    return FALSE;
-	}
-	prom = Promise::createEvaluatedPromise(CAR(args), x);
-	args = CONS(prom, CDR(args));
-	UNPROTECT(1);
-    }
-    PROTECT(args);
-    int disp = DispatchOrEval(call, op, args, rho, ans,
-			      MissingArgHandling::Keep, 0);
-    if (prom) DECREMENT_REFCNT(PRVALUE(prom));
-    UNPROTECT(1);
-    return disp;
-}
-
 /* The [<- operator.  "x" is the vector that is to be assigned into, */
 /* y is the vector that is going to provide the new values and subs is */
 /* the vector of subscripts that are going to be replaced. */
@@ -882,17 +859,17 @@ int R_DispatchOrEvalSP(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP *ans)
 
 SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans;
-
-    /* This code performs an internal version of method dispatch. */
-    /* We evaluate the first argument and attempt to dispatch on it. */
-    /* If the dispatch fails, we "drop through" to the default code below. */
-
-    if(R_DispatchOrEvalSP(call, op, args, rho, &ans))
-/*     if(DispatchAnyOrEval(call, op, "[<-", args, rho, &ans, 0, 0)) */
-      return(ans);
-
-    return do_subassign_dflt(call, op, ans, rho);
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subassign_dflt,
+        expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
@@ -1021,13 +998,18 @@ static SEXP DeleteOneVectorListItem(SEXP x, R_xlen_t which)
  * args[3] = replacement values */
 SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans;
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
 
-    if(R_DispatchOrEvalSP(call, op, args, rho, &ans))
-/*     if(DispatchAnyOrEval(call, op, "[[<-", args, rho, &ans, 0, 0)) */
-      return(ans);
-
-    return do_subassign2_dflt(call, op, ans, rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subassign2_dflt,
+        expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden
@@ -1366,12 +1348,11 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 */
 SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP nlist, ans, input;
+    SEXP nlist, input;
     int iS;
 
-    /* Note the RHS has already been evaluated at this point */
-
-    nlist = CADR(args);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    nlist = arglist.get(1);
     if (TYPEOF(nlist) == PROMSXP) {
 	nlist = eval(nlist, env);
     }
@@ -1385,16 +1366,19 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* replace the second argument with a string */
-    SETCADR(args, input);
+    arglist.set(1, input);
+    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
+                                        SEXP_downcast<BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(env),
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
 
-    if(R_DispatchOrEvalSP(call, op, args, env, &ans))
-      return(ans);
-
-    GCStackRoot<> ansrt(ans);
     if (! iS)
 	nlist = installTrChar(STRING_ELT(input, 0));
 
-    return R_subassign3_dflt(call, CAR(ans), nlist, CADDR(ans));
+    return R_subassign3_dflt(call, arglist.get(0), nlist, arglist.get(2));
 }
 
 /* used in "$<-" (above) and methods_list_dispatch.c */

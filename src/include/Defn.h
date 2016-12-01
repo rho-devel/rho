@@ -566,7 +566,6 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
 # define ErrorMessage		Rf_ErrorMessage
-# define evalListKeepMissing	Rf_evalListKeepMissing
 # define factorsConform		Rf_factorsConform
 # define findcontext		Rf_findcontext
 # define findVar1		Rf_findVar1
@@ -612,7 +611,6 @@ LibExtern SEXP R_LogicalNAValue INI_as(NULL);
 # define mat2indsub		Rf_mat2indsub
 # define matchArg		Rf_matchArg
 # define matchArgExact		Rf_matchArgExact
-# define matchArgs		Rf_matchArgs
 # define matchPar		Rf_matchPar
 # define Mbrtowc		Rf_mbrtowc
 # define mbtoucs		Rf_mbtoucs
@@ -756,7 +754,6 @@ SEXP dispatch_subset2(SEXP, R_xlen_t, SEXP, SEXP);
 SEXP duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated(SEXP, Rboolean);
 R_xlen_t any_duplicated3(SEXP, SEXP, Rboolean);
-SEXP Rf_evalListKeepMissing(SEXP, SEXP);
 int Rf_factorsConform(SEXP, SEXP);
 SEXP Rf_findVar1(SEXP, SEXP, SEXPTYPE, int);
 void Rf_FrameClassFix(SEXP);
@@ -772,21 +769,37 @@ void Rf_InitFunctionHashing(void);
 void Rf_InitGlobalEnv(void);
 Rboolean R_current_trace_state(void);
 Rboolean R_current_debug_state(void);
-Rboolean R_has_methods(SEXP);
 void R_InitialData(void);
 
 #ifdef __cplusplus
 }  // extern "C"
-std::pair<bool, SEXP>
-R_possible_dispatch(rho::Expression* call, rho::BuiltInFunction* op,
-		    const rho::ArgList&, rho::Environment* env);
-int Rf_DispatchOrEval(SEXP, SEXP, SEXP, SEXP, SEXP*,
-		      rho::MissingArgHandling, int);
+bool R_has_methods(const rho::BuiltInFunction* func);
 
-R_xlen_t dispatch_xlength(rho::RObject* object, rho::Expression* call,
+std::pair<bool, SEXP>
+R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
+		    const rho::ArgList&, rho::Environment* env);
+std::pair<bool, SEXP>
+Rf_DispatchOrEval(const rho::Expression* call, const rho::BuiltInFunction* op,
+                  rho::ArgList* args, rho::Environment* env,
+                  rho::MissingArgHandling dropmissing);
+// Like DispatchOrEval, but args have already been evaluated.
+std::pair<bool, SEXP>
+Rf_Dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
+            const rho::ArgList& args, rho::Environment* env);
+std::pair<bool, SEXP>
+Rf_DispatchGroup(const char *group, const rho::Expression* call,
+                 const rho::BuiltInFunction* op,
+                 rho::ArgList&& args, rho::Environment* env);
+std::pair<bool, SEXP> Rf_usemethod(const char* generic,
+                                   const rho::RObject* object,
+                                   const rho::Expression* call,
+                                   rho::Environment* env,
+                                   rho::Environment* callenv,
+                                   rho::Environment* defenv);
+R_xlen_t dispatch_xlength(rho::RObject* object,
+                          const rho::Expression* call,
                           rho::Environment* rho);
-R_len_t dispatch_length(rho::RObject* object, rho::Expression* call,
-                        rho::Environment* rho);
+
 extern "C" {
 #endif
 
@@ -811,7 +824,6 @@ SEXP Rf_makeSubscript(SEXP, SEXP, R_xlen_t *, SEXP);
 SEXP Rf_markKnown(const char *, SEXP);
 SEXP Rf_mat2indsub(SEXP, SEXP, SEXP);
 SEXP Rf_matchArgExact(SEXP, SEXP*);
-SEXP Rf_matchArgs(SEXP, SEXP, SEXP);
 SEXP Rf_mkCLOSXP(SEXP, SEXP, SEXP);
 SEXP Rf_mkFalse(void);
 SEXP Rf_mkPROMISE(SEXP, SEXP);
@@ -873,7 +885,6 @@ void Rf_unbindVar(SEXP, SEXP);
 void unmarkPhase(void);
 #endif
 SEXP R_LookupMethod(SEXP, SEXP, SEXP, SEXP);
-int Rf_usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
 SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP, Rboolean);
 
 /* ../main/bind.c */

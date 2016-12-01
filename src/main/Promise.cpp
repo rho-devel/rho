@@ -33,6 +33,7 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "rho/Bailout.hpp"
+#include "rho/Expression.hpp"
 #include "rho/GCStackRoot.hpp"
 #include "rho/PlainContext.hpp"
 #include "rho/StackChecker.hpp"
@@ -49,16 +50,43 @@ namespace rho {
     }
 }
 
-void Promise::detachReferents()
+PromiseData::PromiseData(const RObject* valgen, Environment* env)
+    : m_under_evaluation(false), m_interrupted(false),
+      m_is_pointer_to_promise(false)
+{
+    m_value = Symbol::unboundValue();
+    m_valgen = valgen;
+    m_environment = env;
+}
+
+PromiseData::PromiseData(Promise* value)
+    : m_is_pointer_to_promise(true)
+{
+    m_value = value;
+}
+
+PromiseData::~PromiseData() = default;
+PromiseData::PromiseData(PromiseData&&) = default;
+PromiseData& PromiseData::operator=(PromiseData&& other) = default;
+
+Promise* PromiseData::asPromise() {
+    Promise* promise = new Promise(std::move(*this));
+    *this = PromiseData(promise);
+    return promise;
+}
+
+void PromiseData::detachReferents()
 {
     m_value.detach();
     m_valgen.detach();
     m_environment.detach();
-    RObject::detachReferents();
 }
 
-RObject* Promise::evaluate(Environment* /*env*/)
+RObject* PromiseData::evaluate()
 {
+    if (m_is_pointer_to_promise) {
+        return getThis()->evaluate();
+    }
     if (m_value == Symbol::unboundValue()) {
 	// Force promise:
 	if (m_interrupted) {
@@ -75,7 +103,7 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	    PlainContext cntxt;
 	    RObject* val = Evaluator::evaluate(
 		const_cast<RObject*>(m_valgen.get()),
-		environment());
+		m_environment.get());
 	    setValue(val);
 	}
 	catch (...) {
@@ -84,18 +112,22 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	}
 	m_under_evaluation = false;
     }
-    return value();
+    return m_value;
 }
 
-bool Promise::isMissingSymbol() const
+bool PromiseData::isMissingSymbol() const
 {
+    if (m_is_pointer_to_promise) {
+        return getThis()->isMissingSymbol();
+    }
+
     bool ans = false;
     /* This is wrong but I'm not clear why - arr
     if (m_value == Symbol::missingArgument())
      	return true;
     */
     if (m_value == Symbol::unboundValue() && m_valgen) {
-	RObject* prexpr = PREXPR(const_cast<Promise*>(this));
+	const RObject* prexpr = m_valgen;
 	if (prexpr->sexptype() == SYMSXP) {
 	    // According to Luke Tierney's comment to R_isMissing() in CR,
 	    // if a cycle is found then a missing argument has been
@@ -106,7 +138,7 @@ bool Promise::isMissingSymbol() const
 		const Symbol* promsym
 		    = static_cast<const Symbol*>(prexpr);
 		m_under_evaluation = true;
-		ans = isMissingArgument(promsym, environment()->frame());
+		ans = isMissingArgument(promsym, m_environment->frame());
 	    }
 	    catch (...) {
 		m_under_evaluation = false;
@@ -118,7 +150,7 @@ bool Promise::isMissingSymbol() const
     return ans;
 }
 
-void Promise::setValue(RObject* val)
+void PromiseData::setValue(RObject* val)
 {
     m_value = val;
     SET_NAMED(val, 2);
@@ -131,12 +163,11 @@ const char* Promise::typeName() const
     return staticTypeName();
 }
 
-void Promise::visitReferents(const_visitor* v) const
+void PromiseData::visitReferents(GCNode::const_visitor* v) const
 {
     const GCNode* value = m_value;
     const GCNode* valgen = m_valgen;
     const GCNode* env = m_environment;
-    RObject::visitReferents(v);
     if (value)
 	(*v)(value);
     if (valgen)
@@ -168,7 +199,12 @@ void SET_PRVALUE(SEXP x, SEXP v)
 
 int PRSEEN(SEXP x) {
     Promise* prom = SEXP_downcast<Promise*>(x);
-    return prom->m_under_evaluation
-	|| prom->m_interrupted
-	|| prom->m_environment == R_NilValue;
+    return prom->m_data->m_under_evaluation
+	|| prom->m_data->m_interrupted
+	|| prom->m_data->m_environment == R_NilValue;
+}
+
+SEXP PRENV(SEXP x) {
+    const Promise& prom = *SEXP_downcast<Promise*>(x);
+    return prom.environment();
 }

@@ -21,8 +21,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef RHO_JIT_FRAME_DESCRIPTOR_HPP
-#define RHO_JIT_FRAME_DESCRIPTOR_HPP
+#ifndef RHO_FRAME_DESCRIPTOR_HPP
+#define RHO_FRAME_DESCRIPTOR_HPP
 
 #include <vector>
 #include "rho/GCNode.hpp"
@@ -31,13 +31,11 @@ namespace rho {
 class Closure;
 class Symbol;
 
-namespace JIT {
-
 /**
  * A FrameDescriptor creates a static mapping between the symbols expected to
  * be used in a function and integers that can be used as array offsets.
  *
- * This is used to create the layout for CompiledFrame.
+ * This is used to create the layout for Environment objects.
  *
  * Note that it is not guaranteed that all symbols used in the function will
  * be listed in the FrameDescriptor.
@@ -80,7 +78,6 @@ private:
     int m_num_formals;
 };
 
-} // namespace JIT
 } // namespace rho
 
-#endif // RHO_JIT_FRAME_DESCRIPTOR_HPP
+#endif // RHO_FRAME_DESCRIPTOR_HPP

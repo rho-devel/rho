@@ -27,6 +27,7 @@
 #include "rho/Environment.hpp"
 #include "rho/Evaluator.hpp"
 #include "rho/Expression.hpp"
+#include "rho/Frame.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/LoopBailout.hpp"
 #include "rho/LoopException.hpp"
@@ -34,7 +35,6 @@
 #include "rho/RObject.hpp"
 #include "rho/StackChecker.hpp"
 #include "rho/Symbol.hpp"
-#include "rho/jit/CompiledFrame.hpp"
 #include "Defn.h"
 
 /*
@@ -71,8 +71,8 @@ RObject* rho_runtime_lookupSymbol(const Symbol* value,
  * those cases.
  */
 RObject* rho_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
-						  Environment* environment,
-						  int position)
+						 Environment* environment,
+						 int position)
 {
     assert(environment->frame() != nullptr);
     assert(symbol != DotsSymbol);
@@ -80,9 +80,7 @@ RObject* rho_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
     assert(symbol != R_MissingArg);
     assert(position >= 0);
 
-    JIT::CompiledFrame* frame
-	// TODO(kmillar): when optimizing make this a static cast.
-	= dynamic_cast<JIT::CompiledFrame*>(environment->frame());
+    Frame* frame = environment->frame();
     assert(frame != nullptr);
 
     Frame::Binding* binding = frame->binding(position);
@@ -113,17 +111,15 @@ RObject* rho_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
  * Assign to a symbol in a CompiledFrame.
  */
 void rho_runtime_assignSymbolInCompiledFrame(const Symbol* symbol,
-					      Environment* environment,
-					      int position,
-					      RObject* value)
+					     Environment* environment,
+					     int position,
+					     RObject* value)
 {
     assert(environment->frame() != nullptr);
     assert(value != R_MissingArg);
     assert(position >= 0);
 
-    JIT::CompiledFrame* frame
-	// TODO(kmillar): when optimizing make this a static cast.
-	= dynamic_cast<JIT::CompiledFrame*>(environment->frame());
+    Frame* frame = environment->frame();
     assert(frame != nullptr);
 
     Frame::Binding* binding = frame->obtainBinding(symbol, position);
@@ -143,7 +139,7 @@ RObject* rho_runtime_callFunction(const FunctionBase* function,
     IncrementStackDepthScope scope;
 
     ArgList arglist(args, ArgList::RAW);
-    return call->evaluateFunctionCall(function, environment, &arglist);
+    return call->evaluateFunctionCall(function, environment, arglist);
 }
 
 void rho_runtime_do_break(Environment* environment) {

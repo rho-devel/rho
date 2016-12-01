@@ -127,7 +127,7 @@ namespace rho {
 	 * or a pointer to an S3Launcher object for the method found.
 	 */
 	static S3Launcher*
-	create(RObject* object, std::string generic, std::string group,
+	create(const RObject* object, std::string generic, std::string group,
 	       Environment* call_env, Environment* table_env,
 	       bool allow_default);
 

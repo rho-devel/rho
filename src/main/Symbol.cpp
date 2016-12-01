@@ -110,11 +110,17 @@ RObject* Symbol::evaluate(Environment* env)
 	val = Rf_ddfindVar(this, env);
     else {
 	Frame::Binding* bdg = env->findBinding(this);
-	if (bdg)
-	    val = bdg->unforcedValue();
-	else if (this == missingArgument())
-	    val = this;  // This reproduces CR behaviour
-	else val = unboundValue();
+	if (bdg) {
+            val = bdg->forcedValue();
+            if (bdg->isPromise()) {
+                if (NAMED(val) < 2)
+                    SET_NAMED(val, 2);
+                return val;
+            }
+        } else if (this == missingArgument()) {
+            val = this;  // This reproduces CR error messages.
+        }
+        else val = unboundValue();
     }
     if (!val)
 	return nullptr;

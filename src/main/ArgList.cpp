@@ -33,6 +33,7 @@
 #include "rho/DottedArgs.hpp"
 #include "rho/Environment.hpp"
 #include "rho/Evaluator.hpp"
+#include "rho/Expression.hpp"
 #include "rho/Promise.hpp"
 #include "rho/errors.hpp"
 
@@ -40,6 +41,9 @@ using namespace std;
 using namespace rho;
 
 // Implementation of ArgList::coerceTag() is in coerce.cpp
+
+ArgList::ArgList(const ArgList& other)
+    : ArgList(other.list(), other.status()) {}
 
 PairList* ArgList::append(RObject* value, const RObject* tag,
 			  PairList* last_element) {
@@ -53,7 +57,7 @@ PairList* ArgList::append(RObject* value, const RObject* tag,
 
 void ArgList::evaluateToArray(Environment* env,
 			      int num_args, RObject** evaluated_args,
-			      MissingArgHandling allow_missing)
+			      MissingArgHandling allow_missing) const
 {
     assert(allow_missing != MissingArgHandling::Drop);
 
@@ -98,7 +102,7 @@ void ArgList::evaluate(Environment* env,
 RObject* ArgList::evaluateSingleArgument(const RObject* arg,
 					 Environment* env,
 					 MissingArgHandling allow_missing,
-					 int arg_number) {
+					 int arg_number) const {
     // assert(allow_missing != MissingArgHandling::Drop);
 
     if (m_first_arg_env) {
@@ -179,12 +183,26 @@ RObject* ArgList::get(int position) const {
     return cell ? cell->car() : nullptr;
 }
 
+void ArgList::set(int position, RObject* value) {
+    assert(position < size());
+    auto cell = mutable_list()->begin();
+    std::advance(cell, position);
+    cell->setCar(value);
+}
+
 const RObject* ArgList::getTag(int position) const {
     ConsCell* cell = m_list.get();
     for (int i = 0; i < position && cell != nullptr; i++) {
 	cell = cell->tail();
     }
     return cell ? cell->tag() : nullptr;
+}
+
+void ArgList::setTag(int position, const Symbol* tag) {
+    assert(position < size());
+    auto cell = mutable_list()->begin();
+    std::advance(cell, position);
+    cell->setTag(tag);
 }
 
 bool ArgList::has3Dots() const {
@@ -211,8 +229,20 @@ bool ArgList::hasTags() const {
 
 void ArgList::stripTags()
 {
-    for (PairList* p = mutable_list(); p; p = p->tail())
-	p->setTag(nullptr);
+    for (auto& item : *mutable_list()) {
+        item.setTag(nullptr);
+    }
+}
+
+void ArgList::erase(int pos) {
+    assert(pos < size());
+    if (pos == 0) {
+        m_list = mutable_list()->tail();
+        return;
+    }
+    auto prev = mutable_list()->begin();
+    std::advance(prev, pos - 1);
+    prev->setTail(prev->tail()->tail());
 }
 
 const Symbol* ArgList::tag2Symbol(const RObject* tag)
@@ -230,7 +260,7 @@ void ArgList::wrapInPromises(Environment* env,
     if (m_status == EVALUATED) {
 	assert(call != nullptr);
 	ArgList raw_args(call->tail(), RAW);
-	raw_args.wrapInForcedPromises(env, this);
+	raw_args.wrapInForcedPromises(env, *this);
 	m_status = PROMISED;
 	m_list = raw_args.m_list;
 	return;
@@ -258,17 +288,17 @@ void ArgList::wrapInPromises(Environment* env,
 }
 
 void ArgList::wrapInForcedPromises(Environment* env,
-				   const ArgList* evaluated_values)
+				   const ArgList& evaluated_values)
 {
     assert(m_status == RAW);
-    assert(evaluated_values->status() == EVALUATED);
+    assert(evaluated_values.status() == EVALUATED);
 
     if (m_first_arg_env) {
-	assert(m_first_arg.get() == evaluated_values->get(0));
+	assert(m_first_arg.get() == evaluated_values.get(0));
     }
 
     auto expanded_args = getExpandedArgs(env);
-    const auto& values = *evaluated_values->list();
+    const auto& values = *evaluated_values.list();
 
     setList(nullptr);
     PairList* lastout = nullptr;

@@ -26,7 +26,6 @@
 #include "rho/jit/Compiler.hpp"
 
 #include "rho/jit/CompilationException.hpp"
-#include "rho/jit/FrameDescriptor.hpp"
 #include "rho/jit/MCJITMemoryManager.hpp"
 #include "rho/jit/Runtime.hpp"
 #include "rho/jit/TypeBuilder.hpp"
@@ -36,6 +35,7 @@
 #include "rho/DottedArgs.hpp"
 #include "rho/Environment.hpp"
 #include "rho/Expression.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/RObject.hpp"
 #include "rho/SEXP_downcast.hpp"

@@ -100,7 +100,6 @@ SEXP do_break(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_browser(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 SEXP do_builtins(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* internal_);
 SEXP do_c(SEXP, SEXP, SEXP, SEXP);  // Calls do_c_dflt
-SEXP do_c_dflt(SEXP, SEXP, SEXP, SEXP); // Tricky
 SEXP do_call(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_capabilities(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_capabilitiesX11(rho::Expression* call, const rho::BuiltInFunction* op);

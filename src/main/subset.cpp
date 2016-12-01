@@ -370,47 +370,17 @@ static int ExtractExactArg(SEXP args)
     return exact;
 }
 
-/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
-   Also defined in subassign.c */
-static R_INLINE
-int R_DispatchOrEvalSP(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP *ans)
-{
-    SEXP prom = NULL;
-    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
-	SEXP x = eval(CAR(args), rho);
-	PROTECT(x);
-	if (! OBJECT(x)) {
-	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
-	    UNPROTECT(1);
-	    return FALSE;
-	}
-	prom = Promise::createEvaluatedPromise(CAR(args), x);
-	args = CONS(prom, CDR(args));
-	UNPROTECT(1);
-    }
-    PROTECT(args);
-    int disp = DispatchOrEval(call, op, args, rho, ans,
-			      MissingArgHandling::Keep, 0);
-    if (prom) DECREMENT_REFCNT(PRVALUE(prom));
-    UNPROTECT(1);
-    return disp;
-}
-
-/* The "[" subset operator.
- * This provides the most general form of subsetting. */
-
+/* The "[" subset operator. */
 SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans;
-
-    /* If the first argument is an object and there is an */
-    /* approriate method, we dispatch to that method, */
-    /* otherwise we evaluate the arguments and fall through */
-    /* to the generic code below.  Note that evaluation */
-    /* retains any missing argument indicators. */
-
-    if(R_DispatchOrEvalSP(call, op, args, rho, &ans)) {
-/*     if(DispatchAnyOrEval(call, op, "[", args, rho, &ans, 0, 0)) */
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
+                                       MissingArgHandling::Keep);
+    if (dispatched.first) {
+        RObject* ans = dispatched.second;
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
@@ -418,7 +388,8 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* Method dispatch has failed, we now */
     /* run the generic internal code. */
-    return do_subset_dflt(call, op, ans, rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subset_dflt, expression, function, arglist, envx);
 }
 
 static R_INLINE R_xlen_t scalarIndex(SEXP s)
@@ -625,30 +596,26 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-
 /* The [[ subset operator.  It needs to be fast. */
 /* The arguments to this call are evaluated on entry. */
 
 SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans;
-
-    /* If the first argument is an object and there is */
-    /* an approriate method, we dispatch to that method, */
-    /* otherwise we evaluate the arguments and fall */
-    /* through to the generic code below.  Note that */
-    /* evaluation retains any missing argument indicators. */
-
-    if(R_DispatchOrEvalSP(call, op, args, rho, &ans)) {
+    const Expression* expression = SEXP_downcast<Expression*>(call);
+    const BuiltInFunction* function = SEXP_downcast<BuiltInFunction*>(op);
+    Environment* envx = SEXP_downcast<Environment*>(rho);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    auto dispatched = Rf_DispatchOrEval(expression, function, &arglist, envx,
+                                        MissingArgHandling::Keep);
+    if (dispatched.first) {
+        SEXP ans = dispatched.second;
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
     }
 
-    /* Method dispatch has failed. */
-    /* We now run the generic internal code. */
-
-    return do_subset2_dflt(call, op, ans, rho);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_subset2_dflt, expression, function, arglist, envx);
 }
 
 SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
@@ -880,8 +847,7 @@ pstrmatch(SEXP target, SEXP input, size_t slen)
 */
 SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP input, nlist, ans;
-
+    SEXP input, nlist;
     /* first translate CADR of args into a string so that we can
        pass it down to DispatchorEval and have it behave correctly */
     nlist = CADR(args);
@@ -889,8 +855,10 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 	nlist = eval(nlist, env);
     if(isSymbol(nlist) )
 	input = Rf_ScalarString(PRINTNAME(nlist));
-    else if(isString(nlist) )
-	input = Rf_ScalarString(STRING_ELT(nlist, 0));
+    else if(isString(nlist) ) {
+      input = Rf_length(nlist) == 1
+          ? nlist : Rf_ScalarString(STRING_ELT(nlist, 0));
+    }
     else {
 	errorcall(call,_("invalid subscript type '%s'"),
 		  type2char(TYPEOF(nlist)));
@@ -902,23 +870,23 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* Previously this was SETCADR(args, input); */
     /* which could cause problems when nlist was */
     /* ..., as in PR#8718 */
-    PROTECT(args = CONS(CAR(args), CONS(input, R_NilValue)));
+    ArgList arglist({ CAR(args), input }, ArgList::RAW);
 
-    /* If the first argument is an object and there is */
-    /* an approriate method, we dispatch to that method, */
-    /* otherwise we evaluate the arguments and fall */
-    /* through to the generic code below.  Note that */
-    /* evaluation retains any missing argument indicators. */
-
-    if(R_DispatchOrEvalSP(call, op, args, env, &ans)) {
-	UNPROTECT(2);
+    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
+                                        SEXP_downcast<BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(env),
+                                        MissingArgHandling::Keep);
+    if (dispatched.first) {
+        SEXP ans = dispatched.second;
+	UNPROTECT(1);
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
     }
 
-    UNPROTECT(2); /* input, args */
-    return R_subset3_dflt(CAR(ans), STRING_ELT(input, 0), call);
+    UNPROTECT(1); /* input, args */
+    return R_subset3_dflt(arglist.get(0), STRING_ELT(input, 0), call);
 }
 
 /* used in eval.c */

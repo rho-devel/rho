@@ -155,7 +155,7 @@ namespace rho {
 
 	/** @brief Create an environment suitable for evaluating this closure.
 	 */
-        Environment* createExecutionEnv() const;
+        Environment* createExecutionEnv(const ArgList&) const;
 
 	/** @brief Set debugging status.
 	 *

@@ -254,7 +254,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)->InternalDispatch(
 	SEXP_downcast<Expression*>(call2),
-	SEXP_downcast<Environment*>(env), &arglist);
+	SEXP_downcast<Environment*>(env), arglist);
     if (dispatched.first) {
 	UNPROTECT(2);
 	return(dispatched.second);

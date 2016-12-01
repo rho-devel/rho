@@ -316,7 +316,7 @@ namespace rho {
 	}
 
 	RObject* invoke(const Expression* call, Environment* env,
-                        ArgList* args) const
+                        const ArgList& args) const
 	{
 	    // Handle internal generic functions.
 	    static BuiltInFunction* length_fn
@@ -334,10 +334,7 @@ namespace rho {
 	    }
 
 	    assert(m_function);
-            return m_function(const_cast<Expression*>(call),
-                              const_cast<BuiltInFunction*>(this),
-                              const_cast<PairList*>(args->list()),
-                              env);
+            return callBuiltInWithCApi(m_function, call, this, args, env);
         }
 
         RObject* invoke(const Expression* call, Environment* env,
@@ -394,6 +391,11 @@ namespace rho {
 	    return m_first_arg_name;
 	}
 
+        static SEXP callBuiltInWithCApi(CCODE builtin,
+                                        const Expression* call,
+                                        const FunctionBase* op,
+                                        const ArgList& args,
+                                        Environment* env);
     private:
 	// The type of internal dispatch (if any) that the function does..
 	enum class DispatchType {
@@ -404,7 +406,7 @@ namespace rho {
         std::pair<bool, RObject*>
         InternalDispatch(const Expression* call,
 			 Environment* env,
-			 ArgList* evaluated_args) const;
+			 const ArgList& evaluated_args) const;
 
         // This works like DispatchOrEval in the case where the arguments
         // have already been evaluated.
@@ -552,18 +554,18 @@ namespace rho {
 	    }
 	}
 
-	bool needsDispatch(const ArgList* evaluated_args) const
+	bool needsDispatch(const ArgList& evaluated_args) const
 	{
 	    if (!isInternalGeneric())
 		return false;
-	    switch(evaluated_args->size()) {
+	    switch(evaluated_args.size()) {
 	    case 0:
 		return false;
 	    case 1:
-		return needsDispatch(evaluated_args->get(0));
+		return needsDispatch(evaluated_args.get(0));
 	    default:
-		return needsDispatch(evaluated_args->get(0),
-				     evaluated_args->get(1));
+		return needsDispatch(evaluated_args.get(0),
+				     evaluated_args.get(1));
 	    }
 	}
 

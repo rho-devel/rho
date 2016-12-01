@@ -80,7 +80,7 @@ const unsigned char RObject::s_class_mask;
 RObject::RObject(const RObject& pattern)
     : m_type(pattern.m_type), m_named(0),
       m_memory_traced(pattern.m_memory_traced), m_missing(pattern.m_missing),
-      m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
+      m_active_binding(pattern.m_active_binding),
       m_binding_locked(pattern.m_binding_locked)
 {
     m_attrib = clone(pattern.m_attrib.get());
@@ -323,7 +323,6 @@ protected:
     virtual ~PaddedPairList() {}
 
     void* m_unused_padding_1;
-    void* m_unused_padding_2;
 };
 
 }  // anonymous namespace

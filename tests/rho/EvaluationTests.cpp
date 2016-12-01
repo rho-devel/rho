@@ -27,7 +27,8 @@
 #include "rho/Closure.hpp"
 #include "rho/CommandTerminated.hpp"
 #include "rho/Evaluator.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Expression.hpp"
+#include "rho/Frame.hpp"
 #include "rho/ListVector.hpp"
 #include "Defn.h"
 #include "Parse.h"
@@ -114,7 +115,7 @@ Environment* Executor::newTestEnv()
     // Every evaluation is done in a freshly created environment, so that
     // side effects don't propogate.
     // Only the base environment is visible from this environment.
-    GCStackRoot<Frame> frame(new ListFrame());
+    GCStackRoot<Frame> frame(Frame::normalFrame());
     return new Environment(Environment::base(), frame);
 }
 
@@ -186,7 +187,7 @@ public:
 	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
 	GCStackRoot<Expression> call(new Expression(closure));
-	return call->invokeClosure(closure, env, &args);
+	return call->invokeClosure(closure, env, args);
     }
 };
 

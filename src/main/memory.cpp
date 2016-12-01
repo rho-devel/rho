@@ -43,7 +43,7 @@
 #include "rho/FunctionContext.hpp"
 #include "rho/GCManager.hpp"
 #include "rho/IntVector.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/LogicalVector.hpp"
 #include "rho/MemoryBank.hpp"
 #include "rho/RealVector.hpp"
@@ -290,7 +290,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCStackRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCStackRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
-    GCStackRoot<Frame> frame(new ListFrame(Rf_length(namevalr) + 5));
+    GCStackRoot<Frame> frame(Frame::normalFrame(Rf_length(namevalr) + 5));
     frameReadPairList(frame, namevalr);
     return new Environment(rhor, frame);
 }

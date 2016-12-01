@@ -993,7 +993,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)
 	->InternalDispatch(call2,
 			   SEXP_downcast<Environment*>(env),
-			   &arglist);
+			   arglist);
     if (dispatched.first) {
 	return dispatched.second;
     }
@@ -1007,7 +1007,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 
     static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "x", "digits" });
     SEXP x, digits;
-    matcher->match(&arglist, { &x, &digits} );
+    matcher->match(arglist, { &x, &digits} );
     if (Rf_length(digits) == 0)
 	errorcall(call, _("invalid second argument of length 0"));
     return do_math2(SEXP_downcast<Expression*>(call),
@@ -1025,14 +1025,14 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
     static RObject* log_symbol = Symbol::obtain("log");
     ArgList arglist2({ args[0], tmp }, ArgList::EVALUATED);
     Expression* call2 = new Expression(log_symbol, arglist2);
-    auto dispatch = op->InternalDispatch(call2, env, &arglist2);
+    auto dispatch = op->InternalDispatch(call2, env, arglist2);
     if (dispatch.first) {
 	return dispatch.second;
     }
 
     if (isComplex(args[0]))
-	return complex_math2(call2, const_cast<BuiltInFunction*>(op),
-			     const_cast<PairList*>(arglist2.list()), env);
+      return BuiltInFunction::callBuiltInWithCApi(complex_math2,
+                                                  call2, op, arglist2, env);
     else
 	return math2(args[0], tmp, logbase, call);
 }
@@ -1049,10 +1049,13 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
    contain missing arguments.  */
 SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    Environment* envx = SEXP_downcast<Environment*>(env);
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    arglist.evaluate(SEXP_downcast<Environment*>(env),
-		     MissingArgHandling::Keep);
-    return do_log_builtin(call, op, const_cast<PairList*>(arglist.list()), env);
+    arglist.evaluate(envx, MissingArgHandling::Keep);
+    return BuiltInFunction::callBuiltInWithCApi(
+        do_log_builtin,
+        SEXP_downcast<Expression*>(call),
+        SEXP_downcast<BuiltInFunction*>(op), arglist, envx);
 }
 
 SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1103,7 +1106,7 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("argument \"%s\" is missing, with no default"), "x");
 
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-	auto dispatched = builtin->InternalDispatch(callx, env, &arglist);
+	auto dispatched = builtin->InternalDispatch(callx, env, arglist);
 	if (dispatched.first)
 	    res = dispatched.second;
 	else {
@@ -1121,7 +1124,7 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* after the match, Rf_length(args) will be 2 */
 	ArgList arglist1(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
 	SEXP x, base;
-	matcher->match(&arglist1, { &x, &base });
+	matcher->match(arglist1, { &x, &base });
 
 	if(x == R_MissingArg)
 	    error(_("argument \"%s\" is missing, with no default"), "x");
@@ -1130,7 +1133,7 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	args = Rf_list2(x, base);
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-	auto dispatched = builtin->InternalDispatch(callx, env, &arglist);
+	auto dispatched = builtin->InternalDispatch(callx, env, arglist);
 	if (dispatched.first) {
 	    res = dispatched.second;
 	} else {

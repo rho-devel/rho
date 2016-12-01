@@ -25,7 +25,6 @@
 #define R_NO_REMAP
 #include "rho/jit/CompiledExpression.hpp"
 
-#include "rho/jit/CompiledFrame.hpp"
 #include "rho/jit/Compiler.hpp"
 #include "rho/jit/CompilerContext.hpp"
 #include "rho/jit/Globals.hpp"
@@ -36,6 +35,7 @@
 
 #include "rho/Closure.hpp"
 #include "rho/Environment.hpp"
+#include "rho/Frame.hpp"
 #include "rho/RObject.hpp"
 
 using llvm::Module;
@@ -149,13 +149,13 @@ void CompiledExpression::visitReferents(const_visitor* v) const {
     GCNode::visitReferents(v);
 }
 
-Frame* CompiledExpression::createFrame() const {
-  return new CompiledFrame(m_frame_descriptor);
+Frame* CompiledExpression::createFrame(const ArgList& promised_args) const {
+    return Frame::closureWorkingFrame(m_frame_descriptor, promised_args);
 }
 
 bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const
 {
-  const CompiledFrame* frame = dynamic_cast<const CompiledFrame*>(env->frame());
+  const Frame* frame = env->frame();
   if (!frame)
     return false;
   return frame->getDescriptor() == m_frame_descriptor.get();

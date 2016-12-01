@@ -33,6 +33,7 @@
 #include <Defn.h>
 #include <Internal.h>
 #include "basedecl.h"
+#include "rho/ArgMatcher.hpp"
 #include "rho/ClosureContext.hpp"
 #include "rho/DottedArgs.hpp"
 #include "rho/Promise.hpp"
@@ -41,8 +42,6 @@
 using namespace rho;
 
 #define NIL -1
-#define ARGUSED(x) LEVELS(x)
-#define SET_ARGUSED(x,v) SETLEVELS(x,v)
 
 /* interval at which to check interrupts */
 #define NINTERRUPT 1000000
@@ -970,7 +969,7 @@ SEXP matchE(SEXP itable, SEXP ix, int nmatch, SEXP env)
 }
 
 /* used from other code, not here: */
-SEXP match(SEXP itable, SEXP ix, int nmatch)
+SEXP Rf_match(SEXP itable, SEXP ix, int nmatch)
 {
     return match5(itable, ix, nmatch, nullptr, R_BaseEnv);
 }
@@ -1243,7 +1242,7 @@ static SEXP StripUnmatched(SEXP s)
 {
     if (s == R_NilValue) return s;
 
-    if (CAR(s) == R_MissingArg && !ARGUSED(s) ) {
+    if (CAR(s) == R_MissingArg) {
 	return StripUnmatched(CDR(s));
     }
     else if (CAR(s) == R_DotsSymbol ) {
@@ -1271,16 +1270,12 @@ static SEXP ExpandDots(SEXP s, int expdots)
 	if (expdots) {
 	    r = CAR(s);
 	    while (CDR(r) != R_NilValue ) {
-		SET_ARGUSED(r, 1);
 		r = CDR(r);
 	    }
-	    SET_ARGUSED(r, 1);
 	    SETCDR(r, ExpandDots(CDR(s), expdots));
 	    return CAR(s);
 	}
     }
-    else
-	SET_ARGUSED(s, 0);
     SETCDR(s, ExpandDots(CDR(s), expdots));
     return s;
 }
@@ -1394,7 +1389,10 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
     }
-    rlist = matchArgs(formals, actuals, call);
+    ArgList actuals_list(SEXP_downcast<PairList*>(actuals), ArgList::RAW);
+    ArgMatcher* matcher = new ArgMatcher(SEXP_downcast<PairList*>(formals));
+    rlist = matcher->matchToPairList(actuals_list,
+                                     SEXP_downcast<Expression*>(call));
 
     /* Attach the argument names as tags */
 

@@ -32,12 +32,12 @@
 #define EXPRESSION_H
 
 #include "rho/ArgList.hpp"
+#include "rho/ArgMatcher.hpp"
 #include "rho/FunctionBase.hpp"
 #include "rho/PairList.hpp"
 
 namespace rho {
     class ArgList;
-    class ArgMatchInfo;
     class BuiltInFunction;
     class Closure;
     class Frame;
@@ -108,13 +108,13 @@ namespace rho {
         // Used by jit/RuntimeImpl.cpp and Expression.cpp
         RObject* evaluateFunctionCall(const FunctionBase* func,
                                       Environment* env,
-                                      ArgList* raw_arglist) const;
+                                      const ArgList& raw_arglist) const;
 
         // Used by Expression.cpp, engine.cpp (with evaluated arguments),
         // objects.cpp (with promised arguments) and DotInternal.cpp
 	RObject* applyBuiltIn(const BuiltInFunction* func,
                               Environment* env,
-                              ArgList* arglist) const;
+                              const ArgList& arglist) const;
 
 	/** @brief Invoke the function.
 	 *
@@ -146,7 +146,7 @@ namespace rho {
 	 */
         RObject* invokeClosure(const Closure* func,
                                Environment* calling_env,
-                               ArgList* arglist,
+                               const ArgList& arglist,
                                const Frame* method_bindings = nullptr) const;
 
 	// Virtual functions of RObject:
@@ -161,27 +161,22 @@ namespace rho {
 
         FunctionBase* getFunction(Environment* env) const;
 
-        RObject* evaluateClosureCall(const Closure* func,
-				     Environment* env,
-                                     ArgList* arglist,
-                                     const Frame* method_bindings) const;
-
         RObject* invokeClosureImpl(const Closure* func,
                                    Environment* calling_env,
-                                   ArgList* arglist,
+                                   const ArgList& arglist,
                                    const Frame* method_bindings) const;
 
 	RObject* evaluateBuiltInCall(const BuiltInFunction* func,
                                      Environment* env,
-                                     ArgList* arglist) const;
+                                     const ArgList& arglist) const;
 
 	RObject* evaluateDirectBuiltInCall(const BuiltInFunction* func,
                                            Environment* env,
-                                           ArgList* arglist) const;
+                                           const ArgList& arglist) const;
 
 	RObject* evaluateIndirectBuiltInCall(const BuiltInFunction* func,
-                                            Environment* env,
-                                            ArgList* arglist) const;
+                                             Environment* env,
+                                             const ArgList& arglist) const;
 
 	template<typename... Args>
 	RObject* evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction*,
@@ -195,7 +190,7 @@ namespace rho {
 					   bool evaluated,
 					   Args...) const;
 	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
-					   Environment*, ArgList*) const;
+					   Environment*, const ArgList&) const;
 
         static void importMethodBindings(const Frame* method_bindings,
                                          Frame* newframe);
@@ -203,7 +198,7 @@ namespace rho {
 
 	virtual void matchArgsIntoEnvironment(const Closure* func,
 					      Environment* calling_env,
-					      ArgList* arglist,
+					      const ArgList& arglist,
 					      Environment* execution_env) const;
 
 	Expression& operator=(const Expression&) = delete;
@@ -269,14 +264,11 @@ namespace rho {
 	// Object used for recording details from previous evaluations of
 	// this expression, for the purpose of optimizing future evaluations.
 	// In the future, this will likely include type recording as well.
-        mutable struct {
-	    GCEdge<const FunctionBase> m_function;
-            const ArgMatchInfo* m_arg_match_info;
-	} m_cache;
+        mutable GCEdge<const ArgMatchCache> m_cached_matching_info;
 
 	void matchArgsIntoEnvironment(const Closure* func,
 				      Environment* calling_env,
-				      ArgList* arglist,
+				      const ArgList& arglist,
 				      Environment* execution_env)
 	    const override;
 

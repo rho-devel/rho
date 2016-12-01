@@ -48,8 +48,9 @@ using namespace rho;
 
 static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
-static SEXP cbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
-static SEXP rbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
+static SEXP cbind(SEXP, const ArgList& args, SEXPTYPE, SEXP, int);
+static SEXP rbind(SEXP, const ArgList& args, SEXPTYPE, SEXP, int);
+static SEXP do_c_dflt(SEXP call, SEXP op, ArgList&& args, SEXP env);
 
 /* The following code establishes the return type for the */
 /* functions  unlist, c, cbind, and rbind and also determines */
@@ -636,7 +637,7 @@ struct NameData {
 };
 
 
-static void NewExtractNames(SEXP v, SEXP base, SEXP tag, int recurse,
+static void NewExtractNames(SEXP v, SEXP base, const RObject* tag, int recurse,
 			     struct BindData *data, struct NameData *nameData)
 {
     SEXP names, namei;
@@ -647,7 +648,7 @@ static void NewExtractNames(SEXP v, SEXP base, SEXP tag, int recurse,
     /* sequence and create the new basename string. */
 
     if (tag != R_NilValue) {
-	PROTECT(base = NewBase(base, tag));
+        PROTECT(base = NewBase(base, const_cast<SEXP>(tag)));
 	savefirstpos = nameData->firstpos;
 	saveseqno = nameData->seqno;
 	savecount = nameData->count;
@@ -799,25 +800,25 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans;
-
     /* Attempt method dispatch. */
-
-    if (DispatchOrEval(call, op, args, env, &ans, MissingArgHandling::Drop, 1))
-	return(ans);
-    PROTECT(ans);
-    SEXP res = do_c_dflt(call, op, ans, env);
-    UNPROTECT(1);
-    return res;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = Rf_Dispatch(SEXP_downcast<const Expression*>(call),
+                                  SEXP_downcast<const BuiltInFunction*>(op),
+                                  arglist,
+                                  SEXP_downcast<Environment*>(env));
+    if (dispatched.first)
+      return dispatched.second;
+    return do_c_dflt(call, op, std::move(arglist), env);
 }
 
-SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
+static SEXP do_c_dflt(SEXP call, SEXP op, ArgList&& arglist, SEXP env)
 {
     SEXP ans, t;
     int recurse, usenames;
     SEXPTYPE mode;
     struct BindData data;
     struct NameData nameData;
+    SEXP args = const_cast<PairList*>(arglist.list());
 
 /*    data.deparse_level = 1;  Initialize this early. */
 
@@ -1057,12 +1058,16 @@ SEXP attribute_hidden do_unlist(/*const*/ Expression* call, const BuiltInFunctio
 /* This is a special .Internal */
 SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP a, t, obj, method, rho, ans;
+    SEXP obj, rho;
+    FunctionBase* method = nullptr;
     SEXPTYPE mode;
     int deparse_level;
     Rboolean compatible = TRUE, anyS4 = FALSE;
     struct BindData data;
     char buf[512];
+
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    Environment* callenv = SEXP_downcast<Environment*>(env);
 
     /* since R 2.2.0: first argument "deparse.level" */
     deparse_level = asInteger(eval(CAR(args), env));
@@ -1096,13 +1101,15 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
     arglist.wrapInPromises(SEXP_downcast<Environment*>(env));
-    args = const_cast<PairList*>(arglist.list());
+    args = nullptr;
+    ArgList::const_iterator arg = arglist.getArgs().begin();
+    ++arg;  // skip deparse.level
+    const ArgList::const_iterator end = arglist.getArgs().end();
 
     const char *generic = ((PRIMVAL(op) == 1) ? "cbind" : "rbind");
     const char *klass = "";
-    method = R_NilValue;
-    for (a = CDR(args); a != R_NilValue; a = CDR(a)) {
-	PROTECT(obj = eval(CAR(a), env));
+    for ( ; arg != end; ++arg) {
+        PROTECT(obj = eval(arg->car(), env));
 	if (tryS4 && !anyS4 && isS4(obj)) anyS4 = TRUE;
 	if (compatible && isObject(obj)) {
 	    SEXP classlist = PROTECT(R_data_class2(obj));
@@ -1118,7 +1125,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 			/* There is no previous class */
 			/* We use this method. */
 			klass = s;
-			method = classmethod;
+			method = SEXP_downcast<FunctionBase*>(classmethod);
 		    }
 		    else {
 			/* Check compatibility with the */
@@ -1141,20 +1148,16 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     tryS4 = Rboolean(anyS4 && (!compatible || method == R_NilValue));
     if (tryS4) {
 	// keep 'deparse.level' as first arg and *name* it:
-	SET_TAG(args, install("deparse.level"));
+        static Symbol* deparse_level_symbol = Symbol::obtain("deparse.level");
+        if (!arglist.getTag(0))
+          arglist.setTag(0, deparse_level_symbol);
 	// and use methods:::cbind / rbind
-	method = findFun(install(generic), R_MethodsNamespace);
+	method = findFunction(Symbol::obtain(generic),
+                              SEXP_downcast<Environment*>(R_MethodsNamespace));
     } else
-	args = CDR(args); // keeping deparse.level for S4 dispatch
+      arglist.erase(0); // keeping deparse.level for S4 dispatch
     if (method != R_NilValue) { // found an S3 or S4 method
-	PROTECT(method);
-	Closure* closure = SEXP_downcast<Closure*>(method);
-	Expression* callx = SEXP_downcast<Expression*>(call);
-	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	Environment* callenv = SEXP_downcast<Environment*>(env);
-	ans = callx->invokeClosure(closure, callenv, &arglist);
-	UNPROTECT(1);
-	return ans;
+	return callx->evaluateFunctionCall(method, callenv, arglist);
     }
 
     /* Dispatch based on class membership has failed. */
@@ -1164,8 +1167,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     data.ans_flags = 0;
     data.ans_length = 0;
     data.ans_nnames = 0;
-    for (t = args; t != R_NilValue; t = CDR(t))
-	AnswerType(PRVALUE(CAR(t)), 0, 0, &data, call);
+    for (const auto& arg : arglist.getArgs()) {
+	AnswerType(PRVALUE(arg.car()), 0, 0, &data, call);
+    }
 
     /* zero-extent matrices shouldn't give NULL, but cbind(NULL) should: */
     if (!data.ans_flags && !data.ans_length) {
@@ -1201,10 +1205,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (PRIMVAL(op) == 1)
-	a = cbind(call, args, mode, rho, deparse_level);
+        return cbind(call, arglist, mode, rho, deparse_level);
     else
-	a = rbind(call, args, mode, rho, deparse_level);
-    return a;
+        return rbind(call, arglist, mode, rho, deparse_level);
 }
 
 
@@ -1231,13 +1234,13 @@ static void SetColNames(SEXP dimnames, SEXP x)
  * unless the result has zero rows, hence is of length zero and no
  * copying will be done.
  */
-static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
+static SEXP cbind(SEXP call, const ArgList& args, SEXPTYPE mode, SEXP rho,
 		  int deparse_level)
 {
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mrows, lenmin = 0;
-    SEXP dn, t, u, result, dims;
+    SEXP dn, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1247,8 +1250,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
     /* check if we are in the zero-row case */
 
-    for (t = args; t != R_NilValue; t = CDR(t)) {
-	u = PRVALUE(CAR(t));
+    for (const auto& arg : args.getArgs()) {
+        u = PRVALUE(arg.car());
 	if((isMatrix(u) ? nrows(u) : length(u)) > 0) {
 	    lenmin = 1;
 	    break;
@@ -1258,8 +1261,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     /* check conformability of matrix arguments */
 
     int na = 0;
-    for (t = args; t != R_NilValue; t = CDR(t), na++) {
-	u = PRVALUE(CAR(t));
+    for (const auto& arg : args.getArgs()) {
+        u = PRVALUE(arg.car());
 	dims = getAttrib(u, R_DimSymbol);
 	if (length(dims) == 2) {
 	    if (mrows == -1)
@@ -1273,13 +1276,15 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    rows = imax2(rows, length(u));
 	    cols += 1;
 	}
+        na++;
     }
     if (mrows != -1) rows = mrows;
 
     /* Check conformability of vector arguments. -- Look for dimnames. */
 
-    for (t = args, na = 0; t != R_NilValue; t = CDR(t), na++) {
-	u = PRVALUE(CAR(t));
+    na = 0;
+    for (const auto& arg : args.getArgs()) {
+        u = PRVALUE(arg.car());
 	dims = getAttrib(u, R_DimSymbol);
 	if (length(dims) == 2) {
 	    dn = getAttrib(u, R_DimNamesSymbol);
@@ -1296,14 +1301,15 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		warning("number of rows of result is not a multiple of vector length (arg %d)", na + 1);
 	    }
 	    PROTECT(dn = getAttrib(u, R_NamesSymbol));
-	    if (k >= lenmin && (TAG(t) != R_NilValue ||
+	    if (k >= lenmin && (arg.tag() != R_NilValue ||
 				(deparse_level == 2) ||
 				((deparse_level == 1) &&
-				 isSymbol(substitute(CAR(t),R_NilValue)))))
+				 isSymbol(substitute(arg.car(),R_NilValue)))))
 		have_cnames = TRUE;
 	    nnames = imax2(nnames, length(dn));
 	    UNPROTECT(1); /* dn */
 	}
+        na++;
     }
     if (mnames || nnames == rows)
 	have_rnames = TRUE;
@@ -1312,8 +1318,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     R_xlen_t n = 0; // index, possibly of long vector
 
     if (mode == STRSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+      for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, STRSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1324,8 +1330,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == VECSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+        for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car());
 	    int umatrix = isMatrix(u); /* might be lost in coercion to VECSXP */
 	    if (umatrix || length(u) >= lenmin) {
 		/* we cannot assume here that coercion will work */
@@ -1362,8 +1368,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == CPLXSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+        for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, CPLXSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1374,8 +1380,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == RAWSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+        for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, RAWSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1386,8 +1392,8 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else { /* everything else, currently REALSXP, INTSXP, LGLSXP */
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t)); /* type of u can be any of: RAW, LGL, INT, REAL */
+        for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car()); /* type of u can be any of: RAW, LGL, INT, REAL */
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		R_xlen_t k = XLENGTH(u);
 		R_xlen_t idx = (!isMatrix(u)) ? rows : k;
@@ -1432,15 +1438,16 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
     /* Adjustment of dimnames attributes. */
     if (have_cnames || have_rnames) {
-	SEXP nam, tnam,v;
+	SEXP tnam,v;
+        StringVector* nam = nullptr;
 	PROTECT(dn = allocVector(VECSXP, 2));
-	if (have_cnames)
-	    nam = SET_VECTOR_ELT(dn, 1, allocVector(STRSXP, cols));
-	else
-	    nam = R_NilValue;	/* -Wall */
+	if (have_cnames) {
+            nam = StringVector::create(cols);
+            SET_VECTOR_ELT(dn, 1, nam);
+        }
 	int j = 0;
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+        for (const auto& arg : args.getArgs()) {
+            u = PRVALUE(arg.car());
 	    if (isMatrix(u)) {
 		v = getAttrib(u, R_DimNamesSymbol);
 
@@ -1467,10 +1474,11 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		    && u != R_NilValue && length(u) == rows)
 		    SetRowNames(dn, lazy_duplicate(u));
 
-		if (TAG(t) != R_NilValue)
-		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
+		if (arg.tag() != R_NilValue)
+                  (*nam)[j++] = const_cast<String*>(
+                      SEXP_downcast<const Symbol*>(arg.tag())->name());
 		else {
-		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
+                  GCStackRoot<> expr(substitute(arg.car(), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2) {
@@ -1490,13 +1498,13 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     return result;
 } /* cbind */
 
-static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
+static SEXP rbind(SEXP call, const ArgList& args, SEXPTYPE mode, SEXP rho,
 		  int deparse_level)
 {
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mcols, lenmin = 0;
-    SEXP dn, t, u, result, dims;
+    SEXP dn, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1506,8 +1514,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
     /* check if we are in the zero-cols case */
 
-    for (t = args; t != R_NilValue; t = CDR(t)) {
-	u = PRVALUE(CAR(t));
+    for (const auto& arg : args.getArgs()) {
+        u = PRVALUE(arg.car());
 	if((isMatrix(u) ? ncols(u) : length(u)) > 0) {
 	    lenmin = 1;
 	    break;
@@ -1517,8 +1525,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     /* check conformability of matrix arguments */
 
     int na = 0;
-    for (t = args; t != R_NilValue; t = CDR(t), na++) {
-	u = PRVALUE(CAR(t));
+    for (const auto& arg : args.getArgs()) {
+	u = PRVALUE(arg.car());
 	dims = getAttrib(u, R_DimSymbol);
 	if (length(dims) == 2) {
 	    if (mcols == -1)
@@ -1532,14 +1540,15 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	    cols = imax2(cols, length(u));
 	    rows += 1;
 	}
+        ++na;
     }
     if (mcols != -1) cols = mcols;
 
     /* Check conformability of vector arguments. -- Look for dimnames. */
 
     na = 0;
-    for (t = args; t != R_NilValue; t = CDR(t), na++) {
-	u = PRVALUE(CAR(t));
+    for (const auto& arg : args.getArgs()) {
+	u = PRVALUE(arg.car());
 	dims = getAttrib(u, R_DimSymbol);
 	if (length(dims) == 2) {
 	    dn = getAttrib(u, R_DimNamesSymbol);
@@ -1557,14 +1566,15 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		warning("number of columns of result is not a multiple of vector length (arg %d)", na + 1);
 	    }
 	    PROTECT(dn = getAttrib(u, R_NamesSymbol));
-	    if (k >= lenmin && (TAG(t) != R_NilValue ||
+	    if (k >= lenmin && (arg.tag() != R_NilValue ||
 				(deparse_level == 2) ||
 				((deparse_level == 1) &&
-				 isSymbol(substitute(CAR(t),R_NilValue)))))
+				 isSymbol(substitute(arg.car(), R_NilValue)))))
 		have_rnames = TRUE;
 	    nnames = imax2(nnames, length(dn));
 	    UNPROTECT(1); /* dn */
 	}
+        ++na;
     }
     if (mnames || nnames == cols)
 	have_cnames = TRUE;
@@ -1574,8 +1584,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     R_xlen_t n = 0;
 
     if (mode == STRSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, STRSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1586,8 +1596,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == VECSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car());
 	    int umatrix = isMatrix(u), urows = umatrix ? nrows(u) : 1; /* coercing to VECSXP will lose these. PR#15468 */
 	    if (umatrix || length(u) >= lenmin) {
 		PROTECT(u = coerceVector(u, mode));
@@ -1602,8 +1612,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == RAWSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, RAWSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1615,8 +1625,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else if (mode == CPLXSXP) {
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car());
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		u = coerceVector(u, CPLXSXP);
 		R_xlen_t k = XLENGTH(u);
@@ -1628,8 +1638,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	}
     }
     else { /* everything else, currently REALSXP, INTSXP, LGLSXP */
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t)); /* type of u can be any of: RAW, LGL, INT, REAL */
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car()); /* type of u can be any of: RAW, LGL, INT, REAL */
 	    if (isMatrix(u) || length(u) >= lenmin) {
 		R_xlen_t k = XLENGTH(u);
 		R_xlen_t idx = (isMatrix(u)) ? nrows(u) : (k > 0);
@@ -1674,8 +1684,8 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	else
 	    nam = R_NilValue;	/* -Wall */
 	int j = 0;
-	for (t = args; t != R_NilValue; t = CDR(t)) {
-	    u = PRVALUE(CAR(t));
+	for (const auto& arg : args.getArgs()) {
+	    u = PRVALUE(arg.car());
 	    if (isMatrix(u)) {
 		v = getAttrib(u, R_DimNamesSymbol);
 
@@ -1705,10 +1715,11 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		    && u != R_NilValue && length(u) == cols)
 		    SetColNames(dn, lazy_duplicate(u));
 
-		if (TAG(t) != R_NilValue)
-		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
+		if (arg.tag() != R_NilValue)
+                    SET_STRING_ELT(nam, j++,
+                                   PRINTNAME(const_cast<SEXP>(arg.tag())));
 		else {
-		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
+                    GCStackRoot<> expr(substitute(arg.car(), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2) {

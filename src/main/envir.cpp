@@ -103,7 +103,7 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "rho/ClosureContext.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/ListVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
@@ -132,7 +132,7 @@ static void setActiveValue(SEXP fun, SEXP val)
     expr->evaluate(Environment::global());
 }
 
-void Frame::Binding::assign(RObject* new_value, Origin origin)
+void Frame::Binding::assignSlow(RObject* new_value, Origin origin)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
@@ -149,6 +149,7 @@ void Frame::Binding::assign(RObject* new_value, Origin origin)
 
 RObject* Frame::Binding::unforcedValue() const
 {
+    ensureArgumentsAreBoxed();
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
     return ans;
@@ -195,7 +196,7 @@ int attribute_hidden R_Newhashpjw(const char *s)
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
-    GCStackRoot<Frame> frame(new ListFrame);
+    GCStackRoot<Frame> frame(Frame::normalFrame());
     return new Environment(enc, frame);
 }
 
@@ -1151,7 +1152,7 @@ SEXP attribute_hidden do_attach(/*const*/ Expression* call, const BuiltInFunctio
     StringVector* name = SEXP_downcast<StringVector*>(name_);
 
     if (isNewList(what_)) {
-	GCStackRoot<Frame> frame(new ListFrame);
+        GCStackRoot<Frame> frame(Frame::normalFrame());
 	GCStackRoot<Environment> newenv(new Environment(nullptr, frame));
 
 	const ListVector* elements = SEXP_downcast<ListVector*>(what_);

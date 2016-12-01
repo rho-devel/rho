@@ -160,6 +160,8 @@ namespace rho {
 	ArgList(std::initializer_list<RObject*> args, Status status)
 	    : ArgList(PairList::make(args.size(), args.begin()), status) { }
 
+        explicit ArgList(const ArgList&);
+
 	/** @brief Evaluate the arguments in the ArgList.
 	 *
 	 * Except as regards the handling of ... and missing values
@@ -256,7 +258,7 @@ namespace rho {
 	void evaluateToArray(Environment* env,
 			     int num_args, RObject** evaluated_args,
 			     MissingArgHandling allow_missing
-			         = MissingArgHandling::Error);
+			         = MissingArgHandling::Error) const;
 
 	/** @brief Get the first argument.
 	 *
@@ -304,9 +306,22 @@ namespace rho {
          */
         RObject* get(int position) const;
 
+        /** @brief Set the argument at the specified position.
+         */
+        void set(int position, RObject* value);
+
         /** @brief Return the tag at the specified position.
          */
         const RObject* getTag(int position) const;
+
+        /** @brief Set the tag at the specified position.
+         */
+        void setTag(int position, const Symbol* tag);
+
+        /** @brief Remove the argument at the specified position.  Invalidates
+         *     any existing iterators.
+         */
+        void erase(int position);
 
 	/** @brief Iterator through the argument list, leaving '...' unchanged.
 	 *
@@ -474,27 +489,33 @@ namespace rho {
 			    const Expression* call = nullptr);
 
     private:
-	const PairList* const m_orig_list;  // Pointer to the argument
-	  // list supplied to the constructor. 
-	GCStackRoot<PairList> m_list;  // The current argument list. The
-	  // class code should never modify the PairList supplied as
-	  // an argument to the constructor, even though the
-	  // constructor casts const away when it initialises this
-	  // data member.
-	GCStackRoot<> m_first_arg;  // If the first argument needed to
-	  // be evaluated in a call to firstArg(), this is a pointer
-	  // to the resulting value, and m_first_arg_env points to the
-	  // Environment in which evaluation took place.  Both
-	  // pointers are reset to null once the first argument has
-	  // been processed in a subsequent call to evaluate() or
-	  // wrapInPromises(). 
-	GCStackRoot<Environment> m_first_arg_env;
-	Status m_status;
+        // Pointer to the argument list supplied to the constructor.
+        const PairList* const m_orig_list;
+
+        // The current argument list. The class code should never modify the
+        // PairList supplied as an argument to the constructor, even though the
+        // constructor casts const away when it initialises this data member.
+        GCStackRoot<PairList> m_list;
+
+        // If the first argument needed to be evaluated in a call to
+        // firstArg(), this is a pointer to the resulting value, and
+        // m_first_arg_env points to the Environment in which evaluation
+        // took place.  Both pointers are reset to null once the first
+        // argument has been processed in a subsequent call to evaluate() or
+        // converted to a promise.
+        mutable GCStackRoot<> m_first_arg;
+        mutable GCStackRoot<Environment> m_first_arg_env;
+
+        // wrapInPromises() defers actual promise creation, storing the promise
+        // environment here.  Promise objects are created only when needed.
+        GCStackRoot<Environment> m_promise_env;
+
+        Status m_status;
 
 	RObject* evaluateSingleArgument(const RObject* arg,
 					Environment* env,
 					MissingArgHandling allow_missing,
-					int arg_number);
+					int arg_number) const;
 
 	void setList(PairList* list) {
 	    m_list = list;
@@ -520,12 +541,9 @@ namespace rho {
 			 PairList* last_element);
 
 	void wrapInForcedPromises(Environment* env,
-				  const ArgList* evaluated_values);
+				  const ArgList& evaluated_values);
 
-	// Not implemented.  Declared private to suppress
-	// compiler-generated versions:
-	ArgList(const ArgList&);
-	ArgList& operator=(const ArgList&);
+        ArgList& operator=(const ArgList&) = delete;
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
 	static const Symbol* coerceTag(const RObject* tag);

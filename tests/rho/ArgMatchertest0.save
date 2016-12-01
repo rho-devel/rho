@@ -40,7 +40,7 @@ EXPLICIT  green : vert
 EXPLICIT  grey : gris
 EXPLICIT  orange : corail
 EXPLICIT  red : rouge
-DEFAULTED silver : Promise(SILVER, fenv)
+DEFAULTED silver : SILVER
 MISSING   violet : Symbol::missingArgument()
 EXPLICIT  white : weiss
 EXPLICIT  yellow : jaune

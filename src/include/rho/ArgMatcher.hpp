@@ -42,7 +42,7 @@
 #undef match
 
 namespace rho {
-    class ArgMatchInfo;
+    class ArgMatchCache;
     class Environment;
     class PairList;
     class RObject;
@@ -188,13 +188,16 @@ namespace rho {
 	 *          the supplied arguments, which must have had
 	 *          ArgList::wrapInPromises() applied.
 	 */
-	void match(Environment* target_env, const ArgList* supplied) const;
+	void match(Environment* target_env, const ArgList& supplied) const;
 
-        void match(Environment* target_env, const ArgList* supplied,
-		   const ArgMatchInfo* matching) const;
+        void match(Environment* target_env, const ArgList& supplied,
+		   GCEdge<const ArgMatchCache>* cache) const;
 
-	void match(const ArgList* supplied,
+	void match(const ArgList& supplied,
 		   std::initializer_list<RObject**> matched_values) const;
+
+        PairList* matchToPairList(const ArgList& supplied,
+                                  const Expression* call) const;
 
 	/** @brief Number of formal arguments.
 	 *
@@ -205,23 +208,6 @@ namespace rho {
 	{
 	    return m_formal_data.size();
 	}
-
-	/** @brief Store information required to match arguments quickly.
-	 *
-	 * This function runs the normal argument matching algorithm, but
-	 * instead of creating bindings in a frame, it generates an object
-	 * summarizing how the matching is done.  This can be passed to future
-	 * calls to match() that use arglist with the same tags as \a args,
-	 * resulting in dramatically faster matching.
-	 *
-	 * This function returns nullptr if the matching can't be cached (e.g.
-	 * because \a args contains <tt>...</tt> and throws an error if the
-	 * arguments don't match this matcher's formals.
-	 *
-	 * @param args An arglist with the pattern of tags to match against.
-	 *           The values of the arguments are ignored.
-	 */
-	const ArgMatchInfo* createMatchInfo(const ArgList* args) const;
 
 	/** @brief Copy formal bindings from one Environment to another.
 	 *
@@ -300,7 +286,7 @@ namespace rho {
 	    const Symbol* symbol;
 	    bool follows_dots;  // true if ... occurs earlier in the
 				// formals list.
-	    RObject* value;
+	    RObject* default_value;
 	    unsigned int index;
 	};
 
@@ -341,11 +327,28 @@ namespace rho {
 	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 
-        void match(const ArgList* supplied, MatchCallback* callback) const;
-        void matchWithCache(const ArgList* supplied, MatchCallback* callback,
-			    const ArgMatchInfo* matching) const;
-        void matchByPosition(const ArgList* supplied, MatchCallback* callback)
+        void match(const ArgList& supplied, MatchCallback* callback) const;
+        void matchWithCache(const ArgList& supplied, MatchCallback* callback,
+                            const ArgMatchCache* cache) const;
+        void matchByPosition(const ArgList& supplied, MatchCallback* callback)
 	    const;
+
+        /** @brief Store information required to match arguments quickly.
+         *
+         * This function runs the normal argument matching algorithm, but
+         * instead of creating bindings in a frame, it generates an object
+         * summarizing how the matching is done.  This can be passed to future
+         * calls to match() that use arglist with the same tags as \a args,
+         * resulting in dramatically faster matching.
+         *
+         * This function returns nullptr if the matching can't be cached (e.g.
+         * because \a args contains <tt>...</tt> and throws an error if the
+         * arguments don't match this matcher's formals.
+         *
+         * @param args An arglist with the pattern of tags to match against.
+         *           The values of the arguments are ignored.
+         */
+        const ArgMatchCache* createMatchCache(const ArgList& args) const;
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
@@ -368,22 +371,24 @@ namespace rho {
 	    std::initializer_list<const char*> arg_names);
     };
 
-    class ArgMatchInfo {
-    public:
-	ArgMatchInfo(int num_formals, const ArgList& args);
+    class ArgMatchCache : public GCNode {
+     public:
+        ArgMatchCache(int num_formals, const ArgList& args);
 
-	bool arglistTagsMatch(const PairList* args) const;
+        bool arglistTagsMatch(const ArgList& args) const;
 
 	int getSindex(int findex) const {
 	    return m_values[findex];
 	}
 
-	boost::iterator_range<std::vector<int>::const_iterator> getDotArgs() const {
-	    return boost::make_iterator_range(m_values.begin() + m_num_formals,
+        boost::iterator_range<std::vector<int>::const_iterator> getDotArgs()
+            const
+        {
+            return boost::make_iterator_range(m_values.begin() + m_num_formals,
 					      m_values.end());
 	}
 
-	bool operator==(const ArgMatchInfo& other) const {
+	bool operator==(const ArgMatchCache& other) const {
 	    return (m_num_formals == other.m_num_formals
 		    && m_values == other.m_values
 		    && m_tags == other.m_tags);
@@ -393,6 +398,7 @@ namespace rho {
 
 	// TODO: This should be private.
 	int m_num_formals;
+	const ArgMatcher* m_matcher;
 	std::vector<int> m_values;
 	std::vector<const Symbol*> m_tags;
 

@@ -23,7 +23,7 @@
 
 #define R_NO_REMAP
 
-#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/Closure.hpp"
 #include "rho/ConsCell.hpp"
 #include "rho/Expression.hpp"
@@ -34,7 +34,6 @@
 #include <algorithm>
 
 namespace rho {
-namespace JIT {
 
 namespace {
 
@@ -165,5 +164,4 @@ int FrameDescriptor::getLocation(const Symbol* symbol) const
     return -1;
 }
 
-} // namespace JIT
 } // namespace rho

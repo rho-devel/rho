@@ -42,24 +42,6 @@
 #include "rho/ConsCell.hpp"
 
 extern "C" {
-    // Used in matching formal and actual arguments (within match.cpp
-    // and unique.cpp).
-    inline unsigned char ARGUSED(SEXP x)
-    {
-	using namespace rho;
-	return SEXP_downcast<PairList*>(x)->m_argused;
-    }
-
-    // Used in matching formal and actual arguments (within match.cpp
-    // and unique.cpp).
-    inline void SET_ARGUSED(SEXP x, unsigned char v)
-    {
-	using namespace rho;
-	// The RHS is a kludge to avoid a -Wconversion warning:
-	SEXP_downcast<PairList*>(x)->m_argused
-	  = static_cast<unsigned int>(v & 3);
-    }
-
     /** @brief Is a Binding locked?
      *
      * @param b Pointer to a PairList object (checked) representing a

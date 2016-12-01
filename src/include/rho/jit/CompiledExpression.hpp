@@ -26,10 +26,11 @@
 
 #include <memory>
 
+#include "rho/ArgList.hpp"
 #include "rho/GCEdge.hpp"
 #include "rho/GCNode.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/jit/FrameDescriptor.hpp"
+#include "rho/FrameDescriptor.hpp"
 
 namespace llvm {
 
@@ -46,8 +47,6 @@ class RObject;
 
 namespace JIT {
 
-class FrameDescriptor;
-
 class CompiledExpression : public GCNode {
 public:
     ~CompiledExpression();
@@ -58,7 +57,7 @@ public:
 	return m_function(env);
     }
 
-    Frame* createFrame() const;
+    Frame* createFrame(const ArgList& promised_args) const;
 
     bool hasMatchingFrameLayout(const Environment* env) const;
 

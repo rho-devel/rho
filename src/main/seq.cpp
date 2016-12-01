@@ -605,7 +605,7 @@ done:
     return a;
 }
 
-/* We are careful to use evalListKeepMissing here (inside
+/* We are careful to use MissingArgHandling::Keep here (inside
    DispatchOrEval) to avoid dropping missing arguments so e.g.
    rep(1:3,,8) matches length.out */
 
@@ -615,13 +615,16 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, x, times, length_out, each_, ignored;
     int each = 1, nprotect = 3;
     R_xlen_t i, lx, len = NA_INTEGER, nt;
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
 
     /* includes factors, POSIX[cl]t, Date */
-    if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 0))
-	return(ans);
-
-    /* This has evaluated all the non-missing arguments into ans */
-    PROTECT(args = ans);
+    auto dispatched = Rf_DispatchOrEval(SEXP_downcast<Expression*>(call),
+                                        SEXP_downcast<BuiltInFunction*>(op),
+                                        &arglist,
+                                        SEXP_downcast<Environment*>(rho),
+                                        MissingArgHandling::Keep);
+    if (dispatched.first)
+        return dispatched.second;
 
     /* This is a primitive, and we have not dispatched to a method
        so we manage the argument matching ourselves.  We pretend this is
@@ -629,8 +632,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     */
     static GCRoot<ArgMatcher> matcher = new ArgMatcher(
 	{ "x", "times", "length.out", "each", "..." });
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    matcher->match(&arglist, { &x, &times, &length_out, &each_, &ignored });
+    matcher->match(arglist, { &x, &times, &length_out, &each_, &ignored });
 
     /* supported in R 2.15.x */
     if (TYPEOF(x) == LISTSXP)
@@ -738,8 +740,13 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean One = RHOCONSTRUCT(Rboolean, nargs == 1);
     R_xlen_t i, lout = NA_INTEGER;
 
-    if (DispatchOrEval(call, op, args, rho, &ans, MissingArgHandling::Keep, 1))
-	return(ans);
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+    auto dispatched = Rf_Dispatch(SEXP_downcast<Expression*>(call),
+                                  SEXP_downcast<BuiltInFunction*>(op),
+                                  arglist,
+                                  SEXP_downcast<Environment*>(rho));
+    if (dispatched.first)
+        return dispatched.second;
 
     /* This is a primitive and we manage argument matching ourselves.
        We pretend this is
@@ -747,8 +754,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     */
     static GCRoot<ArgMatcher> matcher = new ArgMatcher(
 	{ "from", "to", "by", "length.out", "along.with", "..." });
-    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-    matcher->match(&arglist,
+    matcher->match(arglist,
 		   { &from, &to, &by, &len, &along, &ignored });
 
     if(One && from != R_MissingArg) {

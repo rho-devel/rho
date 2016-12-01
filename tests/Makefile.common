@@ -169,13 +169,15 @@ test-Examples:
 test-Examples-Recommended:
 	@(cd Examples && $(MAKE) $(MK_EXTRA_FLAGS) $@)
 
-test-Specific-strict: $(test-out-strict)
-test-Specific-sloppy: $(test-out-sloppy)
-test-Specific:
+test-Specific-strict:
 	@$(ECHO) "running strict specific tests"
-	@$(MAKE) $(MK_EXTRA_FLAGS) test-Specific-strict RVAL_IF_DIFF=1
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-strict) RVAL_IF_DIFF=1
+
+test-Specific-sloppy:
 	@$(ECHO) "running sloppy specific tests"
-	@$(MAKE) $(MK_EXTRA_FLAGS) test-Specific-sloppy RVAL_IF_DIFF=0
+	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-sloppy) RVAL_IF_DIFF=0
+
+test-Specific: test-Specific-strict test-Specific-sloppy
 
 test-Packages:
 	touch $(R_PKGS_BASE:=.tsin)
@@ -232,12 +234,7 @@ test-Random:
 
 test-Reg:
 	@$(ECHO) "running regression tests ..."
-	@if test -n "${TEST_MC_CORES}"; then \
-	  $(MAKE) $(MK_EXTRA_FLAGS) -j ${TEST_MC_CORES} $(test-out-reg) RVAL_IF_DIFF=1; \
-	else \
-	  $(MAKE) $(MK_EXTRA_FLAGS) $(test-out-reg) RVAL_IF_DIFF=1; \
-	fi
-	@$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-reg3) RVAL_IF_DIFF=1
+	$(MAKE) $(MK_EXTRA_FLAGS) $(test-out-reg) $(test-out-reg3) RVAL_IF_DIFF=1
 
 test-Regexp:
 	@$(ECHO) "running regexp regression tests"

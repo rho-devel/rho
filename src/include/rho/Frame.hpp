@@ -31,9 +31,14 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include "rho/Allocator.hpp"
+#include "rho/ArgList.hpp"
+#include "rho/FrameDescriptor.hpp"
 #include "rho/GCNode.hpp"
+#include "rho/Promise.hpp"
 #include "rho/Provenance.hpp"
 #include "rho/Symbol.hpp"
+#include <unordered_map>
 
 namespace rho {
     class Environment;
@@ -105,6 +110,7 @@ namespace rho {
 #ifdef PROVENANCE_TRACKING
 		m_provenance = nullptr;
 #endif
+		m_argument_id = 0;
 	    }
 
 	    /** @brief Represent this Binding as a PairList element.
@@ -141,7 +147,15 @@ namespace rho {
 	     *
 	     * @param origin Origin of the newly-assigned value.
 	     */
-	    void assign(RObject* new_value, Origin origin = EXPLICIT);
+	    void assign(RObject* new_value, Origin origin = EXPLICIT) {
+		if (isLocked() || isActive()) {
+		    assignSlow(new_value, origin);
+		} else {
+		    m_origin = origin;
+		    m_value = new_value;
+		    m_frame->monitorWrite(*this);
+		}
+	    }
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -163,7 +177,13 @@ namespace rho {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    RObject* forcedValue() const;
+	    RObject* forcedValue() const {
+                if (m_value == argumentTag()
+		    || (m_value && m_value->sexptype() == PROMSXP)) {
+		    return forcedValueSlow().first;
+		}
+		return m_value;
+	    }
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -188,7 +208,13 @@ namespace rho {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue2() const;
+	    std::pair<RObject*, bool> forcedValue2() const {
+		if (m_value == argumentTag()
+		    || (m_value && m_value->sexptype() == PROMSXP)) {
+		    return forcedValueSlow();
+		}
+		return std::make_pair(m_value, false);
+	    }
 
 	    /** @brief Get pointer to Frame.
 	     *
@@ -287,8 +313,9 @@ namespace rho {
 	     */
 	    RObject* rawValue() const
 	    {
-	    	if (m_frame)
+		if (m_frame)
 		    m_frame->monitorRead(*this);
+                ensureArgumentsAreBoxed();
 		return m_value;
 	    }
 
@@ -348,7 +375,16 @@ namespace rho {
 	     * @param quiet Don't trigger monitor.
 	     */
 	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
-	                  bool quiet = false);
+	                  bool quiet = false)
+	    {
+		if (isLocked() || isActive()) {
+		    handleSetValueError();
+		}
+		m_value = new_value;
+		m_origin = origin;
+		if (!quiet)
+		    m_frame->monitorWrite(*this);
+	    }
 
 	    /** @brief Bound symbol.
 	     *
@@ -371,6 +407,12 @@ namespace rho {
 	     */
 	    RObject* unforcedValue() const;
 
+            //* @brief Is the value bound to the symbol a promise?
+            bool isPromise() const {
+              return m_value == argumentTag()
+                  || (m_value && m_value->sexptype() == PROMSXP);
+            }
+
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
 	     * This function conducts a visitor to those objects
@@ -386,15 +428,82 @@ namespace rho {
 
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
-	    GCEdge<> m_value;
+	    mutable GCEdge<> m_value;
 #ifdef PROVENANCE_TRACKING
 	    GCEdge<const Provenance> m_provenance;
 #endif
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
-	};  // Frame::Binding
+            // Bindings to default arguments are represented using a PromiseData
+            // stored in the frame.  In this case, m_value is set to
+            // argumentTag() and m_argument_id is set to the slot number of the
+            // data.
+            unsigned char m_argument_id;
 
+	    static Symbol* argumentTag() {
+                static GCRoot<Symbol> tag = Symbol::createUnnamedSymbol();
+		return tag;
+	    }
+
+            void ensureArgumentsAreBoxed() const {
+		if (m_value == argumentTag()) {
+                    boxArgument();
+		}
+	    }
+
+	    void boxArgument() const;
+
+	    std::pair<RObject*, bool> forcedValueSlow() const;
+	    void assignSlow(RObject* new_value, Origin origin);
+	    void handleSetValueError() const;
+
+	    /** @brief Has this binding been set to a value?
+	     *
+	     * In this case, R_MissingValue etc all count as being 'set'.
+	     * Unset bindings are a private implementation detail of Frame and
+	     * should never escape from the Frame object.
+	     *
+	     * @return true iff this Binding has been set.
+	     */
+	    bool isSet() const
+	    {
+		return m_frame != nullptr;
+	    }
+
+	    void unset() {
+		// Matches the constructor.
+		m_frame = nullptr;
+		m_symbol = nullptr;
+		m_origin = MISSING;
+		m_active = false;
+		m_locked = false;
+		m_value = Symbol::missingArgument();
+#ifdef PROVENANCE_TRACKING
+		m_provenance = nullptr;
+#endif
+	    }
+
+	    /** @brief Define the object to which this Binding's
+	     *         Symbol is bound.
+	     *
+	     * Raises an error if the Binding is locked or active.
+	     *
+	     * @param argument_id The slot id of the promise data in the parent
+	     *          frame to which this Binding's Symbol is now to be
+	     *          bound.
+	     *
+	     * @param origin Origin of the newly assigned value.
+	     *
+	     * @param quiet Don't trigger monitor.
+	     */
+	    void setValueToArgument(unsigned char argument_id,
+                                    Origin origin = EXPLICIT,
+                                    bool quiet = false) {
+                m_argument_id = argument_id;
+		setValue(argumentTag(), origin, quiet);
+	    }
+	};  // Frame::Binding
 
 	/** @brief Function type for read and write monitors.
 	 *
@@ -402,12 +511,27 @@ namespace rho {
 	 */
 	typedef void (*monitor)(const Binding&);
 
-	Frame()
-	    : m_cache_count(0), m_locked(false), m_no_special_symbols(true),
-	      m_read_monitored(false), m_write_monitored(false)
-	{}
+     private:
+	Frame(size_t size = 16, bool check_list_size = true);
+	Frame(const ArgList& promised_args,
+	      size_t size = 16, bool check_list_size = true);
+	Frame(const FrameDescriptor* descriptor, const ArgList& promised_args);
+     public:
+        static Frame* closureWorkingFrame(const FrameDescriptor* descriptor,
+                                          const ArgList& promised_args) {
+            return new Frame(descriptor, promised_args);
+        }
+        static Frame* closureWorkingFrame(const ArgList& promised_args,
+                                          size_t size = 16,
+					  bool check_list_size = true) {
+            return new Frame(promised_args, size, check_list_size);
+        }
+        static Frame* normalFrame(size_t size = 16,
+                                  bool check_list_size = true) {
+            return new Frame(size, check_list_size);
+        }
 
-	/** @brief Copy constructor.
+       /** @brief Copy constructor.
 	 *
 	 * The copy will define the same mapping from Symbols to R
 	 * objects as \a source; neither the R objects, nor of course
@@ -416,11 +540,7 @@ namespace rho {
 	 * The copy will be locked if \a source is locked.  However,
 	 * the copy will not have a read or write monitor.
 	 */
-	Frame(const Frame& source)
-	    : m_cache_count(0), m_locked(source.m_locked),
-	      m_no_special_symbols(source.m_no_special_symbols),
-	      m_read_monitored(false), m_write_monitored(false)
-	{}
+	Frame(const Frame& source);
 
 	/** @brief Get contents as a PairList.
 	 *
@@ -491,15 +611,71 @@ namespace rho {
 	 * pointer if it was not found..
 	 */
 	const Binding* binding(const Symbol* symbol) const {
-	    if (symbol->isSpecialSymbol() && m_no_special_symbols)
+	    return const_cast<Frame*>(this)->binding(symbol);
+	}
+
+	/** @brief Access binding of an already-defined Symbol.
+	 *
+	 * This function provides a pointer to the Binding of a
+	 * Symbol.  In this variant the pointer is non-const, and
+	 * consequently the calling code can use it to modify the
+	 * Binding (provided the Binding is not locked).
+	 *
+	 * @param location assigned to the Symbol in the FrameDescriptor.
+	 *
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not set.
+	 */
+	Binding* binding(int location)
+	{
+	    assert(m_descriptor != nullptr);
+	    assert(location >= 0);
+	    assert(location < m_descriptor->getNumberOfSymbols());
+	    Binding* binding = m_bindings + location;
+	    if (binding->isSet()) {
+		return binding;
+	    } else {
 		return nullptr;
-	    return v_binding(symbol);
+	    }
+	}
+
+	/** @brief Access const binding of an already-defined Symbol.
+	 *
+	 * This function provides a pointer to a PairList element
+	 * representing the binding of a symbol.  In this variant the
+	 * pointer is const, and consequently the calling code can use
+	 * it only to examine the binding.
+	 *
+	 * @param symbol The Symbol for which a mapping is sought.
+	 *
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not found..
+	 */
+	const Binding* binding(int location) const {
+	    return const_cast<Frame*>(this)->binding(location);
 	}
 
 	/** @brief Call a function for all of a Frame object's Bindings.
 	 */
-	virtual void visitBindings(std::function<void(const Binding*)> f) const
-	    = 0;
+	void visitBindings(std::function<void(const Binding*)> f) const;
+
+	/** @brief Call a function for all of a Frame object's Bindings.
+	 */
+	void modifyBindings(std::function<void(Binding*)> f);
+
+        void addDefaultArgument(const Symbol* symbol, const RObject* expression,
+                                Environment* env, int frame_location = -1);
+
+	/** @brief Call arguments wrapped in Promises.
+	 *
+	 * @return If this frame is the working frame of a closure,
+	 *    then returns the list of arguments to the call, each wrapped in
+	 *    a Promise.  Otherwise the return value is undefined.
+	 */
+	const ArgList& promiseArgs() const
+	{
+	    return m_promised_args;
+	}
 
 	/** @brief Remove all symbols from the Frame.
 	 *
@@ -524,7 +700,7 @@ namespace rho {
 	 * type facility to return a pointer to the type of object
 	 * being cloned.
 	 */
-	virtual Frame* clone() const = 0;
+	Frame* clone() const;
 
 	/** @brief Enable monitored reading of Symbol values.
 	 *
@@ -624,7 +800,7 @@ namespace rho {
 	 *
 	 * It is permitted to apply this function to a locked Frame.
 	 */
-	virtual void lockBindings() = 0;
+	void lockBindings();
 
 	/** @brief Get or create a Binding for a Symbol.
 	 *
@@ -642,6 +818,32 @@ namespace rho {
 	 * @return Pointer to the required Binding.
 	 */
 	Binding* obtainBinding(const Symbol* symbol);
+
+	/** @brief Get or create a Binding for a Symbol.
+	 *
+	 * If the Frame already contains a Binding for a specified
+	 * Symbol, the function returns it.  Otherwise a Binding to
+	 * the null pointer is created, and a pointer to that Binding
+	 * returned.
+	 *
+	 * An error is raised if a new Binding needs to be created and
+	 * the Frame is locked.
+	 *
+	 * @param symbol The Symbol for which a Binding is to be
+	 *          obtained.
+	 * @param location assigned to the Symbol in the FrameDescriptor.
+	 *
+	 * @return Pointer to the required Binding.
+	 */
+	Binding* obtainBinding(const Symbol* symbol, int location) {
+	    Frame::Binding* binding = m_bindings + location;
+	    if (!binding->isSet()) {
+		initializeBindingIfUnlocked(binding, symbol);
+		m_used_bindings_size = std::max(m_used_bindings_size,
+						(unsigned char)(location + 1));
+	    }
+	    return binding;
+	}
 
 	/** @brief Import a Binding from another Frame into this one.
 	 *
@@ -722,7 +924,7 @@ namespace rho {
 	 * @return the number of Symbols for which Bindings exist in
 	 * this Frame.
 	 */
-	virtual std::size_t size() const = 0;
+	std::size_t size() const;
 
 	/** @brief Symbols bound by this Frame.
 	 *
@@ -735,15 +937,69 @@ namespace rho {
         std::vector<const Symbol*> symbols(bool include_dotsymbols,
 					   bool sorted = false) const;
 
+	const FrameDescriptor* getDescriptor() const
+	{
+	    return m_descriptor;
+	}
+
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
-    protected:
-	// Declared protected to ensure that Frame objects are created
+     private:
+	friend class Environment;
+
+	static monitor s_read_monitor, s_write_monitor;
+	// The default size of the array to create.
+	static const size_t kDefaultListSize = 16;
+	// The largest array to create.  Since the array must be searched
+	// with a linear scan, we don't want to allow it to get too big unless
+	// we have a FrameDescriptor.
+	static const size_t kMaxListSize = 64;
+
+	// The main array that bindings are stored in.
+	// Note that the array cannot be moved or expanded, as there is a
+	// bunch of code (most notably the global cache) that keeps pointers
+	// to bindings.
+	Binding* m_bindings;
+	GCEdge<const FrameDescriptor> m_descriptor;
+	// The size of the m_bindings array.
+	unsigned char m_bindings_size;
+        // The number of currently used elements in the m_bindings array.
+	unsigned char m_used_bindings_size;
+        // Number of cached Environments of which this is the Frame.  Normally
+	// either 0 or 1.
+	unsigned char m_cache_count;
+	bool m_locked                  : 1;
+	bool m_no_special_symbols      : 1;
+	mutable bool m_read_monitored  : 1;
+	mutable bool m_write_monitored : 1;
+
+        // The default arguments that were added by the argument matching.
+        std::vector<PromiseData> m_default_arglist;
+
+        friend class ArgMatcher;
+        friend class ArgMatchCache;
+
+	// Used to store any bindings that don't fit in m_bindings.
+	// Usually this is nullptr.
+	typedef std::unordered_map<const Symbol*, Binding,
+				   std::hash<const Symbol*>,
+				   std::equal_to<const Symbol*>,
+				   rho::Allocator<std::pair<const Symbol* const,
+							    Binding>>>
+	    map;
+	map* m_overflow;
+
+	// The arguments that were passed in to the closure.
+	ArgList m_promised_args;
+	GCEdge<const PairList> m_promised_args_protect;
+
+        std::pair<RObject*, bool> argumentValue(unsigned char argument_id) const;
+
+        Promise* argumentValueAsPromise(unsigned char promiseId) const;
+
+        // Declared private to ensure that Frame objects are created
 	// only using 'new':
-	~Frame()
-	{
-	    statusChanged(nullptr);
-	}
+	~Frame();
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -759,21 +1015,10 @@ namespace rho {
 	}
 
 	void initializeBinding(Binding* binding, const Symbol* symbol);
+	void initializeBindingIfUnlocked(Binding* binding, const Symbol* symbol);
 
 	// Virtual function of GCNode:
 	void detachReferents() override;
-    private:
-	friend class Environment;
-
-	static monitor s_read_monitor, s_write_monitor;
-
-	unsigned char m_cache_count;  // Number of cached Environments
-			// of which this is the Frame.  Normally
-			// either 0 or 1.
-	bool m_locked                  : 1;
-	bool m_no_special_symbols      : 1;
-	mutable bool m_read_monitored  : 1;
-	mutable bool m_write_monitored : 1;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -807,12 +1052,7 @@ namespace rho {
 		s_write_monitor(bdg);
 	}
 
-	// Implementation dependent auxiliary functions:
-	virtual void v_clear() = 0;
-	virtual bool v_erase(const Symbol* symbol) = 0;
-	virtual Binding* v_obtainBinding(const Symbol* symbol) = 0;
-	virtual Binding* v_binding(const Symbol* symbol) = 0;
-	virtual const Binding* v_binding(const Symbol* symbol) const = 0;
+	Binding* v_binding(const Symbol* symbol);
     };
 
     /** @brief Incorporate bindings defined by a PairList into a Frame.

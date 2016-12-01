@@ -83,6 +83,7 @@ tc_invisible_21.R
 tc_invisible_3.R
 tc_invisible_9.R
 tc_ISOdatetime_2.R
+tc_nargs_1.R
 tc_operators_167.R
 tc_operators_201.R
 tc_operators_297.R

@@ -132,7 +132,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     static GCRoot<ArgMatcher> matcher = new ArgMatcher({ "expr", "add" });
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-    matcher->match(&arglist, { &code, &add });
+    matcher->match(arglist, { &code, &add });
     if (code == R_MissingArg)
 	code = R_NilValue;
     if (add != R_MissingArg) {

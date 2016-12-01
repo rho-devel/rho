@@ -38,7 +38,7 @@
 #include "rho/Expression.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
 #include "rho/GCStackRoot.hpp"
-#include "rho/ListFrame.hpp"
+#include "rho/Frame.hpp"
 #include "rho/PlainContext.hpp"
 #include "rho/ReturnBailout.hpp"
 #include "rho/ReturnException.hpp"
@@ -146,12 +146,12 @@ void Closure::compile() const {
 #endif
 }
 
-Environment* Closure::createExecutionEnv() const {
+Environment* Closure::createExecutionEnv(const ArgList& arglist) const {
     Frame* frame =
 #ifdef ENABLE_LLVM_JIT
-        m_compiled_body ? m_compiled_body->createFrame():
+        m_compiled_body ? m_compiled_body->createFrame(arglist):
 #endif
-        new ListFrame;
+        Frame::closureWorkingFrame(arglist);
     return new Environment(environment(), frame);
 }
 

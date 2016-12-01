@@ -1277,7 +1277,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     static GCRoot<ArgMatcher> matcher
 	= new ArgMatcher({ "text", "condition", "expr", "skipcalls" });
     SEXP text, condition, expr, skipcalls;
-    matcher->match(&arglist, { &text, &condition, &expr, &skipcalls });
+    matcher->match(arglist, { &text, &condition, &expr, &skipcalls });
 
     /* substitute defaults */
     if (text == R_MissingArg)
