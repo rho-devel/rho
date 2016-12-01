@@ -214,9 +214,8 @@ public:
     	    // Create a value bound to Symbol::missingArgument()
     	    m_target_env->frame()->obtainBinding(formal.symbol);
 	} else {
-	    RObject* value = new Promise(formal.default_value, m_target_env);
-	    m_target_env->frame()->bind(formal.symbol, value,
-					Frame::Binding::DEFAULTED);
+            m_target_env->frame()->addDefaultArgument(
+                formal.symbol, formal.default_value, m_target_env);
 	}
     }
 
@@ -391,13 +390,14 @@ void ArgMatcher::match(const ArgList& supplied,
 void ArgMatcher::match(Environment* target_env, const ArgList& supplied,
 		       GCEdge<const ArgMatchCache>* cache) const
 {
+    assert(supplied.status() != ArgList::RAW);
     if (!*cache
         || (*cache)->m_matcher != this
         || !(*cache)->arglistTagsMatch(supplied))
     {
         *cache = createMatchCache(supplied);
     }
-    if (!cache)
+    if (!(*cache))
       match(target_env, supplied);
 
     ClosureMatchCallback callback(target_env);

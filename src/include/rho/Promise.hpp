@@ -72,7 +72,6 @@ namespace rho {
 
         PromiseData(Promise* value);
 
-        PromiseData();
         ~PromiseData();
 
         //* @brief Move constructor.
@@ -193,12 +192,22 @@ namespace rho {
     public:
 	Promise(const RObject* valgen, Environment* env)
 	    : RObject(PROMSXP),
-	      m_data(valgen, env) {}
+              m_data(&m_storage),
+	      m_storage(valgen, env) {}
 
 	Promise(PromiseData&& value)
 	    : RObject(PROMSXP),
-              m_data(std::forward<PromiseData>(value))
+              m_data(&m_storage),
+              m_storage(std::forward<PromiseData>(value))
 	{}
+
+        Promise(PromiseData* value, const GCNode* protect)
+	    : RObject(PROMSXP),
+              m_data(value),
+              m_storage(nullptr)
+      {
+          m_protect = protect;
+      }
 
 	static Promise* createEvaluatedPromise(const RObject* expression,
 					       RObject* evaluated_value) {
@@ -221,7 +230,7 @@ namespace rho {
 	 * evaluating the value generator.
 	 */
 	RObject* force() {
-	    return m_data.evaluate();
+	    return m_data->evaluate();
 	}
 
 	/** @brief Not for general use.
@@ -233,7 +242,7 @@ namespace rho {
 	 * @return true iff ... well, read the code!
 	 */
 	bool isMissingSymbol() const {
-	    return m_data.isMissingSymbol();
+	    return m_data->isMissingSymbol();
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -246,31 +255,37 @@ namespace rho {
 	}
 
 	RObject* evaluate(Environment*) override {
-	    return m_data.evaluate();
+	    return m_data->evaluate();
 	}
 
 	//* @brief Has this promise been evaluated yet?
 	bool evaluated() const {
-	    return m_data.evaluated();
+	    return m_data->evaluated();
 	}
 
 	const char* typeName() const override;
 
         // Virtual function of GCNode:
 	void visitReferents(GCNode::const_visitor* v) const override {
-	    m_data.visitReferents(v);
+	    m_data->visitReferents(v);
 	    RObject::visitReferents(v);
+            if (m_protect) {
+                (*v)(m_protect);
+            }
 	}
     protected:
         // Virtual function of GCNode:
 	void detachReferents() override {
-	    m_data.detachReferents();
+	    m_data->detachReferents();
+            m_protect = nullptr;
 	    RObject::detachReferents();
 	}
     private:
 	friend class PromiseData;
 
-	PromiseData m_data;
+	PromiseData* m_data;
+        PromiseData m_storage;
+        GCEdge<const GCNode> m_protect;
 
 	friend RObject* ::PRCODE(RObject*);
 	friend RObject* ::PRENV(RObject*);
@@ -283,7 +298,7 @@ namespace rho {
 	 * evaluated.
 	 */
 	Environment* environment() const {
-	    return m_data.m_environment;
+	    return m_data->m_environment;
 	}
 
 	/** @brief Access the value of a Promise.
@@ -292,7 +307,7 @@ namespace rho {
 	 * Symbol::unboundValue() if it has not yet been evaluated.
 	 */
 	RObject* value() {
-	    return m_data.m_value;
+	    return m_data->m_value;
 	}
 
 	/** @brief RObject to be evaluated by the Promise.
@@ -301,7 +316,7 @@ namespace rho {
 	 * the Promise.
 	 */
 	const RObject* valueGenerator() const {
-	    return m_data.m_valgen;
+	    return m_data->m_valgen;
 	}
 
 	/** @brief Set value of the Promise.
@@ -313,7 +328,7 @@ namespace rho {
 	 * @param val Value to be associated with the Promise.
 	 */
 	void setValue(RObject* val) {
-	    m_data.setValue(val);
+	    m_data->setValue(val);
 	}
 
 	friend void ::SET_PRVALUE(SEXP x, SEXP v);  // Needs setValue().
@@ -343,12 +358,12 @@ namespace rho {
 
     inline PromiseData* PromiseData::getThis() {
         return m_is_pointer_to_promise
-            ? &static_cast<Promise*>(m_value.get())->m_data : this;
+            ? static_cast<Promise*>(m_value.get())->m_data : this;
     }
 
     inline const PromiseData* PromiseData::getThis() const {
         return m_is_pointer_to_promise
-            ? &static_cast<const Promise*>(m_value.get())->m_data : this;
+            ? static_cast<const Promise*>(m_value.get())->m_data : this;
     }
 
 }  // namespace rho

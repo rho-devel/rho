@@ -47,7 +47,7 @@ Frame::monitor Frame::s_write_monitor = nullptr;
 
 PairList* Frame::Binding::asPairList(PairList* tail) const
 {
-    PairList* ans = new PairList(m_value, tail, symbol());
+    PairList* ans = new PairList(unforcedValue(), tail, symbol());
     SET_MISSING(ans, origin());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
@@ -62,6 +62,9 @@ Frame::Binding::forcedValueSlow() const
     bool promise_forced = false;
     RObject* val = m_value;
 
+    if (val == argumentTag()) {
+        return frame()->argumentValue(m_argument_id);
+    }
     if (val && val->sexptype() == PROMSXP) {
 	Promise* prom = static_cast<Promise*>(val);
 	if (!prom->evaluated()) {
@@ -71,6 +74,10 @@ Frame::Binding::forcedValueSlow() const
 	val = Evaluator::evaluate(prom, nullptr);
     }
     return make_pair(val, promise_forced);
+}
+
+void Frame::Binding::boxArgument() const {
+    m_value = m_frame->argumentValueAsPromise(m_argument_id);
 }
 
 void Frame::Binding::fromPairList(PairList* pl)
@@ -133,6 +140,8 @@ Frame::Frame(const ArgList& promised_args, size_t num_bindings,
       m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
       m_promised_args(promised_args)
 {
+    m_promised_args_protect = m_promised_args.list();
+
     if (check_list_size && num_bindings > kMaxListSize) {
 	size_t overflow_size = num_bindings - kMaxListSize;
 	m_overflow = new map(overflow_size);
@@ -144,7 +153,6 @@ Frame::Frame(const ArgList& promised_args, size_t num_bindings,
 
     m_bindings = new Binding[num_bindings];
     m_bindings_size = num_bindings;
-    m_promised_args_protect = m_promised_args.list();
 }
 
 Frame::Frame(const FrameDescriptor* descriptor, const ArgList& promised_args)
@@ -161,11 +169,11 @@ Frame::Frame(const Frame& source)
       m_read_monitored(false), m_write_monitored(false), m_overflow(nullptr),
       m_promised_args(source.m_promised_args)
 {
+    m_promised_args_protect = m_promised_args.list();
     m_bindings = new Binding[m_bindings_size];
     importBindings(&source);
     if (source.isLocked())
 	lock(false);
-    m_promised_args_protect = m_promised_args.list();
 }
 
 Frame::~Frame() {
@@ -389,6 +397,7 @@ Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
 void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
     if (!binding_to_import)
 	return;
+    binding_to_import->ensureArgumentsAreBoxed();
     Binding *new_binding = obtainBinding(binding_to_import->symbol());
     *new_binding = *binding_to_import;
     new_binding->m_frame = this;
@@ -442,6 +451,37 @@ void Frame::visitReferents(const_visitor* v) const
 	(*v)(m_descriptor);
     if (m_promised_args_protect)
 	(*v)(m_promised_args_protect);
+    for (auto &item : m_default_arglist) {
+        item.visitReferents(v);
+    }
+}
+
+void Frame::addDefaultArgument(const Symbol* symbol, const RObject* expression,
+                               Environment* env, int frame_location)
+{
+  Binding* binding = frame_location == -1
+      ? obtainBinding(symbol)
+      : obtainBinding(symbol, frame_location);
+
+  if (expression == Symbol::missingArgument()) {
+      return;
+  }
+  m_default_arglist.emplace_back(expression, env);
+  binding->setValueToArgument(m_default_arglist.size() - 1, Binding::DEFAULTED);
+}
+
+std::pair<RObject*, bool> Frame::argumentValue(unsigned char argumentId) const
+{
+    PromiseData& promise = const_cast<PromiseData&>(
+        m_default_arglist[argumentId]);
+    bool already_evaluated = promise.evaluated();
+    return std::make_pair(promise.evaluate(), !already_evaluated);
+}
+
+Promise* Frame::argumentValueAsPromise(unsigned char argumentId) const {
+    return new Promise(
+        const_cast<PromiseData*>(&m_default_arglist[argumentId]),
+        this);
 }
 
 namespace rho {

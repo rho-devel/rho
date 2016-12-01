@@ -66,8 +66,6 @@ extern "C" {
 }
 
 namespace {
-    Environment *fenv;
-
     string kv_regex_string("([\\w\\.]*)\\s*:\\s*(\\w*)");
     boost::basic_regex<char> kv_regex(kv_regex_string);
 
@@ -172,17 +170,8 @@ namespace {
 		break;
 	    case PROMSXP:
 		{
-		    Promise* prom = static_cast<Promise*>(value);
-		    cout << "Promise("
-			 << getString(PRCODE(prom))
-			 << ", ";
-		    SEXP env = PRENV(prom);
-		    if (env == fenv)
-			cout << "fenv)";
-		    else {
-			cerr << "Unexpected environment.\n";
-			abort();
-		    }
+                  Promise* prom = static_cast<Promise*>(value);
+                  showValue(PREXPR(prom));
 		}
 		break;
 	    case SYMSXP:
@@ -196,7 +185,7 @@ namespace {
 		}
 		break;
 	    default:
-		cerr << "Unexpected SEXPTYPE.\n";
+                cerr << "Unexpected SEXPTYPE: " << value->sexptype() << ".\n";
 		abort();
 	    }
 	}
@@ -256,10 +245,6 @@ int main(int argc, char* argv[]) {
 
     Evaluator evalr;
 
-    // Set up Environments:
-    GCStackRoot<Frame> ff(Frame::normalFrame());
-    GCStackRoot<Environment> fenvrt(new Environment(0, ff));
-    fenv = fenvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1]));
@@ -270,11 +255,16 @@ int main(int argc, char* argv[]) {
 	cerr << "ArgMatchertest: Error encountered while processing formals" << endl;
 	return 0;
     }
+
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     ArgList supplied(getArgs(argv[2]), ArgList::RAW);
+
+    // Set up Environments:
     // Set up frame and prior bindings (if any):
-    Frame* frame = fenv->frame();
+    GCStackRoot<Frame> frame(Frame::closureWorkingFrame(supplied));
+    GCStackRoot<Environment> fenv(new Environment(0, frame));
+
     if (argc == 4) {
 	cout << "\nPrior bindings:\n\n";
 	GCStackRoot<PairList> prior_bindings(getArgs(argv[3]));

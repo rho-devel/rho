@@ -149,6 +149,7 @@ void Frame::Binding::assignSlow(RObject* new_value, Origin origin)
 
 RObject* Frame::Binding::unforcedValue() const
 {
+    ensureArgumentsAreBoxed();
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
     return ans;
