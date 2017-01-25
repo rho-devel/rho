@@ -323,7 +323,7 @@ SEXP do_refcnt(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObje
 SEXP do_regexec(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* useBytes_);
 SEXP do_regexpr(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* perl_, rho::RObject* fixed_, rho::RObject* useBytes_);
 SEXP do_regFinaliz(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* e_, rho::RObject* f_, rho::RObject* onexit_);
-rho::quick_builtin do_relop;
+SEXP do_relop(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* lhs, rho::RObject* rhs);
 SEXP do_remove(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* envir_, rho::RObject* inherits_);
 SEXP do_rep(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_rep_int(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* times_);

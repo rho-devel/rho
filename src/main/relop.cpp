@@ -134,7 +134,7 @@ namespace {
     }
 }  // anonymous namespace
 
-static SEXP do_relop_dflt(/*const*/ Expression* call,
+SEXP do_relop(/*const*/ Expression* call,
 			  const BuiltInFunction* op,
 			  RObject* xarg, RObject* yarg)
 {
@@ -228,19 +228,6 @@ static SEXP do_relop_dflt(/*const*/ Expression* call,
 	return relop(vl.get(), vr.get(), opcode);
     } else errorcall(call, _("comparison of these types is not implemented"));
     return nullptr;  // -Wall
-}
-
-RObject* attribute_hidden do_relop(/*const*/ Expression* call,
-				   const BuiltInFunction* op,
-				   Environment* env,
-				   RObject* const* args,
-				   int num_args,
-				   const PairList* tags)
-{
-    op->checkNumArgs(num_args, 2, call);
-    return do_relop_dflt(const_cast<Expression*>(call),
-			 const_cast<BuiltInFunction*>(op),
-			 args[0], args[1]);
 }
 
 /* POSIX allows EINVAL when one of the strings contains characters

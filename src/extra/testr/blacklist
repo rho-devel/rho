@@ -84,6 +84,9 @@ tc_invisible_3.R
 tc_invisible_9.R
 tc_ISOdatetime_2.R
 tc_nargs_1.R
+tc_operators_105.R
+tc_operators_143.R
+tc_operators_148.R
 tc_operators_167.R
 tc_operators_201.R
 tc_operators_297.R
@@ -93,6 +96,7 @@ tc_operators_329.R
 tc_operators_338.R
 tc_operators_38.R
 tc_operators_5.R
+tc_operators_84.R
 tc_putconst_1.R
 tc_putconst_2.R
 tc_radixsort_1.R
