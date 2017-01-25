@@ -715,16 +715,17 @@ static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
     return result;
 }
 
-SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_math1(Expression* call, const BuiltInFunction* builtin,
+			       RObject* x)
 {
     SEXP s;
 
-    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
+    if (isComplex(x)) {
+	return complex_math1(call, const_cast<BuiltInFunction*>(builtin),
+			     PairList::cons(x, nullptr), nullptr);
+    }
 
-    if (isComplex(CAR(args)))
-	return complex_math1(call, op, args, env);
-
-#define MATH1(x) math1(CAR(args), x, call);
+#define MATH1(FUN) math1(x, FUN, call);
     switch (builtin->variant()) {
     case 1: return MATH1(floor);
     case 2: return MATH1(ceil);

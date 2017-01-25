@@ -260,7 +260,7 @@ rho::quick_builtin do_mapply;
 SEXP do_match(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* table, rho::RObject* nomatch_, rho::RObject* incomparables);
 SEXP do_matchcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_matprod(SEXP, SEXP, SEXP, SEXP);
-SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
+SEXP do_math1(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x);
 SEXP do_math2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y);
 SEXP do_Math2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_math3(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* nu, rho::RObject* expon_scaled);
