@@ -169,9 +169,9 @@ namespace rho {
                                              Environment* env,
                                              const ArgList& arglist) const;
 
-	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
+	RObject* evaluateNativeBuiltInCall(const BuiltInFunction*,
 					   Environment*, const ArgList&) const;
-	RObject* evalArgsAndEvaluateFixedArityBuiltIn(const BuiltInFunction*,
+	RObject* evalArgsAndEvaluateNativeBuiltInCall(const BuiltInFunction*,
                                                       Environment*,
                                                       const ArgList&) const;
 

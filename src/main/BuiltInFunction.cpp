@@ -92,7 +92,6 @@ BuiltInFunction::BuiltInFunction(const char* name,
 {
     m_calling_convention = CallingConvention::PairList;
     m_function.pairlist = cfun;
-
     if (cfun == do_External
 	|| cfun == do_Externalgr
 	|| cfun == do_begin
@@ -142,6 +141,20 @@ BuiltInFunction::BuiltInFunction(const char* name,
 
     if (cfun == reinterpret_cast<FixedNativeFnStorage>(do_paren))
 	m_transparent = true;
+}
+
+BuiltInFunction::BuiltInFunction(const char* name,
+				 VarArgsNativeFn function,
+				 unsigned int variant,
+				 unsigned int flags,
+				 int arity,
+				 PPinfo ppinfo,
+				 const char* first_arg_name,
+				 DispatchType dispatch)
+    : BuiltInFunction(name, variant, flags, arity, ppinfo,
+		      first_arg_name, dispatch) {
+    m_calling_convention = CallingConvention::VarArgsNative;
+    m_function.varargs_native = function;
 }
 
 BuiltInFunction::BuiltInFunction(const char* name,

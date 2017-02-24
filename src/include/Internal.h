@@ -64,7 +64,7 @@ SEXP do_agrep(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObjec
 SEXP do_allnames(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* expr_, rho::RObject* functions_, rho::RObject* max_names_, rho::RObject* unique_);
 SEXP do_anyNA(SEXP, SEXP, SEXP, SEXP);
 SEXP do_aperm(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a_, rho::RObject* perm_, rho::RObject* resize_);
-rho::ArgumentArrayFn do_arith;
+SEXP do_arith(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_aregexec(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* bounds_, rho::RObject* cost_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* use_bytes_);
 SEXP do_args(SEXP, SEXP, SEXP, SEXP); // non-trivial
 SEXP do_array(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* data_, rho::RObject* dim_, rho::RObject* dimnames_);

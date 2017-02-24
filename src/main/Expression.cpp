@@ -168,28 +168,28 @@ static void prepareToInvokeBuiltIn(const BuiltInFunction* func)
 #endif
 }
 
-RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
-					       Environment* env,
-					       const ArgList& arglist) const
+RObject* Expression::evaluateNativeBuiltInCall(const BuiltInFunction* func,
+                                               Environment* env,
+                                               const ArgList& arglist) const
 {
-  assert(func->sexptype() == SPECIALSXP
-         || arglist.status() == ArgList::EVALUATED);
-  const PairList* tags = arglist.tags();
+    assert(func->sexptype() == SPECIALSXP
+           || arglist.status() == ArgList::EVALUATED);
+    const PairList* tags = arglist.tags();
     prepareToInvokeBuiltIn(func);
-    switch(func->arity()) {
+    switch(arglist.size()) {
     case 0:
-        return func->invokeFixedArity(this, env, tags);
+        return func->invokeNativeCall(this, env, tags);
 /*  This macro expands out to:
     case 1:
-	return func->invokeFixedArity(this, env, tags, arglist.get(0));
+	return func->invokeNativeCall(this, env, tags, arglist.get(0));
     case 2:
-	return func->invokeFixedArity(this, env, tags, arglist.get(0), arglist.get(1));
+	return func->invokeNativeCall(this, env, tags, arglist.get(0), arglist.get(1));
     ...
 */
 #define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist.get(N)
 #define CASE_STATEMENT(Z, N, IGNORED)              \
     case N:                                        \
-      return func->invokeFixedArity(this, env, tags, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
+      return func->invokeNativeCall(this, env, tags, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
 
 	BOOST_PP_REPEAT_FROM_TO(1, 20, CASE_STATEMENT, 0);
 
@@ -206,27 +206,27 @@ static inline RObject* evalIfNonNull(RObject* x, Environment* env) {
   return x ? x->evaluate(env) : x;
 }
 
-RObject* Expression::evalArgsAndEvaluateFixedArityBuiltIn(
+RObject* Expression::evalArgsAndEvaluateNativeBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
     const PairList* tags = arglist.tags();
-    int arity = func->arity();
+    int arity = arglist.size();
     if (arity == 0) {
       prepareToInvokeBuiltIn(func);
-      return func->invokeFixedArity(this, env, tags);
+      return func->invokeNativeCall(this, env, tags);
     }
     auto arg_iterator = arglist.getArgs().begin();
 /*  This macro expands out to:
     RObject* arg0 = evalIfNonNull(arg_iterator->car(), env);
     if (arity == 1) {
       prepareToInvokeBuiltIn(func);
-      return func->invokeFixedArity(this, env, tags, arg0);
+      return func->invokeNativeCall(this, env, tags, arg0);
     }
     ++arg_iterator;
     RObject* arg1 = evalIfNonNull(arg_iterator->car(), env);
     if (arity == 2) {
       prepareToInvokeBuiltIn(func);
-      return func->invokeFixedArity(this, env, tags, arg0, arg1);
+      return func->invokeNativeCall(this, env, tags, arg0, arg1);
     }
     ...
 */
@@ -235,7 +235,7 @@ RObject* Expression::evalArgsAndEvaluateFixedArityBuiltIn(
     RObject* arg##N = evalIfNonNull(arg_iterator->car(), env); \
     if (arity == N + 1) {                                      \
       prepareToInvokeBuiltIn(func);                            \
-      return func->invokeFixedArity(this, env, tags,           \
+      return func->invokeNativeCall(this, env, tags,           \
                                     BOOST_PP_REPEAT(BOOST_PP_ADD(N, 1), ARGUMENT_LIST, 0)); \
     }                                                          \
     ++arg_iterator;
@@ -289,13 +289,14 @@ RObject* Expression::evaluateDirectBuiltInCall(
     int num_evaluated_args = arglist.size();
     checkArityAndNamingRequirements(func, num_evaluated_args);
 
-    if (func->getCallingConvention()
-        == BuiltInFunction::CallingConvention::FixedNative)
+    auto calling_convention = func->getCallingConvention();
+    if (calling_convention == BuiltInFunction::CallingConvention::FixedNative
+        || calling_convention == BuiltInFunction::CallingConvention::VarArgsNative)
     {
         if (args_need_evaluation) {
-            return evalArgsAndEvaluateFixedArityBuiltIn(func, env, arglist);
+            return evalArgsAndEvaluateNativeBuiltInCall(func, env, arglist);
         } else {
-            return evaluateFixedArityBuiltIn(func, env, arglist);
+            return evaluateNativeBuiltInCall(func, env, arglist);
         }
     }
 

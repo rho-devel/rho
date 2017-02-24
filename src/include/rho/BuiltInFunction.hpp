@@ -301,7 +301,7 @@ namespace rho {
 
         // The different ways that the underlying function can take arguments.
         enum class CallingConvention {
-          PairList, ArgumentArray, FixedNative
+          PairList, ArgumentArray, FixedNative, VarArgsNative
         };
         CallingConvention getCallingConvention() const {
           return m_calling_convention;
@@ -355,12 +355,13 @@ namespace rho {
         }
 
 	template<typename... Args>
-        RObject* invokeFixedArity(const Expression* call,
+        RObject* invokeNativeCall(const Expression* call,
 				  Environment* env,
 				  const PairList* tags,
 				  Args... args) const {
-            assert(m_calling_convention == CallingConvention::FixedNative);
-            assert(sizeof...(Args) == arity());
+            assert(getCallingConvention() == CallingConvention::FixedNative
+                   || getCallingConvention() == CallingConvention::VarArgsNative);
+            assert(sizeof...(Args) == arity() || arity() == -1);
             if (functionNeedsInternalDispatch()
                 && argsHaveClassToDispatchOn(args...))
 	    {
@@ -370,22 +371,25 @@ namespace rho {
 		if (dispatched.first)
 		    return dispatched.second;
 	    }
-            return invokeFixedArityWithoutDispatch(call, env, tags, args...);
+            return invokeNativeCallWithoutDispatch(call, args...);
         }
-      
+
 	template<typename... Args>
-        RObject* invokeFixedArityWithoutDispatch(const Expression* call,
-                                                 Environment* env,
-                                                 const PairList* tags,
-                                                 Args... args) const
-        {
-            assert(m_calling_convention == CallingConvention::FixedNative);
-            assert(sizeof...(Args) == arity());
-	    auto fn = reinterpret_cast<
+	RObject* invokeNativeCallWithoutDispatch(const Expression* call,
+						 Args... args) const {
+            assert(sizeof...(Args) == arity() || arity() == -1);
+            if (getCallingConvention() == CallingConvention::FixedNative) {
+              auto fn = reinterpret_cast<
 		RObject*(*)(Expression*, const BuiltInFunction*,
 			    Args...)>(m_function.fixed_native);
-	    return (*fn)(const_cast<Expression*>(call), this, args...);
-	}
+              return (*fn)(const_cast<Expression*>(call), this, args...);
+	    } else {
+                assert(getCallingConvention() == CallingConvention::VarArgsNative);
+		return (m_function.varargs_native)(
+                    const_cast<Expression*>(call),
+                    this, sizeof...(Args), args...);
+	    }
+        }
 
 	RObject* invokeSpecial(const Expression* call, Environment* env,
                                const PairList* args) const {
@@ -474,6 +478,11 @@ namespace rho {
 	typedef RObject* (*FixedNativeFnStorage)(Expression*,
                                                  const BuiltInFunction*,
                                                  class SequenceOfRObject*);
+	// Function that takes a variable number of arguments.
+	typedef RObject* (*VarArgsNativeFn)(Expression*,
+					    const BuiltInFunction*,
+					    int num_args,
+					    ...);
 
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -523,6 +532,16 @@ namespace rho {
 			PPinfo ppinfo,
 			const char* first_arg_name = nullptr,
 			DispatchType dispatch = DispatchType::NONE);
+
+        BuiltInFunction(const char* name,
+                        VarArgsNativeFn cfun,
+			unsigned int variant,
+			unsigned int flags,
+			int arity,
+			PPinfo ppinfo,
+			const char* first_arg_name = nullptr,
+			DispatchType dispatch = DispatchType::NONE);
+
 	BuiltInFunction(const char*,
 			unsigned int,
 			unsigned int,
@@ -550,6 +569,7 @@ namespace rho {
           CCODE pairlist;
           ArgumentArrayFn arg_array;
           FixedNativeFnStorage fixed_native;
+          VarArgsNativeFn varargs_native;
         } m_function;
 
 	std::string m_name;  // name of function

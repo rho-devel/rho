@@ -57,6 +57,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdarg.h>
 
 #include "R_ext/Itermacros.h"
 #include "rho/ArgMatcher.hpp"
@@ -290,25 +291,30 @@ static R_INLINE SEXP ScalarValue2(SEXP x, SEXP y)
 
 /* Unary and Binary Operators */
 
-RObject* attribute_hidden do_arith(/*const*/ Expression* call_,
+RObject* attribute_hidden do_arith(/*const*/ Expression* call,
 				   const BuiltInFunction* op_,
-				   Environment* env,
-				   RObject* const* args,
 				   int num_args,
-				   const PairList* tags)
+				   ...)
 {
-    Expression* call = const_cast<Expression*>(call_);
-    BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
-
-    switch(num_args) {
-    case 1:
-	return R_unary(call, op, args[0]);
-    case 2:
-	return R_binary(call, op, args[0], args[1]);
-    default:
+    if (num_args < 1 || num_args > 2) {
 	errorcall(call, _("operator needs one or two arguments"));
     }
-    return nullptr;			/* never used; to keep -Wall happy */
+
+    BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
+    RObject* result;
+
+    va_list args;
+    va_start(args, num_args);
+    if (num_args == 1) {
+	RObject* arg = va_arg(args, RObject*);
+	result = R_unary(call, op, arg);
+    } else {
+	RObject* lhs = va_arg(args, RObject*);
+	RObject* rhs = va_arg(args, RObject*);
+	result = R_binary(call, op, lhs, rhs);
+    }
+    va_end(args);
+    return result;
 }
 
 namespace {
