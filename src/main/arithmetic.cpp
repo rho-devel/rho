@@ -303,10 +303,10 @@ RObject* attribute_hidden do_arith(/*const*/ Expression* call,
     BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
 
     if (num_args == 1) {
-        UNPACK_VA_ARGS(num_args, 1, arg);
+	UNPACK_VA_ARGS(num_args, (arg));
 	return R_unary(call, op, arg);
     } else {
-        UNPACK_VA_ARGS(num_args, 2, lhs, rhs);
+	UNPACK_VA_ARGS(num_args, (lhs)(rhs));
 	return R_binary(call, op, lhs, rhs);
     }
 }
@@ -776,10 +776,14 @@ SEXP attribute_hidden do_math1(Expression* call, const BuiltInFunction* builtin,
 }
 
 /* methods are allowed to have more than one arg */
-SEXP attribute_hidden do_trunc(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_trunc(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     call->check1arg("x"); // Checked _after_ internal dispatch.
-    SEXP arg = num_args > 0 ? args[0] : R_NilValue;
+    SEXP arg = R_NilValue;
+    if (num_args > 0) {
+	UNPACK_VA_ARGS(num_args, (arg_));
+	arg = arg_;
+    }
     if (isComplex(arg))
 	errorcall(call, _("unimplemented complex function"));
     return math1(arg, trunc, call);

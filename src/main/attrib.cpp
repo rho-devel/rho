@@ -781,19 +781,19 @@ SEXP attribute_hidden R_data_class2 (SEXP obj)
 }
 
 // class(x)  &  .cache_class(classname, extendsForS3(.)) {called from methods} :
-SEXP attribute_hidden R_do_data_class(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden R_do_cache_data_class(/*const*/ Expression* call, const BuiltInFunction* op, RObject* klass, RObject* value)
 {
-  if(op->variant() == 1) { // .cache_class() - typically re-defining existing cache
-      call->check1arg("class");
-      SEXP klass = args[0];
-      if(TYPEOF(klass) != STRSXP || LENGTH(klass) < 1)
-	  error("invalid class argument to internal .class_cache");
-      const char *class_str = translateChar(STRING_ELT(klass, 0));
-      return cache_class(class_str, args[1]);
-  }
-  // class():
-  call->check1arg("x");
-  return R_data_class(args[0], FALSE);
+    call->check1arg("class");
+    if(TYPEOF(klass) != STRSXP || LENGTH(klass) < 1)
+	error("invalid class argument to internal .class_cache");
+    const char *class_str = translateChar(STRING_ELT(klass, 0));
+    return cache_class(class_str, value);
+}
+
+SEXP attribute_hidden R_do_data_class(/*const*/ Expression* call, const BuiltInFunction* op, RObject* klass)
+{
+    call->check1arg("x");
+    return R_data_class(klass, FALSE);
 }
 
 /* names(object) <- name */

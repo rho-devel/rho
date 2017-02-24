@@ -4960,7 +4960,7 @@ R_newCurlUrl(const char *description, const char * const mode, int type);
 /* op = 0: .Internal( url(description, open, blocking, encoding, method))
    op = 1: .Internal(file(description, open, blocking, encoding, method, raw))
 */
-SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     RHOCONST char *class2 = "url";
@@ -4971,8 +4971,19 @@ SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* 
     cetype_t ienc = CE_NATIVE;
     Rconnection con = nullptr;
 
+    va_list args;
+    va_start(args, num_args);
+    scmd = NEXT_ARG;
+    sopen = NEXT_ARG;
+    block = asLogical(NEXT_ARG);
+    enc = NEXT_ARG;
+    const char* cmeth = CHAR(asChar(NEXT_ARG));
+    if (op->variant() == 1) { // file() -- has extra  'raw'  argument
+	raw = asLogical(NEXT_ARG);
+    }
+    va_end(args);
+
     // --------- description
-    scmd = args[0];
     if(!isString(scmd) || Rf_length(scmd) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(Rf_length(scmd) > 1)
@@ -5009,22 +5020,18 @@ SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* 
 	inet = FALSE;
 
     // --------- open
-    sopen = args[1];
     if(!isString(sopen) || Rf_length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     // --------- blocking
-    block = asLogical(args[2]);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "block");
     // --------- encoding
-    enc = args[3];
     if(!isString(enc) || Rf_length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
 
     // --------- method
-    const char *cmeth = CHAR(asChar(args[4]));
     meth = streql(cmeth, "libcurl"); // 1 if "libcurl", else 0
     defmeth = streql(cmeth, "default");
     if (streql(cmeth, "wininet")) {
@@ -5039,7 +5046,6 @@ SEXP attribute_hidden do_url(/*const*/ Expression* call, const BuiltInFunction* 
 #endif
 
     if(op->variant() == 1) { // file() -- has extra  'raw'  argument
-	raw = asLogical(args[5]);
 	if(raw == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "raw");
     }

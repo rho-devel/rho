@@ -1055,10 +1055,11 @@ Rboolean isMethodsDispatchOn(void)
    It seems it is not currently called with onOff = TRUE (and would
    not have worked prior to 3.0.2).
 */ 
-SEXP attribute_hidden do_S4on(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_S4on(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     if(num_args == 0) return Rf_ScalarLogical(isMethodsDispatchOn());
-    return R_isMethodsDispatchOn(args[0]);
+    UNPACK_VA_ARGS(num_args, (x));
+    return R_isMethodsDispatchOn(x);
 }
 
 

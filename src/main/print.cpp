@@ -117,14 +117,17 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_invisible(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     switch (num_args) {
     case 0:
 	return R_NilValue;
     case 1:
+    {
 	call->check1arg("x");
-	return args[0];
+	UNPACK_VA_ARGS(num_args, (x));
+	return x;
+    }
     default:
 	op->checkNumArgs(num_args, 1, call);
 	return call;/* never used, just for -Wall */

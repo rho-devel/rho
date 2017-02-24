@@ -144,13 +144,13 @@ SEXP attribute_hidden do_logic(/*const*/ Expression* call, const BuiltInFunction
     case 2:
     {
 	op->checkNumArgs(num_args, 2, call);
-	UNPACK_VA_ARGS(num_args, 2, lhs, rhs);
+	UNPACK_VA_ARGS(num_args, (lhs) (rhs));
 	return lbinary(op, lhs, rhs);
     }
     case 3:
     {
 	op->checkNumArgs(num_args, 1, call);
-	UNPACK_VA_ARGS(num_args, 1, arg1);
+	UNPACK_VA_ARGS(num_args, (arg1));
 	return lnot(arg1);
     }
     default:
