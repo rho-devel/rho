@@ -189,7 +189,10 @@ SEXP do_gcinfo(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObje
 rho::quick_builtin do_gctime;
 SEXP do_gctorture(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_);
 SEXP do_gctorture2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* step_, rho::RObject* wait_, rho::RObject* inhibit_release_);
-rho::quick_builtin do_get;
+SEXP do_get(rho::Expression* call, const rho::BuiltInFunction* op,
+            rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* inherits);
+SEXP do_get0(rho::Expression* call, const rho::BuiltInFunction* op,
+             rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* inherits, rho::RObject* value_if_not_found);
 SEXP do_getDllTable(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_getVarsFromFrame(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* env_, rho::RObject* force_promises_);
 SEXP do_getenv(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* symbol_, rho::RObject* default_value_);

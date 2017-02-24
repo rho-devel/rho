@@ -257,7 +257,7 @@ new BuiltInFunction("all.names",	do_allnames,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}
 new BuiltInFunction("comment",	do_comment,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("comment<-",	do_commentgets,	0,	11,	2,	{PP_FUNCALL, PREC_LEFT,	1}),
 new BuiltInFunction("get",		do_get,		1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}),
-new BuiltInFunction("get0",	do_get,		2,	11,	5,	{PP_FUNCALL, PREC_FN,	0}),
+new BuiltInFunction("get0",	do_get0,		2,	11,	5,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("mget",	do_mget,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("exists",	do_get,		0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}),
 new BuiltInFunction("assign",	do_assign,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}),
