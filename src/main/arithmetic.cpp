@@ -301,20 +301,14 @@ RObject* attribute_hidden do_arith(/*const*/ Expression* call,
     }
 
     BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
-    RObject* result;
 
-    va_list args;
-    va_start(args, num_args);
     if (num_args == 1) {
-	RObject* arg = va_arg(args, RObject*);
-	result = R_unary(call, op, arg);
+        UNPACK_VA_ARGS(num_args, 1, arg);
+	return R_unary(call, op, arg);
     } else {
-	RObject* lhs = va_arg(args, RObject*);
-	RObject* rhs = va_arg(args, RObject*);
-	result = R_binary(call, op, lhs, rhs);
+        UNPACK_VA_ARGS(num_args, 2, lhs, rhs);
+	return R_binary(call, op, lhs, rhs);
     }
-    va_end(args);
-    return result;
 }
 
 namespace {

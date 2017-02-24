@@ -37,6 +37,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/preprocessor.hpp>
+#include <stdarg.h>
 #include "rho/BuiltInFunction.hpp"
 #include "rho/RObject.hpp"
 #include "rho/Expression.hpp"
@@ -51,6 +53,18 @@ namespace rho {
                                     int num_args,
                                     const PairList* tags);
 }  // namespace rho
+
+// Some macros to help unpack args from VarArgsBuiltin.
+#define UNPACK_SINGLE_VA_ARG(r, data, elem) \
+    RObject* elem = va_arg(args, RObject*);
+
+#define UNPACK_VA_ARGS(LAST_ARG, NUM_ARGS, ...)     \
+    assert(num_args == NUM_ARGS);                   \
+    va_list args;                                   \
+    va_start(args, LAST_ARG);                       \
+    BOOST_PP_LIST_FOR_EACH(UNPACK_SINGLE_VA_ARG, 0, \
+                           BOOST_PP_TUPLE_TO_LIST(NUM_ARGS, (__VA_ARGS__))) \
+    va_end(args);
 
 /* Function Names */
 
@@ -249,7 +263,7 @@ SEXP do_loadFromConn2(rho::Expression* call, const rho::BuiltInFunction* op, rho
 SEXP do_localeconv(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_log(SEXP, SEXP, SEXP, SEXP);  // Special
 rho::ArgumentArrayFn do_log1arg;
-rho::ArgumentArrayFn do_logic;
+SEXP do_logic(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
 SEXP do_ls(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* envir_, rho::RObject* all_names_, rho::RObject* sorted_);
