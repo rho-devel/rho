@@ -824,9 +824,7 @@ SEXP attribute_hidden do_namesgets(/*const*/ Expression* call, const BuiltInFunc
     }
     if (names != R_NilValue) {
 	GCStackRoot<PairList> tl(new PairList);
-        PROTECT(call = new Expression(nullptr, tl));
-	SETCAR(call, install("as.character"));
-	SETCADR(call, names);
+      PROTECT(call = new Expression(Rf_install("as.character"), { names }));
 	names = eval(call, R_BaseEnv);
 	UNPROTECT(1);
     }

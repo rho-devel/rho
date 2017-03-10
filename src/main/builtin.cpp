@@ -153,11 +153,8 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (addit && (oldcode = ctxt->onExit()) != R_NilValue ) {
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
-		GCStackRoot<PairList> tl(PairList::make(2));
-		PROTECT(tmp = new Expression(nullptr, tl));
-		SETCAR(tmp, R_BraceSymbol);
-		SETCADR(tmp, oldcode);
-		SETCADDR(tmp, code);
+                 PROTECT(tmp = new Expression(R_BraceSymbol,
+                                              { oldcode, code }));
 		ctxt->setOnExit(tmp);
 		UNPROTECT(1);
 	    }
