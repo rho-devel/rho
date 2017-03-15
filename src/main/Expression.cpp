@@ -250,7 +250,11 @@ RObject* Expression::evaluateBuiltInCall(
     if (func->getCallingConvention()
         == BuiltInFunction::CallingConvention::PairList)
     {
+      if (func->sexptype() == SPECIALSXP) {
+        return evaluatePairListSpecialCall(func, env, arglist);
+      } else {
         return evaluatePairListBuiltInCall(func, env, arglist);
+      }
     } else {
         return evaluateDirectBuiltInCall(func, env, arglist);
     }
@@ -297,17 +301,9 @@ RObject* Expression::evaluateDirectBuiltInCall(
                         arglist.tags());
 }
 
-RObject* Expression::evaluatePairListBuiltInCall(
+RObject* Expression::evaluatePairListSpecialCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (func->sexptype() == BUILTINSXP
-	&& arglist.status() != ArgList::EVALUATED)
-    {
-      ArgList evaluated_args(arglist);
-      evaluated_args.evaluate(env);
-      return evaluatePairListBuiltInCall(func, env, evaluated_args);
-    }
-
     // Check the number of arguments.
     int num_evaluated_args = arglist.size();
     func->checkNumArgs(num_evaluated_args, this);
@@ -318,8 +314,31 @@ RObject* Expression::evaluatePairListBuiltInCall(
 	check1arg(first_arg_name);
     }
 
+    return func->invokeSpecial(this, env, arglist.list());
+}
+
+RObject* Expression::evaluatePairListBuiltInCall(
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
+{
+    assert(func->sexptype() == BUILTINSXP);
+    ArgList evaluated_args(arglist);
+    if (arglist.status() != ArgList::EVALUATED)
+    {
+      evaluated_args.evaluate(env);
+    }
+
+    // Check the number of arguments.
+    int num_evaluated_args = evaluated_args.size();
+    func->checkNumArgs(num_evaluated_args, this);
+
+    // Check that any naming requirements on the first arg are satisfied.
+    const char* first_arg_name = func->getFirstArgName();
+    if (first_arg_name) {
+	check1arg(first_arg_name);
+    }
+
     prepareToInvokeBuiltIn(func);
-    return func->invoke(this, env, arglist);
+    return func->invoke(this, env, std::move(evaluated_args));
 }
 
 RObject* Expression::invokeClosure(const Closure* func,

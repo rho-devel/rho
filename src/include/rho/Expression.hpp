@@ -177,6 +177,9 @@ namespace rho {
 	RObject* evaluatePairListBuiltInCall(const BuiltInFunction* func,
                                              Environment* env,
                                              const ArgList& arglist) const;
+	RObject* evaluatePairListSpecialCall(const BuiltInFunction* func,
+                                             Environment* env,
+                                             const ArgList& arglist) const;
 
 	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
 					   Environment*, const ArgList&) const;

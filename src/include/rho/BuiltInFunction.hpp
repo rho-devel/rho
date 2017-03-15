@@ -307,32 +307,24 @@ namespace rho {
           return m_calling_convention;
         }
 
-	bool isInternalGeneric() const {
-	    return m_dispatch_type != DispatchType::NONE;
-	}
-
-	bool isSummaryGroupGeneric() const {
-	    return m_dispatch_type == DispatchType::GROUP_SUMMARY;
-	}
-
 	RObject* invoke(const Expression* call, Environment* env,
-                        const ArgList& args) const
+                        ArgList&& args) const
 	{
 	    // Handle internal generic functions.
-	    static BuiltInFunction* length_fn
-		= BuiltInFunction::obtainPrimitive("length");
-	    if (needsDispatch(args)
-                // Specials, the summary group and length handle dispatch
-		// themselves.
-		&& sexptype() == BUILTINSXP
-		&& !isSummaryGroupGeneric()
-		&& this != length_fn)
+            if (functionNeedsInternalDispatch()
+                && argsHaveClassToDispatchOn(args))
 	    {
-		auto dispatched = InternalDispatch(call, env, args);
+                auto dispatched = RealInternalDispatch(call, env,
+                                                       std::move(args));
 		if (dispatched.first)
 		    return dispatched.second;
 	    }
-
+            return invokeWithoutDispatch(call, env, args);
+        }
+      
+	RObject* invokeWithoutDispatch(const Expression* call, Environment* env,
+                                       const ArgList& args) const
+        {
 	    assert(m_calling_convention == CallingConvention::PairList);
             return callBuiltInWithCApi(m_function.pairlist, call, this, args,
                                        env);
@@ -342,19 +334,21 @@ namespace rho {
                         RObject* const* args, int num_args,
                         const PairList* tags) const {
 	    // Handle internal generic functions.
-	    static BuiltInFunction* length_fn
-		= BuiltInFunction::obtainPrimitive("length");
-	    if (needsDispatch(num_args, args)
-		&& sexptype() == BUILTINSXP
-		&& !isSummaryGroupGeneric()
-		&& this != length_fn)
+            if (functionNeedsInternalDispatch()
+                && argsHaveClassToDispatchOn(args, num_args))
 	    {
 		auto dispatched = RealInternalDispatch(call, num_args, args,
 						       tags, env);
 		if (dispatched.first)
 		    return dispatched.second;
 	    }
-	    
+            return invokeWithoutDispatch(call, env, args, num_args, tags);
+        }
+      
+        RObject* invokeWithoutDispatch(const Expression* call, Environment* env,
+                                       RObject* const* args, int num_args,
+                                       const PairList* tags) const
+        {
             assert(m_calling_convention == CallingConvention::ArgumentArray);
             return m_function.arg_array(const_cast<Expression*>(call),
                                         this, env, args, num_args, tags);
@@ -367,13 +361,8 @@ namespace rho {
 				  Args... args) const {
             assert(m_calling_convention == CallingConvention::FixedNative);
             assert(sizeof...(Args) == arity());
-	    static BuiltInFunction* length_fn
-		= BuiltInFunction::obtainPrimitive("length");
-
-	    if (needsDispatch(args...)
-		&& sexptype() == BUILTINSXP
-		&& !isSummaryGroupGeneric()
-		&& this != length_fn)
+            if (functionNeedsInternalDispatch()
+                && argsHaveClassToDispatchOn(args...))
 	    {
 		std::initializer_list<RObject*> args_array = { args... };
 		auto dispatched = RealInternalDispatch(
@@ -381,14 +370,35 @@ namespace rho {
 		if (dispatched.first)
 		    return dispatched.second;
 	    }
-
+            return invokeFixedArityWithoutDispatch(call, env, tags, args...);
+        }
+      
+	template<typename... Args>
+        RObject* invokeFixedArityWithoutDispatch(const Expression* call,
+                                                 Environment* env,
+                                                 const PairList* tags,
+                                                 Args... args) const
+        {
+            assert(m_calling_convention == CallingConvention::FixedNative);
+            assert(sizeof...(Args) == arity());
 	    auto fn = reinterpret_cast<
 		RObject*(*)(Expression*, const BuiltInFunction*,
 			    Args...)>(m_function.fixed_native);
 	    return (*fn)(const_cast<Expression*>(call), this, args...);
 	}
 
-	const char* getFirstArgName() const {
+	RObject* invokeSpecial(const Expression* call, Environment* env,
+                               const PairList* args) const {
+          assert(sexptype() == SPECIALSXP);
+          assert(getCallingConvention() == CallingConvention::PairList);
+          assert(!functionNeedsInternalDispatch());
+          return (*m_function.pairlist)(const_cast<Expression*>(call),
+                                        const_cast<BuiltInFunction*>(this),
+                                        const_cast<PairList*>(args),
+                                        env);
+        }
+
+            const char* getFirstArgName() const {
 	    return m_first_arg_name;
 	}
 
@@ -404,28 +414,46 @@ namespace rho {
 	    GROUP_MATH, GROUP_OPS, GROUP_COMPLEX, GROUP_SUMMARY };
 
     public:
-        std::pair<bool, RObject*>
-        InternalDispatch(const Expression* call,
-			 Environment* env,
-			 const ArgList& evaluated_args) const;
-
-        // This works like DispatchOrEval in the case where the arguments
-        // have already been evaluated.
-        std::pair<bool, RObject*>
-        InternalDispatch(const Expression* call,
-			 Environment* env,
-			 int num_args,
-			 RObject* const* evaluated_args,
-			 const PairList* tags) const {
-	    // assert(sexptype() == BUILTINSXP
-	    // 	   || m_function == do_Math2
-	    // 	   || m_function == do_log);
-	    if (!needsDispatch(num_args, evaluated_args)) {
-		return std::make_pair(false, nullptr);
-	    }
-	    return RealInternalDispatch(call, num_args, evaluated_args, tags,
-					env);
+        bool functionNeedsInternalDispatch() const {
+            static BuiltInFunction* length_fn
+                = BuiltInFunction::obtainPrimitive("length");
+            if (isInternalGeneric()
+                // Specials, the summary group and length handle dispatch
+                // themselves.
+                && !isSummaryGroupGeneric()
+                && sexptype() == BUILTINSXP
+                && this != length_fn)
+                return true;
+            return false;
 	}
+
+	/* @brief Attempt to dispatch this call to a method.
+         *
+	 * @param call The call being dispatched.
+	 * @param env The environment to call the method from.
+	 * @param evaluated_args The arguments to pass to the method.
+	 *
+	 * @return The first value is whether or not the dispatch succeeded.
+	 *    The second value is the return value if it did.
+         *
+         * @note If the dispatch fails, then evaluated_args is unchanged.
+	 */
+        std::pair<bool, RObject*>
+        InternalDispatch(const Expression* call,
+			 Environment* env,
+			 ArgList&& evaluated_args) const
+        {
+            assert(evaluated_args.status() == ArgList::EVALUATED);
+  
+            // NB: functionNeedsInternalDispatch() might not be true, since
+            //   we could be doing dispatch for a special etc.
+            assert(m_dispatch_type != DispatchType::NONE);
+            if (argsHaveClassToDispatchOn(evaluated_args)) {
+                return RealInternalDispatch(call, env,
+                                            std::move(evaluated_args));
+            }
+            return std::make_pair(false, nullptr);
+        }
 
     private:
 	const char* GetInternalGroupDispatchName() const;
@@ -542,42 +570,49 @@ namespace rho {
 	// allocated only using 'new'.
 	~BuiltInFunction();
 
-	// Internal dispatch is used a lot, but there most of the time
-	// no dispatch is needed because no objects are involved.
-	// This quickly detects most of cases.
-	bool needsDispatch(int num_args, RObject* const* evaluated_args) const
-	{
+	bool isInternalGeneric() const {
+	    return m_dispatch_type != DispatchType::NONE;
+	}
+
+	bool isSummaryGroupGeneric() const {
+	    return m_dispatch_type == DispatchType::GROUP_SUMMARY;
+	}
+
+        bool argsHaveClassToDispatchOn(RObject* const* evaluated_args,
+                                       int num_args) const
+        {
 	    switch(num_args) {
 	    case 0:
 		return false;
 	    case 1:
-		return needsDispatch(evaluated_args[0]);
+		return argsHaveClassToDispatchOn(evaluated_args[0]);
 	    default:
-		return needsDispatch(evaluated_args[0], evaluated_args[1]);
+		return argsHaveClassToDispatchOn(evaluated_args[0],
+						 evaluated_args[1]);
 	    }
 	}
 
-	bool needsDispatch(const ArgList& evaluated_args) const
+	bool argsHaveClassToDispatchOn(const ArgList& evaluated_args) const
 	{
-	    if (!isInternalGeneric())
-		return false;
 	    switch(evaluated_args.size()) {
 	    case 0:
 		return false;
 	    case 1:
-		return needsDispatch(evaluated_args.get(0));
+                return argsHaveClassToDispatchOn(evaluated_args.get(0));
 	    default:
-		return needsDispatch(evaluated_args.get(0),
-				     evaluated_args.get(1));
+                return argsHaveClassToDispatchOn(evaluated_args.get(0),
+                                                 evaluated_args.get(1));
 	    }
 	}
 
-	bool needsDispatch(const RObject* arg1 = nullptr,
-			   const RObject* arg2 = nullptr,
-			   ...) const
+	// Internal dispatch is used a lot, but there most of the time
+	// no dispatch is needed because no objects are involved.
+	// This quickly detects those cases.
+	bool argsHaveClassToDispatchOn(const RObject* arg1 = nullptr,
+                                       const RObject* arg2 = nullptr,
+                                       ...) const
 	{
-	    if (!isInternalGeneric())
-		return false;
+	    assert(m_dispatch_type != DispatchType::NONE);
 	    if (arg1 && arg1->hasClass())
 		return true;
 	    // 'Ops' dispatch on the second argument as well.
@@ -586,6 +621,11 @@ namespace rho {
 		return true;
 	    return false;
 	}
+
+        std::pair<bool, RObject*>
+        RealInternalDispatch(const Expression* call,
+                             Environment* env,
+                             ArgList&& args) const;
 
         std::pair<bool, RObject*>
         RealInternalDispatch(const Expression* call,
