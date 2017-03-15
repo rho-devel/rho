@@ -103,10 +103,6 @@ FunctionBase* Expression::getFunction(Environment* env) const
 
 RObject* Expression::evaluate(Environment* env)
 {
-    IncrementStackDepthScope scope;
-    RAllocStack::Scope ras_scope;
-    ProtectStack::Scope ps_scope;
-
     FunctionBase* function = getFunction(env);
 
     ArgList arglist(tail(), ArgList::RAW);
@@ -115,24 +111,30 @@ RObject* Expression::evaluate(Environment* env)
 
 RObject* Expression::evaluateFunctionCall(const FunctionBase* func,
                                           Environment* env,
-                                          const ArgList& raw_arglist) const
+                                          const ArgList& args,
+                                          const Frame* method_bindings) const
 {
-    func->maybeTrace(this);
-
     if (func->sexptype() == CLOSXP) {
-      return invokeClosure(static_cast<const Closure*>(func), env,
-                           raw_arglist, nullptr);
+        return evaluateFunctionCall(static_cast<const Closure*>(func),
+                                    env, args, method_bindings);
     }
 
     assert(func->sexptype() == BUILTINSXP || func->sexptype() == SPECIALSXP);
-    return applyBuiltIn(static_cast<const BuiltInFunction*>(func), env,
-                        raw_arglist);
+    assert(method_bindings == nullptr);
+    return evaluateFunctionCall(static_cast<const BuiltInFunction*>(func), env,
+                                args);
 }
 
-RObject* Expression::applyBuiltIn(const BuiltInFunction* builtin,
-                                  Environment* env, const ArgList& raw_arglist)
+RObject* Expression::evaluateFunctionCall(const BuiltInFunction* builtin,
+                                          Environment* env,
+                                          const ArgList& raw_arglist)
     const
 {
+    IncrementStackDepthScope scope;
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+    builtin->maybeTrace(this);
+
     RObject* result;
 
     if (builtin->createsStackFrame()) {
@@ -170,7 +172,9 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       Environment* env,
 					       const ArgList& arglist) const
 {
-    const PairList* tags = arglist.tags();
+  assert(func->sexptype() == SPECIALSXP
+         || arglist.status() == ArgList::EVALUATED);
+  const PairList* tags = arglist.tags();
     prepareToInvokeBuiltIn(func);
     switch(func->arity()) {
     case 0:
@@ -260,6 +264,18 @@ RObject* Expression::evaluateBuiltInCall(
     }
 }
 
+void Expression::checkArityAndNamingRequirements(const BuiltInFunction* func,
+                                                 int num_args) const
+{
+    // Check the number of arguments.
+    func->checkNumArgs(num_args, this);
+
+    // Check that any naming requirements on the first arg are satisfied.
+    const char* first_arg_name = func->getFirstArgName();
+    if (first_arg_name)
+	check1arg(first_arg_name);
+}
+
 RObject* Expression::evaluateDirectBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
@@ -270,14 +286,8 @@ RObject* Expression::evaluateDirectBuiltInCall(
         return evaluateDirectBuiltInCall(func, env, expanded_args);
     }
 
-    // Check the number of arguments.
     int num_evaluated_args = arglist.size();
-    func->checkNumArgs(num_evaluated_args, this);
-
-    // Check that any naming requirements on the first arg are satisfied.
-    const char* first_arg_name = func->getFirstArgName();
-    if (first_arg_name)
-	check1arg(first_arg_name);
+    checkArityAndNamingRequirements(func, num_evaluated_args);
 
     if (func->getCallingConvention()
         == BuiltInFunction::CallingConvention::FixedNative)
@@ -304,16 +314,7 @@ RObject* Expression::evaluateDirectBuiltInCall(
 RObject* Expression::evaluatePairListSpecialCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    // Check the number of arguments.
-    int num_evaluated_args = arglist.size();
-    func->checkNumArgs(num_evaluated_args, this);
-
-    // Check that any naming requirements on the first arg are satisfied.
-    const char* first_arg_name = func->getFirstArgName();
-    if (first_arg_name) {
-	check1arg(first_arg_name);
-    }
-
+    checkArityAndNamingRequirements(func, arglist.size());
     return func->invokeSpecial(this, env, arglist.list());
 }
 
@@ -327,28 +328,25 @@ RObject* Expression::evaluatePairListBuiltInCall(
       evaluated_args.evaluate(env);
     }
 
-    // Check the number of arguments.
-    int num_evaluated_args = evaluated_args.size();
-    func->checkNumArgs(num_evaluated_args, this);
-
-    // Check that any naming requirements on the first arg are satisfied.
-    const char* first_arg_name = func->getFirstArgName();
-    if (first_arg_name) {
-	check1arg(first_arg_name);
-    }
+    checkArityAndNamingRequirements(func, evaluated_args.size());
 
     prepareToInvokeBuiltIn(func);
     return func->invoke(this, env, std::move(evaluated_args));
 }
 
-RObject* Expression::invokeClosure(const Closure* func,
-                                   Environment* calling_env,
-                                   const ArgList& arglist,
-                                   const Frame* method_bindings) const
+RObject* Expression::evaluateFunctionCall(const Closure* func,
+                                          Environment* calling_env,
+                                          const ArgList& arglist,
+                                          const Frame* method_bindings) const
 {
-  return GCStackFrameBoundary::withStackFrameBoundary(
-      [=]() { return invokeClosureImpl(func, calling_env, arglist,
-                                       method_bindings); });
+    IncrementStackDepthScope scope;
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+    func->maybeTrace(this);
+
+    return GCStackFrameBoundary::withStackFrameBoundary(
+        [=]() { return invokeClosureImpl(func, calling_env, arglist,
+                                         method_bindings); });
 }
 
 void Expression::matchArgsIntoEnvironment(const Closure* func,

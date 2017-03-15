@@ -799,7 +799,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PROTECT(op = findFun(install("range.default"), env));
     Closure* closure = SEXP_downcast<Closure*>(op);
-    ans = call2->invokeClosure(closure, callenv, arglist);
+    ans = call2->evaluateFunctionCall(closure, callenv, arglist);
     UNPROTECT(2);
     return(ans);
 }

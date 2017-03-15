@@ -105,32 +105,13 @@ namespace rho {
 	    return "language";
 	}
 
-        // Used by jit/RuntimeImpl.cpp and Expression.cpp
-        RObject* evaluateFunctionCall(const FunctionBase* func,
-                                      Environment* env,
-                                      const ArgList& raw_arglist) const;
-
-        // Used by Expression.cpp, engine.cpp (with evaluated arguments),
-        // objects.cpp (with promised arguments) and DotInternal.cpp
-	RObject* applyBuiltIn(const BuiltInFunction* func,
-                              Environment* env,
-                              const ArgList& arglist) const;
-
 	/** @brief Invoke the function.
 	 *
-	 * This differs from apply() in that it is assumed that any
-	 * required wrapping of the function arguments in Promise
-	 * objects will have been carried out before invoke() is
-	 * called, whereas apply() carries out this wrapping itself.
+	 * @param func The function to call.
 	 *
-	 * @param env Non-null pointer to the Environment in which the
-	 *          function is to be evaluated.
+	 * @param env The environment to call the function from.
 	 *
-	 * @param arglist Non-null pointer to the
-	 *          ArgList containing the arguments with which the
-	 *          function is to be invoked.
-	 *
-	 * @param call Pointer to the Expression calling the function.
+	 * @param arglist The arguments to pass to the function.
 	 *
 	 * @param method_bindings This pointer will be non-null if and
 	 *          only if this invocation represents a method call,
@@ -139,15 +120,23 @@ namespace rho {
 	 *          environment, for example bindings of the Symbols
 	 *          \c .Generic and \c .Class.
 	 *
-	 * @return The result of applying the function.
-         *
-         * @note This function is used mainly by code that implements method
-         *         dispatch.
+	 * @return The result of evaluating the function call.
 	 */
-        RObject* invokeClosure(const Closure* func,
-                               Environment* calling_env,
-                               const ArgList& arglist,
-                               const Frame* method_bindings = nullptr) const;
+	RObject* evaluateFunctionCall(const FunctionBase* func,
+				      Environment* env,
+                                      const ArgList& arglist,
+				      const Frame* method_bindings = nullptr)
+	    const;
+        // Specializations of the above function for cases where we statically
+        // know the type of the function.
+        RObject* evaluateFunctionCall(const BuiltInFunction* func,
+                                      Environment* env,
+                                      const ArgList& arglist) const;
+        RObject* evaluateFunctionCall(const Closure* func,
+                                      Environment* env,
+                                      const ArgList& arglist,
+                                      const Frame* method_bindings = nullptr)
+            const;
 
 	// Virtual functions of RObject:
 	Expression* clone() const override;
@@ -169,7 +158,6 @@ namespace rho {
 	RObject* evaluateBuiltInCall(const BuiltInFunction* func,
                                      Environment* env,
                                      const ArgList& arglist) const;
-
 	RObject* evaluateDirectBuiltInCall(const BuiltInFunction* func,
                                            Environment* env,
                                            const ArgList& arglist) const;
@@ -196,7 +184,10 @@ namespace rho {
 					      const ArgList& arglist,
 					      Environment* execution_env) const;
 
-	Expression& operator=(const Expression&) = delete;
+        void checkArityAndNamingRequirements(const BuiltInFunction* func,
+                                             int num_args) const;
+
+      Expression& operator=(const Expression&) = delete;
     };
 
     /** @brief Singly linked list representing an R expression.

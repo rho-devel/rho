@@ -103,12 +103,13 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
 {
     if (func->sexptype() == CLOSXP) {
 	const Closure* clos = static_cast<const Closure*>(func);
-	return call->invokeClosure(clos, env, arglist, method_bindings);
+	return call->evaluateFunctionCall(clos, env, arglist, method_bindings);
     } else {
 	GCStackRoot<Environment>
 	    newenv(new Environment(nullptr, method_bindings));
-        return call->applyBuiltIn(static_cast<const BuiltInFunction*>(func),
-                                  newenv, arglist);
+        return call->evaluateFunctionCall(
+            static_cast<const BuiltInFunction*>(func),
+            newenv, arglist);
     }
 }
 
@@ -1448,7 +1449,7 @@ R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
 	    }
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = call->invokeClosure(func, callenv, arglist);
+	    value = call->evaluateFunctionCall(func, callenv, arglist);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1461,7 +1462,7 @@ R_possible_dispatch(const rho::Expression* call, const rho::BuiltInFunction* op,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = call->invokeClosure(func, callenv, arglist);
+    value = call->evaluateFunctionCall(func, callenv, arglist);
     // Only occurs if func() didn't throw an exception.
     prim_methods[offset] = current;
     if (value == deferred_default_object)
