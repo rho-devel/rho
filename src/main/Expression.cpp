@@ -166,46 +166,26 @@ static void prepareToInvokeBuiltIn(const BuiltInFunction* func)
 #endif
 }
 
-template<typename... Args>
-RObject* Expression::evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction* func,
-						      Environment* env,
-						      const PairList* tags,
-						      Args... args) const
-{
-    prepareToInvokeBuiltIn(func);
-    return func->invokeFixedArity(this, env, tags, args...);
-}
-
-template<typename... Args>
-RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Environment* env, const PairList* tags, bool evaluated, Args... args) const
-{
-    if (evaluated) {
-	return evaluateBuiltInWithEvaluatedArgs(fun, env, tags, args...);
-    }
-    return evaluateBuiltInWithEvaluatedArgs(fun, env, tags,
-	(args ? args->evaluate(env) : nullptr)...);
-}
-
 RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 					       Environment* env,
 					       const ArgList& arglist) const
 {
-    bool evaluated = arglist.status() == ArgList::EVALUATED;
     const PairList* tags = arglist.tags();
+    prepareToInvokeBuiltIn(func);
     switch(func->arity()) {
     case 0:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated);
+        return func->invokeFixedArity(this, env, tags);
 /*  This macro expands out to:
     case 1:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1));
+	return func->invokeFixedArity(this, env, tags, arglist.get(0));
     case 2:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1), arglist.get(2));
+	return func->invokeFixedArity(this, env, tags, arglist.get(0), arglist.get(1));
     ...
 */
 #define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist.get(N)
 #define CASE_STATEMENT(Z, N, IGNORED)              \
     case N:                                        \
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
+      return func->invokeFixedArity(this, env, tags, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
 
 	BOOST_PP_REPEAT_FROM_TO(1, 20, CASE_STATEMENT, 0);
 
@@ -217,6 +197,52 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
 		  _("too many arguments, sorry"));
     }
 }
+
+static inline RObject* evalIfNonNull(RObject* x, Environment* env) {
+  return x ? x->evaluate(env) : x;
+}
+
+RObject* Expression::evalArgsAndEvaluateFixedArityBuiltIn(
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
+{
+    const PairList* tags = arglist.tags();
+    int arity = func->arity();
+    if (arity == 0) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeFixedArity(this, env, tags);
+    }
+    auto arg_iterator = arglist.getArgs().begin();
+/*  This macro expands out to:
+    RObject* arg0 = evalIfNonNull(arg_iterator->car(), env);
+    if (arity == 1) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeFixedArity(this, env, tags, arg0);
+    }
+    ++arg_iterator;
+    RObject* arg1 = evalIfNonNull(arg_iterator->car(), env);
+    if (arity == 2) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeFixedArity(this, env, tags, arg0, arg1);
+    }
+    ...
+*/
+#define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arg##N
+#define CMD_SEQUENCE(Z, N, IGNORED)                            \
+    RObject* arg##N = evalIfNonNull(arg_iterator->car(), env); \
+    if (arity == N + 1) {                                      \
+      prepareToInvokeBuiltIn(func);                            \
+      return func->invokeFixedArity(this, env, tags,           \
+                                    BOOST_PP_REPEAT(BOOST_PP_ADD(N, 1), ARGUMENT_LIST, 0)); \
+    }                                                          \
+    ++arg_iterator;
+
+    BOOST_PP_REPEAT_FROM_TO(0, 20, CMD_SEQUENCE, 0);
+
+    Rf_errorcall(const_cast<Expression*>(this),
+                 _("too many arguments, sorry"));
+}
+#undef CMD_SEQUENCE
+#undef ARGUMENT_LIST
 
 RObject* Expression::evaluateBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
@@ -245,8 +271,13 @@ RObject* Expression::evaluateDirectBuiltInCall(
     if (first_arg_name)
 	check1arg(first_arg_name);
 
+    bool args_need_evaluation = arglist.status() != ArgList::EVALUATED;
     if (func->hasFixedArityCall()) {
+      if (args_need_evaluation) {
+        return evalArgsAndEvaluateFixedArityBuiltIn(func, env, arglist);
+      } else {
 	return evaluateFixedArityBuiltIn(func, env, arglist);
+    }
     }
 
     // Create an array on stack to write arguments to.

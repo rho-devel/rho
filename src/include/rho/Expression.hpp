@@ -178,19 +178,11 @@ namespace rho {
                                              Environment* env,
                                              const ArgList& arglist) const;
 
-	template<typename... Args>
-	RObject* evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction*,
-						  Environment*,
-						  const PairList*,
-						  Args...) const;
-	template<typename... Args>
-	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
-					   Environment*,
-					   const PairList*,
-					   bool evaluated,
-					   Args...) const;
 	RObject* evaluateFixedArityBuiltIn(const BuiltInFunction*,
 					   Environment*, const ArgList&) const;
+	RObject* evalArgsAndEvaluateFixedArityBuiltIn(const BuiltInFunction*,
+                                                      Environment*,
+                                                      const ArgList&) const;
 
         static void importMethodBindings(const Frame* method_bindings,
                                          Frame* newframe);
