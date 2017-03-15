@@ -247,16 +247,20 @@ RObject* Expression::evalArgsAndEvaluateFixedArityBuiltIn(
 RObject* Expression::evaluateBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (func->hasDirectCall() || func->hasFixedArityCall())
+    if (func->getCallingConvention()
+        == BuiltInFunction::CallingConvention::PairList)
+    {
+        return evaluatePairListBuiltInCall(func, env, arglist);
+    } else {
         return evaluateDirectBuiltInCall(func, env, arglist);
-    else
-      return evaluateIndirectBuiltInCall(func, env, arglist);
+    }
 }
 
 RObject* Expression::evaluateDirectBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (arglist.has3Dots()) {
+    bool args_need_evaluation = arglist.status() != ArgList::EVALUATED;
+    if (args_need_evaluation && arglist.has3Dots()) {
         ArgList expanded_args(arglist);
         expanded_args.evaluate(env);
         return evaluateDirectBuiltInCall(func, env, expanded_args);
@@ -271,13 +275,14 @@ RObject* Expression::evaluateDirectBuiltInCall(
     if (first_arg_name)
 	check1arg(first_arg_name);
 
-    bool args_need_evaluation = arglist.status() != ArgList::EVALUATED;
-    if (func->hasFixedArityCall()) {
-      if (args_need_evaluation) {
-        return evalArgsAndEvaluateFixedArityBuiltIn(func, env, arglist);
-      } else {
-	return evaluateFixedArityBuiltIn(func, env, arglist);
-    }
+    if (func->getCallingConvention()
+        == BuiltInFunction::CallingConvention::FixedNative)
+    {
+        if (args_need_evaluation) {
+            return evalArgsAndEvaluateFixedArityBuiltIn(func, env, arglist);
+        } else {
+            return evaluateFixedArityBuiltIn(func, env, arglist);
+        }
     }
 
     // Create an array on stack to write arguments to.
@@ -292,7 +297,7 @@ RObject* Expression::evaluateDirectBuiltInCall(
                         arglist.tags());
 }
 
-RObject* Expression::evaluateIndirectBuiltInCall(
+RObject* Expression::evaluatePairListBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
     if (func->sexptype() == BUILTINSXP
@@ -300,7 +305,7 @@ RObject* Expression::evaluateIndirectBuiltInCall(
     {
       ArgList evaluated_args(arglist);
       evaluated_args.evaluate(env);
-      return evaluateIndirectBuiltInCall(func, env, evaluated_args);
+      return evaluatePairListBuiltInCall(func, env, evaluated_args);
     }
 
     // Check the number of arguments.

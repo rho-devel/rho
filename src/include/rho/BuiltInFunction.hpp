@@ -299,13 +299,13 @@ namespace rho {
 	// Virtual function of RObject:
 	const char* typeName() const override;
 
-        bool hasDirectCall() const {
-            return m_quick_function;
+        // The different ways that the underlying function can take arguments.
+        enum class CallingConvention {
+          PairList, ArgumentArray, FixedNative
+        };
+        CallingConvention getCallingConvention() const {
+          return m_calling_convention;
         }
-
-	bool hasFixedArityCall() const {
-	    return m_fixed_arity_fn;
-	}
 
 	bool isInternalGeneric() const {
 	    return m_dispatch_type != DispatchType::NONE;
@@ -333,8 +333,9 @@ namespace rho {
 		    return dispatched.second;
 	    }
 
-	    assert(m_function);
-            return callBuiltInWithCApi(m_function, call, this, args, env);
+	    assert(m_calling_convention == CallingConvention::PairList);
+            return callBuiltInWithCApi(m_function.pairlist, call, this, args,
+                                       env);
         }
 
         RObject* invoke(const Expression* call, Environment* env,
@@ -354,9 +355,9 @@ namespace rho {
 		    return dispatched.second;
 	    }
 	    
-            assert(m_quick_function);
-            return m_quick_function(const_cast<Expression*>(call),
-                                    this, env, args, num_args, tags);
+            assert(m_calling_convention == CallingConvention::ArgumentArray);
+            return m_function.arg_array(const_cast<Expression*>(call),
+                                        this, env, args, num_args, tags);
         }
 
 	template<typename... Args>
@@ -364,8 +365,8 @@ namespace rho {
 				  Environment* env,
 				  const PairList* tags,
 				  Args... args) const {
-	    assert(m_fixed_arity_fn);
-	    assert(sizeof...(Args) == arity());
+            assert(m_calling_convention == CallingConvention::FixedNative);
+            assert(sizeof...(Args) == arity());
 	    static BuiltInFunction* length_fn
 		= BuiltInFunction::obtainPrimitive("length");
 
@@ -383,7 +384,7 @@ namespace rho {
 
 	    auto fn = reinterpret_cast<
 		RObject*(*)(Expression*, const BuiltInFunction*,
-			    Args...)>(m_fixed_arity_fn);
+			    Args...)>(m_function.fixed_native);
 	    return (*fn)(const_cast<Expression*>(call), this, args...);
 	}
 
@@ -432,19 +433,19 @@ namespace rho {
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
 	// list.
-        typedef RObject*(*QuickInvokeFunction)(/*const*/ Expression* call,
-					       const BuiltInFunction* op,
-					       Environment* env,
-					       RObject* const* args,
-					       int num_args,
-					       const PairList* tags);
+        typedef RObject*(*ArgumentArrayFn)(/*const*/ Expression* call,
+                                           const BuiltInFunction* op,
+                                           Environment* env,
+                                           RObject* const* args,
+                                           int num_args,
+                                           const PairList* tags);
 
 	// Placeholder for fuctions that takes the arguments as normal C
 	// function arguments.
 	// This must be cast to the correct type before calling.
-	typedef RObject* (*FixedArityFnStorage)(Expression*,
-						const BuiltInFunction*,
-						class SequenceOfRObject*);
+	typedef RObject* (*FixedNativeFnStorage)(Expression*,
+                                                 const BuiltInFunction*,
+                                                 class SequenceOfRObject*);
 
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -462,7 +463,7 @@ namespace rho {
 			const char* first_arg_name = nullptr,
 			DispatchType dispatch = DispatchType::NONE);
 	BuiltInFunction(const char*,
-			QuickInvokeFunction,
+			ArgumentArrayFn,
 			unsigned int,
 			unsigned int,
 			int,
@@ -480,14 +481,14 @@ namespace rho {
 			PPinfo ppinfo,
 			const char* first_arg_name = nullptr,
 			DispatchType dispatch = DispatchType::NONE)
-	    : BuiltInFunction(name, reinterpret_cast<FixedArityFnStorage>(cfun),
+	    : BuiltInFunction(name, reinterpret_cast<FixedNativeFnStorage>(cfun),
 			      variant, flags, arity, ppinfo,
 			      first_arg_name, dispatch) {
 	    assert(arity == sizeof...(Args));
 	};
 
 	BuiltInFunction(const char* name,
-			FixedArityFnStorage cfun,
+			FixedNativeFnStorage cfun,
 			unsigned int variant,
 			unsigned int flags,
 			int arity,
@@ -516,10 +517,12 @@ namespace rho {
         static map* getInternalFunctionLookupTable();
 
 	unsigned int m_offset;
-	CCODE m_function;
-        QuickInvokeFunction m_quick_function;
-
-	FixedArityFnStorage m_fixed_arity_fn;
+        CallingConvention m_calling_convention;
+        union {
+          CCODE pairlist;
+          ArgumentArrayFn arg_array;
+          FixedNativeFnStorage fixed_native;
+        } m_function;
 
 	std::string m_name;  // name of function
 	unsigned int m_variant;  // used to select alternative

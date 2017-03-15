@@ -174,7 +174,7 @@ namespace rho {
                                            Environment* env,
                                            const ArgList& arglist) const;
 
-	RObject* evaluateIndirectBuiltInCall(const BuiltInFunction* func,
+	RObject* evaluatePairListBuiltInCall(const BuiltInFunction* func,
                                              Environment* env,
                                              const ArgList& arglist) const;
 

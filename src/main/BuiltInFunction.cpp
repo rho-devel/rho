@@ -90,30 +90,29 @@ BuiltInFunction::BuiltInFunction(const char* name,
     : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
-    m_function = cfun;
-    m_quick_function = nullptr;
-    m_fixed_arity_fn = nullptr;
+    m_calling_convention = CallingConvention::PairList;
+    m_function.pairlist = cfun;
 
-    if (m_function == do_External
-	|| m_function == do_Externalgr
-	|| m_function == do_begin
-	|| m_function == do_break
-	|| m_function == do_dotcall
-	|| m_function == do_for
-	|| m_function == do_if
-	|| m_function == do_internal
-	|| m_function == do_repeat
-	|| m_function == do_return
-	|| m_function == do_while) {
+    if (cfun == do_External
+	|| cfun == do_Externalgr
+	|| cfun == do_begin
+	|| cfun == do_break
+	|| cfun == do_dotcall
+	|| cfun == do_for
+	|| cfun == do_if
+	|| cfun == do_internal
+	|| cfun == do_repeat
+	|| cfun == do_return
+	|| cfun == do_while) {
 	m_transparent = true;
     }
-    if (m_function == do_set) {
+    if (cfun == do_set) {
 	m_transparent = false;
     }
 }
 
 BuiltInFunction::BuiltInFunction(const char* name,
-				 QuickInvokeFunction fun,
+				 ArgumentArrayFn fun,
 				 unsigned int variant,
 				 unsigned int flags,
 				 int arity,
@@ -123,13 +122,12 @@ BuiltInFunction::BuiltInFunction(const char* name,
     : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
-    m_function = nullptr;
-    m_quick_function = fun;
-    m_fixed_arity_fn = nullptr;
+    m_calling_convention = CallingConvention::ArgumentArray;
+    m_function.arg_array = fun;
 }
 
 BuiltInFunction::BuiltInFunction(const char* name,
-				 FixedArityFnStorage cfun,
+				 FixedNativeFnStorage cfun,
 				 unsigned int variant,
 				 unsigned int flags,
 				 int arity,
@@ -139,11 +137,10 @@ BuiltInFunction::BuiltInFunction(const char* name,
     : BuiltInFunction(name, variant, flags, arity, ppinfo,
 		      first_arg_name, dispatch)
 {
-    m_function = nullptr;
-    m_quick_function = nullptr;
-    m_fixed_arity_fn = cfun;
+    m_calling_convention = CallingConvention::FixedNative;
+    m_function.fixed_native = cfun;
 
-    if (m_fixed_arity_fn == reinterpret_cast<FixedArityFnStorage>(do_paren))
+    if (cfun == reinterpret_cast<FixedNativeFnStorage>(do_paren))
 	m_transparent = true;
 }
 
