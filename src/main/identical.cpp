@@ -48,28 +48,20 @@ static Rboolean neWithNaN(double x, double y, ne_strictness_type str);
 
 
 /* .Internal(identical(..)) */
-SEXP attribute_hidden do_identical(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags)
+SEXP attribute_hidden do_identical(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y, rho::RObject* num_eq_, rho::RObject* single_NA_, rho::RObject* attr_as_set_, rho::RObject* ignore_bytecode_, rho::RObject* ignore_env_)
 {
     int num_eq = 1, single_NA = 1, attr_as_set = 1, ignore_bytecode = 1,
-	ignore_env = 0, nargs = num_args, flags;
+	ignore_env = 0, flags;
     /* avoid problems with earlier (and future) versions captured in S4
        methods: but this should be fixed where it is caused, in
        'methods'!
 
        checkArity(op, args); */
-   if (nargs < 5)
-	error("%d arguments passed to .Internal(%s) which requires %d",
-	      num_args, op->name(), op->arity());
-
-    SEXP x = args[0]; args = (args + 1);
-    SEXP y = args[0]; args = (args + 1);
-    num_eq = asLogical(args[0]); args = (args + 1);
-    single_NA = asLogical(args[0]); args = (args + 1);
-    attr_as_set = asLogical(args[0]); args = (args + 1);
-    if (nargs >= 6)
-	ignore_bytecode = asLogical(args[0]);
-    if (nargs >= 7)
-	ignore_env = asLogical(args[1]);
+    num_eq = asLogical(num_eq_);
+    single_NA = asLogical(single_NA_);
+    attr_as_set = asLogical(attr_as_set_);
+    ignore_bytecode = asLogical(ignore_bytecode_);
+    ignore_env = asLogical(ignore_env_);
 
     if(num_eq == NA_LOGICAL) error(_("invalid '%s' value"), "num.eq");
     if(single_NA == NA_LOGICAL) error(_("invalid '%s' value"), "single.NA");

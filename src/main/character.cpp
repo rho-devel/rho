@@ -107,7 +107,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_nzchar(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     SEXP x, ans;
 
@@ -119,7 +119,19 @@ SEXP attribute_hidden do_nzchar(/*const*/ Expression* call, const BuiltInFunctio
 			   (unsigned long) num_args),
 		  num_args, op->name(), 1, 2);
     call->check1arg("x");
-    x = args[0];
+
+    // Unpack the arguments.
+    va_list args;
+    va_start(args, num_args);
+    x = NEXT_ARG;
+
+    int keepNA = FALSE; // the default
+    if(num_args > 1) {
+	RObject* keepNA_ = NEXT_ARG;
+	keepNA = asLogical(keepNA_);
+	if (keepNA == NA_LOGICAL) keepNA = FALSE;
+    }
+    va_end(args);
 
     if (isFactor(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
@@ -127,11 +139,6 @@ SEXP attribute_hidden do_nzchar(/*const*/ Expression* call, const BuiltInFunctio
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
 
-    int keepNA = FALSE; // the default
-    if(num_args > 1) {
-	keepNA = asLogical(args[1]);
-	if (keepNA == NA_LOGICAL) keepNA = FALSE;
-    }
     R_xlen_t i, len = XLENGTH(x);
     PROTECT(ans = allocVector(LGLSXP, len));
     if (keepNA)

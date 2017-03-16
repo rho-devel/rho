@@ -658,21 +658,29 @@ R_xlen_t any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 #undef DUPLICATED_INIT
 
 
-/* .Internal(duplicated(x))	  [op=0]
-  .Internal(unique(x))		  [op=1]
-   .Internal(anyDuplicated(x))	  [op=2]
+/* .Internal(duplicated   (x, incomparables, fromLast, nmax))	  [op=0]
+   .Internal(unique       (x, incomparables, fromLast, nmax))	  [op=1]
+   .Internal(anyDuplicated(x, incomparables, fromLast))		  [op=2]
 */
-SEXP attribute_hidden do_duplicated(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_duplicated(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
-    SEXP x, incomp, dup, ans;
+    SEXP dup, ans;
     int fromLast, nmax = NA_INTEGER;
     R_xlen_t i, k, n;
 
-    x = args[0];
-    incomp = args[1];
-    if (Rf_length(args[2]) < 1)
+    va_list args;
+    va_start(args, num_args);
+    SEXP x = NEXT_ARG;
+    SEXP incomp = NEXT_ARG;
+    SEXP fromLast_ = NEXT_ARG;
+    if (op->variant() <= 1) {
+	nmax = asInteger(NEXT_ARG);
+    }
+    va_end(args);
+
+    if (Rf_length(fromLast_) < 1)
 	error(_("'fromLast' must be length 1"));
-    fromLast = asLogical(args[2]);
+    fromLast = asLogical(fromLast_);
     if (fromLast == NA_LOGICAL)
 	error(_("'fromLast' must be TRUE or FALSE"));
 
@@ -690,7 +698,6 @@ SEXP attribute_hidden do_duplicated(/*const*/ Expression* call, const BuiltInFun
 	       (op->variant() == 1 ? "unique" : /* 2 */ "anyDuplicated")));
     }
     if (op->variant() <= 1) {
-	nmax = asInteger(args[3]);
 	if (nmax != NA_INTEGER && nmax <= 0)
 	    error(_("'nmax' must be positive"));
     }

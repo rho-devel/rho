@@ -811,18 +811,16 @@ SEXP attribute_hidden do_remove(/*const*/ Expression* call, const BuiltInFunctio
 
 /*----------------------------------------------------------------------
 
-  do_get
+  Used by do_get, do_get0
 
   This function returns the SEXP associated with the character
   argument.  It needs the environment of the calling function as a
-  default.
-
-      get(x, envir, mode, inherits)
-      exists(x, envir, mode, inherits)
-
+  default.  Returns R_UnboundValue if no value was found.
 */
 
-SEXP attribute_hidden do_get(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+static RObject* do_get_common(Expression* call, const BuiltInFunction* op,
+			      RObject* x, RObject* envir, RObject* mode,
+			      RObject* inherits)
 {
     SEXP rval, genv, t1 = R_NilValue;
     SEXPTYPE gmode;
@@ -831,19 +829,19 @@ SEXP attribute_hidden do_get(/*const*/ Expression* call, const BuiltInFunction* 
     /* The first arg is the object name */
     /* It must be present and a non-empty string */
 
-    if (!isValidStringF(args[0]))
+    if (!isValidStringF(x))
 	error(_("invalid first argument"));
     else
-	t1 = installTrChar(STRING_ELT(args[0], 0));
+	t1 = installTrChar(STRING_ELT(x, 0));
 
     /* envir :	originally, the "where=" argument */
 
-    if (TYPEOF(args[1]) == REALSXP || TYPEOF(args[1]) == INTSXP) {
-	where = asInteger(args[1]);
+    if (TYPEOF(envir) == REALSXP || TYPEOF(envir) == INTSXP) {
+	where = asInteger(envir);
 	genv = R_sysframe(where, ClosureContext::innermost());
     }
     else {
-	genv = simple_as_environment(args[1]);
+	genv = simple_as_environment(envir);
 	if (!genv)
 	    error(_("invalid '%s' argument"), "envir");
     }
@@ -854,17 +852,17 @@ SEXP attribute_hidden do_get(/*const*/ Expression* call, const BuiltInFunction* 
        storage.mode.
     */
 
-    if (isString(args[2])) {
-	if (!strcmp(CHAR(STRING_ELT(args[2], 0)), "function")) /* ASCII */
+    if (isString(mode)) {
+	if (!strcmp(CHAR(STRING_ELT(mode, 0)), "function")) /* ASCII */
 	    gmode = FUNSXP;
 	else
-	    gmode = str2type(CHAR(STRING_ELT(args[2], 0))); /* ASCII */
+	    gmode = str2type(CHAR(STRING_ELT(mode, 0))); /* ASCII */
     } else {
 	error(_("invalid '%s' argument"), "mode");
 	gmode = FUNSXP;/* -Wall */
     }
 
-    ginherits = asLogical(args[3]);
+    ginherits = asLogical(inherits);
     if (ginherits == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "inherits");
 
@@ -874,40 +872,44 @@ SEXP attribute_hidden do_get(/*const*/ Expression* call, const BuiltInFunction* 
 	error(_("argument \"%s\" is missing, with no default"),
 	      CHAR(PRINTNAME(t1)));
 
-    switch (op->variant()) {
-    case 0: // exists(.) :
-	return ScalarLogical(rval != R_UnboundValue);
-	break;
-    case 1: //  have get(.)
-	if (rval == R_UnboundValue) {
-	    if (gmode == ANYSXP)
-		error(_("object '%s' not found"), EncodeChar(PRINTNAME(t1)));
-	    else
-		error(_("object '%s' of mode '%s' was not found"),
-		      CHAR(PRINTNAME(t1)),
-		      CHAR(STRING_ELT(args[2], 0))); /* ASCII */
-	}
-
-#     define GET_VALUE(rval)				\
-	/* We need to evaluate if it is a promise */    \
-	if (TYPEOF(rval) == PROMSXP)                    \
-	    rval = eval(rval, genv);                    \
-                                                        \
-	if (!ISNULL(rval) && NAMED(rval) == 0)          \
-	    SET_NAMED(rval, 1);
-
-	GET_VALUE(rval);
-	break;
-
-    case 2: // get0(.)
-	if (rval == R_UnboundValue)
-	    return args[4];// i.e.  value_if_not_exists
-	GET_VALUE(rval);
-	break;
-    }
     return rval;
 }
-#undef GET_VALUE
+
+SEXP attribute_hidden do_get(Expression* call, const BuiltInFunction* op,
+			     RObject* x, RObject* envir, RObject* mode,
+			     RObject* inherits)
+{
+    RObject* value = do_get_common(call, op,
+				   x, envir, mode, inherits);
+    switch (op->variant()) {
+    case 0: // exists(.) :
+	return ScalarLogical(value != R_UnboundValue);
+    case 1: //  have get(.)
+	if (value == R_UnboundValue) {
+	    SEXP x_printname = PRINTNAME(installTrChar(STRING_ELT(x, 0)));
+	    if (str2type(CHAR(STRING_ELT(mode, 0))) == ANYSXP)
+		error(_("object '%s' not found"), EncodeChar(x_printname));
+	    else
+		error(_("object '%s' of mode '%s' was not found"),
+		      CHAR(x_printname),
+		      CHAR(STRING_ELT(mode, 0))); /* ASCII */
+	}
+	return forceIfPromise(value);
+    default:
+	error(_("unknown op"));
+    }
+}
+
+SEXP attribute_hidden do_get0(Expression* call, const BuiltInFunction* op,
+			      RObject* x, RObject* envir, RObject* mode,
+			      RObject* inherits, RObject* value_if_missing)
+{
+    RObject* value = do_get_common(call, op,
+				   x, envir, mode, inherits);
+    if (value != R_UnboundValue)
+	return forceIfPromise(value);
+    return value_if_missing;
+}
 
 static SEXP gfind(const char *name, Environment* env, SEXPTYPE mode,
 		  SEXP ifnotfound, int inherits)

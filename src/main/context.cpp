@@ -221,7 +221,7 @@ SEXP attribute_hidden do_sysbrowser(/*const*/ Expression* call, const BuiltInFun
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP attribute_hidden do_sys(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_sys(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
@@ -233,7 +233,10 @@ SEXP attribute_hidden do_sys(/*const*/ Expression* call, const BuiltInFunction* 
     while (cptr && cptr->workingEnvironment() != t)
 	cptr = ClosureContext::innermost(cptr->nextOut());
 
-    if (num_args == 1) n = asInteger(args[0]);
+    if (num_args == 1) {
+	UNPACK_VA_ARGS(num_args, (n_));
+	n = asInteger(n_);
+    }
 
     switch (op->variant()) {
     case 1: /* parent */

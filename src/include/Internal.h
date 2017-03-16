@@ -37,6 +37,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/preprocessor.hpp>
+#include <stdarg.h>
 #include "rho/BuiltInFunction.hpp"
 #include "rho/RObject.hpp"
 #include "rho/Expression.hpp"
@@ -44,13 +46,25 @@
 #include "rho/PairList.hpp"
 
 namespace rho {
-  typedef RObject*(quick_builtin)(Expression*,
-                                  const BuiltInFunction*,
-                                  Environment* env,
-                                  RObject* const* args,
-                                  int num_args,
-                                  const PairList* tags);
+  typedef RObject*(ArgumentArrayFn)(Expression*,
+                                    const BuiltInFunction*,
+                                    Environment* env,
+                                    RObject* const* args,
+                                    int num_args,
+                                    const PairList* tags);
 }  // namespace rho
+
+// Some macros to help unpack args from VarArgsBuiltin.
+#define NEXT_ARG va_arg(args, rho::RObject*)
+
+#define _EXTRACT_ONE_ARG(r, data, elem)     \
+    rho::RObject* elem = NEXT_ARG;
+
+#define UNPACK_VA_ARGS(LAST_ARG, ARG_NAME_SEQUENCE)    \
+    va_list args;                                   \
+    va_start(args, LAST_ARG);                       \
+    BOOST_PP_SEQ_FOR_EACH(_EXTRACT_ONE_ARG, 0, ARG_NAME_SEQUENCE) \
+    va_end(args);
 
 /* Function Names */
 
@@ -64,7 +78,7 @@ SEXP do_agrep(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObjec
 SEXP do_allnames(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* expr_, rho::RObject* functions_, rho::RObject* max_names_, rho::RObject* unique_);
 SEXP do_anyNA(SEXP, SEXP, SEXP, SEXP);
 SEXP do_aperm(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* a_, rho::RObject* perm_, rho::RObject* resize_);
-rho::quick_builtin do_arith;
+SEXP do_arith(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_aregexec(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* bounds_, rho::RObject* cost_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* use_bytes_);
 SEXP do_args(SEXP, SEXP, SEXP, SEXP); // non-trivial
 SEXP do_array(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* data_, rho::RObject* dim_, rho::RObject* dimnames_);
@@ -72,7 +86,7 @@ SEXP do_asPOSIXct(rho::Expression* call, const rho::BuiltInFunction* op, rho::RO
 SEXP do_asPOSIXlt(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* tz_);
 SEXP do_ascall(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* args);
 SEXP do_as_environment(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* arg);
-rho::quick_builtin do_asatomic;
+SEXP do_asatomic(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_asfunction(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* envir_);
 SEXP do_assign(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_, rho::RObject* envir_, rho::RObject* inherits_);
 SEXP do_asvector(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* mode);
@@ -144,7 +158,7 @@ SEXP do_dotCode(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dput(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* file_, rho::RObject* control_);
 SEXP do_drop(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_dump(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* envir_, rho::RObject* opts_, rho::RObject* evaluate_);
-rho::quick_builtin do_duplicated;
+SEXP do_duplicated(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_dynload(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* local_, rho::RObject* now_, rho::RObject* dots_);
 SEXP do_dynunload(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_eapply(SEXP, SEXP, SEXP, SEXP);  // Special
@@ -186,10 +200,13 @@ SEXP do_formals(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObj
 SEXP do_function(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_gc(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_, rho::RObject* reset_);
 SEXP do_gcinfo(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* verbose_);
-rho::quick_builtin do_gctime;
+SEXP do_gctime(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_gctorture(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_);
 SEXP do_gctorture2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* step_, rho::RObject* wait_, rho::RObject* inhibit_release_);
-rho::quick_builtin do_get;
+SEXP do_get(rho::Expression* call, const rho::BuiltInFunction* op,
+            rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* inherits);
+SEXP do_get0(rho::Expression* call, const rho::BuiltInFunction* op,
+             rho::RObject* x, rho::RObject* envir, rho::RObject* mode, rho::RObject* inherits, rho::RObject* value_if_not_found);
 SEXP do_getDllTable(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_getVarsFromFrame(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* vars_, rho::RObject* env_, rho::RObject* force_promises_);
 SEXP do_getenv(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* symbol_, rho::RObject* default_value_);
@@ -209,15 +226,15 @@ SEXP do_gsub(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject
 SEXP do_iconv(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* from_, rho::RObject* to_, rho::RObject* sub_, rho::RObject* mark_, rho::RObject* toRaw_);
 SEXP do_ICUget(SEXP, SEXP, SEXP, SEXP);
 SEXP do_ICUset(SEXP, SEXP, SEXP, SEXP);
-rho::quick_builtin do_identical;
+SEXP do_identical(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y, rho::RObject* num_eq_, rho::RObject* single_NA_, rho::RObject* attr_as_set_, rho::RObject* ignore_bytecode_, rho::RObject* ignore_env_);
 SEXP do_if(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_inherits(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* what_, rho::RObject* which_);
-rho::quick_builtin do_inspect;
+SEXP do_inspect(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_intToUtf8(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* multiple_);
 SEXP do_interactive(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_internal(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_intToBits(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
-rho::quick_builtin do_invisible;
+SEXP do_invisible(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP NORET do_invokeRestart(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* r_, rho::RObject* args_);
 SEXP do_is(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_isatty(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_);
@@ -234,9 +251,9 @@ SEXP do_lapply(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_lazyLoadDBfetch(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* key_, rho::RObject* file_, rho::RObject* compressed_, rho::RObject* hook_);
 SEXP do_lazyLoadDBflush(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_);
 SEXP do_lazyLoadDBinsertValue(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* value, rho::RObject* file, rho::RObject* ascii, rho::RObject* compsxp, rho::RObject* hook);
-rho::quick_builtin do_length;
+rho::ArgumentArrayFn do_length;
 SEXP do_lengthgets(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_);
-rho::quick_builtin do_lengths;
+rho::ArgumentArrayFn do_lengths;
 SEXP do_levelsgets(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_);
 SEXP do_listdirs(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* full_names_, rho::RObject* recursive_);
 SEXP do_listfiles(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_, rho::RObject* pattern_, rho::RObject* all_files_, rho::RObject* full_names_, rho::RObject* recursive_, rho::RObject* ignore_case_, rho::RObject* include_dirs_, rho::RObject* no_dots_);
@@ -245,8 +262,8 @@ SEXP do_load(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject
 SEXP do_loadFromConn2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* envir_, rho::RObject* verbose_);
 SEXP do_localeconv(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_log(SEXP, SEXP, SEXP, SEXP);  // Special
-rho::quick_builtin do_log1arg;
-rho::quick_builtin do_logic;
+rho::ArgumentArrayFn do_log1arg;
+SEXP do_logic(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
 SEXP do_ls(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* envir_, rho::RObject* all_names_, rho::RObject* sorted_);
@@ -256,11 +273,11 @@ SEXP do_makelist(SEXP, SEXP, SEXP, SEXP);
 SEXP do_makenames(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* allow__);
 SEXP do_makeunique(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* names_, rho::RObject* sep_);
 SEXP do_makevector(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* mode_, rho::RObject* length_);
-rho::quick_builtin do_mapply;
+rho::ArgumentArrayFn do_mapply;
 SEXP do_match(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* table, rho::RObject* nomatch_, rho::RObject* incomparables);
 SEXP do_matchcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_matprod(SEXP, SEXP, SEXP, SEXP);
-SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
+SEXP do_math1(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x);
 SEXP do_math2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* y);
 SEXP do_Math2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_math3(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* nu, rho::RObject* expon_scaled);
@@ -272,12 +289,12 @@ SEXP do_mget(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject
 SEXP do_missing(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_names(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_namesgets(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* value_);
-rho::quick_builtin do_nargs;
+rho::ArgumentArrayFn do_nargs;
 SEXP do_nchar(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* type_, rho::RObject* allowNA_, rho::RObject* keepNA_);
 SEXP do_newenv(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* hash_, rho::RObject* parent_, rho::RObject* size_);
 SEXP do_nextmethod(SEXP,SEXP,SEXP,SEXP);  // Special
 SEXP do_ngettext(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* msg1_, rho::RObject* msg2_, rho::RObject* domain_);
-rho::quick_builtin do_nzchar;
+SEXP do_nzchar(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_onexit(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_options(SEXP, SEXP, SEXP, SEXP);
 SEXP do_order(SEXP, SEXP, SEXP, SEXP);
@@ -287,18 +304,18 @@ SEXP do_parentenvgets(rho::Expression* call, const rho::BuiltInFunction* op, rho
 SEXP do_paren(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_parentframe(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_);
 SEXP do_parse(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* n_, rho::RObject* text_, rho::RObject* prompt_, rho::RObject* srcfile_, rho::RObject* encoding_);
-rho::quick_builtin do_paste;
+rho::ArgumentArrayFn do_paste;
 SEXP do_pathexpand(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* path_);
 SEXP do_pcre_config(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pmatch(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* table_, rho::RObject* nomatch_, rho::RObject* duplicates_ok_);
-rho::quick_builtin do_pmin;
+rho::ArgumentArrayFn do_pmin;
 SEXP do_pos2env(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pos);
 SEXP do_POSIXlt2D(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_pretty(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* min_, rho::RObject* max_, rho::RObject* n_, rho::RObject* min_n_, rho::RObject* shrink_sml_, rho::RObject* bias_, rho::RObject* eps_correct_);
 SEXP do_primitive(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* name_);
-rho::quick_builtin do_printdefault;
+rho::ArgumentArrayFn do_printdefault;
 SEXP do_printDeferredWarnings(rho::Expression* call, const rho::BuiltInFunction* op);
-rho::quick_builtin do_printfunction;
+rho::ArgumentArrayFn do_printfunction;
 SEXP do_prmatrix(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* rowlab_, rho::RObject* collab_, rho::RObject* quote_, rho::RObject* right_, rho::RObject* na_print_);
 SEXP do_proctime(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_psort(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* partial_);
@@ -307,8 +324,8 @@ SEXP do_quit(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject
 SEXP do_quote(SEXP, SEXP, SEXP, SEXP);  // Special
 extern "C" SEXP do_radixsort(SEXP, SEXP, SEXP, SEXP);
 SEXP do_range(SEXP, SEXP, SEXP, SEXP);
-rho::quick_builtin do_rank;
-rho::quick_builtin do_rapply;
+rho::ArgumentArrayFn do_rank;
+rho::ArgumentArrayFn do_rapply;
 SEXP do_rawShift(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* n_);
 SEXP do_rawToBits(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_rawToChar(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* multiple_);
@@ -323,7 +340,7 @@ SEXP do_refcnt(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObje
 SEXP do_regexec(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* fixed_, rho::RObject* useBytes_);
 SEXP do_regexpr(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* pattern_, rho::RObject* text_, rho::RObject* ignore_case_, rho::RObject* perl_, rho::RObject* fixed_, rho::RObject* useBytes_);
 SEXP do_regFinaliz(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* e_, rho::RObject* f_, rho::RObject* onexit_);
-rho::quick_builtin do_relop;
+SEXP do_relop(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* lhs, rho::RObject* rhs);
 SEXP do_remove(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* envir_, rho::RObject* inherits_);
 SEXP do_rep(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_rep_int(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* times_);
@@ -335,7 +352,7 @@ SEXP do_Rhome(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_RNGkind(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* kind_, rho::RObject* normal_kind_);
 SEXP do_rowsum(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* group_, rho::RObject* unique_groups_, rho::RObject* na_rm_, rho::RObject* unique_group_names_);
 SEXP do_rowscols(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
-rho::quick_builtin do_S4on;
+SEXP do_S4on(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_sample(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* size_, rho::RObject* replace_, rho::RObject* prob_);
 SEXP do_sample2(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_, rho::RObject* size_);
 SEXP do_save(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* list_, rho::RObject* file_, rho::RObject* ascii_, rho::RObject* version_, rho::RObject* envir_, rho::RObject* eval_promises_);
@@ -343,7 +360,7 @@ SEXP do_saveToConn(rho::Expression* call, const rho::BuiltInFunction* op, rho::R
 SEXP do_scan(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* what_, rho::RObject* nmax_, rho::RObject* sep_, rho::RObject* dec_, rho::RObject* quote_, rho::RObject* skip_, rho::RObject* nlines_, rho::RObject* na_strings_, rho::RObject* flush_, rho::RObject* fill_, rho::RObject* strip_white_, rho::RObject* quiet_, rho::RObject* blank_lines_skip_, rho::RObject* multi_line_, rho::RObject* comment_char_, rho::RObject* allowEscapes_, rho::RObject* encoding_, rho::RObject* skipNul_);
 SEXP do_search(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_seq(SEXP, SEXP, SEXP, SEXP);
-rho::quick_builtin do_seq_along;
+rho::ArgumentArrayFn do_seq_along;
 SEXP do_seq_len(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* length);
 SEXP do_serialize(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection, rho::RObject* type, rho::RObject* version, rho::RObject* hook);
 SEXP do_unserialize(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* connection);
@@ -368,8 +385,8 @@ SEXP do_sinknumber(rho::Expression* call, const rho::BuiltInFunction* op, rho::R
 SEXP do_slotgets(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_sort(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* decreasing_);
 SEXP do_split(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* f_);
-rho::quick_builtin do_sprintf;
-rho::quick_builtin do_standardGeneric;
+rho::ArgumentArrayFn do_sprintf;
+rho::ArgumentArrayFn do_standardGeneric;
 SEXP do_startsWith(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x, rho::RObject* prefix);
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP) NORET;
 SEXP do_storage_mode(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* obj, rho::RObject* value);
@@ -395,7 +412,7 @@ SEXP do_substr(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObje
 SEXP do_substrgets(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* start_, rho::RObject* stop_, rho::RObject* value_);
 SEXP do_summary(SEXP, SEXP, SEXP, SEXP);
 SEXP do_switch(SEXP, SEXP, SEXP, SEXP);  // Special
-rho::quick_builtin do_sys;
+SEXP do_sys(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_sysbrowser(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* n_);
 SEXP do_sysgetpid(rho::Expression* call, const rho::BuiltInFunction* op);
 SEXP do_systime(rho::Expression* call, const rho::BuiltInFunction* op);
@@ -409,7 +426,7 @@ SEXP do_trace(SEXP, SEXP, SEXP, SEXP);
 SEXP do_traceOnOff(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* on_);
 SEXP do_traceback(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_transpose(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
-rho::quick_builtin do_trunc;
+SEXP do_trunc(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_typeof(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_);
 SEXP do_unclass(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object);
 SEXP do_unlink(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* x_, rho::RObject* recursive_, rho::RObject* force_);
@@ -428,7 +445,8 @@ SEXP do_which(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObjec
 SEXP do_withVisible(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_xtfrm(SEXP, SEXP, SEXP, SEXP);
 
-rho::quick_builtin R_do_data_class;
+SEXP R_do_data_class(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* klass);
+SEXP R_do_cache_data_class(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* klass, rho::RObject* value);
 SEXP R_do_set_class(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* object, rho::RObject* klass);
 SEXP R_getS4DataSlot(SEXP obj, SEXPTYPE type);
 
@@ -448,7 +466,7 @@ SEXP do_isseekable(rho::Expression* call, const rho::BuiltInFunction* op, rho::R
 SEXP do_close(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* con_, rho::RObject* dots_);
 SEXP do_fifo(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* blocking_, rho::RObject* encoding_);
 SEXP do_pipe(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* encoding_);
-rho::quick_builtin do_url;
+SEXP do_url(rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...);
 SEXP do_gzfile(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* description_, rho::RObject* open_, rho::RObject* encoding_, rho::RObject* compression_);
 SEXP do_unz(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* file_, rho::RObject* open_, rho::RObject* encoding_);
 SEXP do_seek(rho::Expression* call, const rho::BuiltInFunction* op, rho::RObject* connection, rho::RObject* where_, rho::RObject* origin_, rho::RObject* rw_);
@@ -471,9 +489,9 @@ SEXP do_memDecompress(rho::Expression* call, const rho::BuiltInFunction* op, rho
 
 SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
 SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);
-rho::quick_builtin do_provCommand;
+rho::ArgumentArrayFn do_provCommand;
 SEXP do_provenance(SEXP, SEXP, SEXP, SEXP);  // Special
-rho::quick_builtin do_provenance_graph;
+rho::ArgumentArrayFn do_provenance_graph;
 SEXP do_bserialize(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_bdeserialize(SEXP, SEXP, SEXP, SEXP);  // Special
 

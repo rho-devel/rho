@@ -47,17 +47,23 @@ static void inspect_tree(int pre, SEXP v, int deep, int pvec) {
 /* internal API - takes one mandatory argument (object to inspect) and
    two optional arguments (deep and pvec - see above), positional argument
    matching only */
-SEXP attribute_hidden do_inspect(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, rho::Environment* env, rho::RObject* const* args, int num_args, const rho::PairList* tags) {
-    SEXP obj = args[0];
+SEXP attribute_hidden do_inspect(/*const*/ rho::Expression* call, const rho::BuiltInFunction* op, int num_args, ...)
+{
+    va_list args;
+    va_start(args, num_args);
+
+    SEXP obj = NEXT_ARG;
     int deep = -1;
     int pvec = 5;
     if (num_args > 1) {
-	deep = asInteger(args[1]);
+	deep = asInteger(NEXT_ARG);
 	if (num_args > 2) {
-	    pvec = asInteger(args[2]);
+	    pvec = asInteger(NEXT_ARG);
 	}
     }
-    inspect_tree(0, args[0], deep, pvec);
+    va_end(args);
+
+    inspect_tree(0, obj, deep, pvec);
     return obj;
 }
 

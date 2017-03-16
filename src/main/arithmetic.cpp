@@ -57,6 +57,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdarg.h>
 
 #include "R_ext/Itermacros.h"
 #include "rho/ArgMatcher.hpp"
@@ -290,25 +291,24 @@ static R_INLINE SEXP ScalarValue2(SEXP x, SEXP y)
 
 /* Unary and Binary Operators */
 
-RObject* attribute_hidden do_arith(/*const*/ Expression* call_,
+RObject* attribute_hidden do_arith(/*const*/ Expression* call,
 				   const BuiltInFunction* op_,
-				   Environment* env,
-				   RObject* const* args,
 				   int num_args,
-				   const PairList* tags)
+				   ...)
 {
-    Expression* call = const_cast<Expression*>(call_);
-    BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
-
-    switch(num_args) {
-    case 1:
-	return R_unary(call, op, args[0]);
-    case 2:
-	return R_binary(call, op, args[0], args[1]);
-    default:
+    if (num_args < 1 || num_args > 2) {
 	errorcall(call, _("operator needs one or two arguments"));
     }
-    return nullptr;			/* never used; to keep -Wall happy */
+
+    BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
+
+    if (num_args == 1) {
+	UNPACK_VA_ARGS(num_args, (arg));
+	return R_unary(call, op, arg);
+    } else {
+	UNPACK_VA_ARGS(num_args, (lhs)(rhs));
+	return R_binary(call, op, lhs, rhs);
+    }
 }
 
 namespace {
@@ -715,16 +715,17 @@ static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
     return result;
 }
 
-SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_math1(Expression* call, const BuiltInFunction* builtin,
+			       RObject* x)
 {
     SEXP s;
 
-    BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
+    if (isComplex(x)) {
+	return complex_math1(call, const_cast<BuiltInFunction*>(builtin),
+			     PairList::cons(x, nullptr), nullptr);
+    }
 
-    if (isComplex(CAR(args)))
-	return complex_math1(call, op, args, env);
-
-#define MATH1(x) math1(CAR(args), x, call);
+#define MATH1(FUN) math1(x, FUN, call);
     switch (builtin->variant()) {
     case 1: return MATH1(floor);
     case 2: return MATH1(ceil);
@@ -775,10 +776,14 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* methods are allowed to have more than one arg */
-SEXP attribute_hidden do_trunc(/*const*/ Expression* call, const BuiltInFunction* op, Environment* env, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_trunc(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     call->check1arg("x"); // Checked _after_ internal dispatch.
-    SEXP arg = num_args > 0 ? args[0] : R_NilValue;
+    SEXP arg = R_NilValue;
+    if (num_args > 0) {
+	UNPACK_VA_ARGS(num_args, (arg_));
+	arg = arg_;
+    }
     if (isComplex(arg))
 	errorcall(call, _("unimplemented complex function"));
     return math1(arg, trunc, call);
@@ -993,7 +998,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     auto dispatched = SEXP_downcast<BuiltInFunction*>(op)
 	->InternalDispatch(call2,
 			   SEXP_downcast<Environment*>(env),
-			   arglist);
+			   std::move(arglist));
     if (dispatched.first) {
 	return dispatched.second;
     }
@@ -1025,7 +1030,7 @@ SEXP attribute_hidden do_log1arg(/*const*/ Expression* call, const BuiltInFuncti
     static RObject* log_symbol = Symbol::obtain("log");
     ArgList arglist2({ args[0], tmp }, ArgList::EVALUATED);
     Expression* call2 = new Expression(log_symbol, arglist2);
-    auto dispatch = op->InternalDispatch(call2, env, arglist2);
+    auto dispatch = op->InternalDispatch(call2, env, std::move(arglist2));
     if (dispatch.first) {
 	return dispatch.second;
     }
@@ -1106,7 +1111,8 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("argument \"%s\" is missing, with no default"), "x");
 
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-	auto dispatched = builtin->InternalDispatch(callx, env, arglist);
+	auto dispatched = builtin->InternalDispatch(callx, env,
+                                                    std::move(arglist));
 	if (dispatched.first)
 	    res = dispatched.second;
 	else {
@@ -1133,7 +1139,8 @@ SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	args = Rf_list2(x, base);
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
-	auto dispatched = builtin->InternalDispatch(callx, env, arglist);
+	auto dispatched = builtin->InternalDispatch(callx, env,
+                                                    std::move(arglist));
 	if (dispatched.first) {
 	    res = dispatched.second;
 	} else {

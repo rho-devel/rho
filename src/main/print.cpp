@@ -117,14 +117,17 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_invisible(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     switch (num_args) {
     case 0:
 	return R_NilValue;
     case 1:
+    {
 	call->check1arg("x");
-	return args[0];
+	UNPACK_VA_ARGS(num_args, (x));
+	return x;
+    }
     default:
 	op->checkNumArgs(num_args, 1, call);
 	return call;/* never used, just for -Wall */
@@ -440,11 +443,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	names = getAttrib(s, R_NamesSymbol);
 	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
-	{
-	    GCStackRoot<PairList> tl(new PairList);
-	    PROTECT(newcall = new Expression(nullptr, tl));
-	}
-	SETCAR(newcall, install("print"));
+        PROTECT(newcall = new Expression(Rf_install("print"), { nullptr }));
 
 	if(ns > 0) {
 	    int n_pr = (ns <= R_print.max +1) ? ns : R_print.max;
@@ -606,11 +605,7 @@ static void printList(SEXP s, SEXP env)
 	i = 1;
 	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
-	{
-	    GCStackRoot<PairList> tl(new PairList);
-	    PROTECT(newcall = new Expression(nullptr, tl));
-	}
-	SETCAR(newcall, install("print"));
+        PROTECT(newcall = new Expression(Rf_install("print"), { nullptr }));
 	while (TYPEOF(s) == LISTSXP) {
 	    if (i > 1) Rprintf("\n");
 	    if (TAG(s) != R_NilValue && isSymbol(TAG(s))) {
@@ -932,7 +927,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
 		   This will not dispatch to show() as 'digits' is supplied.
 		*/
-		SEXP s, t, na_string = R_print.na_string,
+		SEXP s, na_string = R_print.na_string,
 		    na_string_noquote = R_print.na_string_noquote;
 		int quote = R_print.quote,
 		    digits = R_print.digits, gap = R_print.gap,
@@ -940,14 +935,9 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    na_width_noquote = R_print.na_width_noquote;
 		Rprt_adj right = RHOCONSTRUCT(Rprt_adj, R_print.right);
 
-		{
-		    GCStackRoot<PairList> tl(PairList::make(2));
-		    PROTECT(t = s = new Expression(nullptr, tl));
-		}
-		SETCAR(t, install("print")); t = CDR(t);
-		SETCAR(t,  CAR(a)); t = CDR(t);
-		SETCAR(t, ScalarInteger(digits));
-		SET_TAG(t, install("digits"));
+                s = PROTECT(new Expression(Rf_install("print"),
+                                           { CAR(a), ScalarInteger(digits) }));
+		SET_TAG(CDDR(s), install("digits"));
 		eval(s, env);
 		UNPROTECT(1);
 		R_print.quote = quote;

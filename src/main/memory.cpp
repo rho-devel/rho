@@ -209,13 +209,15 @@ SEXP attribute_hidden do_gc(/*const*/ Expression* call, const BuiltInFunction* o
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
-SEXP attribute_hidden do_gctime(/*const*/ Expression* call, const BuiltInFunction* op, Environment* rho, RObject* const* args, int num_args, const PairList* tags)
+SEXP attribute_hidden do_gctime(/*const*/ Expression* call, const BuiltInFunction* op, int num_args, ...)
 {
     SEXP ans;
     if (num_args == 0)
 	gctime_enabled = TRUE;
-    else
-	gctime_enabled = Rboolean(asLogical(args[0]));
+    else {
+	UNPACK_VA_ARGS(num_args, (enabled));
+	gctime_enabled = Rboolean(asLogical(enabled));
+    }
     ans = allocVector(REALSXP, 5);
     REAL(ans)[0] = gctimes[0];
     REAL(ans)[1] = gctimes[1];

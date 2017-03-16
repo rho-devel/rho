@@ -103,10 +103,6 @@ FunctionBase* Expression::getFunction(Environment* env) const
 
 RObject* Expression::evaluate(Environment* env)
 {
-    IncrementStackDepthScope scope;
-    RAllocStack::Scope ras_scope;
-    ProtectStack::Scope ps_scope;
-
     FunctionBase* function = getFunction(env);
 
     ArgList arglist(tail(), ArgList::RAW);
@@ -115,24 +111,30 @@ RObject* Expression::evaluate(Environment* env)
 
 RObject* Expression::evaluateFunctionCall(const FunctionBase* func,
                                           Environment* env,
-                                          const ArgList& raw_arglist) const
+                                          const ArgList& args,
+                                          const Frame* method_bindings) const
 {
-    func->maybeTrace(this);
-
     if (func->sexptype() == CLOSXP) {
-      return invokeClosure(static_cast<const Closure*>(func), env,
-                           raw_arglist, nullptr);
+        return evaluateFunctionCall(static_cast<const Closure*>(func),
+                                    env, args, method_bindings);
     }
 
     assert(func->sexptype() == BUILTINSXP || func->sexptype() == SPECIALSXP);
-    return applyBuiltIn(static_cast<const BuiltInFunction*>(func), env,
-                        raw_arglist);
+    assert(method_bindings == nullptr);
+    return evaluateFunctionCall(static_cast<const BuiltInFunction*>(func), env,
+                                args);
 }
 
-RObject* Expression::applyBuiltIn(const BuiltInFunction* builtin,
-                                  Environment* env, const ArgList& raw_arglist)
+RObject* Expression::evaluateFunctionCall(const BuiltInFunction* builtin,
+                                          Environment* env,
+                                          const ArgList& raw_arglist)
     const
 {
+    IncrementStackDepthScope scope;
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+    builtin->maybeTrace(this);
+
     RObject* result;
 
     if (builtin->createsStackFrame()) {
@@ -166,46 +168,28 @@ static void prepareToInvokeBuiltIn(const BuiltInFunction* func)
 #endif
 }
 
-template<typename... Args>
-RObject* Expression::evaluateBuiltInWithEvaluatedArgs(const BuiltInFunction* func,
-						      Environment* env,
-						      const PairList* tags,
-						      Args... args) const
+RObject* Expression::evaluateNativeBuiltInCall(const BuiltInFunction* func,
+                                               Environment* env,
+                                               const ArgList& arglist) const
 {
-    prepareToInvokeBuiltIn(func);
-    return func->invokeFixedArity(this, env, tags, args...);
-}
-
-template<typename... Args>
-RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* fun, Environment* env, const PairList* tags, bool evaluated, Args... args) const
-{
-    if (evaluated) {
-	return evaluateBuiltInWithEvaluatedArgs(fun, env, tags, args...);
-    }
-    return evaluateBuiltInWithEvaluatedArgs(fun, env, tags,
-	(args ? args->evaluate(env) : nullptr)...);
-}
-
-RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
-					       Environment* env,
-					       const ArgList& arglist) const
-{
-    bool evaluated = arglist.status() == ArgList::EVALUATED;
+    assert(func->sexptype() == SPECIALSXP
+           || arglist.status() == ArgList::EVALUATED);
     const PairList* tags = arglist.tags();
-    switch(func->arity()) {
+    prepareToInvokeBuiltIn(func);
+    switch(arglist.size()) {
     case 0:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated);
+        return func->invokeNativeCall(this, env, tags);
 /*  This macro expands out to:
     case 1:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1));
+	return func->invokeNativeCall(this, env, tags, arglist.get(0));
     case 2:
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, arglist.get(1), arglist.get(2));
+	return func->invokeNativeCall(this, env, tags, arglist.get(0), arglist.get(1));
     ...
 */
 #define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arglist.get(N)
 #define CASE_STATEMENT(Z, N, IGNORED)              \
     case N:                                        \
-	return evaluateFixedArityBuiltIn(func, env, tags, evaluated, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
+      return func->invokeNativeCall(this, env, tags, BOOST_PP_REPEAT(N, ARGUMENT_LIST, 0));
 
 	BOOST_PP_REPEAT_FROM_TO(1, 20, CASE_STATEMENT, 0);
 
@@ -218,35 +202,102 @@ RObject* Expression::evaluateFixedArityBuiltIn(const BuiltInFunction* func,
     }
 }
 
+static inline RObject* evalIfNonNull(RObject* x, Environment* env) {
+  return x ? x->evaluate(env) : x;
+}
+
+RObject* Expression::evalArgsAndEvaluateNativeBuiltInCall(
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
+{
+    const PairList* tags = arglist.tags();
+    int arity = arglist.size();
+    if (arity == 0) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeNativeCall(this, env, tags);
+    }
+    auto arg_iterator = arglist.getArgs().begin();
+/*  This macro expands out to:
+    RObject* arg0 = evalIfNonNull(arg_iterator->car(), env);
+    if (arity == 1) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeNativeCall(this, env, tags, arg0);
+    }
+    ++arg_iterator;
+    RObject* arg1 = evalIfNonNull(arg_iterator->car(), env);
+    if (arity == 2) {
+      prepareToInvokeBuiltIn(func);
+      return func->invokeNativeCall(this, env, tags, arg0, arg1);
+    }
+    ...
+*/
+#define ARGUMENT_LIST(Z, N, IGNORED) BOOST_PP_COMMA_IF(N) arg##N
+#define CMD_SEQUENCE(Z, N, IGNORED)                            \
+    RObject* arg##N = evalIfNonNull(arg_iterator->car(), env); \
+    if (arity == N + 1) {                                      \
+      prepareToInvokeBuiltIn(func);                            \
+      return func->invokeNativeCall(this, env, tags,           \
+                                    BOOST_PP_REPEAT(BOOST_PP_ADD(N, 1), ARGUMENT_LIST, 0)); \
+    }                                                          \
+    ++arg_iterator;
+
+    BOOST_PP_REPEAT_FROM_TO(0, 20, CMD_SEQUENCE, 0);
+
+    Rf_errorcall(const_cast<Expression*>(this),
+                 _("too many arguments, sorry"));
+}
+#undef CMD_SEQUENCE
+#undef ARGUMENT_LIST
+
 RObject* Expression::evaluateBuiltInCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (func->hasDirectCall() || func->hasFixedArityCall())
+    if (func->getCallingConvention()
+        == BuiltInFunction::CallingConvention::PairList)
+    {
+      if (func->sexptype() == SPECIALSXP) {
+        return evaluatePairListSpecialCall(func, env, arglist);
+      } else {
+        return evaluatePairListBuiltInCall(func, env, arglist);
+      }
+    } else {
         return evaluateDirectBuiltInCall(func, env, arglist);
-    else
-      return evaluateIndirectBuiltInCall(func, env, arglist);
+    }
 }
 
-RObject* Expression::evaluateDirectBuiltInCall(
-    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
+void Expression::checkArityAndNamingRequirements(const BuiltInFunction* func,
+                                                 int num_args) const
 {
-    if (arglist.has3Dots()) {
-        ArgList expanded_args(arglist);
-        expanded_args.evaluate(env);
-        return evaluateDirectBuiltInCall(func, env, expanded_args);
-    }
-
     // Check the number of arguments.
-    int num_evaluated_args = arglist.size();
-    func->checkNumArgs(num_evaluated_args, this);
+    func->checkNumArgs(num_args, this);
 
     // Check that any naming requirements on the first arg are satisfied.
     const char* first_arg_name = func->getFirstArgName();
     if (first_arg_name)
 	check1arg(first_arg_name);
+}
 
-    if (func->hasFixedArityCall()) {
-	return evaluateFixedArityBuiltIn(func, env, arglist);
+RObject* Expression::evaluateDirectBuiltInCall(
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
+{
+    bool args_need_evaluation = arglist.status() != ArgList::EVALUATED;
+    if (args_need_evaluation && arglist.has3Dots()) {
+        ArgList expanded_args(arglist);
+        expanded_args.evaluate(env);
+        return evaluateDirectBuiltInCall(func, env, expanded_args);
+    }
+
+    int num_evaluated_args = arglist.size();
+    checkArityAndNamingRequirements(func, num_evaluated_args);
+
+    auto calling_convention = func->getCallingConvention();
+    if (calling_convention == BuiltInFunction::CallingConvention::FixedNative
+        || calling_convention == BuiltInFunction::CallingConvention::VarArgsNative)
+    {
+        if (args_need_evaluation) {
+            return evalArgsAndEvaluateNativeBuiltInCall(func, env, arglist);
+        } else {
+            return evaluateNativeBuiltInCall(func, env, arglist);
+        }
     }
 
     // Create an array on stack to write arguments to.
@@ -261,39 +312,42 @@ RObject* Expression::evaluateDirectBuiltInCall(
                         arglist.tags());
 }
 
-RObject* Expression::evaluateIndirectBuiltInCall(
+RObject* Expression::evaluatePairListSpecialCall(
     const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-    if (func->sexptype() == BUILTINSXP
-	&& arglist.status() != ArgList::EVALUATED)
-    {
-      ArgList evaluated_args(arglist);
-      evaluated_args.evaluate(env);
-      return evaluateIndirectBuiltInCall(func, env, evaluated_args);
-    }
-
-    // Check the number of arguments.
-    int num_evaluated_args = arglist.size();
-    func->checkNumArgs(num_evaluated_args, this);
-
-    // Check that any naming requirements on the first arg are satisfied.
-    const char* first_arg_name = func->getFirstArgName();
-    if (first_arg_name) {
-	check1arg(first_arg_name);
-    }
-
-    prepareToInvokeBuiltIn(func);
-    return func->invoke(this, env, arglist);
+    checkArityAndNamingRequirements(func, arglist.size());
+    return func->invokeSpecial(this, env, arglist.list());
 }
 
-RObject* Expression::invokeClosure(const Closure* func,
-                                   Environment* calling_env,
-                                   const ArgList& arglist,
-                                   const Frame* method_bindings) const
+RObject* Expression::evaluatePairListBuiltInCall(
+    const BuiltInFunction* func, Environment* env, const ArgList& arglist) const
 {
-  return GCStackFrameBoundary::withStackFrameBoundary(
-      [=]() { return invokeClosureImpl(func, calling_env, arglist,
-                                       method_bindings); });
+    assert(func->sexptype() == BUILTINSXP);
+    ArgList evaluated_args(arglist);
+    if (arglist.status() != ArgList::EVALUATED)
+    {
+      evaluated_args.evaluate(env);
+    }
+
+    checkArityAndNamingRequirements(func, evaluated_args.size());
+
+    prepareToInvokeBuiltIn(func);
+    return func->invoke(this, env, std::move(evaluated_args));
+}
+
+RObject* Expression::evaluateFunctionCall(const Closure* func,
+                                          Environment* calling_env,
+                                          const ArgList& arglist,
+                                          const Frame* method_bindings) const
+{
+    IncrementStackDepthScope scope;
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+    func->maybeTrace(this);
+
+    return GCStackFrameBoundary::withStackFrameBoundary(
+        [=]() { return invokeClosureImpl(func, calling_env, arglist,
+                                         method_bindings); });
 }
 
 void Expression::matchArgsIntoEnvironment(const Closure* func,
