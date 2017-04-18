@@ -2133,6 +2133,7 @@ assign("#HAS_DUPLICATE_CLASS_NAMES", FALSE, envir = .classTable)
     if(length(classDef@contains)) {
         superclasses <- names(classDef@contains)
         for(what in superclasses) {
+            cat("Superclass: ", what, "\n")
             cdef <- .getClassFromCache(what, resolve.confl = "all")
 	    if(is(cdef, "classRepresentation"))
 		.removeSubClass(what, Class, cdef)
