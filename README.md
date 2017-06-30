@@ -1,3 +1,6 @@
+# Development on Rho has been suspended indefinitely.
+## If you are interested in resuming development, please contact kmillar@google.com
+
 <img src="doc/html/rho_logo.png?raw=true" alt="Rho logo" width="130" height="100"/>
 
 [![Build Status](https://travis-ci.org/rho-devel/rho.svg?branch=master)](https://travis-ci.org/rho-devel/rho)
